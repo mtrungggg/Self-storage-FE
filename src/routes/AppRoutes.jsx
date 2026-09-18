@@ -9,8 +9,17 @@ import AccessControl from "../pages/AccessControl";
 import FacilityMap from "../pages/FacilityMap";
 import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
+import AdminOperationsOverview from "../pages/AdminOperationsOverview";
+import AdminStaffScheduling from "../pages/AdminStaffScheduling";
+import AdminFacilityManagement from "../pages/AdminFacilityManagement";
+import AdminPricingPolicy from "../pages/AdminPricingPolicy";
+import AdminContractsCustomers from "../pages/AdminContractsCustomers";
+import AdminSecurityCenter from "../pages/AdminSecurityCenter";
+import AdminAuditLog from "../pages/AdminAuditLog";
+import AdminUserManagement from "../pages/AdminUserManagement";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
+import AdminLayouts from "../layouts/AdminLayouts";
 
 // Central route table: public auth routes plus role-scoped route groups.
 function AppRoutes() {
@@ -32,6 +41,17 @@ function AppRoutes() {
 
       <Route element={<StaffLayouts />}>
         <Route path="/staff-dashboard" element={<StaffDashboard />} />
+      </Route>
+
+      <Route element={<AdminLayouts />}>
+        <Route path="/admin-overview" element={<AdminOperationsOverview />} />
+        <Route path="/admin-facilities" element={<AdminFacilityManagement />} />
+        <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
+        <Route path="/admin-staffing" element={<AdminStaffScheduling />} />
+        <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
+        <Route path="/admin-system" element={<AdminSecurityCenter />} />
+        <Route path="/admin-audit-log" element={<AdminAuditLog />} />
+        <Route path="/admin-users" element={<AdminUserManagement />} />
       </Route>
     </Routes>
   );

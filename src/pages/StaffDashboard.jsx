@@ -1,145 +1,273 @@
 import { useStaffDashboard } from "../hooks/useStaffDashboard";
 
+const STATUS_STYLES = {
+  available: "border-[#2dd4a0] bg-[#effcf6]",
+  occupied: "border-[#dfe7f5] bg-white",
+  handover: "border-[#f5a524] bg-[#fff8ec] ring-2 ring-[#f5a524]/30",
+  alert: "border-[#e5484d] bg-[#fdecec]",
+};
+
 function StaffDashboard() {
   const {
     profile,
-    facilityStats,
-    ticketTabs,
-    shiftSchedule,
-    activeTicketTab,
-    setActiveTicketTab,
-    filteredTickets,
-    ticketStats,
+    navTabs,
+    activeNavTab,
+    setActiveNavTab,
+    currentTime,
+    kpis,
+    zones,
+    activeZone,
+    setActiveZone,
+    floors,
+    activeFloor,
+    setActiveFloor,
+    filteredUnits,
+    legendWithCounts,
+    handover,
+    checkedItems,
+    toggleChecklistItem,
+    scheduleTabs,
+    activeScheduleTab,
+    setActiveScheduleTab,
+    filteredSchedule,
   } = useStaffDashboard();
 
   return (
     <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
       <header className="border-b border-[#e6ebf5] bg-white">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-6">
+        <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
               <span className="material-symbols-outlined text-[16px]">lock</span>
             </div>
-            <div className="leading-tight">
-              <div className="text-[15px] font-bold text-[#0b1c30]">VaultSpace</div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">Staff Operations Console</div>
+            <div className="hidden leading-tight sm:block">
+              <div className="text-[14px] font-bold">VaultSpace</div>
+              <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">Facility Portal</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
-            <span className="hidden items-center gap-1 md:flex">
-              <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">domain</span>
-              {profile.facility}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
-              <span className="material-symbols-outlined text-[16px]">person</span>
-            </div>
-            <div className="hidden leading-tight lg:block">
-              <div className="text-[12px] font-bold text-[#0b1c30]">{profile.name}</div>
-              <div className="text-[10px] text-[#8996a9]">{profile.role}</div>
+          <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex">
+            {navTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveNavTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-semibold transition ${
+                  activeNavTab === tab.id ? "bg-[#eef4ff] text-[#1d5fe5]" : "text-[#58657a] hover:bg-[#f5f7fd]"
+                }`}
+              >
+                {tab.label}
+                {tab.count ? (
+                  <span className="rounded-full bg-[#0b1c30] px-1.5 py-0.5 text-[9px] text-white">{tab.count}</span>
+                ) : null}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[11px] font-semibold tabular-nums text-[#8996a9] md:block">{currentTime}</span>
+            <button className="hidden items-center gap-1.5 rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[11px] font-bold text-white md:flex">
+              <span className="material-symbols-outlined text-[14px]">sync_alt</span>
+              Bàn giao ca
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
+                <span className="material-symbols-outlined text-[16px]">person</span>
+              </div>
+              <div className="hidden leading-tight lg:block">
+                <div className="text-[11px] font-bold">{profile.name}</div>
+                <div className="text-[9px] text-[#8996a9]">{profile.code} • {profile.role}</div>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
-        <div className="rounded-[16px] bg-[#0b1c30] p-6 text-white">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                <span className="material-symbols-outlined text-[14px]">schedule</span>
-                Ca trực: {profile.shift}
+      <main className="mx-auto max-w-[1320px] px-4 py-5 lg:px-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {kpis.map((kpi) => (
+            <div key={kpi.id} className="rounded-[12px] border border-[#dfe7f5] bg-white p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)]">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                {kpi.label}
+                <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">{kpi.icon}</span>
               </div>
-              <h1 className="mt-2 text-[24px] font-bold tracking-[-0.02em]">Bảng điều khiển Nhân viên Vận hành</h1>
-              <p className="mt-2 max-w-[520px] text-[12px] leading-6 text-[#c7d1e6]">
-                Theo dõi tình trạng cơ sở, xử lý yêu cầu hỗ trợ kỹ thuật và bàn giao ca làm việc.
-              </p>
+              <div className="mt-1 text-[20px] font-bold">{kpi.value}</div>
+              <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
             </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
-            {facilityStats.map((stat) => (
-              <div key={stat.id} className="rounded-[12px] border border-white/10 bg-white/5 p-3">
-                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                  {stat.label}
-                  <span className="material-symbols-outlined text-[14px]">{stat.icon}</span>
-                </div>
-                <div className="mt-1 text-[16px] font-bold">{stat.value}</div>
-                <div className="text-[10px] text-[#8f9cbd]">{stat.note}</div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+          <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="text-[15px] font-bold text-[#0b1c30]">Yêu cầu hỗ trợ được phân công</div>
-                <p className="text-[11px] text-[#8996a9]">
-                  {ticketStats.pending} đang chờ • {ticketStats.inProgress} đang xử lý • {ticketStats.resolved} đã xử lý
-                </p>
-              </div>
-              <div className="inline-flex flex-wrap rounded-[10px] bg-[#eef4ff] p-1">
-                {ticketTabs.map((tab) => (
+              <div className="text-[14px] font-bold">Sơ đồ mặt bằng</div>
+              <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
+                {floors.map((floor) => (
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveTicketTab(tab.id)}
-                    className={`rounded-[8px] px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                      activeTicketTab === tab.id ? "bg-[#0b1c30] text-white shadow-sm" : "text-[#58657a]"
+                    key={floor.id}
+                    onClick={() => setActiveFloor(floor.id)}
+                    className={`rounded-[6px] px-2.5 py-1 text-[10px] font-semibold transition ${
+                      activeFloor === floor.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"
                     }`}
                   >
-                    {tab.label}
+                    {floor.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-4 space-y-3">
-              {filteredTickets.map((ticket) => (
-                <div key={ticket.id} className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold text-[#1d5fe5]">{ticket.id}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        ticket.status === "pending"
-                          ? "bg-[#eef4ff] text-[#1d5fe5]"
-                          : ticket.status === "in_progress"
-                          ? "bg-[#0b1c30] text-white"
-                          : "bg-[#e7f8ee] text-[#0e7b4c]"
-                      }`}
-                    >
-                      {ticket.statusLabel}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[13px] font-semibold text-[#0b1c30]">{ticket.title}</div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-[#8996a9]">
-                    <span>Khoang: {ticket.unit}</span>
-                    <span>{ticket.time}</span>
-                    <span className="font-semibold text-[#c0362c]">{ticket.priority}</span>
-                  </div>
-                </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {zones.map((zone) => (
+                <button
+                  key={zone.id}
+                  onClick={() => setActiveZone(zone.id)}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                    activeZone === zone.id ? "bg-[#0b1c30] text-white" : "bg-[#f5f7fd] text-[#58657a]"
+                  }`}
+                >
+                  {zone.label}
+                </button>
               ))}
-              {filteredTickets.length === 0 && (
-                <div className="rounded-[12px] border border-dashed border-[#dfe7f5] p-6 text-center text-[12px] text-[#8996a9]">
-                  Không có yêu cầu nào trong mục này.
-                </div>
-              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-3 border-b border-[#eef1f8] pb-3 text-[10px] font-semibold text-[#58657a]">
+              {legendWithCounts.map((item) => (
+                <span key={item.id} className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  {item.label} ({item.count})
+                </span>
+              ))}
+            </div>
+
+            {filteredUnits.length === 0 ? (
+              <div className="mt-3 rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
+                Không có khoang nào ở khu vực này.
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {filteredUnits.map((unit) => (
+                  <div key={unit.id} className={`rounded-[10px] border p-2.5 ${STATUS_STYLES[unit.status]}`}>
+                    <div className="text-[11px] font-bold">{unit.id}</div>
+                    <div className="text-[9px] text-[#8996a9]">{unit.size}</div>
+                    <div className="mt-1 truncate text-[9px] font-semibold text-[#58657a]">{unit.note}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[16px] border border-[#f5a524]/40 bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+            <div className="flex items-center justify-between">
+              <span className="rounded-full bg-[#fff2d8] px-2 py-0.5 text-[9px] font-bold text-[#a15c00]">Chờ bàn giao</span>
+              <span className="text-[10px] font-semibold text-[#8996a9]">{handover.code}</span>
+            </div>
+            <div className="mt-2 text-[15px] font-bold">Kho #{handover.unit}</div>
+
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
+                <span className="material-symbols-outlined text-[16px]">person</span>
+              </div>
+              <div className="flex items-center gap-1 text-[12px] font-bold">
+                {handover.customer}
+                <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">verified</span>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1.5 text-[11px] text-[#3a475a]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#8996a9]">Kích thước</span>
+                <span className="font-semibold">{handover.size}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8996a9]">Cọc & Thanh toán</span>
+                <span className="font-semibold">{handover.deposit} · {handover.payment}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8996a9]">Mã PIN kích hoạt</span>
+                <span className="font-semibold">{handover.pin}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8996a9]">Pin khóa cửa</span>
+                <span className="font-semibold">{handover.battery}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1.5 border-t border-[#eef1f8] pt-3">
+              {handover.checklist.map((item) => (
+                <label key={item.id} className="flex items-center gap-2 text-[11px] text-[#3a475a]">
+                  <input
+                    type="checkbox"
+                    checked={checkedItems.has(item.id)}
+                    onChange={() => toggleChecklistItem(item.id)}
+                    className="h-3.5 w-3.5 accent-[#1d5fe5]"
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-3 space-y-2">
+              <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white">
+                <span className="material-symbols-outlined text-[14px]">nfc</span>
+                Cấp thẻ NFC & Gửi OTP
+              </button>
+              <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#0e7b4c] py-2 text-[11px] font-bold text-white">
+                <span className="material-symbols-outlined text-[14px]">task_alt</span>
+                Xác nhận bàn giao & Ký nhận
+              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Báo sự cố</button>
+                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Lưu tạm</button>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] text-[#8996a9]">{handover.handoffNote}</div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-[14px] font-bold">Lịch trình tiếp nhận & trả kho</div>
+            <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
+              {scheduleTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveScheduleTab(tab.id)}
+                  className={`flex items-center gap-1 rounded-[6px] px-2.5 py-1.5 text-[10px] font-semibold transition ${
+                    activeScheduleTab === tab.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-            <div className="text-[15px] font-bold text-[#0b1c30]">Lịch trình ca trực</div>
-            <p className="text-[11px] text-[#8996a9]">Danh sách công việc cần thực hiện trong ca hôm nay</p>
-
-            <div className="mt-4 space-y-3">
-              {shiftSchedule.map((item) => (
-                <div key={item.time} className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <div className="text-[11px] font-bold text-[#1d5fe5]">{item.time}</div>
-                  <div className="mt-0.5 text-[12px] text-[#3a475a]">{item.task}</div>
+          <div className="mt-3 space-y-2">
+            {filteredSchedule.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[11px] font-bold text-[#1d5fe5]">
+                    {item.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[12px] font-bold">
+                      {item.name}
+                      <span className="text-[9px] font-semibold text-[#1d5fe5]">#{item.id}</span>
+                    </div>
+                    <div className="text-[10px] text-[#8996a9]">{item.unit} • {item.status}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-semibold text-[#58657a]">{item.time}</span>
+                  <button className="rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[10px] font-bold text-white">{item.action}</button>
+                </div>
+              </div>
+            ))}
+            {filteredSchedule.length === 0 && (
+              <div className="rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
+                Không có tác vụ nào trong mục này.
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -148,3 +276,4 @@ function StaffDashboard() {
 }
 
 export default StaffDashboard;
+
