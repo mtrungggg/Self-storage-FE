@@ -9,6 +9,11 @@ function Login() {
     showPassword,
     setShowPassword,
     loading,
+    error,
+    email,
+    setEmail,
+    password,
+    setPassword,
     features,
     handleSubmit,
   } = useLogin();
@@ -147,6 +152,13 @@ function Login() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-[10px] border border-[#f5b5b8] bg-[#fdecec] px-3 py-2.5 text-[13px] font-semibold text-[#b3261e]">
+                  <span className="material-symbols-outlined text-[18px]">error</span>
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label className="mb-2 block text-[13px] font-semibold text-[#0f172a]">Email hoặc Số điện thoại</label>
                 <div className="relative">
@@ -154,6 +166,8 @@ function Login() {
                   <input
                     type="text"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder={accountType === "business" ? "Email doanh nghiệp hoặc MST" : "tenban@congty.vn hoặc 090 123 4567"}
                     className="w-full rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] text-[#122033] placeholder:text-[#7a8595] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                   />
@@ -173,6 +187,8 @@ function Login() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
                     className="w-full rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-11 text-[13px] text-[#122033] placeholder:text-[#7a8595] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                   />

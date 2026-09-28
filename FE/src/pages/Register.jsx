@@ -11,7 +11,25 @@ function Register() {
     showConfirmPassword,
     setShowConfirmPassword,
     faqs,
+    step,
+    fullName,
+    setFullName,
+    email,
+    setEmail,
+    phoneNumber,
+    setPhoneNumber,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    otpCode,
+    setOtpCode,
+    loading,
+    error,
+    infoMessage,
     handleSubmit,
+    handleVerifyOtp,
+    handleResendOtp,
   } = useRegister();
 
   return (
@@ -213,6 +231,56 @@ function Register() {
               <span className="h-px flex-1 bg-[#dfe7f5]" />
             </div>
 
+            {error && (
+              <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-[#f5b5b8] bg-[#fdecec] px-3 py-2.5 text-[13px] font-semibold text-[#b3261e]">
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                {error}
+              </div>
+            )}
+            {infoMessage && !error && (
+              <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-[#bfe3d0] bg-[#edf8f4] px-3 py-2.5 text-[13px] font-semibold text-[#0e7b4c]">
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                {infoMessage}
+              </div>
+            )}
+
+            {step === "otp" ? (
+              <form className="space-y-4" onSubmit={handleVerifyOtp}>
+                <div>
+                  <label className="mb-2 block text-[13px] font-semibold text-[#0f172a]">Mã OTP gửi tới {email}</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">pin</span>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="Nhập mã 6 số"
+                      className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] tracking-[0.3em] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3.5 text-[15px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7] disabled:opacity-75"
+                >
+                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                  {loading ? "Đang xác thực..." : "Xác thực & Hoàn tất đăng ký"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="w-full text-center text-[12px] font-semibold text-[#1d5fe5] hover:underline disabled:opacity-60"
+                >
+                  Gửi lại mã OTP
+                </button>
+              </form>
+            ) : (
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label className="mb-2 block text-[13px] font-semibold text-[#0f172a]">Họ và tên đầy đủ *</label>
@@ -221,6 +289,8 @@ function Register() {
                   <input
                     type="text"
                     required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     placeholder="Ví dụ: Nguyễn Văn An"
                     className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                   />
@@ -236,6 +306,8 @@ function Register() {
                     <input
                       type="email"
                       required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="tenban@email.com"
                       className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                     />
@@ -250,6 +322,8 @@ function Register() {
                     <input
                       type="tel"
                       required
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="0912 345 678"
                       className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-16 pr-4 text-[13px] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                     />
@@ -266,6 +340,9 @@ function Register() {
                     <input
                       type={showPassword ? "text" : "password"}
                       required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
                       className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-11 text-[13px] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                     />
@@ -286,6 +363,9 @@ function Register() {
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       required
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••••••"
                       className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-11 text-[13px] outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]"
                     />
@@ -346,16 +426,18 @@ function Register() {
 
               <button
                 type="submit"
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3.5 text-[15px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7]"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3.5 text-[15px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7] disabled:opacity-75"
               >
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                Tạo tài khoản &amp; Nhận ưu đãi 50%
+                {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản & Nhận ưu đãi 50%"}
               </button>
 
               <div className="text-center text-[12px] text-[#5f6c7a]">
                 Đã có tài khoản VaultSpace? <Link to="/login" className="font-semibold text-[#1d5fe5] hover:underline">Đăng nhập tại đây</Link>
               </div>
             </form>
+            )}
           </section>
         </div>
 

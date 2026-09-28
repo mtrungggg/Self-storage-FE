@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BRAND_NAME } from "../constants/brand";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Kho của tôi", to: "/dashboard", style: "soft" },
@@ -16,6 +17,14 @@ const ACTIVE_CLASS = {
 
 // Shared top navigation bar used by every authenticated portal page.
 function Header({ active, subtitle = "Custom Storage Portal", showUserBadge = false, showExpandIcon = false }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header className="border-b border-[#e6ebf5] bg-white">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-6">
@@ -74,11 +83,19 @@ function Header({ active, subtitle = "Custom Storage Portal", showUserBadge = fa
           </div>
           {showUserBadge && (
             <div className="hidden leading-tight lg:block">
-              <div className="text-[12px] font-bold text-[#0b1c30]">Alex Morgan</div>
-              <div className="text-[10px] text-[#8996a9]">Khách hàng thành viên</div>
+              <div className="text-[12px] font-bold text-[#0b1c30]">{user?.fullName ?? "Khách hàng"}</div>
+              <div className="text-[10px] text-[#8996a9]">{user?.email ?? "Khách hàng thành viên"}</div>
             </div>
           )}
           {showExpandIcon && <span className="material-symbols-outlined text-[16px] text-[#58657a]">expand_more</span>}
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Đăng xuất"
+            className="flex items-center gap-1 rounded-md border border-[#dfe7f5] px-2 py-1.5 text-[#58657a] hover:border-[#f5b5b8] hover:text-[#b3261e]"
+          >
+            <span className="material-symbols-outlined text-[16px]">logout</span>
+          </button>
         </div>
       </div>
     </header>

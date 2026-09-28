@@ -20,8 +20,10 @@ import AdminUserManagement from "../pages/AdminUserManagement";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
+import ProtectedRoute from "./ProtectedRoute";
 
-// Central route table: public auth routes plus role-scoped route groups.
+// Central route table: public auth routes plus role-scoped route groups
+// gated behind ProtectedRoute, which requires a valid authenticated session.
 function AppRoutes() {
   return (
     <Routes>
@@ -29,29 +31,31 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      <Route element={<CustomerLayouts />}>
-        <Route path="/home" element={<Home />} />
-        <Route path="/storage-detail" element={<StorageDetail />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/dashboard" element={<CustomerDashboard />} />
-        <Route path="/access-control" element={<AccessControl />} />
-        <Route path="/facility-map" element={<FacilityMap />} />
-        <Route path="/support" element={<Support />} />
-      </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<CustomerLayouts />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/storage-detail" element={<StorageDetail />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/dashboard" element={<CustomerDashboard />} />
+          <Route path="/access-control" element={<AccessControl />} />
+          <Route path="/facility-map" element={<FacilityMap />} />
+          <Route path="/support" element={<Support />} />
+        </Route>
 
-      <Route element={<StaffLayouts />}>
-        <Route path="/staff-dashboard" element={<StaffDashboard />} />
-      </Route>
+        <Route element={<StaffLayouts />}>
+          <Route path="/staff-dashboard" element={<StaffDashboard />} />
+        </Route>
 
-      <Route element={<AdminLayouts />}>
-        <Route path="/admin-overview" element={<AdminOperationsOverview />} />
-        <Route path="/admin-facilities" element={<AdminFacilityManagement />} />
-        <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
-        <Route path="/admin-staffing" element={<AdminStaffScheduling />} />
-        <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
-        <Route path="/admin-system" element={<AdminSecurityCenter />} />
-        <Route path="/admin-audit-log" element={<AdminAuditLog />} />
-        <Route path="/admin-users" element={<AdminUserManagement />} />
+        <Route element={<AdminLayouts />}>
+          <Route path="/admin-overview" element={<AdminOperationsOverview />} />
+          <Route path="/admin-facilities" element={<AdminFacilityManagement />} />
+          <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
+          <Route path="/admin-staffing" element={<AdminStaffScheduling />} />
+          <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
+          <Route path="/admin-system" element={<AdminSecurityCenter />} />
+          <Route path="/admin-audit-log" element={<AdminAuditLog />} />
+          <Route path="/admin-users" element={<AdminUserManagement />} />
+        </Route>
       </Route>
     </Routes>
   );

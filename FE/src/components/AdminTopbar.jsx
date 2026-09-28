@@ -1,5 +1,16 @@
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 // Shared topbar used by every Admin console page.
 function AdminTopbar({ activeHub, statusBanner, profile }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header className="flex h-14 items-center gap-3 border-b border-[#e6ebf5] bg-white px-4 lg:px-6">
       <button className="hidden items-center gap-1 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px] font-semibold text-[#3a475a] md:flex">
@@ -33,6 +44,15 @@ function AdminTopbar({ activeHub, statusBanner, profile }) {
           <div className="text-[9px] text-[#8996a9]">{profile.role}</div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        title="Đăng xuất"
+        className="flex items-center gap-1 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:border-[#f5b5b8] hover:text-[#b3261e]"
+      >
+        <span className="material-symbols-outlined text-[16px]">logout</span>
+      </button>
     </header>
   );
 }
