@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useRegister } from "../hooks/useRegister";
+import { BRAND_NAME, SSL_BADGE_TEXT, SUPPORT_HOTLINE, CURRENCY_LABEL } from "../constants/brand";
 
 function Register() {
   const {
@@ -23,7 +24,7 @@ function Register() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-[27px] font-bold tracking-[-0.04em] text-[#0b1c30]">VaultSpace</span>
+              <span className="text-[27px] font-bold tracking-[-0.04em] text-[#0b1c30]">{BRAND_NAME}</span>
               <span className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-[#58657a] md:inline-block">
                 ENTERPRISE SECURE
               </span>
@@ -33,17 +34,17 @@ function Register() {
           <div className="flex items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
             <div className="hidden items-center gap-2 rounded-md border border-[#dde8fb] bg-[#eef4ff] px-2 py-1.5 md:flex">
               <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">verified_user</span>
-              <span>256-Bit SSL</span>
+              <span>{SSL_BADGE_TEXT}</span>
             </div>
 
             <div className="hidden items-center gap-2 rounded-md bg-[#eef4ff] px-2 py-1.5 text-[#214db7] lg:flex">
               <span className="material-symbols-outlined text-[16px]">phone_in_talk</span>
-              <span>Hotline: 1-800-VAULT-911</span>
+              <span>Hotline: {SUPPORT_HOTLINE}</span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[18px]">language</span>
-              <span>EN / USD</span>
+              <span>{CURRENCY_LABEL}</span>
             </div>
 
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
@@ -400,7 +401,7 @@ function Register() {
 
       <footer className="border-t border-[#e3eaf5] bg-[#f6f8fe] px-4 py-4 text-[12px] text-[#64728a]">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
-          <div>© 2025 VaultSpace Logistics Inc. All rights reserved.</div>
+          <div>© 2025 {BRAND_NAME} Logistics Inc. All rights reserved.</div>
           <div className="flex items-center gap-3">
             <span>ISO 27001 Certified</span>
             <span>•</span>

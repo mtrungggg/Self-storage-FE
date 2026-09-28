@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import { BRAND_NAME } from "../constants/brand";
 
 // Shared marketing footer used by every authenticated portal page; content differs per page via props.
 function Footer({
   tagline,
   hotline,
   columns,
-  bottomText = "© 2025 VaultSpace Logistics & Storage Systems Inc. Bảo lưu mọi quyền.",
+  bottomText = `\u00a9 2025 ${BRAND_NAME} Logistics & Storage Systems Inc. Bảo lưu mọi quyền.`,
   bottomLinks = [
     { label: "Bảo mật thông tin" },
     { label: "Điều khoản sử dụng" },
@@ -22,7 +23,7 @@ function Footer({
               <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
                 <span className="material-symbols-outlined text-[16px]">lock</span>
               </div>
-              <span className="text-[15px] font-bold text-[#0b1c30]">VaultSpace</span>
+              <span className="text-[15px] font-bold text-[#0b1c30]">{BRAND_NAME}</span>
             </div>
             <p className="mt-3 text-[12px] leading-5 text-[#58657a]">{tagline}</p>
             {hotline && (

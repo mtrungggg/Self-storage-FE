@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BRAND_NAME } from "../constants/brand";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Kho của tôi", to: "/dashboard", style: "soft" },
@@ -24,7 +25,7 @@ function Header({ active, subtitle = "Custom Storage Portal", showUserBadge = fa
               <span className="material-symbols-outlined text-[16px]">lock</span>
             </div>
             <div className="leading-tight">
-              <div className="text-[15px] font-bold text-[#0b1c30]">VaultSpace</div>
+              <div className="text-[15px] font-bold text-[#0b1c30]">{BRAND_NAME}</div>
               <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">{subtitle}</div>
             </div>
           </div>
