@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
+import AuthScene from "../pages/AuthScene";
 import Home from "../pages/Home";
 import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
@@ -25,9 +24,9 @@ import AdminLayouts from "../layouts/AdminLayouts";
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/" element={<AuthScene />} />
+      <Route path="/login" element={<AuthScene />} />
+      <Route path="/register" element={<AuthScene />} />
 
       <Route element={<CustomerLayouts />}>
         <Route path="/home" element={<Home />} />
