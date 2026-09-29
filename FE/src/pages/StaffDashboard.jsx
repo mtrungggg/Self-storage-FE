@@ -37,13 +37,13 @@ function StaffDashboard() {
       <header className="border-b border-[#e6ebf5] bg-white">
         <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
-              <span className="material-symbols-outlined text-[16px]">lock</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#1d5fe5] text-white shadow-sm">
+              <span className="material-symbols-outlined text-[18px]">warehouse</span>
             </div>
-            <div className="hidden leading-tight sm:block">
-              <div className="text-[14px] font-bold">VaultSpace</div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">Facility Portal</div>
-            </div>
+            <span className="hidden text-[16px] tracking-tight sm:block">
+              <span className="font-black text-[#0a3d91]">G1</span>
+              <span className="font-bold text-[#0b1c30]">SelfStorage</span>
+            </span>
           </div>
 
           <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex">

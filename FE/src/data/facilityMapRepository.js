@@ -1,9 +1,9 @@
 // Data layer: content source for the FacilityMap page.
 export function getFloors() {
   return [
-    { id: "floor1", label: "Tầng 1 (Mặt trệt & Drive-up)" },
-    { id: "floor2", label: "Tầng 2 (Kho vi khí hậu máy lạnh)" },
-    { id: "yard", label: "Bãi đỗ container ngoài trời" },
+    { id: "floor1", label: "Tầng 1 • Trệt & Drive-up" },
+    { id: "floor2", label: "Tầng 2 • Điều hòa nhiệt độ" },
+    { id: "yard", label: "Bãi ngoài trời" },
   ];
 }
 
@@ -34,24 +34,24 @@ export function getRightUnits() {
 export function getWayfindingSteps() {
   return [
     {
-      title: "Cổng an ninh & Barrier phía Nam",
+      title: "Cổng an ninh phía Nam",
       tag: "Tầng trệt",
-      text: "Quét mã PIN cá nhân #4829 hoặc dùng ứng dụng VaultSpace để mở cổng tự động 24/7.",
+      text: "Quét mã PIN #4829 hoặc dùng ứng dụng để mở cổng tự động 24/7.",
     },
     {
-      title: "Bến bốc dỡ hàng tập trung (Dock số 2)",
-      tag: "Miễn phí 45 phút",
-      text: "Lùi xe vào khoang bốc dỡ có mái che, sàn bằng phẳng phù hợp xe tải nhỏ và SUV.",
+      title: "Bến bốc dỡ hàng (Dock 2)",
+      tag: "Miễn phí 45p",
+      text: "Lùi xe vào khoang dỡ có mái che, sàn phẳng thuận tiện chuyển hàng.",
     },
     {
-      title: "Lấy xe đẩy & Đi thang máy công nghiệp số 2",
-      tag: "Tải trọng 3.000kg",
-      text: "Lấy xe đẩy 4 bánh tại sảnh thang. Chạm thẻ hoặc mã PIN để kích hoạt thang 2 Lầu.",
+      title: "Thang máy số 2 & Xe đẩy",
+      tag: "Tải trọng 3 tấn",
+      text: "Xe đẩy sẵn có tại sảnh. Quét mã PIN hoặc thẻ để kích hoạt thang lên tầng 2.",
     },
     {
-      title: "Đến cửa Kho #B-204 (Đích đến)",
-      tag: "15 mét rẽ phải",
-      text: "Rời thang máy, rẽ phải vào Hành lang Đông B-East. Kho #B-204 ở vị trí thứ 2 bên trái.",
+      title: "Đến kho #B-204",
+      tag: "Rẽ phải 15m",
+      text: "Rời thang máy, rẽ phải vào Hành lang Đông. Kho #B-204 nằm ở vị trí thứ 2 bên trái.",
     },
   ];
 }
@@ -60,32 +60,32 @@ export function getFacilityAmenities() {
   return [
     {
       icon: "local_shipping",
-      title: "Bãi đỗ xe tải dỡ hàng",
-      text: "4 bến đỗ có mái che, trần cao 4.2m phù hợp xe tải 2.5 tấn.",
+      title: "Bến dỡ xe tải",
+      text: "4 bến có mái che, phù hợp xe tải đến 2.5 tấn.",
     },
     {
       icon: "elevator",
-      title: "Thang máy tải hàng siêu trọng",
-      text: "Lồng 2.4m x 2.8m, tải trọng tối đa 3.000 kg, chứa vừa pallet hàng lớn.",
+      title: "Thang máy chở hàng",
+      text: "Tải trọng 3.000 kg, chứa vừa pallet hàng lớn.",
     },
     {
       icon: "forklift",
-      title: "Xe nâng pallet & Xe đẩy 4 bánh",
-      text: "Trang bị sẵn tại sảnh thang và bãi đỗ hàng, sử dụng miễn phí.",
+      title: "Xe đẩy & Xe nâng",
+      text: "Sẵn có tại sảnh thang và bến bốc dỡ, sử dụng miễn phí.",
     },
     {
       icon: "schedule",
-      title: "Thời gian ra vào & Trực ban",
-      text: "Cổng mở 24/7 qua mã PIN. Nhân viên trực từ 07:00 đến 20:00 hàng ngày.",
+      title: "Thời gian ra vào",
+      text: "Cổng mở 24/7 qua mã PIN. Nhân viên hỗ trợ 07:00 – 20:00.",
     },
   ];
 }
 
 export function getFacilityMapTrustBadges() {
   return [
-    { icon: "verified", title: "ISO 27001", text: "An ninh thông tin đạt chuẩn" },
-    { icon: "lock", title: "SSL 256-Bit", text: "Mã hóa thanh toán ngân hàng" },
-    { icon: "videocam", title: "CCTV 24/7", text: "Giám sát liên tục mọi hành lang" },
-    { icon: "health_and_safety", title: "Bảo hiểm toàn diện", text: "Bảo vệ tài sản rủi ro tối đa" },
+    { icon: "verified", title: "ISO 27001", text: "Chuẩn quốc tế" },
+    { icon: "lock", title: "Khóa thông minh", text: "Bảo mật đa lớp" },
+    { icon: "videocam", title: "Camera 24/7", text: "Giám sát liên tục" },
+    { icon: "health_and_safety", title: "Bảo hiểm $50k", text: "Bảo vệ tài sản" },
   ];
 }

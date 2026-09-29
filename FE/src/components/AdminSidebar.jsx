@@ -5,13 +5,13 @@ function AdminSidebar({ navGroups, activeId, footer, sectionBadge, networkStatus
   return (
     <aside className="hidden w-[220px] shrink-0 flex-col border-r border-[#e6ebf5] bg-white lg:flex">
       <div className="flex items-center gap-2 border-b border-[#eef1f8] p-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
-          <span className="material-symbols-outlined text-[16px]">lock</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#1d5fe5] text-white shadow-sm">
+          <span className="material-symbols-outlined text-[18px]">warehouse</span>
         </div>
-        <div className="leading-tight">
-          <div className="text-[13px] font-bold">VaultSpace</div>
-          <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">OPS B2B Portal</div>
-        </div>
+        <span className="text-[16px] tracking-tight">
+          <span className="font-black text-[#0a3d91]">G1</span>
+          <span className="font-bold text-[#0b1c30]">SelfStorage</span>
+        </span>
       </div>
 
       <div className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-semibold text-[#0e7b4c]">

@@ -1,5 +1,4 @@
 import { useBilling } from "../hooks/useBilling";
-import { getDefaultFooterColumns } from "../data/footerRepository";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -18,53 +17,28 @@ function Billing() {
 
   return (
     <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
-      <Header active="billing" showUserBadge />
-
-      <div className="border-b border-[#dfe7f5] bg-[#eef4ff]">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-2 text-[11px] font-semibold text-[#3a475a] lg:px-6">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-[#0e7b4c]">
-              <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-              Giám sát an ninh 24/7 đang hoạt động
-            </span>
-            <span className="flex items-center gap-1 text-[#0e7b4c]">
-              <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-              Khóa cửa sinh trắc học đang hoạt động
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">verified_user</span>
-              Có 6 cơ sở đạt chuẩn bảo mật cấp độ A
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">phone_in_talk</span>
-              Hotline khẩn cấp: 1800 888 999
-            </span>
-          </div>
-        </div>
-      </div>
+      <Header active="billing" />
 
       <main className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[26px] font-bold tracking-[-0.02em] text-[#0b1c30]">Hóa đơn & Tự động thanh toán</h1>
-              <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[11px] font-bold text-[#1d5fe5]">Chu kỳ cước Tháng 10/2025</span>
+              <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-[#0b1c30]">Hóa đơn &amp; Thanh toán</h1>
+              <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">Tháng 10/2025</span>
             </div>
-            <p className="mt-2 max-w-[640px] text-[13px] leading-6 text-[#58657a]">
-              Quản lý thanh toán tự động, tra cứu hóa đơn VAT và kiểm soát chu kỳ cước cho các kho đang thuê tại VaultSpace.
+            <p className="mt-1 text-[13px] text-[#58657a]">
+              Quản lý hóa đơn và phương thức thanh toán định kỳ.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 rounded-[10px] border border-[#dfe7f5] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#3a475a]">
+            <button className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-white px-3.5 py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff]">
               <span className="material-symbols-outlined text-[16px]">description</span>
-              Xuất sao kê (PDF/Excel)
+              Xuất sao kê
             </button>
-            <button className="flex items-center gap-2 rounded-[10px] bg-[#1d5fe5] px-4 py-2.5 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7]">
+            <button className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7]">
               <span className="material-symbols-outlined text-[16px]">bolt</span>
-              Thanh toán ngay ($260.00)
+              Thanh toán ($260)
             </button>
           </div>
         </div>
@@ -72,75 +46,75 @@ function Billing() {
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Khoản sắp đến hạn
-              <span className="rounded-full bg-[#fff1e6] px-2 py-0.5 text-[#b45309]">01/11/2025</span>
+              Sắp đến hạn
+              <span className="rounded-full bg-[#fff1e6] px-2 py-0.5 text-[10px] font-semibold text-[#b45309]">01/11/2025</span>
             </div>
-            <div className="mt-2 text-[22px] font-bold text-[#0b1c30]">$101.00 <span className="text-[12px] font-semibold text-[#8996a9]">USD</span></div>
-            <div className="mt-1 text-[11px] text-[#58657a]">Kho tự quản #B-204 (Climate-Control)</div>
-            <div className="mt-2 flex items-center gap-1 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
+            <div className="mt-2 text-[22px] font-bold text-[#0b1c30]">$101.00</div>
+            <div className="mt-1 text-[11px] text-[#58657a]">Kho #B-204 (Có điều hòa)</div>
+            <div className="mt-2 flex items-center gap-1.5 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
               <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">autorenew</span>
-              Tự động trích Visa ****4092
+              Tự động trích Visa •••• 4092
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Tự động thanh toán
-              <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[#0e7b4c]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> Đang bật
+              Thanh toán tự động
+              <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[10px] font-semibold text-[#0e7b4c]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> Bật
               </span>
             </div>
-            <div className="mt-2 text-[16px] font-bold text-[#0b1c30]">Visa Infinite</div>
-            <div className="mt-1 text-[11px] text-[#58657a]">**** **** **** 4092 (Hết hạn 08/28)</div>
-            <div className="mt-2 flex items-center justify-between text-[11px] text-[#3a475a]">
-              <span>Chủ thẻ: Alex Morgan</span>
-              <button className="font-semibold text-[#1d5fe5] hover:underline">Thay đổi thẻ</button>
+            <div className="mt-2 text-[16px] font-bold text-[#0b1c30]">Visa •••• 4092</div>
+            <div className="mt-1 text-[11px] text-[#58657a]">Hạn 08/28 • Alex Morgan</div>
+            <div className="mt-2 flex items-center justify-between text-[11px]">
+              <span className="text-[#8996a9]">Thẻ mặc định</span>
+              <button className="font-semibold text-[#1d5fe5] hover:underline">Đổi thẻ</button>
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Tiền cọc an ninh
-              <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[#0e7b4c]">Bảo toàn 100%</span>
+              Tiền cọc
+              <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[10px] font-semibold text-[#0e7b4c]">Bảo toàn</span>
             </div>
-            <div className="mt-2 text-[22px] font-bold text-[#0b1c30]">$130.00 <span className="text-[12px] font-semibold text-[#8996a9]">USD</span></div>
-            <div className="mt-1 text-[11px] text-[#58657a]">Áp dụng cho 2 căn: #B-204 & #D-118</div>
-            <div className="mt-2 flex items-center gap-1 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
+            <div className="mt-2 text-[22px] font-bold text-[#0b1c30]">$130.00</div>
+            <div className="mt-1 text-[11px] text-[#58657a]">Kho #B-204 &amp; #D-118</div>
+            <div className="mt-2 flex items-center gap-1.5 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
               <span className="material-symbols-outlined text-[14px] text-[#0e7b4c]">verified</span>
-              Hoàn trả tự động khi tất toán bàn giao
+              Hoàn trả khi trả kho
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Hóa đơn VAT điện tử
-              <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[#0e7b4c]">Hợp lệ</span>
+              Hóa đơn VAT
+              <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[10px] font-semibold text-[#0e7b4c]">Đầy đủ</span>
             </div>
             <div className="mt-2 flex items-center gap-2 text-[22px] font-bold text-[#0b1c30]">
               12/12
               <span className="material-symbols-outlined text-[18px] text-[#0e7b4c]">check_circle</span>
             </div>
-            <div className="mt-1 text-[11px] text-[#58657a]">MST: 0109845621 (Morgan &amp; Assoc.)</div>
-            <div className="mt-2 flex items-center gap-1 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
+            <div className="mt-1 text-[11px] text-[#58657a]">MST: 0109845621</div>
+            <div className="mt-2 flex items-center gap-1.5 rounded-md bg-[#f8faff] px-2 py-1.5 text-[11px] text-[#3a475a]">
               <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">mail</span>
-              Tự gửi vào email công ty
+              Tự động gửi qua email
             </div>
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-5 overflow-hidden rounded-[16px] bg-[#0b1c30] text-white md:grid-cols-[1fr_260px]">
           <div className="p-6">
-            <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#7fd8b1]">Hệ thống kho thông minh</div>
-            <div className="mt-1 text-[18px] font-bold">Hành lang an ninh &amp; Khóa số thông minh trực tuyến</div>
-            <p className="mt-2 max-w-[480px] text-[12px] leading-6 text-[#c7d1e6]">
-              Mỗi chu kỳ thanh toán hợp lệ giúp mã PIN, thẻ sinh trắc học và hệ thống kiểm soát nhiệt độ của bạn duy trì hoạt động 24/7/365.
+            <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#7fd8b1]">Đảm bảo dịch vụ</div>
+            <div className="mt-1 text-[17px] font-bold">Duy trì quyền truy cập &amp; An ninh 24/7</div>
+            <p className="mt-2 max-w-[480px] text-[12px] leading-relaxed text-[#c7d1e6]">
+              Thanh toán đúng hạn bảo đảm mã PIN, khóa thông minh và hệ thống điều hòa nhiệt độ luôn hoạt động ổn định.
             </p>
           </div>
           <div
-            className="h-full min-h-[140px] w-full bg-cover bg-center"
+            className="h-full min-h-[130px] w-full bg-cover bg-center"
             style={{
               backgroundImage:
-                "linear-gradient(90deg, rgba(11,28,48,0.9), rgba(11,28,48,0)), url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80')",
+                "linear-gradient(90deg, rgba(11,28,48,0.95), rgba(11,28,48,0.1)), url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80')",
             }}
           />
         </div>
@@ -150,11 +124,11 @@ function Billing() {
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-[15px] font-bold text-[#0b1c30]">Danh sách Hóa đơn &amp; Lịch sử Giao dịch</div>
-                  <p className="mt-1 text-[11px] text-[#8996a9]">Lưu trữ 5 năm phục vụ quyết toán thuế doanh nghiệp.</p>
+                  <div className="text-[15px] font-bold text-[#0b1c30]">Lịch sử giao dịch</div>
+                  <p className="mt-0.5 text-[11px] text-[#8996a9]">Hóa đơn lưu trữ phục vụ quyết toán thuế.</p>
                 </div>
-                <select className="rounded-md border border-[#dfe7f5] bg-white px-2 py-1.5 text-[12px] font-semibold text-[#3a475a] outline-none">
-                  <option>Năm 2025 (Tất cả)</option>
+                <select className="rounded-md border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[12px] font-semibold text-[#3a475a] outline-none">
+                  <option>Năm 2025</option>
                   <option>Năm 2024</option>
                 </select>
               </div>
@@ -166,7 +140,7 @@ function Billing() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`rounded-[8px] px-3 py-1.5 text-[12px] font-semibold transition ${
-                        activeTab === tab.id ? "bg-[#0b1c30] text-white shadow-sm" : "text-[#58657a]"
+                        activeTab === tab.id ? "bg-[#0b1c30] text-white shadow-sm" : "text-[#58657a] hover:text-[#0b1c30]"
                       }`}
                     >
                       {tab.label}
@@ -179,28 +153,28 @@ function Billing() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Tìm theo mã hóa đơn, mã kho"
+                    placeholder="Tìm mã hóa đơn, mã kho..."
                     className="rounded-md border border-[#dfe7f5] bg-white py-1.5 pl-8 pr-3 text-[12px] outline-none focus:border-[#3b82f6]"
                   />
                 </div>
               </div>
 
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[640px] border-collapse text-[12px]">
+                <table className="w-full min-w-[620px] border-collapse text-[12px]">
                   <thead>
                     <tr className="border-b border-[#eef1f8] text-left text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                      <th className="py-2 pr-3">Mã hóa đơn</th>
-                      <th className="py-2 pr-3">Ngày lập/hạn</th>
-                      <th className="py-2 pr-3">Mô tả cước &amp; căn kho</th>
-                      <th className="py-2 pr-3">Số tiền</th>
-                      <th className="py-2 pr-3">Phương thức</th>
-                      <th className="py-2 pr-3">Trạng thái</th>
-                      <th className="py-2 pr-3 text-right">Thao tác</th>
+                      <th className="py-2.5 pr-3">Mã HĐ</th>
+                      <th className="py-2.5 pr-3">Ngày</th>
+                      <th className="py-2.5 pr-3">Dịch vụ</th>
+                      <th className="py-2.5 pr-3">Số tiền</th>
+                      <th className="py-2.5 pr-3">Thanh toán</th>
+                      <th className="py-2.5 pr-3">Trạng thái</th>
+                      <th className="py-2.5 pr-3 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredInvoices.map((inv) => (
-                      <tr key={inv.id} className="border-b border-[#f2f4fa]">
+                      <tr key={inv.id} className="border-b border-[#f2f4fa] hover:bg-[#f8faff]">
                         <td className="py-3 pr-3 font-semibold text-[#1d5fe5]">{inv.id}</td>
                         <td className="py-3 pr-3 text-[#3a475a]">{inv.date}</td>
                         <td className="py-3 pr-3">
@@ -211,19 +185,23 @@ function Billing() {
                         <td className="py-3 pr-3 text-[#3a475a]">{inv.method}</td>
                         <td className="py-3 pr-3">
                           {inv.status === "paid" ? (
-                            <span className="rounded-full bg-[#e7f8ee] px-2 py-1 text-[11px] font-bold text-[#0e7b4c]">Đã thanh toán</span>
+                            <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[11px] font-bold text-[#0e7b4c]">Đã thanh toán</span>
                           ) : (
-                            <span className="rounded-full bg-[#eef4ff] px-2 py-1 text-[11px] font-bold text-[#1d5fe5]">Sắp đến hạn</span>
+                            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-bold text-[#1d5fe5]">Sắp đến hạn</span>
                           )}
                         </td>
                         <td className="py-3 pr-3 text-right">
                           {inv.status === "paid" ? (
                             <span className="flex items-center justify-end gap-2 text-[#8996a9]">
-                              <span className="material-symbols-outlined text-[16px]">visibility</span>
-                              <span className="material-symbols-outlined text-[16px]">download</span>
+                              <button title="Xem chi tiết" className="hover:text-[#1d5fe5]">
+                                <span className="material-symbols-outlined text-[16px]">visibility</span>
+                              </button>
+                              <button title="Tải xuống" className="hover:text-[#1d5fe5]">
+                                <span className="material-symbols-outlined text-[16px]">download</span>
+                              </button>
                             </span>
                           ) : (
-                            <button className="rounded-md bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white">Thanh toán sớm</button>
+                            <button className="rounded-md bg-[#1d5fe5] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#174fc7]">Thanh toán</button>
                           )}
                         </td>
                       </tr>
@@ -233,14 +211,14 @@ function Billing() {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8996a9]">
-                <span>Hiển thị {filteredInvoices.length} trên tổng số 18 chứng từ kế toán</span>
+                <span>Hiển thị {filteredInvoices.length} / 18 hóa đơn</span>
                 <div className="flex items-center gap-1">
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5]">
+                  <button className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5] hover:bg-[#f8faff]">
                     <span className="material-symbols-outlined text-[14px]">chevron_left</span>
                   </button>
                   <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#0b1c30] font-semibold text-white">1</span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5]">2</span>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5]">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5] hover:bg-[#f8faff]">2</span>
+                  <button className="flex h-7 w-7 items-center justify-center rounded-md border border-[#dfe7f5] hover:bg-[#f8faff]">
                     <span className="material-symbols-outlined text-[14px]">chevron_right</span>
                   </button>
                 </div>
@@ -249,66 +227,66 @@ function Billing() {
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between">
-                <div className="text-[15px] font-bold text-[#0b1c30]">Chi tiết chu kỳ cước theo từng Căn kho</div>
-                <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[11px] font-bold text-[#1d5fe5]">2 Kho Đang Hoạt Động</span>
+                <div className="text-[15px] font-bold text-[#0b1c30]">Cước định kỳ theo kho</div>
+                <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">2 kho đang thuê</span>
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
                   <div className="flex items-center justify-between">
                     <div className="text-[13px] font-bold text-[#0b1c30]">Kho #B-204</div>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#3a475a]">Tầng 2</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#3a475a] border border-[#eef1f8]">Tầng 2</span>
                   </div>
-                  <div className="text-[11px] text-[#8996a9]">5' x 10' • Kiểm soát nhiệt độ (Climate)</div>
+                  <div className="text-[11px] text-[#8996a9]">5' × 10' • Điều hòa nhiệt độ</div>
 
                   <div className="mt-3 space-y-1.5 text-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#58657a]">Giá thuê gốc hàng tháng:</span>
-                      <span className="font-semibold text-[#0b1c30]">$89.00 USD</span>
+                      <span className="text-[#58657a]">Tiền thuê kho:</span>
+                      <span className="font-semibold text-[#0b1c30]">$89.00/tháng</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#58657a]">Bảo hiểm tài sản VaultGuard:</span>
-                      <span className="font-semibold text-[#0b1c30]">+$12.00 USD</span>
+                      <span className="text-[#58657a]">Bảo hiểm VaultGuard:</span>
+                      <span className="font-semibold text-[#0b1c30]">+$12.00</span>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[13px] font-bold text-[#0b1c30]">
-                    Tổng phí định kỳ:
-                    <span>$101.00 USD/tháng</span>
+                    Tổng định kỳ:
+                    <span className="text-[#1d5fe5]">$101.00/tháng</span>
                   </div>
 
                   <div className="mt-2 flex items-center justify-between text-[11px] text-[#8996a9]">
-                    <span>Trừ tiền: Ngày 01 hàng tháng</span>
-                    <span className="font-semibold text-[#1d5fe5]">Tự động trừ Visa</span>
+                    <span>Kỳ trừ: Ngày 01 hàng tháng</span>
+                    <span className="font-semibold text-[#3a475a]">Visa •••• 4092</span>
                   </div>
                 </div>
 
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
                   <div className="flex items-center justify-between">
                     <div className="text-[13px] font-bold text-[#0b1c30]">Kho #D-118</div>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#3a475a]">Tầng trệt</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#3a475a] border border-[#eef1f8]">Tầng trệt</span>
                   </div>
-                  <div className="text-[11px] text-[#8996a9]">10' x 20' • Drive-Up Tiếp cận ô tô</div>
+                  <div className="text-[11px] text-[#8996a9]">10' × 20' • Garage xe vào tận nơi</div>
 
                   <div className="mt-3 space-y-1.5 text-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#58657a]">Giá thuê kho khoảng rộng:</span>
-                      <span className="font-semibold text-[#0b1c30]">$159.00 USD</span>
+                      <span className="text-[#58657a]">Tiền thuê kho:</span>
+                      <span className="font-semibold text-[#0b1c30]">$159.00/tháng</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#58657a]">Bảo hiểm thiết bị chuyên dụng:</span>
-                      <span className="font-semibold text-[#0e7b4c]">Đã gồm trọn gói</span>
+                      <span className="text-[#58657a]">Bảo hiểm cơ bản:</span>
+                      <span className="font-semibold text-[#0e7b4c]">Đã bao gồm</span>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[13px] font-bold text-[#0b1c30]">
-                    Tổng phí định kỳ:
-                    <span>$159.00 USD/tháng</span>
+                    Tổng định kỳ:
+                    <span className="text-[#1d5fe5]">$159.00/tháng</span>
                   </div>
 
                   <div className="mt-2 flex items-center justify-between text-[11px] text-[#8996a9]">
-                    <span>Trừ tiền: Ngày 15 hàng tháng</span>
-                    <span className="font-semibold text-[#1d5fe5]">Tự động trừ Visa</span>
+                    <span>Kỳ trừ: Ngày 15 hàng tháng</span>
+                    <span className="font-semibold text-[#3a475a]">Visa •••• 4092</span>
                   </div>
                 </div>
               </div>
@@ -324,10 +302,10 @@ function Billing() {
 
               <div className="mt-3 rounded-[14px] bg-[#0b1c30] p-4 text-white">
                 <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.06em] text-[#7fd8b1]">
-                  VaultSpace AUTO-PAY
+                  Tự động thanh toán
                   <span className="material-symbols-outlined text-[16px]">check_circle</span>
                 </div>
-                <div className="mt-4 text-[16px] font-semibold tracking-[0.1em]">**** **** **** 4092</div>
+                <div className="mt-4 text-[16px] font-semibold tracking-[0.1em]">•••• •••• •••• 4092</div>
                 <div className="mt-3 flex items-center justify-between text-[10px] text-[#c7d1e6]">
                   <span>
                     CHỦ THẺ
@@ -342,86 +320,85 @@ function Billing() {
 
               <div className="mt-3 space-y-2">
                 <div className="flex items-center justify-between rounded-[10px] border border-[#eef1f8] p-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-[18px] text-[#3a475a]">phone_iphone</span>
                     <div>
                       <div className="text-[12px] font-semibold text-[#0b1c30]">Apple Pay</div>
-                      <div className="text-[10px] text-[#8996a9]">Đã liên kết (Khả dụng thanh toán chậm)</div>
+                      <div className="text-[10px] text-[#8996a9]">Đã liên kết ví</div>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-[16px] text-[#0e7b4c]">check_circle</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[10px] border border-[#eef1f8] p-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-[18px] text-[#3a475a]">qr_code_2</span>
                     <div>
-                      <div className="text-[12px] font-semibold text-[#0b1c30]">VietQR Pro / MoMo</div>
-                      <div className="text-[10px] text-[#8996a9]">Thanh toán tức thời qua ứng dụng ngân hàng</div>
+                      <div className="text-[12px] font-semibold text-[#0b1c30]">VietQR / MoMo</div>
+                      <div className="text-[10px] text-[#8996a9]">Quét mã tức thì</div>
                     </div>
                   </div>
-                  <button className="text-[11px] font-semibold text-[#1d5fe5] hover:underline">Cài đặt</button>
+                  <button className="text-[11px] font-semibold text-[#1d5fe5] hover:underline">Liên kết</button>
                 </div>
               </div>
 
-              <button className="mt-3 flex w-full items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#1d5fe5] py-2.5 text-[12px] font-semibold text-[#1d5fe5]">
+              <button className="mt-3 flex w-full items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#1d5fe5] py-2 text-[12px] font-semibold text-[#1d5fe5] hover:bg-[#f8faff]">
                 <span className="material-symbols-outlined text-[16px]">add</span>
-                Thêm phương thức thanh toán mới
+                Thêm phương thức mới
               </button>
             </div>
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
-                Hóa đơn Doanh nghiệp / VAT
+                Thông tin hóa đơn VAT
                 <span className="material-symbols-outlined text-[16px] text-[#0e7b4c]">check_circle</span>
               </div>
 
-              <label className="mt-3 flex items-center gap-2 text-[12px] text-[#3a475a]">
+              <label className="mt-3 flex items-center gap-2 text-[12px] text-[#3a475a] cursor-pointer">
                 <input type="checkbox" checked={autoInvoice} onChange={() => setAutoInvoice((v) => !v)} className="h-4 w-4 accent-[#1d5fe5]" />
-                Tự động xuất hóa đơn VAT điện tử
+                Tự động xuất hóa đơn điện tử
               </label>
 
               <div className="mt-3 space-y-2 text-[12px]">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Tên doanh nghiệp</div>
-                  <input defaultValue="Morgan & Associates Tech Ltd." className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-2 text-[12px] outline-none focus:border-[#3b82f6]" />
+                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Tên công ty</div>
+                  <input defaultValue="Morgan & Associates Tech Ltd." className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[12px] outline-none focus:border-[#3b82f6]" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Mã số thuế (MST)</div>
-                    <input defaultValue="0109845621" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-2 text-[12px] outline-none focus:border-[#3b82f6]" />
+                    <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Mã số thuế</div>
+                    <input defaultValue="0109845621" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[12px] outline-none focus:border-[#3b82f6]" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Cơ quan thuế</div>
-                    <input defaultValue="Cục Thuế TP HCM" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-2 text-[12px] outline-none focus:border-[#3b82f6]" />
+                    <input defaultValue="Cục Thuế TP HCM" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[12px] outline-none focus:border-[#3b82f6]" />
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Địa chỉ đăng ký kinh doanh</div>
-                  <input defaultValue="Tầng 4, Tháp Tài chính Bitexco, Q.1, TP. Hồ Chí Minh" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-2 text-[12px] outline-none focus:border-[#3b82f6]" />
+                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Địa chỉ doanh nghiệp</div>
+                  <input defaultValue="Tầng 4, Bitexco, Q.1, TP. Hồ Chí Minh" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[12px] outline-none focus:border-[#3b82f6]" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Email nhận E-invoice</div>
-                  <input defaultValue="billing@alexmorgan.tech" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-2 text-[12px] outline-none focus:border-[#3b82f6]" />
+                  <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Email nhận hóa đơn</div>
+                  <input defaultValue="billing@alexmorgan.tech" className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[12px] outline-none focus:border-[#3b82f6]" />
                 </div>
               </div>
 
-              <button className="mt-4 w-full rounded-[10px] bg-[#0b1c30] py-2.5 text-[12px] font-bold text-white hover:bg-[#132741]">
-                Lưu cập nhật thông tin thuế
+              <button className="mt-4 w-full rounded-[10px] bg-[#0b1c30] py-2 text-[12px] font-bold text-white hover:bg-[#132741]">
+                Lưu thông tin
               </button>
             </div>
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex items-center gap-2 text-[13px] font-bold text-[#0b1c30]">
                 <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">support_agent</span>
-                Hỗ trợ Kế toán &amp; Cước phí
+                Hỗ trợ thanh toán
               </div>
-              <div className="mt-1 text-[11px] text-[#8996a9]">Hotline ưu tiên khách thuê kho</div>
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-[16px] font-bold text-[#1d5fe5]">1800 555 8285</span>
                 <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d5fe5]">Nhánh 2</span>
               </div>
-              <p className="mt-2 text-[11px] leading-5 text-[#8996a9]">
-                Giao dịch thẻ tuân thủ chuẩn bảo mật PCI-DSS Cấp 1 và mã hóa TLS 1.3.
+              <p className="mt-2 text-[11px] text-[#8996a9]">
+                Bảo mật theo chuẩn PCI-DSS Cấp 1 &amp; TLS 1.3.
               </p>
             </div>
           </aside>
@@ -440,10 +417,7 @@ function Billing() {
         </div>
       </main>
 
-      <Footer
-        tagline="Hệ sinh thái lưu trữ thông minh và kho tự quản cao cấp hàng đầu, an toàn tuyệt đối với sinh trắc học và quản lý số hóa."
-        columns={getDefaultFooterColumns()}
-      />
+      <Footer />
     </div>
   );
 }

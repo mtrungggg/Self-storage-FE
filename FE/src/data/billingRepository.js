@@ -4,27 +4,27 @@ export function getInvoices() {
     {
       id: "#INV-2025-1002",
       date: "01/10/2025",
-      desc: "Thuê kho #B-204 (T10/2025)",
-      note: "Kèm bảo hiểm VaultGuard ($12.00)",
-      amount: "$101.00 USD",
-      method: "Visa ****4092",
+      desc: "Kho #B-204 (T10/2025)",
+      note: "Bảo hiểm VaultGuard",
+      amount: "$101.00",
+      method: "Visa •••• 4092",
       status: "paid",
     },
     {
       id: "#INV-2025-0902",
       date: "01/09/2025",
-      desc: "Thuê kho #B-204 (T09/2025)",
-      note: "Cước định kỳ chuẩn",
-      amount: "$101.00 USD",
-      method: "Visa ****4092",
+      desc: "Kho #B-204 (T09/2025)",
+      note: "Cước định kỳ",
+      amount: "$101.00",
+      method: "Visa •••• 4092",
       status: "paid",
     },
     {
       id: "#INV-2025-0815",
       date: "15/08/2025",
-      desc: "Ký hợp đồng kho Garage #D-118",
-      note: "Cước tháng đầu ($159.00) + Cọc ($51.00)",
-      amount: "$210.00 USD",
+      desc: "Hợp đồng kho #D-118",
+      note: "Tháng đầu + Tiền cọc",
+      amount: "$210.00",
       method: "Apple Pay",
       status: "paid",
     },
@@ -32,9 +32,9 @@ export function getInvoices() {
       id: "#INV-2025-1101",
       date: "01/11/2025",
       desc: "Tổng cước kỳ tới (#B-204 & #D-118)",
-      note: "Cước tháng 11 gộp tự động trích",
-      amount: "$260.00 USD",
-      method: "Sẽ tự trừ cuối",
+      note: "Tự động trích thẻ",
+      amount: "$260.00",
+      method: "Visa •••• 4092",
       status: "upcoming",
     },
   ];
@@ -42,18 +42,18 @@ export function getInvoices() {
 
 export function getInvoiceTabs() {
   return [
-    { id: "all", label: "Tất cả đơn" },
+    { id: "all", label: "Tất cả" },
     { id: "paid", label: "Đã thanh toán" },
     { id: "upcoming", label: "Sắp đến hạn" },
-    { id: "deposit", label: "Cọc & Hoàn tiền" },
+    { id: "deposit", label: "Tiền cọc" },
   ];
 }
 
 export function getBillingTrustBadges() {
   return [
-    { icon: "verified", title: "ISO 27001", text: "An ninh thông tin đạt chuẩn" },
-    { icon: "lock", title: "SSL 256-Bit", text: "Mã hóa thanh toán ngân hàng" },
-    { icon: "videocam", title: "CCTV 24/7", text: "Giám sát liên tục mọi hành lang" },
-    { icon: "health_and_safety", title: "Bảo hiểm toàn diện", text: "Bảo vệ tài sản rủi ro tối đa" },
+    { icon: "verified", title: "ISO 27001", text: "Chuẩn quốc tế" },
+    { icon: "lock", title: "PCI-DSS Cấp 1", text: "Bảo mật thanh toán" },
+    { icon: "videocam", title: "Camera 24/7", text: "Giám sát liên tục" },
+    { icon: "health_and_safety", title: "Bảo hiểm $50k", text: "Bảo vệ tài sản" },
   ];
 }

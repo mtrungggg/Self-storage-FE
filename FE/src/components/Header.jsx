@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
-import { BRAND_NAME } from "../constants/brand";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Kho của tôi", to: "/dashboard", style: "soft" },
   { key: "rent", label: "Thuê kho", to: "/home", style: "soft" },
-  { key: "billing", label: "Hóa đơn & Tự động thanh toán", to: "/billing", style: "hard" },
-  { key: "access", label: "Mã PIN & Khóa điện tử", to: "/access-control", style: "hard" },
-  { key: "facility", label: "Sơ đồ cơ sở", to: "/facility-map", style: "hard" },
+  { key: "billing", label: "Hóa đơn", to: "/billing", style: "hard" },
+  { key: "access", label: "Mã PIN", to: "/access-control", style: "hard" },
+  { key: "facility", label: "Sơ đồ", to: "/facility-map", style: "hard" },
 ];
 
 const ACTIVE_CLASS = {
@@ -15,24 +14,24 @@ const ACTIVE_CLASS = {
 };
 
 // Shared top navigation bar used by every authenticated portal page.
-function Header({ active, subtitle = "Custom Storage Portal", showUserBadge = false, showExpandIcon = false }) {
+function Header({ active, showUserBadge = false, showExpandIcon = false }) {
   return (
     <header className="border-b border-[#e6ebf5] bg-white">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
-              <span className="material-symbols-outlined text-[16px]">lock</span>
+          <Link to="/home" className="flex items-center gap-2.5 transition hover:opacity-90">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1d5fe5] text-white shadow-sm">
+              <span className="material-symbols-outlined text-[20px]">warehouse</span>
             </div>
-            <div className="leading-tight">
-              <div className="text-[15px] font-bold text-[#0b1c30]">{BRAND_NAME}</div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8996a9]">{subtitle}</div>
-            </div>
-          </div>
+            <span className="text-[19px] tracking-tight">
+              <span className="font-black text-[#0a3d91]">G1</span>
+              <span className="font-bold text-[#0b1c30]">SelfStorage</span>
+            </span>
+          </Link>
 
           <button className="hidden items-center gap-1 rounded-md border border-[#dfe7f5] px-2.5 py-1.5 text-[12px] font-semibold text-[#3a475a] md:flex">
             <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">domain</span>
-            Vault Trung tâm Thành phố • Tầng #04
+            Vault Trung tâm • Tầng #04
             <span className="material-symbols-outlined text-[16px]">expand_more</span>
           </button>
         </div>
@@ -53,19 +52,19 @@ function Header({ active, subtitle = "Custom Storage Portal", showUserBadge = fa
             )
           )}
           {active === "support" && (
-            <button className="rounded-md bg-[#0b1c30] px-3 py-2 text-[13px] font-bold text-white">Hỗ trợ 24/7</button>
+            <button className="rounded-md bg-[#0b1c30] px-3 py-2 text-[13px] font-bold text-white">Hỗ trợ</button>
           )}
         </nav>
 
         <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
           <span className="hidden items-center gap-1 md:flex">
             <span className="material-symbols-outlined text-[16px]">payments</span>
-            TIỀN USD ($)
+            USD ($)
           </span>
           {active !== "support" && (
             <Link to="/support" className="hidden items-center gap-1 lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>
-              Hỗ trợ 24/7
+              Hỗ trợ
             </Link>
           )}
           <span className="material-symbols-outlined text-[20px] text-[#58657a]">notifications</span>

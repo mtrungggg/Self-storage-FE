@@ -21,23 +21,7 @@ function Support() {
 
   return (
     <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
-      <Header active="support" showUserBadge />
-
-      <div className="border-b border-[#dfe7f5] bg-[#eef4ff]">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-2 text-[11px] font-semibold text-[#3a475a] lg:px-6">
-          <span>Hệ thống VaultSpace / Trung tâm Quản lý Kho &amp; Dịch vụ khách hàng</span>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-[#0e7b4c]">
-              <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-              Hệ thống cổng an ninh 24/7 đang hoạt động
-            </span>
-            <span className="flex items-center gap-1 text-[#0e7b4c]">
-              <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-              Khóa an ninh Sinh trắc học: Hoạt động
-            </span>
-          </div>
-        </div>
-      </div>
+      <Header active="support" />
 
       <main className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
         <div className="rounded-[16px] bg-[#0b1c30] p-6 text-white">
@@ -45,23 +29,23 @@ function Support() {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
                 <span className="material-symbols-outlined text-[14px]">location_on</span>
-                Cơ sở An Phú Central • TP. Thủ Đức
-                <span className="ml-2 text-[#c7d1e6]">Cập nhật lần cuối: 14:35, Hôm nay</span>
+                Cơ sở An Phú Central
+                <span className="ml-2 text-[#c7d1e6]">Cập nhật: Hôm nay</span>
               </div>
-              <h1 className="mt-2 text-[24px] font-bold tracking-[-0.02em]">Quản lý Kho &amp; Trung tâm Hỗ trợ Kỹ thuật</h1>
-              <p className="mt-2 max-w-[560px] text-[12px] leading-6 text-[#c7d1e6]">
-                Giám sát tình trạng khoang lưu trữ, cấp quyền mã PIN và tiếp nhận hỗ trợ kỹ thuật hiện trường 24/7.
+              <h1 className="mt-1 text-[22px] sm:text-[24px] font-bold tracking-[-0.02em]">Trung tâm Hỗ trợ Kỹ thuật</h1>
+              <p className="mt-1 text-[13px] text-[#c7d1e6]">
+                Xử lý yêu cầu sửa chữa và tiếp nhận hỗ trợ kỹ thuật 24/7.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 rounded-[10px] bg-[#1d5fe5] px-4 py-2.5 text-[12px] font-bold text-white hover:bg-[#174fc7]">
+              <button className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-3.5 py-2 text-[12px] font-bold text-white hover:bg-[#174fc7]">
                 <span className="material-symbols-outlined text-[16px]">build</span>
-                Tạo yêu cầu sửa chữa
+                Yêu cầu sửa chữa
               </button>
-              <button className="flex items-center gap-2 rounded-[10px] border border-white/20 bg-white/10 px-4 py-2.5 text-[12px] font-bold text-white">
+              <button className="flex items-center gap-1.5 rounded-[10px] border border-white/20 bg-white/10 px-3.5 py-2 text-[12px] font-bold text-white">
                 <span className="material-symbols-outlined text-[16px]">call</span>
-                1800-555-VAULT
+                1800-555
               </button>
             </div>
           </div>
@@ -69,38 +53,38 @@ function Support() {
           <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                Kho đang quản lý
+                Kho quản lý
                 <span className="material-symbols-outlined text-[14px]">inventory_2</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">3 khoang thuê</div>
-              <div className="text-[10px] text-[#8f9cbd]">• 2 kho hoạt động tốt</div>
+              <div className="mt-1 text-[16px] font-bold">3 Kho thuê</div>
+              <div className="text-[10px] text-[#8f9cbd]">2 kho hoạt động tốt</div>
             </div>
 
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                Cần gia hạn gấp
+                Cần gia hạn
                 <span className="material-symbols-outlined text-[14px]">schedule</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">1 khoang #B-204</div>
-              <div className="text-[10px] text-[#f2b8a4]">⚠ Còn 3 ngày đến hạn</div>
+              <div className="mt-1 text-[16px] font-bold">Kho #B-204</div>
+              <div className="text-[10px] text-[#f2b8a4]">⚠ Còn 3 ngày hạn</div>
             </div>
 
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                Yêu cầu đang xử lý
+                Đang xử lý
                 <span className="material-symbols-outlined text-[14px]">support_agent</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">2 yêu cầu hỗ trợ</div>
-              <div className="text-[10px] text-[#8f9cbd]">• 1 Đang chờ • 1 Đã cử NV</div>
+              <div className="mt-1 text-[16px] font-bold">2 Yêu cầu</div>
+              <div className="text-[10px] text-[#8f9cbd]">1 chờ • 1 đang xử lý</div>
             </div>
 
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                Trực ban cơ sở
+                Trực ban
                 <span className="material-symbols-outlined text-[14px]">emergency</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">24/7 SLA ≤ 15 phút</div>
-              <div className="text-[10px] text-[#8f9cbd]">• Có trực tiếp hiện trường 24/7</div>
+              <div className="mt-1 text-[16px] font-bold">SLA ≤ 15 phút</div>
+              <div className="text-[10px] text-[#8f9cbd]">Trực tiếp 24/7</div>
             </div>
           </div>
         </div>
@@ -420,26 +404,7 @@ function Support() {
         </div>
       </main>
 
-      <Footer
-        tagline="Hệ thống lưu trữ cá nhân & doanh nghiệp thế hệ mới. Hạ tầng kiên cố, ra vào không tiếp xúc."
-        columns={[
-          {
-            title: "Cổng khách hàng",
-            items: ["Kho của tôi", "Mã PIN & Chìa khóa công nghệ", "Thanh toán tự động & Hóa đơn", "Trạng thái khóa điện tử", "Ủy quyền người truy cập"],
-          },
-          {
-            title: "Cơ sở & Kích thước",
-            items: ["Hướng dẫn chọn kích thước kho", "Tiêu chuẩn điều khiển vi khí hậu", "Khu vực xe tải vào/rời", "Đặt lịch sử dụng cầu nâng/bãi đỗ", "Gói bảo hiểm & Khiếu nại"],
-          },
-          {
-            title: "Hỗ trợ & Tin cậy",
-            items: ["Trò chuyện trực tuyến 24/7", "Cửa hàng vật tư đóng gói", "Chính sách an ninh & bảo mật", "Điều khoản hợp đồng thuê kho", "Quy định sử dụng camera"],
-          },
-        ]}
-        bottomText="© 2025 VaultSpace Logistics Technologies, Inc. Bảo lưu mọi quyền. Đơn vị cung cấp kho lưu trữ chuyên nghiệp."
-        bottomLinks={[{ label: "Điều khoản dịch vụ" }, { label: "Quy trình an ninh" }, { label: "Quy chuẩn truy cập" }]}
-        statusText="Trạng thái: Hoạt động tốt"
-      />
+      <Footer />
     </div>
   );
 }
