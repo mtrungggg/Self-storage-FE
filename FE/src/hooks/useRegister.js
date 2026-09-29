@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "./useAuth";
 
 // Application layer: encapsulates Register page state, side effects and API data wiring.
 export function useRegister() {
@@ -53,17 +53,17 @@ export function useRegister() {
     const cleanEmail = email.trim();
 
     if (!cleanFullName || !cleanEmail || !password) {
-      setErrorMessage("Please fill in all required fields (*).");
+      setErrorMessage("Vui lòng điền đầy đủ các thông tin bắt buộc (*).");
       return;
     }
 
     if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+      setErrorMessage("Mật khẩu phải chứa ít nhất 6 ký tự.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match. Please verify your password.");
+      setErrorMessage("Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.");
       return;
     }
 
@@ -77,12 +77,12 @@ export function useRegister() {
       });
 
       setSuccessMessage(
-        res?.message || "Registration successful! A 6-digit OTP code has been sent to your email."
+        res?.message || "Đăng ký thành công! Mã OTP 6 chữ số đã được gửi đến email của bạn."
       );
       setIsOtpStep(true);
       setResendCooldown(60);
     } catch (err) {
-      setErrorMessage(err?.message || "Registration failed. Please try again.");
+      setErrorMessage(err?.message || "Đăng ký không thành công. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -95,14 +95,14 @@ export function useRegister() {
 
     const cleanCode = otpCode.trim();
     if (!cleanCode || cleanCode.length !== 6) {
-      setErrorMessage("Please enter the complete 6-digit OTP code.");
+      setErrorMessage("Vui lòng nhập đầy đủ mã OTP gồm 6 chữ số.");
       return;
     }
 
     setOtpLoading(true);
     try {
       const res = await verifyOtp(email.trim(), cleanCode);
-      setSuccessMessage(res?.message || "Account activated successfully! Redirecting...");
+      setSuccessMessage(res?.message || "Kích hoạt tài khoản thành công! Đang chuyển hướng...");
 
       const user = res?.data?.user;
       const roles = user?.roles || [];
@@ -121,7 +121,7 @@ export function useRegister() {
         }
       }, 800);
     } catch (err) {
-      setErrorMessage(err?.message || "Invalid or expired OTP code.");
+      setErrorMessage(err?.message || "Mã OTP không chính xác hoặc đã hết hạn.");
     } finally {
       setOtpLoading(false);
     }
@@ -135,10 +135,10 @@ export function useRegister() {
     setResendLoading(true);
     try {
       const res = await resendOtp(email.trim());
-      setSuccessMessage(res?.message || "A new OTP code has been sent to your email.");
+      setSuccessMessage(res?.message || "Mã OTP mới đã được gửi lại vào email của bạn.");
       setResendCooldown(60);
     } catch (err) {
-      setErrorMessage(err?.message || "Failed to resend OTP code. Please try again.");
+      setErrorMessage(err?.message || "Gửi lại OTP không thành công. Vui lòng thử lại.");
     } finally {
       setResendLoading(false);
     }
@@ -148,7 +148,7 @@ export function useRegister() {
     setEmail(targetEmail);
     setIsOtpStep(true);
     setErrorMessage("");
-    setSuccessMessage("Please enter the OTP sent to " + targetEmail);
+    setSuccessMessage("Vui lòng nhập mã OTP được gửi tới " + targetEmail);
   };
 
   return {

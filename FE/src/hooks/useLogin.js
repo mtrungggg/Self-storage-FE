@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "./useAuth";
 
 // Application layer: encapsulates Login page state, side effects and API data wiring.
 export function useLogin() {
@@ -28,14 +28,14 @@ export function useLogin() {
 
     const cleanEmail = email.trim();
     if (!cleanEmail || !password) {
-      setErrorMessage("Please enter both email and password.");
+      setErrorMessage("Vui lòng nhập đầy đủ email và mật khẩu.");
       return;
     }
 
     setLoading(true);
     try {
       const res = await login(cleanEmail, password);
-      const msg = res?.message || "Login successful! Redirecting...";
+      const msg = res?.message || "Đăng nhập thành công. Đang chuyển hướng...";
       setSuccessMessage(msg);
 
       if (rememberMe) {
@@ -61,7 +61,7 @@ export function useLogin() {
         }
       }, 700);
     } catch (err) {
-      const msg = err?.message || "Login failed. Please check your credentials.";
+      const msg = err?.message || "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
       setErrorMessage(msg);
 
       // Check if the account has not been activated yet

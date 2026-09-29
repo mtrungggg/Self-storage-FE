@@ -1,8 +1,7 @@
-import { useRef, useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import GridGradientBackground from "@/components/ui/grid-gradient-background";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { useLogin } from "../hooks/useLogin";
 import { useRegister } from "../hooks/useRegister";
 import { cn } from "@/lib/utils";
@@ -40,7 +39,7 @@ export default function AuthScene() {
 
   const isRegister = location.pathname.startsWith("/register");
 
-  // Track navigation direction: 1 = going to register (slide left), -1 = going to login (slide right)
+  // Track navigation direction: 1 = going to register, -1 = going to login
   const prevPathRef = useRef(location.pathname);
   const direction = isRegister ? 1 : -1;
 
@@ -53,42 +52,46 @@ export default function AuthScene() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState("");
 
-  const handleGoogleCredential = async (idToken) => {
-    setGoogleLoading(true);
-    setGoogleError("");
-    try {
-      const res = await googleLogin(idToken);
-      const user = res?.data?.user;
-      const roles = user?.roles || [];
-      setTimeout(() => {
-        if (roles.includes("admin") || roles.includes("system_admin")) {
-          navigate("/admin-overview");
-        } else if (
-          roles.includes("staff") ||
-          roles.includes("facility_staff") ||
-          roles.includes("manager")
-        ) {
-          navigate("/staff-dashboard");
-        } else {
-          navigate("/home");
-        }
-      }, 700);
-    } catch (err) {
-      setGoogleError(err?.message || "Google sign-in failed. Please try again.");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+  const handleGoogleCredential = useCallback(
+    async (idToken) => {
+      setGoogleLoading(true);
+      setGoogleError("");
+      try {
+        const res = await googleLogin(idToken);
+        const user = res?.data?.user;
+        const roles = user?.roles || [];
+        setTimeout(() => {
+          if (roles.includes("admin") || roles.includes("system_admin")) {
+            navigate("/admin-overview");
+          } else if (
+            roles.includes("staff") ||
+            roles.includes("facility_staff") ||
+            roles.includes("manager")
+          ) {
+            navigate("/staff-dashboard");
+          } else {
+            navigate("/home");
+          }
+        }, 600);
+      } catch (err) {
+        setGoogleError(
+          err?.message || "Đăng nhập Google thất bại. Vui lòng thử lại bằng email và mật khẩu."
+        );
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    [googleLogin, navigate]
+  );
 
+  // Initialize Google Identity Services
   useEffect(() => {
-    const clientId =
-      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      "928800899912-81ire3k9j09sibcegq1hriqgg231ahqr.apps.googleusercontent.com";
-
     const initGsi = () => {
       if (window.google?.accounts?.id) {
         window.google.accounts.id.initialize({
-          client_id: clientId,
+          client_id:
+            import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+            "928800899912-81ire3k9j09sibcegq1hriqgg231ahqr.apps.googleusercontent.com",
           callback: async (response) => {
             if (response?.credential) {
               await handleGoogleCredential(response.credential);
@@ -120,14 +123,14 @@ export default function AuthScene() {
       }, 250);
       return () => clearInterval(timer);
     }
-  }, []);
+  }, [handleGoogleCredential]);
 
   const handleGoogleBtnClick = () => {
     if (googleLoading) return;
     setGoogleError("");
 
     if (!window.google?.accounts?.id) {
-      setGoogleError("Google Sign-In is initializing. Please try again in a few moments or disable ad-blocker.");
+      setGoogleError("Dịch vụ Google đang khởi tạo. Vui lòng thử lại sau vài giây hoặc tắt trình chặn quảng cáo.");
       return;
     }
 
@@ -140,7 +143,7 @@ export default function AuthScene() {
     } else {
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed()) {
-          setGoogleError("Unable to display Google prompt. Please allow popups or try again.");
+          setGoogleError("Không thể mở cửa sổ Google. Vui lòng cho phép popup trên trình duyệt.");
         }
       });
     }
@@ -196,61 +199,114 @@ export default function AuthScene() {
     openOtpForEmail,
   } = useRegister();
 
+  // Password matching check
   const hasConfirm = confirmPassword.length > 0;
   const isMatch = hasConfirm && registerPassword === confirmPassword;
   const isMismatch = hasConfirm && registerPassword !== confirmPassword;
 
   return (
-    <GridGradientBackground className="flex min-h-screen flex-col overflow-x-hidden overflow-y-auto">
-      {/* Hidden real GSI container for triggering standard popup */}
-      <div ref={googleHiddenBtnRef} className="hidden pointer-events-none opacity-0 fixed -top-[1000px]" aria-hidden="true" />
+    <div className="relative flex min-h-screen flex-col justify-between overflow-x-hidden bg-[#071322] font-sans text-white">
+      {/* Background Image: Kho lưu trữ hiện đại cao cấp */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=2400&q=85')`,
+        }}
+      />
 
-      {/* Header - Màu xanh biển nhạt ở dạng tĩnh */}
-      <header className="relative z-10 flex-shrink-0 h-[64px] sm:h-[68px] border-b border-[#cfe2fe]/70 bg-[#edf5ff]/75 backdrop-blur-md select-none">
-        <div className="mx-auto flex h-full max-w-[1100px] items-center px-4 lg:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-[#0a3d91] to-[#1d5fe5] text-white shadow-md">
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">warehouse</span>
+      {/* Lớp phủ gradient Deep Navy sang trọng & làm nổi bật form */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-tr from-[#061220]/95 via-[#091d33]/90 to-[#0b2848]/82 backdrop-blur-[2px]" />
+
+      {/* Ambient Glow Lights */}
+      <div className="pointer-events-none fixed -left-36 -top-36 z-0 h-[460px] w-[460px] rounded-full bg-[#1d5fe5]/25 blur-[140px]" />
+      <div className="pointer-events-none fixed -bottom-36 -right-36 z-0 h-[460px] w-[460px] rounded-full bg-[#0ea5e9]/18 blur-[140px]" />
+      <div className="pointer-events-none fixed top-1/2 left-1/3 z-0 h-[380px] w-[380px] -translate-y-1/2 rounded-full bg-[#3b82f6]/10 blur-[130px]" />
+
+      {/* Hidden container for Google rendered button */}
+      <div
+        ref={googleHiddenBtnRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-[9999px] -top-[9999px] opacity-0"
+      />
+
+      {/* Main Content Area */}
+      <main className="relative z-10 flex flex-1 items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto flex w-full max-w-[1040px] flex-col items-center justify-center lg:flex-row lg:items-center lg:gap-14">
+          
+          {/* Left Hero / Brand showcase */}
+          <section className="mb-8 flex flex-col justify-center text-center lg:mb-0 lg:w-[480px] lg:text-left">
+            {/* Logo Thương hiệu */}
+            <div className="mb-5 flex items-center justify-center gap-2.5 lg:justify-start">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1d5fe5] text-white shadow-[0_8px_20px_rgba(29,95,229,0.35)]">
+                <span className="material-symbols-outlined text-[22px]">warehouse</span>
+              </div>
+              <span className="text-[22px] tracking-tight">
+                <span className="font-black text-[#60a5fa]">G1</span>
+                <span className="font-bold text-white">SelfStorage</span>
+              </span>
             </div>
-            <span className="text-[20px] sm:text-[21px] tracking-tight">
-              <span className="font-black text-[#0a3d91]">G1</span>
-              <span className="font-bold text-[#0b1c30]">SelfStorage</span>
-            </span>
-          </div>
-        </div>
-      </header>
 
-      {/* Main Content - Căn chỉnh tối ưu cho mọi kích thước màn hình & trình duyệt Cốc Cốc */}
-      <main className="relative z-10 flex flex-1 items-center justify-center px-3.5 sm:px-4 py-5 sm:py-7 lg:py-9">
-        <div className="mx-auto w-full max-w-[450px] sm:max-w-[475px] my-auto">
-          {/* Card Container - Màu xanh biển nhạt */}
+            <div className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[12px] font-bold text-[#93c5fd] shadow-sm backdrop-blur-md lg:self-start">
+              <span className="material-symbols-outlined text-[16px]">verified_user</span>
+              Kho Tự Quản An Ninh Chuẩn ISO
+            </div>
+
+            <h2 className="mt-4 text-[30px] sm:text-[36px] font-black leading-tight tracking-[-0.03em] text-white drop-shadow-md">
+              Quản lý kho an toàn, tiện lợi &amp; bảo mật
+            </h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#c4d7ec]">
+              Khóa điện tử không chạm 24/7, kiểm soát nhiệt ẩm máy lạnh và hợp đồng thuê linh hoạt trực tuyến.
+            </p>
+
+            <div className="mt-6 hidden space-y-3 sm:block">
+              <div className="flex items-center gap-3 rounded-[14px] border border-white/15 bg-white/[0.08] p-3.5 shadow-sm backdrop-blur-md transition hover:bg-white/[0.12]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-white/15 text-[#60a5fa]">
+                  <span className="material-symbols-outlined text-[18px]">key</span>
+                </span>
+                <div className="text-left text-[12px]">
+                  <div className="font-bold text-white">Khóa số thông minh 24/7</div>
+                  <div className="text-[#94a3b8]">Mở cổng và ô kho trực tiếp qua điện thoại</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-[14px] border border-white/15 bg-white/[0.08] p-3.5 shadow-sm backdrop-blur-md transition hover:bg-white/[0.12]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-white/15 text-[#60a5fa]">
+                  <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+                </span>
+                <div className="text-left text-[12px]">
+                  <div className="font-bold text-white">Báo giá &amp; cọc minh bạch</div>
+                  <div className="text-[#94a3b8]">Không phí phát sinh, hoàn trả 100% tiền cọc</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Right Card: Dynamic Auth Box */}
           <motion.section
             layout
-            transition={{
-              layout: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
-            }}
-            className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] border border-[#bfdbfe]/70 bg-[#edf5ff]/75 p-5 sm:p-7 md:p-8 shadow-[0_20px_50px_rgba(29,95,229,0.07)] backdrop-blur-xl"
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            className="w-full max-w-[460px] rounded-[24px] border border-white/40 bg-white/95 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:p-8 text-[#0b1c30]"
           >
-            {/* Smooth Tab Switcher - Đồng bộ kích thước */}
-            <div className="mb-6 flex h-11 rounded-[12px] bg-[#dbeafe]/70 p-1 backdrop-blur-md">
+            {/* Top Switcher Tab */}
+            <div className="relative mb-6 flex h-11 rounded-[12px] bg-[#f0f4fa] p-1">
               <button
                 type="button"
                 onClick={() => navigate("/login")}
                 className={cn(
-                  "relative flex h-full flex-1 items-center justify-center rounded-[9px] text-[13px] font-semibold transition-colors duration-200",
+                  "relative flex h-full flex-1 items-center justify-center rounded-[9px] text-[13px] font-bold transition-colors duration-200",
                   !isRegister ? "text-[#0b1c30]" : "text-[#587291] hover:text-[#0b1c30]"
                 )}
               >
                 {!isRegister && (
                   <motion.div
                     layoutId="auth-tab-pill"
-                    className="absolute inset-0 rounded-[9px] bg-white shadow-[0_2px_8px_rgba(29,95,229,0.1)]"
+                    className="absolute inset-0 rounded-[9px] bg-white shadow-[0_2px_8px_rgba(29,95,229,0.12)]"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-1.5">
                   <span className="material-symbols-outlined text-[17px]">login</span>
-                  Sign In
+                  Đăng nhập
                 </span>
               </button>
 
@@ -258,28 +314,28 @@ export default function AuthScene() {
                 type="button"
                 onClick={() => navigate("/register")}
                 className={cn(
-                  "relative flex h-full flex-1 items-center justify-center rounded-[9px] text-[13px] font-semibold transition-colors duration-200",
+                  "relative flex h-full flex-1 items-center justify-center rounded-[9px] text-[13px] font-bold transition-colors duration-200",
                   isRegister ? "text-[#0b1c30]" : "text-[#587291] hover:text-[#0b1c30]"
                 )}
               >
                 {isRegister && (
                   <motion.div
                     layoutId="auth-tab-pill"
-                    className="absolute inset-0 rounded-[9px] bg-white shadow-[0_2px_8px_rgba(29,95,229,0.1)]"
+                    className="absolute inset-0 rounded-[9px] bg-white shadow-[0_2px_8px_rgba(29,95,229,0.12)]"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-1.5">
                   <span className="material-symbols-outlined text-[17px]">person_add</span>
-                  Sign Up
+                  Đăng ký
                 </span>
               </button>
             </div>
 
             {/* Google error banner */}
             {googleError && (
-              <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-300 bg-red-50/90 p-3 text-[13px] text-red-800 backdrop-blur-sm">
-                <span className="material-symbols-outlined text-[18px] text-red-600">error</span>
+              <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-300 bg-red-50/90 p-3 text-[12px] text-red-800 backdrop-blur-sm">
+                <span className="material-symbols-outlined text-[17px] text-red-600">error</span>
                 <span>{googleError}</span>
               </div>
             )}
@@ -297,29 +353,32 @@ export default function AuthScene() {
                   exit="exit"
                   className="space-y-4"
                 >
-                  <div className="mb-2">
-                    <h1 className="text-[24px] font-bold tracking-tight text-[#0b1c30]">
-                      Sign In
+                  <div className="mb-1">
+                    <h1 className="text-[22px] font-bold tracking-tight text-[#0b1c30]">
+                      Đăng nhập tài khoản
                     </h1>
+                    <p className="text-[12px] text-[#64748b]">
+                      Truy cập kho lưu trữ và hóa đơn dịch vụ của bạn
+                    </p>
                   </div>
 
                   {/* Status & Error Alerts */}
                   {sessionExpired && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50/80 p-3 text-[13px] text-amber-900 backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-[18px] text-amber-600">warning</span>
-                      <span>Your session has expired. Please sign in again.</span>
+                    <div className="flex items-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50/80 p-3 text-[12px] text-amber-900 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[17px] text-amber-600">warning</span>
+                      <span>Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</span>
                     </div>
                   )}
 
                   {loginError && (
-                    <div className="rounded-[10px] border border-red-300 bg-red-50/80 p-3 text-[13px] text-red-800 backdrop-blur-sm">
+                    <div className="rounded-[10px] border border-red-300 bg-red-50/80 p-3 text-[12px] text-red-800 backdrop-blur-sm">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-red-600">error</span>
+                        <span className="material-symbols-outlined text-[17px] text-red-600">error</span>
                         <span>{loginError}</span>
                       </div>
                       {unverifiedEmail && (
-                        <div className="mt-2.5 flex items-center justify-between border-t border-red-200/80 pt-2 text-[12px]">
-                          <span>Activate this account?</span>
+                        <div className="mt-2.5 flex items-center justify-between border-t border-red-200/80 pt-2 text-[11px]">
+                          <span>Kích hoạt tài khoản này ngay?</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -328,7 +387,7 @@ export default function AuthScene() {
                             }}
                             className="font-bold text-[#1d5fe5] hover:underline"
                           >
-                            Verify OTP code →
+                            Nhập mã OTP →
                           </button>
                         </div>
                       )}
@@ -336,8 +395,8 @@ export default function AuthScene() {
                   )}
 
                   {loginSuccess && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50/80 p-3 text-[13px] text-emerald-800 backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
+                    <div className="flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50/80 p-3 text-[12px] text-emerald-800 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[17px] text-emerald-600">check_circle</span>
                       <span>{loginSuccess}</span>
                     </div>
                   )}
@@ -345,51 +404,53 @@ export default function AuthScene() {
                   {/* Form */}
                   <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                     <div>
-                      <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                        Email or Username
+                      <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                        Địa chỉ Email
                       </label>
                       <div className="relative">
-                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                           mail
                         </span>
                         <input
                           type="email"
                           required
+                          placeholder="name@example.com"
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
-                          className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                          className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-4 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                         />
                       </div>
                     </div>
 
                     <div>
                       <div className="mb-1.5 flex items-center justify-between">
-                        <label className="text-[13px] font-semibold text-[#0f172a]">
-                          Password
+                        <label className="text-[12px] font-bold text-[#0b1c30]">
+                          Mật khẩu
                         </label>
                         <button
                           type="button"
-                          className="text-[12px] font-semibold text-[#1d5fe5] hover:underline"
+                          className="text-[11px] font-semibold text-[#1d5fe5] hover:underline"
                         >
-                          Forgot password?
+                          Quên mật khẩu?
                         </button>
                       </div>
 
                       <div className="relative">
-                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                        <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                           lock
                         </span>
                         <input
                           type={showLoginPassword ? "text" : "password"}
                           required
+                          placeholder="••••••••"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-10 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                          className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-10 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                         />
                         <button
                           type="button"
                           onClick={() => setShowLoginPassword((prev) => !prev)}
-                          className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#687586] hover:text-[#0f172a]"
+                          className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#8996a9] hover:text-[#0b1c30]"
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             {showLoginPassword ? "visibility_off" : "visibility"}
@@ -400,22 +461,22 @@ export default function AuthScene() {
 
                     {/* Remember me */}
                     <div className="flex items-center pt-0.5">
-                      <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#455265]">
+                      <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#58657a]">
                         <input
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="h-4 w-4 rounded accent-[#1d5fe5]"
                         />
-                        Remember me
+                        Ghi nhớ đăng nhập
                       </label>
                     </div>
 
-                    {/* Submit button - Đồng bộ chiều cao h-11 */}
+                    {/* Submit button */}
                     <button
                       type="submit"
                       disabled={loginLoading || googleLoading}
-                      className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-70"
+                      className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[13px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-70"
                     >
                       {loginLoading ? (
                         <span className="flex items-center justify-center gap-2">
@@ -423,28 +484,28 @@ export default function AuthScene() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          Signing in...
+                          Đang đăng nhập...
                         </span>
                       ) : (
-                        "Sign In"
+                        "Đăng nhập"
                       )}
                     </button>
                   </form>
 
                   {/* Divider */}
-                  <div className="my-4 flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#7a8595]">
+                  <div className="my-3 flex items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8996a9]">
                     <span className="h-px flex-1 bg-black/10" />
-                    or continue with
+                    hoặc tiếp tục với
                     <span className="h-px flex-1 bg-black/10" />
                   </div>
 
-                  {/* Google Sign In - Đồng bộ chiều cao h-11 */}
+                  {/* Google Sign In */}
                   <div>
                     <button
                       type="button"
                       disabled={googleLoading || loginLoading}
                       onClick={handleGoogleBtnClick}
-                      className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-blue-200/80 bg-white/70 text-[13px] font-semibold text-[#182638] shadow-sm backdrop-blur-md transition hover:bg-white disabled:opacity-60"
+                      className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-blue-200/80 bg-white/80 text-[13px] font-semibold text-[#0b1c30] shadow-sm backdrop-blur-md transition hover:bg-white disabled:opacity-60"
                     >
                       {googleLoading ? (
                         <span className="flex items-center justify-center gap-2">
@@ -452,7 +513,7 @@ export default function AuthScene() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          Connecting to Google...
+                          Đang kết nối Google...
                         </span>
                       ) : (
                         <>
@@ -474,21 +535,21 @@ export default function AuthScene() {
                               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                             />
                           </svg>
-                          Continue with Google
+                          Đăng nhập bằng Google
                         </>
                       )}
                     </button>
                   </div>
 
                   {/* Switch to Sign Up */}
-                  <div className="pt-2 text-center text-[13px] text-[#5f6c7a]">
-                    Don&apos;t have an account?{" "}
+                  <div className="pt-2 text-center text-[12px] text-[#58657a]">
+                    Chưa có tài khoản?{" "}
                     <button
                       type="button"
                       onClick={() => navigate("/register")}
-                      className="font-semibold text-[#1d5fe5] hover:underline"
+                      className="font-bold text-[#1d5fe5] hover:underline"
                     >
-                      Sign up
+                      Đăng ký ngay
                     </button>
                   </div>
                 </motion.div>
@@ -503,28 +564,28 @@ export default function AuthScene() {
                   exit="exit"
                   className="space-y-4"
                 >
-                  <div className="mb-2">
-                    <h1 className="text-[24px] font-bold tracking-tight text-[#0b1c30]">
-                      {isOtpStep ? "Verify Your Account" : "Sign Up"}
+                  <div className="mb-1">
+                    <h1 className="text-[22px] font-bold tracking-tight text-[#0b1c30]">
+                      {isOtpStep ? "Xác thực tài khoản" : "Tạo tài khoản mới"}
                     </h1>
-                    {isOtpStep && (
-                      <p className="mt-1 text-[13px] text-[#58657a]">
-                        Enter the code sent to your email to activate your account
-                      </p>
-                    )}
+                    <p className="text-[12px] text-[#64748b]">
+                      {isOtpStep
+                        ? "Nhập mã OTP 6 chữ số được gửi tới email để kích hoạt"
+                        : "Đăng ký thành viên để thuê kho và quản lý mã PIN truy cập"}
+                    </p>
                   </div>
 
                   {/* Status & Error Alerts */}
                   {registerError && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-red-300 bg-red-50/80 p-3 text-[13px] text-red-800 backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-[18px] text-red-600">error</span>
+                    <div className="flex items-center gap-2 rounded-[10px] border border-red-300 bg-red-50/80 p-3 text-[12px] text-red-800 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[17px] text-red-600">error</span>
                       <span>{registerError}</span>
                     </div>
                   )}
 
                   {registerSuccess && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50/80 p-3 text-[13px] text-emerald-800 backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-[18px] text-emerald-600">check_circle</span>
+                    <div className="flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50/80 p-3 text-[12px] text-emerald-800 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[17px] text-emerald-600">check_circle</span>
                       <span>{registerSuccess}</span>
                     </div>
                   )}
@@ -532,12 +593,12 @@ export default function AuthScene() {
                   {isOtpStep ? (
                     /* OTP Verification Step */
                     <form onSubmit={handleVerifyOtp} className="space-y-4 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#dbeafe]/80 text-[#1d5fe5] backdrop-blur-sm">
-                        <span className="material-symbols-outlined text-[28px]">mark_email_read</span>
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
+                        <span className="material-symbols-outlined text-[26px]">mark_email_read</span>
                       </div>
 
-                      <div className="text-[13px] text-[#58657a]">
-                        We sent a 6-digit verification code to <strong className="text-[#0b1c30]">{registerEmail}</strong>.
+                      <div className="text-[12px] text-[#58657a]">
+                        Mã xác thực đã gửi tới <strong className="text-[#0b1c30]">{registerEmail}</strong>.
                       </div>
 
                       <div>
@@ -547,16 +608,16 @@ export default function AuthScene() {
                           maxLength={6}
                           value={otpCode}
                           onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                          className="h-12 w-52 rounded-[12px] border-2 border-[#1d5fe5] bg-white/80 text-center font-mono text-[24px] font-bold tracking-[0.3em] text-[#0b1c30] outline-none shadow-sm backdrop-blur-md focus:bg-white focus:ring-4 focus:ring-[#dbeafe]"
+                          className="h-12 w-52 rounded-[12px] border-2 border-[#1d5fe5] bg-white/90 text-center font-mono text-[24px] font-black tracking-[0.3em] text-[#0b1c30] outline-none shadow-sm focus:bg-white focus:ring-4 focus:ring-[#dbeafe]"
                         />
-                        <div className="mt-1.5 text-[11px] text-[#8996a9]">Code is valid for 10 minutes</div>
+                        <div className="mt-1.5 text-[11px] text-[#8996a9]">Mã có hiệu lực trong 10 phút</div>
                       </div>
 
                       <div className="space-y-3 pt-1">
                         <button
                           type="submit"
                           disabled={otpLoading || otpCode.length !== 6}
-                          className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-60"
+                          className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[13px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-60"
                         >
                           {otpLoading ? (
                             <span className="flex items-center justify-center gap-2">
@@ -564,12 +625,12 @@ export default function AuthScene() {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                               </svg>
-                              Verifying...
+                              Đang xác thực...
                             </span>
                           ) : (
                             <>
-                              <span className="material-symbols-outlined text-[18px]">verified</span>
-                              Verify & Activate
+                              <span className="material-symbols-outlined text-[17px]">verified</span>
+                              Xác thực &amp; Kích hoạt
                             </>
                           )}
                         </button>
@@ -578,22 +639,22 @@ export default function AuthScene() {
                           <button
                             type="button"
                             onClick={() => setIsOtpStep(false)}
-                            className="font-medium text-[#58657a] hover:underline"
+                            className="font-semibold text-[#58657a] hover:underline"
                           >
-                            ← Back to edit info
+                            ← Chỉnh sửa thông tin
                           </button>
 
                           <button
                             type="button"
                             disabled={resendLoading || resendCooldown > 0}
                             onClick={handleResendOtp}
-                            className="font-semibold text-[#1d5fe5] hover:underline disabled:opacity-50"
+                            className="font-bold text-[#1d5fe5] hover:underline disabled:opacity-50"
                           >
                             {resendCooldown > 0
-                              ? `Resend in ${resendCooldown}s`
+                              ? `Gửi lại sau ${resendCooldown}s`
                               : resendLoading
-                              ? "Resending..."
-                              : "Resend code"}
+                              ? "Đang gửi lại..."
+                              : "Gửi lại mã OTP"}
                           </button>
                         </div>
                       </div>
@@ -602,55 +663,58 @@ export default function AuthScene() {
                     /* Registration Form */
                     <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
                       <div>
-                        <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                          Full Name *
+                        <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                          Họ và tên *
                         </label>
                         <div className="relative">
-                          <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                          <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                             person
                           </span>
                           <input
                             type="text"
                             required
+                            placeholder="Nguyễn Văn A"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
-                            className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                            className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-4 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                            Email Address *
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                            Địa chỉ Email *
                           </label>
                           <div className="relative">
-                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                               mail
                             </span>
                             <input
                               type="email"
                               required
+                              placeholder="name@example.com"
                               value={registerEmail}
                               onChange={(e) => setRegisterEmail(e.target.value)}
-                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-4 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                            Phone Number
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                            Số điện thoại
                           </label>
                           <div className="relative">
-                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                               phone
                             </span>
                             <input
                               type="tel"
+                              placeholder="0912 345 678"
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value)}
-                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-4 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                             />
                           </div>
                         </div>
@@ -658,24 +722,25 @@ export default function AuthScene() {
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                            Password *
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                            Mật khẩu *
                           </label>
                           <div className="relative">
-                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                               lock
                             </span>
                             <input
                               type={showRegisterPassword ? "text" : "password"}
                               required
+                              placeholder="Tối thiểu 6 ký tự"
                               value={registerPassword}
                               onChange={(e) => setRegisterPassword(e.target.value)}
-                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-10 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                              className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/80 pl-10 pr-10 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                             />
                             <button
                               type="button"
                               onClick={() => setShowRegisterPassword((prev) => !prev)}
-                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#687586] hover:text-[#0f172a]"
+                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#8996a9] hover:text-[#0b1c30]"
                             >
                               <span className="material-symbols-outlined text-[18px]">
                                 {showRegisterPassword ? "visibility_off" : "visibility"}
@@ -685,30 +750,31 @@ export default function AuthScene() {
                         </div>
 
                         <div>
-                          <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                            Confirm Password *
+                          <label className="mb-1.5 block text-[12px] font-bold text-[#0b1c30]">
+                            Xác nhận mật khẩu *
                           </label>
                           <div className="relative">
-                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                            <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
                               lock_reset
                             </span>
                             <input
                               type={showConfirmPassword ? "text" : "password"}
                               required
+                              placeholder="Nhập lại mật khẩu"
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className={`h-11 w-full rounded-[12px] border py-0 pl-10 pr-10 text-[13px] text-[#122033] outline-none backdrop-blur-md transition ${
+                              className={`h-11 w-full rounded-[12px] border py-0 pl-10 pr-10 text-[13px] text-[#0b1c30] outline-none backdrop-blur-md transition ${
                                 isMismatch
                                   ? "border-red-400 bg-red-50/60 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-200"
                                   : isMatch
                                   ? "border-emerald-400 bg-emerald-50/50 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200"
-                                  : "border-blue-200/80 bg-white/70 focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
+                                  : "border-blue-200/80 bg-white/80 focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                               }`}
                             />
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword((prev) => !prev)}
-                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#687586] hover:text-[#0f172a]"
+                              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-[#8996a9] hover:text-[#0b1c30]"
                             >
                               <span className="material-symbols-outlined text-[18px]">
                                 {showConfirmPassword ? "visibility_off" : "visibility"}
@@ -731,22 +797,22 @@ export default function AuthScene() {
                           />
                         </div>
                         <div className="mt-1.5 flex items-center justify-between text-[11px]">
-                          <span className="text-[#64748b]">Minimum 6 characters</span>
+                          <span className="text-[#64748b]">Tối thiểu 6 ký tự</span>
                           {isMismatch && (
-                            <span className="font-semibold text-red-600">✕ Passwords must match</span>
+                            <span className="font-semibold text-red-600">✕ Mật khẩu chưa khớp</span>
                           )}
                           {isMatch && (
-                            <span className="font-semibold text-emerald-600">✓ Passwords match</span>
+                            <span className="font-semibold text-emerald-600">✓ Mật khẩu đã khớp</span>
                           )}
                           {!hasConfirm && (
-                            <span className="text-[#8996a9]">Passwords must match</span>
+                            <span className="text-[#8996a9]">Yêu cầu trùng khớp</span>
                           )}
                         </div>
                       </div>
 
                       {/* Terms agreement */}
                       <div className="pt-0.5">
-                        <label className="flex items-start gap-2 text-[12px] text-[#455265]">
+                        <label className="flex items-start gap-2 text-[12px] text-[#58657a]">
                           <input
                             type="checkbox"
                             required
@@ -754,17 +820,17 @@ export default function AuthScene() {
                             className="mt-0.5 h-4 w-4 rounded accent-[#1d5fe5]"
                           />
                           <span>
-                            I agree to the <span className="font-semibold text-[#1d5fe5]">Terms of Service</span> and{" "}
-                            <span className="font-semibold text-[#1d5fe5]">Privacy Policy</span>.
+                            Tôi đồng ý với <span className="font-semibold text-[#1d5fe5]">Điều khoản dịch vụ</span> và{" "}
+                            <span className="font-semibold text-[#1d5fe5]">Chính sách bảo mật</span>.
                           </span>
                         </label>
                       </div>
 
-                      {/* Submit button - Đồng bộ chiều cao h-11 */}
+                      {/* Submit button */}
                       <button
                         type="submit"
                         disabled={registerLoading || googleLoading}
-                        className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-70"
+                        className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] text-[13px] font-bold text-white shadow-[0_8px_20px_rgba(29,95,229,0.22)] transition hover:bg-[#174fc7] disabled:opacity-70"
                       >
                         {registerLoading ? (
                           <span className="flex items-center justify-center gap-2">
@@ -772,27 +838,27 @@ export default function AuthScene() {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
-                            Signing up...
+                            Đang tạo tài khoản...
                           </span>
                         ) : (
-                          "Sign Up"
+                          "Đăng ký ngay"
                         )}
                       </button>
 
                       {/* Divider */}
-                      <div className="my-4 flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#7a8595]">
+                      <div className="my-3 flex items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8996a9]">
                         <span className="h-px flex-1 bg-black/10" />
-                        or continue with
+                        hoặc tiếp tục với
                         <span className="h-px flex-1 bg-black/10" />
                       </div>
 
-                      {/* Google Sign Up - Đồng bộ chiều cao h-11 */}
+                      {/* Google Sign Up */}
                       <div>
                         <button
                           type="button"
                           disabled={googleLoading || registerLoading}
                           onClick={handleGoogleBtnClick}
-                          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-blue-200/80 bg-white/70 text-[13px] font-semibold text-[#182638] shadow-sm backdrop-blur-md transition hover:bg-white disabled:opacity-60"
+                          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-[12px] border border-blue-200/80 bg-white/80 text-[13px] font-semibold text-[#0b1c30] shadow-sm backdrop-blur-md transition hover:bg-white disabled:opacity-60"
                         >
                           {googleLoading ? (
                             <span className="flex items-center justify-center gap-2">
@@ -800,7 +866,7 @@ export default function AuthScene() {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                               </svg>
-                              Connecting to Google...
+                              Đang kết nối Google...
                             </span>
                           ) : (
                             <>
@@ -822,7 +888,7 @@ export default function AuthScene() {
                                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                                 />
                               </svg>
-                              Continue with Google
+                              Đăng ký bằng Google
                             </>
                           )}
                         </button>
@@ -831,14 +897,14 @@ export default function AuthScene() {
                   )}
 
                   {/* Switch to Sign In */}
-                  <div className="pt-2 text-center text-[13px] text-[#5f6c7a]">
-                    Already have an account?{" "}
+                  <div className="pt-2 text-center text-[12px] text-[#58657a]">
+                    Đã có tài khoản?{" "}
                     <button
                       type="button"
                       onClick={() => navigate("/login")}
-                      className="font-semibold text-[#1d5fe5] hover:underline"
+                      className="font-bold text-[#1d5fe5] hover:underline"
                     >
-                      Sign in
+                      Đăng nhập ngay
                     </button>
                   </div>
                 </motion.div>
@@ -848,21 +914,21 @@ export default function AuthScene() {
         </div>
       </main>
 
-      {/* Footer - Màu xanh biển nhạt ở dạng tĩnh */}
-      <footer className="relative z-10 flex-shrink-0 border-t border-[#cfe2fe]/70 bg-[#edf5ff]/75 px-4 py-3.5 sm:py-4 text-[12px] text-[#475569] backdrop-blur-md select-none">
+      {/* Footer */}
+      <footer className="relative z-10 flex-shrink-0 border-t border-white/10 bg-[#061220]/80 px-4 py-3.5 text-[12px] text-[#94a3b8] backdrop-blur-md select-none">
         <div className="mx-auto flex max-w-[1100px] flex-col items-center justify-between gap-2 sm:flex-row">
           <div>
-            © 2025 <span className="font-black text-[#0a3d91]">G1</span><span className="font-bold text-[#0b1c30]">SelfStorage</span>. All rights reserved.
+            © 2025 <span className="font-black text-[#60a5fa]">G1</span><span className="font-bold text-white">SelfStorage</span>. Bản quyền thuộc về hệ thống.
           </div>
-          <div className="flex items-center gap-3 text-[12px] text-[#64748b]">
-            <span>Help Center</span>
+          <div className="flex items-center gap-3 text-[12px] text-[#94a3b8]">
+            <span className="cursor-pointer transition hover:text-white">Trung tâm trợ giúp</span>
             <span>•</span>
-            <span>Terms of Service</span>
+            <span className="cursor-pointer transition hover:text-white">Điều khoản sử dụng</span>
             <span>•</span>
-            <span>Privacy Policy</span>
+            <span className="cursor-pointer transition hover:text-white">Chính sách bảo mật</span>
           </div>
         </div>
       </footer>
-    </GridGradientBackground>
+    </div>
   );
 }

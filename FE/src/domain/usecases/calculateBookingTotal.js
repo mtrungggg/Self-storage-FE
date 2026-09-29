@@ -5,13 +5,19 @@ export const SMART_LOCK_ACTIVATION = 15;
 export const FIRST_MONTH_DISCOUNT = BASE_RENT * 0.5;
 
 export function calculateAddonsTotal(addons) {
-  return (addons.blankets ? 15 : 0) + (addons.boxKit ? 28 : 0);
+  return (addons?.blankets ? 15 : 0) + (addons?.boxKit ? 28 : 0);
 }
 
-export function calculateBookingTotal({ protectionPrice, addons }) {
+export function calculateBookingTotal({
+  protectionPrice = 0,
+  addons = {},
+  baseRent = BASE_RENT,
+  deposit = DEPOSIT,
+}) {
   const addonsTotal = calculateAddonsTotal(addons);
+  const firstMonthDiscount = baseRent * 0.5;
   const totalToday =
-    BASE_RENT - FIRST_MONTH_DISCOUNT + DEPOSIT + SMART_LOCK_ACTIVATION + protectionPrice + addonsTotal;
-  const monthlyRent = BASE_RENT + protectionPrice;
-  return { totalToday, monthlyRent, addonsTotal };
+    baseRent - firstMonthDiscount + deposit + SMART_LOCK_ACTIVATION + protectionPrice + addonsTotal;
+  const monthlyRent = baseRent + protectionPrice;
+  return { totalToday, monthlyRent, addonsTotal, baseRent, deposit, firstMonthDiscount };
 }

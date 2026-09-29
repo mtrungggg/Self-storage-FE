@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 
 function StorageDetail() {
   const {
+    unit,
     moveInOptions,
     timeSlots,
     protectionPlans,
@@ -40,16 +41,16 @@ function StorageDetail() {
             </span>
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                Vault Trung tâm • 420 E Cesar Chavez St
+                {unit.facilityName} • {unit.address}
               </div>
-              <div className="text-[14px] font-bold text-[#0b1c30]">Kho Khối B • Tầng trệt</div>
+              <div className="text-[14px] font-bold text-[#0b1c30]">{unit.floor}</div>
             </div>
           </div>
           <div className="flex items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
-            <button className="flex items-center gap-1 text-[#1d5fe5] hover:underline">
+            <Link to="/facility-map" className="flex items-center gap-1 text-[#1d5fe5] hover:underline">
               Sơ đồ kho
               <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -58,7 +59,7 @@ function StorageDetail() {
         {/* Breadcrumb & Reservation Timer */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[12px] font-semibold text-[#58657a]">
-            <Link to="/home" className="hover:underline">Trang chủ</Link> / Kho #B-204
+            <Link to="/home" className="hover:underline">Trang chủ</Link> / Kho {unit.unitCode}
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3 py-1 text-[12px] font-bold text-[#b45309]">
             <span className="material-symbols-outlined text-[15px]">schedule</span>
@@ -77,18 +78,18 @@ function StorageDetail() {
               </div>
 
               <h1 className="mt-3 text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
-                Kho 5' x 10' (4.6 m²)
+                Kho {unit.dimension}
               </h1>
               <p className="mt-1 text-[13px] leading-6 text-[#58657a]">
-                Phù hợp chứa đồ 1 phòng ngủ hoặc căn hộ studio.
+                {unit.fitNote}
               </p>
 
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
                   <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">straighten</span>
                   <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Kích thước</div>
-                  <div className="text-[13px] font-bold text-[#0b1c30]">5' x 10' x 9'</div>
-                  <div className="text-[11px] text-[#8996a9]">12.7 m³</div>
+                  <div className="text-[13px] font-bold text-[#0b1c30]">{unit.sizeLabel || "5' x 10'"} x {unit.height || "2.7m"}</div>
+                  <div className="text-[11px] text-[#8996a9]">{unit.volume || "12.7 m³"}</div>
                 </div>
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
                   <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">device_thermostat</span>
@@ -343,7 +344,7 @@ function StorageDetail() {
 
             <div className="mt-4 space-y-2.5 text-[12px]">
               <div className="flex items-center justify-between">
-                <span className="text-[#3a475a]">Thuê kho chuẩn (5' x 10')</span>
+                <span className="text-[#3a475a]">Thuê kho ({unit.sizeLabel || unit.dimension})</span>
                 <span className="font-semibold text-[#0b1c30]">${pricing.baseRent.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
