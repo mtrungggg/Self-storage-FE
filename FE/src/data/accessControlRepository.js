@@ -71,12 +71,3 @@ export function getAccessControlLogs() {
     },
   ];
 }
-
-export function getAccessControlTrustBadges() {
-  return [
-    { icon: "verified", title: "ISO 27001", text: "Chuẩn quốc tế" },
-    { icon: "lock", title: "Mã hóa 256-Bit", text: "Bảo mật phần cứng" },
-    { icon: "videocam", title: "Camera 24/7", text: "Giám sát liên tục" },
-    { icon: "health_and_safety", title: "Bảo hiểm $50k", text: "Bảo vệ tài sản" },
-  ];
-}

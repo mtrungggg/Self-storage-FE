@@ -47,12 +47,6 @@ function Header({ active, showUserBadge = true }) {
               <span className="font-bold text-[#0b1c30]">SelfStorage</span>
             </span>
           </Link>
-
-          <button className="hidden items-center gap-1 rounded-md border border-[#dfe7f5] px-2.5 py-1.5 text-[12px] font-semibold text-[#3a475a] md:flex">
-            <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">domain</span>
-            Vault Trung tâm • Tầng #04
-            <span className="material-symbols-outlined text-[16px]">expand_more</span>
-          </button>
         </div>
 
         <nav className="hidden items-center gap-1 lg:flex">
@@ -76,11 +70,6 @@ function Header({ active, showUserBadge = true }) {
         </nav>
 
         <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
-          <span className="hidden items-center gap-1 md:flex">
-            <span className="material-symbols-outlined text-[16px]">payments</span>
-            USD ($)
-          </span>
-
           {active !== "support" && (
             <Link to="/support" className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>

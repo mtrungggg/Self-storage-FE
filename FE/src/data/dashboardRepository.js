@@ -37,15 +37,6 @@ export function getDashboardQuickActions() {
   ];
 }
 
-export function getDashboardTrustBadges() {
-  return [
-    { icon: "verified", title: "ISO 27001", text: "Chuẩn quốc tế" },
-    { icon: "lock", title: "Mã hóa SSL", text: "Bảo mật dữ liệu" },
-    { icon: "videocam", title: "Camera 24/7", text: "Giám sát liên tục" },
-    { icon: "health_and_safety", title: "Bảo hiểm $50k", text: "Bảo vệ tài sản" },
-  ];
-}
-
 export function getClimateChartData() {
   return {
     temperature: [21.0, 21.3, 21.5, 21.2, 21.0, 20.8, 21.1, 21.4, 21.6, 21.3, 21.1, 21.2],

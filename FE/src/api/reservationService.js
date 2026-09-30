@@ -2,11 +2,12 @@ import apiClient from "./apiClient";
 
 export const reservationService = {
   /**
-   * Tạo đơn đặt chỗ ô kho online (15-min hold)
-   * @param {{ unitId: number, durationMonths: number, intendedStartDate: string, accessMethod?: string, insurancePackage?: string, customerNotes?: string }} data
+   * Tạo đơn đặt chỗ ô kho online (giữ chỗ có thời hạn)
+   * @param {{ facilityId: number, unitTypeId: number, storageUnitId?: number, startDate: string, durationMonths: number, promotionCode?: string }} data
    */
   async createReservation(data) {
-    return await apiClient.post("/customer/reservations", data);
+    const res = await apiClient.post("/customer/reservations", data);
+    return res?.data ?? null;
   },
 
   /**
@@ -14,9 +15,10 @@ export const reservationService = {
    * @param {string} [status]
    */
   async getMyReservations(status) {
-    return await apiClient.get("/customer/reservations/my", {
+    const res = await apiClient.get("/customer/reservations/my", {
       params: status ? { status } : {},
     });
+    return res?.data ?? [];
   },
 
   /**
@@ -24,15 +26,17 @@ export const reservationService = {
    * @param {number|string} id
    */
   async getReservationDetail(id) {
-    return await apiClient.get(`/customer/reservations/${id}`);
+    const res = await apiClient.get(`/customer/reservations/${id}`);
+    return res?.data ?? null;
   },
 
   /**
    * Hủy đơn đặt chỗ đang chờ thanh toán
    * @param {number|string} id
+   * @param {string} [reason]
    */
-  async cancelReservation(id) {
-    return await apiClient.delete(`/customer/reservations/${id}`);
+  async cancelReservation(id, reason) {
+    return await apiClient.post(`/customer/reservations/${id}/cancel`, { reason });
   },
 };
 

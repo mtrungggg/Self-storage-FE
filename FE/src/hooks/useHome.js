@@ -1,16 +1,26 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  getLocations,
-  getStorageTypes,
   getSizeFilters,
   getRentalTerms,
-  getFacilities,
-  getAvailableUnits,
   getSizeGuideTabs,
   getHomeHighlights,
-  getHomeTrustBadges,
 } from "../data/homeRepository";
+import facilityService from "../api/facilityService";
+import storageUnitService from "../api/storageUnitService";
+
+const CLIMATE_IMAGE =
+  "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80";
+const STANDARD_IMAGE =
+  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
+
+function sizeCategoryOf(areaM2) {
+  if (areaM2 == null) return "all";
+  if (areaM2 < 5) return "small";
+  if (areaM2 < 10) return "medium";
+  if (areaM2 < 20) return "large";
+  return "vehicle";
+}
 
 // Application layer: encapsulates Home (storage search & reservation) page state and data wiring.
 export function useHome() {
@@ -28,29 +38,142 @@ export function useHome() {
   const [sortBy, setSortBy] = useState("recommended");
   const [activeSizeTab, setActiveSizeTab] = useState("studio");
 
-  // Raw data sources
-  const locations = useMemo(() => getLocations(), []);
-  const storageTypes = useMemo(() => getStorageTypes(), []);
+  // Backend-sourced data
+  const [facilities, setFacilities] = useState([]);
+  const [unitTypes, setUnitTypes] = useState([]);
+  const [rawUnits, setRawUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    Promise.all([
+      facilityService.getFacilities(),
+      facilityService.getUnitTypes(),
+      storageUnitService.getAvailableUnits(),
+    ])
+      .then(([facilitiesRes, unitTypesRes, unitsRes]) => {
+        if (!active) return;
+        setFacilities(facilitiesRes);
+        setUnitTypes(unitTypesRes);
+        setRawUnits(unitsRes);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err?.message || "Không thể tải dữ liệu điểm kho. Vui lòng thử lại.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Static UI reference data (not backend-driven)
   const sizeFilters = useMemo(() => getSizeFilters(), []);
   const rentalTerms = useMemo(() => getRentalTerms(), []);
-  const facilities = useMemo(() => getFacilities(), []);
-  const allUnits = useMemo(() => getAvailableUnits(), []);
   const sizeGuideTabs = useMemo(() => getSizeGuideTabs(), []);
   const highlights = useMemo(() => getHomeHighlights(), []);
-  const trustBadges = useMemo(() => getHomeTrustBadges(), []);
+
+  const facilityById = useMemo(() => new Map(facilities.map((f) => [f.id, f])), [facilities]);
+  const unitTypeById = useMemo(() => new Map(unitTypes.map((t) => [t.id, t])), [unitTypes]);
+
+  const locations = useMemo(
+    () => [
+      { id: "all", label: "Tất cả vị trí" },
+      ...facilities.map((f) => ({ id: String(f.id), label: `${f.name} • ${f.city}` })),
+    ],
+    [facilities]
+  );
+
+  const storageTypes = useMemo(
+    () => [
+      { id: "all", label: "Tất cả loại kho", icon: "warehouse" },
+      ...unitTypes.map((t) => ({
+        id: String(t.id),
+        label: t.name,
+        icon: t.climateControlled ? "device_thermostat" : "warehouse",
+      })),
+    ],
+    [unitTypes]
+  );
+
+  // Adapt raw storage units (backend shape) into the shape the UI cards expect
+  const allUnits = useMemo(() => {
+    return rawUnits.map((u) => {
+      const facility = facilityById.get(u.facilityId);
+      const unitType = unitTypeById.get(u.unitTypeId);
+      return {
+        id: u.id,
+        unitCode: u.unitCode,
+        facilityId: u.facilityId,
+        facilityName: facility?.name || "",
+        address: facility?.address || "",
+        floor: [u.floorLabel && `Tầng ${u.floorLabel}`, u.zoneLabel && `Khu ${u.zoneLabel}`]
+          .filter(Boolean)
+          .join(" • "),
+        unitTypeId: u.unitTypeId,
+        typeName: unitType?.name || "",
+        climateControlled: Boolean(unitType?.climateControlled),
+        type: unitType?.climateControlled ? "climate" : "standard",
+        sizeCategory: sizeCategoryOf(unitType?.areaM2),
+        dimension: unitType ? `${unitType.widthM}m x ${unitType.lengthM}m` : "",
+        sizeLabel: unitType ? `${unitType.widthM}m x ${unitType.lengthM}m` : "",
+        areaM2: unitType?.areaM2 ?? null,
+        height: unitType ? `${unitType.heightM}m` : "",
+        volume: unitType ? `${unitType.volumeM3} m³` : "",
+        fitNote: unitType?.description || "",
+        rentPrice: u.monthlyRate,
+        depositPrice: null,
+        image: unitType?.climateControlled ? CLIMATE_IMAGE : STANDARD_IMAGE,
+      };
+    });
+  }, [rawUnits, facilityById, unitTypeById]);
+
+  const facilitiesWithFromPrice = useMemo(() => {
+    return facilities.map((f) => {
+      const unitsAtFacility = allUnits.filter((u) => u.facilityId === f.id);
+      const minPrice = unitsAtFacility.reduce(
+        (min, u) => (min == null || u.rentPrice < min ? u.rentPrice : min),
+        null
+      );
+      return {
+        id: f.id,
+        locationId: String(f.id),
+        name: f.name,
+        address: f.address,
+        badge: f.code,
+        note: f.availableUnitCount > 0 ? `Còn ${f.availableUnitCount} ô kho trống` : "Hiện đã hết chỗ",
+        noteTone: f.availableUnitCount > 0 ? "text-[#0e7b4c]" : "text-[#b45309]",
+        availableCount: f.availableUnitCount,
+        fromValue: minPrice,
+        perks: [`Giờ mở cửa ${(f.openingTime || "").slice(0, 5)} - ${(f.closingTime || "").slice(0, 5)}`],
+        image: STANDARD_IMAGE,
+      };
+    });
+  }, [facilities, allUnits]);
 
   // Filter and sort available units
   const filteredUnits = useMemo(() => {
     return allUnits
       .filter((unit) => {
         // Location filter
-        if (selectedLocation !== "all" && unit.facilityId !== selectedLocation) {
+        if (selectedLocation !== "all" && String(unit.facilityId) !== selectedLocation) {
           return false;
         }
 
         // Type filter
-        if (selectedType !== "all" && unit.type !== selectedType) {
-          return false;
+        if (selectedType !== "all") {
+          if (selectedType === "climate") {
+            if (!unit.climateControlled) return false;
+          } else if (selectedType === "driveup") {
+            return false; // not offered by backend yet
+          } else if (String(unit.unitTypeId) !== selectedType) {
+            return false;
+          }
         }
 
         // Size filter
@@ -75,7 +198,7 @@ export function useHome() {
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.rentPrice - b.rentPrice;
         if (sortBy === "price-desc") return b.rentPrice - a.rentPrice;
-        if (sortBy === "size") return b.areaM2 - a.areaM2;
+        if (sortBy === "size") return (b.areaM2 ?? 0) - (a.areaM2 ?? 0);
         // Default: recommended (medium sizes / top discount first)
         return a.rentPrice - b.rentPrice;
       });
@@ -83,7 +206,7 @@ export function useHome() {
 
   // Filter facilities
   const filteredFacilities = useMemo(() => {
-    return facilities.filter((f) => {
+    return facilitiesWithFromPrice.filter((f) => {
       if (selectedLocation !== "all" && f.locationId !== selectedLocation) {
         return false;
       }
@@ -93,7 +216,7 @@ export function useHome() {
       }
       return true;
     });
-  }, [facilities, selectedLocation, searchKeyword]);
+  }, [facilitiesWithFromPrice, selectedLocation, searchKeyword]);
 
   // Navigate to storage reservation detail with chosen unit
   const handleSelectUnit = (unit) => {
@@ -146,7 +269,10 @@ export function useHome() {
     filteredFacilities,
     sizeGuideTabs,
     highlights,
-    trustBadges,
+
+    // Data loading state
+    loading,
+    error,
 
     // Navigation
     handleSelectUnit,

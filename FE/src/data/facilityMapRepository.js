@@ -80,12 +80,3 @@ export function getFacilityAmenities() {
     },
   ];
 }
-
-export function getFacilityMapTrustBadges() {
-  return [
-    { icon: "verified", title: "ISO 27001", text: "Chuẩn quốc tế" },
-    { icon: "lock", title: "Khóa thông minh", text: "Bảo mật đa lớp" },
-    { icon: "videocam", title: "Camera 24/7", text: "Giám sát liên tục" },
-    { icon: "health_and_safety", title: "Bảo hiểm $50k", text: "Bảo vệ tài sản" },
-  ];
-}

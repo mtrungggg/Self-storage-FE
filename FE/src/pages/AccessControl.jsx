@@ -1,13 +1,13 @@
 import { useAccessControl } from "../hooks/useAccessControl";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import PageBackground from "../components/PageBackground";
 
 function AccessControl() {
   const {
     wallets,
     guestPins,
     accessLogs,
-    trustBadges,
     activeUnit,
     setActiveUnit,
     showPin,
@@ -16,25 +16,38 @@ function AccessControl() {
     handleUnlock,
     alerts,
     toggleAlert,
+    credentials,
+    credentialsLoading,
+    credentialsError,
+    pinChanging,
+    handleChangePin,
   } = useAccessControl();
 
+  const onChangePin = () => {
+    const newPin = window.prompt("Nhập mã PIN mới (6 chữ số):");
+    if (!newPin) return;
+    handleChangePin(newPin).catch(() => {});
+  };
+
   return (
-    <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
+    <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
+      <PageBackground />
       <Header active="access" />
 
-      <main className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-[#0b1c30]">Mã PIN &amp; Khóa điện tử</h1>
-            <p className="mt-1 text-[13px] text-[#58657a]">
-              Quản lý mã truy cập và điều khiển khóa thông minh.
-            </p>
+            <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">Mã PIN &amp; Khóa điện tử</h1>
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-white px-3.5 py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff]">
+            <button
+              onClick={onChangePin}
+              disabled={pinChanging || !credentials}
+              className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-white px-3.5 py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[16px]">sync_alt</span>
-              Đổi mã PIN
+              {pinChanging ? "Đang đổi..." : "Đổi mã PIN"}
             </button>
             <button className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7]">
               <span className="material-symbols-outlined text-[16px]">add</span>
@@ -42,6 +55,12 @@ function AccessControl() {
             </button>
           </div>
         </div>
+
+        {credentialsError && (
+          <div className="mt-4 rounded-[12px] border border-[#fecdca] bg-[#fff1f1] px-4 py-3 text-[13px] font-semibold text-[#b3261e]">
+            {credentialsError}
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[#dfe7f5] bg-white p-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -72,18 +91,6 @@ function AccessControl() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
               Đã khóa
             </span>
-            <span className="flex items-center gap-1 text-[11px] text-[#58657a]">
-              <span className="material-symbols-outlined text-[15px]">battery_5_bar</span>
-              94%
-            </span>
-            <span className="flex items-center gap-1 text-[11px] text-[#58657a]">
-              <span className="material-symbols-outlined text-[15px]">bluetooth</span>
-              Tín hiệu tốt
-            </span>
-            <span className="flex items-center gap-1 text-[11px] text-[#58657a]">
-              <span className="material-symbols-outlined text-[15px]">near_me</span>
-              Cách ~3m
-            </span>
           </div>
         </div>
 
@@ -100,17 +107,27 @@ function AccessControl() {
                 <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Mã PIN chính</div>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2 text-[20px] font-bold tracking-[0.25em] text-[#0b1c30]">
-                    {showPin ? "4 9 2 #" : "• • • • 9 2 #"}
+                    {credentialsLoading
+                      ? "..."
+                      : showPin
+                      ? credentials?.keypadPin || "—"
+                      : (credentials?.keypadPin || "••••••").replace(/./g, "•")}
                     <button onClick={() => setShowPin((v) => !v)} className="material-symbols-outlined text-[18px] text-[#8996a9] hover:text-[#0b1c30]">
                       {showPin ? "visibility_off" : "visibility"}
                     </button>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    <button className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]">
+                    <button
+                      onClick={() => credentials?.keypadPin && navigator.clipboard.writeText(credentials.keypadPin)}
+                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]"
+                    >
                       <span className="material-symbols-outlined text-[14px]">content_copy</span>
                       Sao chép
                     </button>
-                    <button className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]">
+                    <button
+                      onClick={onChangePin}
+                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]"
+                    >
                       <span className="material-symbols-outlined text-[14px]">autorenew</span>
                       Tạo lại mã
                     </button>
@@ -217,10 +234,7 @@ function AccessControl() {
               <div className="mt-3 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-[#3a475a]">directions_car</span>
-                  <div>
-                    <div className="text-[12px] font-semibold text-[#0b1c30]">Barrier Cổng Nam</div>
-                    <div className="text-[10px] text-[#8996a9]">Mã bấm: #9410*</div>
-                  </div>
+                  <div className="text-[12px] font-semibold text-[#0b1c30]">Barrier Cổng Nam</div>
                 </div>
                 <button className="rounded-md bg-[#1d5fe5] px-3 py-1 text-[11px] font-bold text-white hover:bg-[#174fc7]">Mở barrier</button>
               </div>
@@ -228,17 +242,10 @@ function AccessControl() {
               <div className="mt-2 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-[#3a475a]">elevator</span>
-                  <div>
-                    <div className="text-[12px] font-semibold text-[#0b1c30]">Thang máy Tầng 2</div>
-                    <div className="text-[10px] text-[#8996a9]">Phân tầng tự động đến kho</div>
-                  </div>
+                  <div className="text-[12px] font-semibold text-[#0b1c30]">Thang máy Tầng 2</div>
                 </div>
                 <span className="material-symbols-outlined text-[16px] text-[#0e7b4c]">check_circle</span>
               </div>
-
-              <p className="mt-3 text-[10px] text-[#8996a9]">
-                Cổng mở 24/7. Vui lòng giữ khoảng cách 2m khi quét thẻ.
-              </p>
             </div>
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
@@ -256,7 +263,6 @@ function AccessControl() {
                         <span className="truncate text-[12px] font-semibold text-[#0b1c30]">{log.title}</span>
                         <span className="shrink-0 text-[10px] text-[#8996a9]">{log.time}</span>
                       </div>
-                      <div className="truncate text-[11px] text-[#8996a9]">{log.note}</div>
                     </div>
                   </div>
                 ))}
@@ -297,18 +303,6 @@ function AccessControl() {
               </div>
             </div>
           </aside>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 rounded-[14px] border border-[#dfe7f5] bg-white p-5 md:grid-cols-4">
-          {trustBadges.map((item) => (
-            <div key={item.title} className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[22px] text-[#0e7b4c]">{item.icon}</span>
-              <div>
-                <div className="text-[13px] font-bold text-[#0b1c30]">{item.title}</div>
-                <div className="text-[11px] text-[#8996a9]">{item.text}</div>
-              </div>
-            </div>
-          ))}
         </div>
       </main>
 

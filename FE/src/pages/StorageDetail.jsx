@@ -2,6 +2,15 @@ import { Link } from "react-router-dom";
 import { useStorageDetail } from "../hooks/useStorageDetail";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import PageBackground from "../components/PageBackground";
+import { formatVnd } from "../lib/utils";
+
+const DURATION_OPTIONS = [
+  { months: 1, label: "1 tháng" },
+  { months: 3, label: "3 tháng" },
+  { months: 6, label: "6 tháng" },
+  { months: 12, label: "12 tháng" },
+];
 
 function StorageDetail() {
   const {
@@ -11,8 +20,15 @@ function StorageDetail() {
     protectionPlans,
     moveInOption,
     setMoveInOption,
+    customDate,
+    setCustomDate,
+    minCustomDateISO,
+    isCustomDateInvalid,
+    resolvedStartDate,
     timeSlot,
     setTimeSlot,
+    durationMonths,
+    setDurationMonths,
     protectionPlan,
     setProtectionPlan,
     addons,
@@ -22,14 +38,25 @@ function StorageDetail() {
     agreeLock,
     setAgreeLock,
     protectionPrice,
-    totalToday,
-    monthlyRent,
+    addonsTotal,
     canSubmit,
     pricing,
+    pricingLoading,
+    pricingError,
+    bookingLoading,
+    bookingError,
+    submitBooking,
   } = useStorageDetail();
 
+  // Chỉ pricing.totalAmount là số thực sự được backend tạo hóa đơn & trừ tiền qua QR.
+  // Bảo vệ đồ đạc / phụ kiện hiện chưa được backend hỗ trợ tính phí nên KHÔNG được cộng vào tổng thanh toán.
+  const totalToday = pricing?.totalAmount ?? 0;
+  const optionalExtrasTotal = protectionPrice + addonsTotal;
+  const monthlyRent = pricing?.baseMonthlyRate ?? unit.rentPrice ?? 0;
+
   return (
-    <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
+    <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
+      <PageBackground />
       <Header active="rent" />
 
       {/* Facility Header */}
@@ -55,7 +82,7 @@ function StorageDetail() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
         {/* Breadcrumb & Reservation Timer */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[12px] font-semibold text-[#58657a]">
@@ -78,11 +105,8 @@ function StorageDetail() {
               </div>
 
               <h1 className="mt-3 text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
-                Kho {unit.dimension}
+                Kho {unit.unitCode}
               </h1>
-              <p className="mt-1 text-[13px] leading-6 text-[#58657a]">
-                {unit.fitNote}
-              </p>
 
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
@@ -180,18 +204,37 @@ function StorageDetail() {
                 ))}
               </div>
 
-              <div className="mt-3 flex items-center justify-between rounded-[10px] bg-[#f8faff] p-3">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[10px] bg-[#f8faff] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 flex-col items-center justify-center rounded-[8px] bg-[#0b1c30] text-white">
                     <span className="text-[9px] leading-none">THÁNG</span>
-                    <span className="text-[13px] font-bold leading-none">01</span>
+                    <span className="text-[13px] font-bold leading-none">
+                      {String(resolvedStartDate.getMonth() + 1).padStart(2, "0")}
+                    </span>
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold text-[#0b1c30]">Bắt đầu: Thứ 6, 01/11/2025</div>
+                    <div className="text-[13px] font-semibold text-[#0b1c30]">
+                      Bắt đầu: {resolvedStartDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </div>
                     <div className="text-[11px] text-[#8996a9]">Kích hoạt từ 06:00 sáng</div>
                   </div>
                 </div>
-                <button className="text-[12px] font-semibold text-[#1d5fe5] hover:underline">Thay đổi</button>
+                {moveInOption === "custom" && (
+                  <div>
+                    <input
+                      type="date"
+                      value={customDate}
+                      min={minCustomDateISO}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className={`rounded-[8px] border px-2.5 py-1.5 text-[12px] font-semibold outline-none ${
+                        isCustomDateInvalid ? "border-red-400 text-red-600" : "border-[#dfe7f5] text-[#0b1c30]"
+                      }`}
+                    />
+                    {isCustomDateInvalid && (
+                      <div className="mt-1 text-[11px] font-semibold text-red-600">Ngày phải ở tương lai</div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -260,8 +303,8 @@ function StorageDetail() {
                     <div className="mt-2 text-[13px] font-bold text-[#0b1c30]">{plan.name}</div>
                     <p className="mt-1 text-[11px] leading-5 text-[#58657a]">{plan.text}</p>
                     <div className="mt-2 text-[14px] font-bold text-[#0b1c30]">
-                      ${plan.price.toFixed(2)}
-                      <span className="text-[11px] font-normal text-[#8996a9]"> /tháng</span>
+                      {plan.price > 0 ? formatVnd(plan.price) : "Miễn phí"}
+                      {plan.price > 0 && <span className="text-[11px] font-normal text-[#8996a9]"> /tháng</span>}
                     </div>
                   </button>
                 ))}
@@ -293,7 +336,6 @@ function StorageDetail() {
                     </span>
                   </span>
                   <span className="text-right text-[12px] font-bold">
-                    <span className="mr-1 text-[#c2c9d6] line-through">$18.00</span>
                     <span className="text-[#0e7b4c]">MIỄN PHÍ</span>
                   </span>
                 </label>
@@ -311,7 +353,7 @@ function StorageDetail() {
                       <span className="block text-[11px] text-[#8996a9]">Bảo vệ nội thất tránh trầy xước.</span>
                     </span>
                   </span>
-                  <span className="text-[13px] font-bold text-[#0b1c30]">+$15.00</span>
+                  <span className="text-[13px] font-bold text-[#0b1c30]">+{formatVnd(360000)}</span>
                 </label>
 
                 <label className="flex items-center justify-between rounded-[10px] border border-[#dfe7f5] bg-white px-3 py-2.5">
@@ -327,7 +369,7 @@ function StorageDetail() {
                       <span className="block text-[11px] text-[#8996a9]">5 thùng vừa, 5 thùng lớn.</span>
                     </span>
                   </span>
-                  <span className="text-[13px] font-bold text-[#0b1c30]">+$28.00</span>
+                  <span className="text-[13px] font-bold text-[#0b1c30]">+{formatVnd(672000)}</span>
                 </label>
               </div>
             </div>
@@ -342,66 +384,113 @@ function StorageDetail() {
 
             <div className="mt-2 text-[15px] font-bold text-[#0b1c30]">Chi phí thanh toán</div>
 
-            <div className="mt-4 space-y-2.5 text-[12px]">
-              <div className="flex items-center justify-between">
-                <span className="text-[#3a475a]">Thuê kho ({unit.sizeLabel || unit.dimension})</span>
-                <span className="font-semibold text-[#0b1c30]">${pricing.baseRent.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[#0e7b4c]">
-                  <span className="material-symbols-outlined text-[14px]">sell</span>
-                  Giảm 50% tháng đầu
-                </span>
-                <span className="font-semibold text-[#0e7b4c]">-${pricing.firstMonthDiscount.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[#3a475a]">
-                  Tiền cọc
-                  <span className="material-symbols-outlined text-[13px] text-[#8996a9]">info</span>
-                </span>
-                <span className="text-right font-semibold text-[#0b1c30]">
-                  ${pricing.deposit.toFixed(2)}
-                  <span className="block text-[10px] font-normal text-[#0e7b4c]">Hoàn trả</span>
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#3a475a]">Kích hoạt khóa thông minh</span>
-                <span className="font-semibold text-[#0b1c30]">${pricing.smartLockActivation.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#3a475a]">Bảo vệ đồ đạc</span>
-                <span className="font-semibold text-[#0b1c30]">${protectionPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#3a475a]">Khóa trụ</span>
-                <span className="font-semibold text-[#0b1c30]">$0.00</span>
-              </div>
-              {addons.blankets && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#3a475a]">Chăn bọc &amp; Dây chằng</span>
-                  <span className="font-semibold text-[#0b1c30]">$15.00</span>
-                </div>
-              )}
-              {addons.boxKit && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#3a475a]">10 Thùng carton</span>
-                  <span className="font-semibold text-[#0b1c30]">$28.00</span>
-                </div>
-              )}
+            {/* Thời gian thuê (durationMonths gửi lên API tính giá thực tế) */}
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+              {DURATION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.months}
+                  type="button"
+                  onClick={() => setDurationMonths(opt.months)}
+                  className={`rounded-[8px] border px-1.5 py-1.5 text-[11px] font-bold transition ${
+                    durationMonths === opt.months
+                      ? "border-[#1d5fe5] bg-[#eef4ff] text-[#1d5fe5]"
+                      : "border-[#dfe7f5] bg-white text-[#3a475a]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
+            {pricingError && (
+              <div className="mt-3 rounded-[8px] bg-[#fff1f1] px-3 py-2 text-[11px] font-semibold text-[#b3261e]">
+                {pricingError}
+              </div>
+            )}
+
+            {pricingLoading ? (
+              <div className="mt-4 flex items-center gap-2 text-[12px] text-[#58657a]">
+                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Đang tính giá thuê...
+              </div>
+            ) : (
+              <div className="mt-4 space-y-2.5 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#3a475a]">Thuê kho x{durationMonths} tháng ({unit.sizeLabel || unit.dimension})</span>
+                  <span className="font-semibold text-[#0b1c30]">{formatVnd(pricing?.rentAmount)}</span>
+                </div>
+                {pricing?.discountAmount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-[#0e7b4c]">
+                      <span className="material-symbols-outlined text-[14px]">sell</span>
+                      Giảm giá
+                    </span>
+                    <span className="font-semibold text-[#0e7b4c]">-{formatVnd(pricing.discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-[#3a475a]">
+                    Tiền cọc
+                    <span className="material-symbols-outlined text-[13px] text-[#8996a9]">info</span>
+                  </span>
+                  <span className="text-right font-semibold text-[#0b1c30]">
+                    {formatVnd(pricing?.securityDeposit)}
+                    <span className="block text-[10px] font-normal text-[#0e7b4c]">Hoàn trả</span>
+                  </span>
+                </div>
+                {pricing?.bookingFee > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#3a475a]">Phí đặt chỗ</span>
+                    <span className="font-semibold text-[#0b1c30]">{formatVnd(pricing.bookingFee)}</span>
+                  </div>
+                )}
+                {pricing?.taxAmount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#3a475a]">Thuế</span>
+                    <span className="font-semibold text-[#0b1c30]">{formatVnd(pricing.taxAmount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mt-4 flex items-center justify-between border-t border-[#eef1f8] pt-3">
-              <span className="text-[14px] font-bold text-[#0b1c30]">Tổng hôm nay</span>
-              <span className="text-[20px] font-bold text-[#0b1c30]">${totalToday.toFixed(2)}</span>
+              <span className="text-[14px] font-bold text-[#0b1c30]">Tổng lần đầu (thanh toán qua QR)</span>
+              <span className="text-[20px] font-bold text-[#0b1c30]">{formatVnd(totalToday)}</span>
             </div>
+
+            {optionalExtrasTotal > 0 && (
+              <div className="mt-2 rounded-[10px] border border-dashed border-[#dfe7f5] bg-[#fafcff] p-3 text-[11px]">
+                <div className="font-semibold text-[#8996a9]">
+                  Phụ kiện đã chọn (chưa hỗ trợ thanh toán tự động — liên hệ nhân viên khi nhận kho):
+                </div>
+                <div className="mt-1.5 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#3a475a]">Bảo vệ đồ đạc</span>
+                    <span className="font-semibold text-[#0b1c30]">{formatVnd(protectionPrice)}</span>
+                  </div>
+                  {addons.blankets && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#3a475a]">Chăn bọc &amp; Dây chằng</span>
+                      <span className="font-semibold text-[#0b1c30]">{formatVnd(360000)}</span>
+                    </div>
+                  )}
+                  {addons.boxKit && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#3a475a]">10 Thùng carton</span>
+                      <span className="font-semibold text-[#0b1c30]">{formatVnd(672000)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="mt-3 rounded-[10px] bg-[#f8faff] p-3 text-[11px] text-[#58657a]">
               <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30]">
                 Hàng tháng tiếp theo
-                <span>${monthlyRent.toFixed(2)}/tháng</span>
+                <span>{formatVnd(monthlyRent)}/tháng</span>
               </div>
               <div className="mt-1">
-                Từ 01/12/2025. Hủy bất kỳ lúc nào.
+                Hủy bất kỳ lúc nào trước khi nhận kho.
               </div>
             </div>
 
@@ -435,16 +524,28 @@ function StorageDetail() {
               </label>
             </div>
 
+            {bookingError && (
+              <div className="mt-3 rounded-[8px] bg-[#fff1f1] px-3 py-2 text-[11px] font-semibold text-[#b3261e]">
+                {bookingError}
+              </div>
+            )}
+
             <button
+              type="button"
               disabled={!canSubmit}
+              onClick={() => submitBooking().catch(() => {})}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3 text-[14px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[18px]">lock</span>
-              Thanh toán &amp; Đặt cọc
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              {bookingLoading ? (
+                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              ) : (
+                <span className="material-symbols-outlined text-[18px]">lock</span>
+              )}
+              {bookingLoading ? "Đang xử lý..." : "Xác nhận đặt chỗ & Thanh toán"}
+              {!bookingLoading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
             </button>
 
-            <div className="mt-2 text-center text-[11px] text-[#8996a9]">Giữ chỗ 48h miễn phí ($0)</div>
+            <div className="mt-2 text-center text-[11px] text-[#8996a9]">Giữ chỗ theo thời hạn hiển thị khi đặt</div>
             <div className="mt-2 text-center text-[11px] text-[#8996a9]">
               Hỗ trợ: <span className="font-semibold text-[#1d5fe5]">(512) 555-8290</span>
             </div>

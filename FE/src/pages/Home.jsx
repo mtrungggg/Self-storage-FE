@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useHome } from "../hooks/useHome";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import PageBackground from "../components/PageBackground";
+import { formatVnd } from "../lib/utils";
 
 function Home() {
   const {
@@ -32,7 +34,9 @@ function Home() {
     filteredFacilities,
     sizeGuideTabs,
     highlights,
-    trustBadges,
+
+    loading,
+    error,
 
     handleSelectUnit,
   } = useHome();
@@ -45,23 +49,17 @@ function Home() {
     Boolean(searchKeyword.trim());
 
   return (
-    <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
+    <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
+      <PageBackground />
       <Header active="rent" subtitle="Kho tự quản thông minh" />
 
       {/* Hero Section & Search Header */}
       <section className="border-b border-[#e2e8f4] bg-white">
         <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-6">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#eef4ff] px-3 py-1 text-[11px] font-bold text-[#1d5fe5]">
-              <span className="material-symbols-outlined text-[14px]">shield_check</span>
-              Quy trình đặt chỗ trực tuyến bảo mật &amp; minh bạch
-            </div>
             <h1 className="mt-3 text-[26px] sm:text-[34px] font-extrabold leading-tight tracking-[-0.03em] text-[#0b1c30]">
               Tìm &amp; Đặt Ô Kho Tự Quản
             </h1>
-            <p className="mt-1.5 text-[13px] sm:text-[14px] leading-relaxed text-[#58657a]">
-              Khóa điện tử không chạm 24/7 • Kiểm soát ẩm máy lạnh • Miễn phí hủy trước 24h • Hoàn trả 100% tiền cọc
-            </p>
           </div>
 
           {/* Search Box (Bước i: Tìm kiếm theo Vị trí, Loại kho, Kích thước, Thời gian thuê) */}
@@ -222,7 +220,19 @@ function Home() {
       </section>
 
       {/* Main Content (Bước ii: Hiển thị danh sách điểm kho và ô kho trống phù hợp kèm thông tin chi tiết) */}
-      <main className="mx-auto max-w-[1280px] px-4 py-8 lg:px-6">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 lg:px-6">
+        {error && (
+          <div className="mb-4 rounded-[12px] border border-[#fecdca] bg-[#fff1f1] px-4 py-3 text-[13px] font-semibold text-[#b3261e]">
+            {error}
+          </div>
+        )}
+        {loading ? (
+          <div className="flex items-center justify-center rounded-[16px] border border-[#dfe7f5] bg-white p-16">
+            <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5]">progress_activity</span>
+            <span className="ml-3 text-[13px] font-semibold text-[#58657a]">Đang tải dữ liệu điểm kho...</span>
+          </div>
+        ) : (
+        <>
         {/* Results Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e2e8f4] pb-4">
           <div className="flex items-center gap-2">
@@ -299,7 +309,7 @@ function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                {filteredUnits.map((u) => (
+                {filteredUnits.map((u, index) => (
                   <div
                     key={u.id}
                     className="flex flex-col justify-between overflow-hidden rounded-[16px] border border-[#dfe7f5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.03)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(15,23,42,0.07)]"
@@ -335,10 +345,7 @@ function Home() {
 
                       {/* Detail Body */}
                       <div className="p-4">
-                        <div className="flex items-center justify-between">
-                          <span className="rounded-full bg-[#f0f4fc] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
-                            {u.typeName}
-                          </span>
+                        <div className="flex items-center justify-end">
                           <span className="text-[11px] font-semibold text-[#8996a9]">
                             {u.volume} ({u.height})
                           </span>
@@ -347,11 +354,8 @@ function Home() {
                         {/* Kích thước */}
                         <div className="mt-2.5">
                           <div className="text-[17px] font-extrabold text-[#0b1c30]">
-                            Kho {u.dimension}
+                            Kho {index + 1}
                           </div>
-                          <p className="mt-0.5 text-[12px] leading-5 text-[#58657a]">
-                            {u.fitNote}
-                          </p>
                         </div>
 
                         {/* Bảng Giá thuê & Phí cọc */}
@@ -361,7 +365,7 @@ function Home() {
                               Giá thuê
                             </span>
                             <div className="mt-0.5 flex items-baseline gap-1">
-                              <span className="text-[18px] font-black text-[#0b1c30]">${u.rentPrice}</span>
+                              <span className="text-[15px] font-black text-[#0b1c30]">{formatVnd(u.rentPrice)}</span>
                               <span className="text-[11px] font-semibold text-[#8996a9]">/tháng</span>
                             </div>
                           </div>
@@ -370,26 +374,8 @@ function Home() {
                               Phí cọc (Hoàn trả)
                             </span>
                             <div className="mt-0.5 flex items-baseline gap-1">
-                              <span className="text-[18px] font-black text-[#0e7b4c]">${u.depositPrice}</span>
-                              <span className="text-[10px] font-bold text-[#0e7b4c]">100%</span>
+                              <span className="text-[12px] font-bold text-[#0e7b4c]">Tính khi đặt chỗ</span>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Chính sách thuê */}
-                        <div className="mt-3.5 space-y-1 border-t border-[#f0f4f9] pt-3">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                            Chính sách bảo đảm:
-                          </div>
-                          <div className="grid grid-cols-1 gap-1 text-[11px] text-[#475569]">
-                            {u.policies.slice(0, 3).map((policy, idx) => (
-                              <div key={idx} className="flex items-center gap-1.5">
-                                <span className="material-symbols-outlined text-[14px] text-[#0e7b4c]">
-                                  check_circle
-                                </span>
-                                <span>{policy}</span>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       </div>
@@ -435,11 +421,10 @@ function Home() {
                   style={{ backgroundImage: `url('${f.image}')` }}
                 >
                   <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#0b1c30]">
-                    {f.badge} • {f.distance}
+                    {f.badge}
                   </span>
-                  <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#0b1c30]">
-                    <span className="material-symbols-outlined text-[14px] text-[#f4b740]">star</span>
-                    {f.rating} ({f.reviews})
+                  <span className={`absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold ${f.noteTone}`}>
+                    {f.note}
                   </span>
                 </div>
 
@@ -463,12 +448,14 @@ function Home() {
                       <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
                         Giá khởi điểm
                       </div>
-                      <div className="text-[16px] font-extrabold text-[#0b1c30]">{f.from}</div>
+                      <div className="text-[16px] font-extrabold text-[#0b1c30]">
+                        {f.fromValue != null ? `${formatVnd(f.fromValue)}/tháng` : "Liên hệ"}
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedLocation(f.id);
+                        setSelectedLocation(String(f.id));
                         setActiveTab("units");
                       }}
                       className="flex items-center gap-1.5 rounded-[9px] bg-[#0b1c30] px-3.5 py-2 text-[12px] font-bold text-white transition hover:bg-[#132741]"
@@ -481,6 +468,9 @@ function Home() {
               </div>
             ))}
           </div>
+        )}
+
+        </>
         )}
 
         {/* Size Guide Section: Trợ giúp chọn kích thước trực quan */}
@@ -542,18 +532,6 @@ function Home() {
               <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">{h.icon}</span>
               <div className="mt-2 text-[13px] font-bold text-[#0b1c30]">{h.title}</div>
               <p className="mt-1 text-[11px] leading-relaxed text-[#64748b]">{h.text}</p>
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {trustBadges.map((b, i) => (
-            <div key={i} className="flex items-center gap-2.5 rounded-[12px] border border-[#eef2f8] bg-white p-3">
-              <span className="material-symbols-outlined text-[18px] text-[#0e7b4c]">{b.icon}</span>
-              <div>
-                <div className="text-[11px] font-bold text-[#0b1c30]">{b.title}</div>
-                <div className="text-[10px] text-[#8996a9]">{b.text}</div>
-              </div>
             </div>
           ))}
         </section>
