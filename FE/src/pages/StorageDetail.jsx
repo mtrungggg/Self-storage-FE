@@ -43,7 +43,6 @@ function StorageDetail() {
     submitBooking,
   } = useStorageDetail();
 
-  // pricing.totalAmount là số thực tế từ backend tính toán và tạo đơn VietQR
   const totalToday = pricing?.totalAmount ?? 0;
   const monthlyRent = pricing?.baseMonthlyRate ?? unit.rentPrice ?? 0;
 
@@ -56,9 +55,6 @@ function StorageDetail() {
       <div className="border-b border-[#e6ebf5] bg-white">
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef4ff] text-[#1d5fe5]">
-              <span className="material-symbols-outlined text-[18px]">domain</span>
-            </span>
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
                 {unit.facilityName} • {unit.address}
@@ -68,22 +64,20 @@ function StorageDetail() {
           </div>
           <div className="flex items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
             <Link to="/facility-map" className="flex items-center gap-1 text-[#1d5fe5] hover:underline">
-              Sơ đồ kho
-              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              Sơ đồ kho &rarr;
             </Link>
           </div>
         </div>
       </div>
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
-        {/* Breadcrumb & Reservation Timer */}
+        {/* Breadcrumb & Reservation Status */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[12px] font-semibold text-[#58657a]">
             <Link to="/home" className="hover:underline">Trang chủ</Link> / Kho {unit.unitCode}
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3 py-1 text-[12px] font-bold text-[#b45309]">
-            <span className="material-symbols-outlined text-[15px]">schedule</span>
-            Giữ chỗ: 14:59
+          <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3.5 py-1 text-[12px] font-bold text-[#b45309]">
+            Giữ chỗ: 15 phút
           </div>
         </div>
 
@@ -103,34 +97,30 @@ function StorageDetail() {
 
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">straighten</span>
-                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Kích thước</div>
-                  <div className="text-[13px] font-bold text-[#0b1c30]">{unit.sizeLabel || "5' x 10'"} x {unit.height || "2.7m"}</div>
-                  <div className="text-[11px] text-[#8996a9]">{unit.volume || "12.7 m³"}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Kích thước</div>
+                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">{unit.sizeLabel || "5' x 10'"} x {unit.height || "2.7m"}</div>
+                  <div className="mt-0.5 text-[11px] text-[#8996a9]">{unit.volume || "12.7 m³"}</div>
                 </div>
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">device_thermostat</span>
-                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Nhiệt độ</div>
-                  <div className="text-[13px] font-bold text-[#0b1c30]">20°C – 22°C</div>
-                  <div className="text-[11px] text-[#8996a9]">Kiểm soát độ ẩm</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Nhiệt độ</div>
+                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">20°C – 22°C</div>
+                  <div className="mt-0.5 text-[11px] text-[#8996a9]">Kiểm soát độ ẩm</div>
                 </div>
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">lock</span>
-                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">An ninh</div>
-                  <div className="text-[13px] font-bold text-[#0b1c30]">Khóa điện tử</div>
-                  <div className="text-[11px] text-[#8996a9]">Cảm biến PIR</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">An ninh</div>
+                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">Khóa điện tử</div>
+                  <div className="mt-0.5 text-[11px] text-[#8996a9]">Cảm biến PIR</div>
                 </div>
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">door_open</span>
-                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Truy cập</div>
-                  <div className="text-[13px] font-bold text-[#0b1c30]">24/7</div>
-                  <div className="text-[11px] text-[#8996a9]">Không chạm</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Truy cập</div>
+                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">24/7</div>
+                  <div className="mt-0.5 text-[11px] text-[#8996a9]">Không chạm</div>
                 </div>
               </div>
 
-              {/* Đặc tính ô kho & Mục đích sử dụng thực tế từ Backend */}
+              {/* Đặc tính ô kho & Chèn ảnh kho thực tế */}
               <div className="mt-5 border-t border-[#eef1f8] pt-4">
-                <div className="text-[13px] font-bold text-[#0b1c30]">Mô tả sức chứa &amp; Tiêu chuẩn ô kho</div>
+                <div className="text-[13px] font-bold text-[#0b1c30]">Mô tả sức chứa &amp; Không gian ô kho</div>
 
                 <div className="mt-2.5 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4 text-[13px]">
                   <p className="leading-relaxed text-[#3a475a]">
@@ -138,23 +128,29 @@ function StorageDetail() {
                     {unit.fitNote || "Phù hợp lưu trữ hàng hóa, đồ đạc gia đình, tài liệu hồ sơ hoặc trang thiết bị cá nhân."}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold text-[#0e7b4c]">
-                    <span className="flex items-center gap-1 rounded-full bg-[#ecfdf3] px-3 py-1">
-                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      Khóa thông minh điện tử 24/7
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full bg-[#ecfdf3] px-3 py-1">
-                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      Camera an ninh &amp; Cảm biến PIR
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full bg-[#ecfdf3] px-3 py-1">
-                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      {unit.climateControlled ? "Có điều hòa mát 20°C – 22°C" : "Kho khô ráo, thông thoáng"}
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full bg-[#ecfdf3] px-3 py-1">
-                      <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                      Xe đẩy hàng miễn phí tại sảnh
-                    </span>
+                  {/* Ảnh thực tế ô kho và cơ sở */}
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="relative overflow-hidden rounded-[10px] border border-[#dfe7f5] bg-slate-100">
+                      <img
+                        src={unit.image || "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80"}
+                        alt={`Không gian bên trong kho ${unit.unitCode}`}
+                        className="h-44 w-full object-cover transition duration-300 hover:scale-105"
+                      />
+                      <div className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                        Không gian bên trong kho #{unit.unitCode}
+                      </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-[10px] border border-[#dfe7f5] bg-slate-100">
+                      <img
+                        src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
+                        alt={`Hành lang cơ sở ${unit.facilityName}`}
+                        className="h-44 w-full object-cover transition duration-300 hover:scale-105"
+                      />
+                      <div className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                        Lối đi thông thoáng &amp; Hệ thống an ninh
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -163,9 +159,8 @@ function StorageDetail() {
             {/* Bước 1: Ngày chuyển vào */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[14px] font-bold text-[#0b1c30]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1d5fe5] text-[12px] text-white">1</span>
-                  Ngày nhận kho &amp; Chuyển vào
+                <div className="text-[14px] font-bold text-[#0b1c30]">
+                  1. Ngày nhận kho &amp; Chuyển vào
                 </div>
                 <span className="text-[11px] font-semibold text-[#1d5fe5]">Kích hoạt từ ngày chọn</span>
               </div>
@@ -223,9 +218,8 @@ function StorageDetail() {
             {/* Bước 2: Thời hạn thuê & Mã khuyến mãi */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[14px] font-bold text-[#0b1c30]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1d5fe5] text-[12px] text-white">2</span>
-                  Thời hạn thuê &amp; Mã ưu đãi
+                <div className="text-[14px] font-bold text-[#0b1c30]">
+                  2. Thời hạn thuê &amp; Mã ưu đãi
                 </div>
                 <span className="text-[11px] text-[#8996a9]">Linh hoạt gia hạn</span>
               </div>
@@ -282,54 +276,10 @@ function StorageDetail() {
                 </div>
 
                 {appliedVoucher && pricing?.discountAmount > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-[#0e7b4c]">
-                    <span className="material-symbols-outlined text-[15px]">check_circle</span>
+                  <div className="mt-2 text-[11px] font-bold text-[#0e7b4c]">
                     Đã áp dụng mã {appliedVoucher}: Giảm {formatVnd(pricing.discountAmount)}!
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Bước 3: Hướng dẫn kích hoạt & Nhận mã mở khóa */}
-            <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="flex items-center gap-2 text-[14px] font-bold text-[#0b1c30]">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1d5fe5] text-[12px] text-white">3</span>
-                Nhận mã mở khóa &amp; Check-in 24/7
-              </div>
-              <p className="mt-1 text-[11px] text-[#8996a9]">
-                Quy trình hoàn toàn tự động, không cần chờ đợi bàn giao thủ công.
-              </p>
-
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 text-[12px]">
-                <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <div className="flex items-center gap-1.5 font-bold text-[#1d5fe5]">
-                    <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-                    1. Quét QR Thanh toán
-                  </div>
-                  <p className="mt-1 text-[11px] text-[#58657a]">
-                    Thanh toán số tiền hiển thị qua app ngân hàng tức thì.
-                  </p>
-                </div>
-
-                <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <div className="flex items-center gap-1.5 font-bold text-[#1d5fe5]">
-                    <span className="material-symbols-outlined text-[16px]">pin</span>
-                    2. Cấp mã PIN tức thì
-                  </div>
-                  <p className="mt-1 text-[11px] text-[#58657a]">
-                    Hệ thống cấp ngay mã PIN 6 số và mã mở barrier trên màn hình.
-                  </p>
-                </div>
-
-                <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                  <div className="flex items-center gap-1.5 font-bold text-[#0e7b4c]">
-                    <span className="material-symbols-outlined text-[16px]">verified</span>
-                    3. Nhận kho 24/7
-                  </div>
-                  <p className="mt-1 text-[11px] text-[#58657a]">
-                    Chuyển đồ vào kho bất cứ lúc nào không giới hạn thời gian.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -343,7 +293,7 @@ function StorageDetail() {
 
             <div className="mt-2 text-[15px] font-bold text-[#0b1c30]">Chi phí thanh toán</div>
 
-            {/* Thời gian thuê (durationMonths gửi lên API tính giá thực tế) */}
+            {/* Thời gian thuê */}
             <div className="mt-3 grid grid-cols-4 gap-1.5">
               {DURATION_OPTIONS.map((opt) => (
                 <button
@@ -368,8 +318,7 @@ function StorageDetail() {
             )}
 
             {pricingLoading ? (
-              <div className="mt-4 flex items-center gap-2 text-[12px] text-[#58657a]">
-                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+              <div className="mt-4 py-3 text-center text-[12px] text-[#58657a]">
                 Đang tính giá thuê...
               </div>
             ) : (
@@ -380,21 +329,15 @@ function StorageDetail() {
                 </div>
                 {pricing?.discountAmount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[#0e7b4c]">
-                      <span className="material-symbols-outlined text-[14px]">sell</span>
-                      Giảm giá
-                    </span>
+                    <span className="text-[#0e7b4c]">Giảm giá voucher</span>
                     <span className="font-semibold text-[#0e7b4c]">-{formatVnd(pricing.discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-[#3a475a]">
-                    Tiền cọc
-                    <span className="material-symbols-outlined text-[13px] text-[#8996a9]">info</span>
-                  </span>
+                  <span className="text-[#3a475a]">Tiền cọc</span>
                   <span className="text-right font-semibold text-[#0b1c30]">
                     {formatVnd(pricing?.securityDeposit)}
-                    <span className="block text-[10px] font-normal text-[#0e7b4c]">Hoàn trả</span>
+                    <span className="block text-[10px] font-normal text-[#0e7b4c]">Hoàn trả khi trả kho</span>
                   </span>
                 </div>
                 {pricing?.bookingFee > 0 && (
@@ -414,7 +357,7 @@ function StorageDetail() {
 
             <div className="mt-4 flex items-center justify-between border-t border-[#eef1f8] pt-3">
               <span className="text-[14px] font-bold text-[#0b1c30]">Tổng lần đầu (thanh toán qua QR)</span>
-              <span className="text-[20px] font-bold text-[#0b1c30]">{formatVnd(totalToday)}</span>
+              <span className="text-[20px] font-bold text-[#1d5fe5]">{formatVnd(totalToday)}</span>
             </div>
 
             <div className="mt-3 rounded-[10px] bg-[#f8faff] p-3 text-[11px] text-[#58657a]">
@@ -424,21 +367,6 @@ function StorageDetail() {
               </div>
               <div className="mt-1">
                 Hủy bất kỳ lúc nào trước khi nhận kho.
-              </div>
-            </div>
-
-            <div className="mt-3 space-y-1.5 text-[11px] text-[#58657a]">
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-[#0e7b4c]">lock</span>
-                Bảo mật chuẩn 256-bit
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-[#0e7b4c]">event_available</span>
-                Hủy miễn phí trước 24h
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-[#0e7b4c]">verified</span>
-                Giữ giá trong 12 tháng
               </div>
             </div>
 
@@ -469,18 +397,11 @@ function StorageDetail() {
               onClick={() => submitBooking().catch(() => {})}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3 text-[14px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {bookingLoading ? (
-                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-              ) : (
-                <span className="material-symbols-outlined text-[18px]">lock</span>
-              )}
               {bookingLoading ? "Đang xử lý..." : "Xác nhận đặt chỗ & Thanh toán"}
-              {!bookingLoading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
             </button>
 
-            <div className="mt-2 text-center text-[11px] text-[#8996a9]">Giữ chỗ theo thời hạn hiển thị khi đặt</div>
             <div className="mt-2 text-center text-[11px] text-[#8996a9]">
-              Hotline hỗ trợ: <span className="font-semibold text-[#1d5fe5]">1900 6868</span>
+              Giữ chỗ theo thời hạn hiển thị khi đặt
             </div>
           </aside>
         </div>
