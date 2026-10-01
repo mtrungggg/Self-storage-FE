@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { getClimateChartData } from "../data/dashboardRepository";
-import { buildChartPath } from "../domain/usecases/buildChartPath";
 import rentalService from "../api/rentalService";
 
 // Application layer: encapsulates CustomerDashboard ("Kho của tôi") page state and BE API wiring.
 export function useCustomerDashboard() {
-  const { temperature, humidity } = getClimateChartData();
 
   // Real hợp đồng thuê kho của khách hàng (backend: GET /customer/rentals)
   const [rentals, setRentals] = useState([]);
@@ -85,9 +82,6 @@ export function useCustomerDashboard() {
     };
   }, [activeRentals]);
 
-  const tempPath = useMemo(() => buildChartPath(temperature, 20.5, 22, 320, 70), [temperature]);
-  const humidityPath = useMemo(() => buildChartPath(humidity, 40, 55, 320, 70), [humidity]);
-
   const toggleShowPin = (agreementId) => {
     setShowPinMap((prev) => ({
       ...prev,
@@ -131,7 +125,5 @@ export function useCustomerDashboard() {
     copyFeedbackMap,
     copyPinToClipboard,
     handleChangePin,
-    tempPath,
-    humidityPath,
   };
 }

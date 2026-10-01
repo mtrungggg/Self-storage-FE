@@ -15,7 +15,7 @@ export function getGuestPins(unitCode) {
       name: "Giao vận Express",
       tag: "Dùng 1 lần",
       status: "active",
-      schedule: `14:00 – 17:00, hôm nay • Kho #${unitCode}`,
+      schedule: `14:00 – 17:00, hôm nay • Kho ${unitCode}`,
       code: "481903#",
       action: "Hủy mã",
     },
@@ -45,21 +45,21 @@ export function getAccessControlLogs(unitCode) {
   return [
     {
       icon: "lock_open",
-      title: `Mở kho #${unitCode}`,
+      title: `Mở kho ${unitCode}`,
       time: "14:45 hôm nay",
       note: "Bàn phím mã PIN tại cửa",
       dot: "#2dd4a0",
     },
     {
       icon: "dialpad",
-      title: `Mở kho #${unitCode}`,
+      title: `Mở kho ${unitCode}`,
       time: "18/10, 10:12",
       note: "Mã khách • Giao vận Express",
       dot: "#8996a9",
     },
     {
       icon: "key",
-      title: `Mở kho #${unitCode}`,
+      title: `Mở kho ${unitCode}`,
       time: "10/10, 09:30",
       note: "Bàn phím mã PIN tại cửa",
       dot: "#8996a9",

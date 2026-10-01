@@ -124,17 +124,17 @@ function AdminUserManagement() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Tìm theo Họ tên, Email công vụ, SĐT, CCCD, Mã nhân sự (#ADM, #OPS, #STF, #TNT)..."
+            placeholder="Search by Name, Work Email, Phone, National ID, Employee Code (#ADM, #OPS, #STF, #TNT)..."
             className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
           />
         </div>
 
         <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Dropdown label="Vai trò & Cấp bậc" value={filters.role} onChange={(v) => updateFilter("role", v)} options={filterOptions.roles} />
-          <Dropdown label="Phân quyền Cơ sở / Trạm" value={filters.facility} onChange={(v) => updateFilter("facility", v)} options={filterOptions.facilities} />
-          <Dropdown label="Trạng thái tài khoản" value={filters.status} onChange={(v) => updateFilter("status", v)} options={filterOptions.statuses} />
+          <Dropdown label="Role &amp; Tier" value={filters.role} onChange={(v) => updateFilter("role", v)} options={filterOptions.roles} />
+          <Dropdown label="Facility / Hub Access" value={filters.facility} onChange={(v) => updateFilter("facility", v)} options={filterOptions.facilities} />
+          <Dropdown label="Account Status" value={filters.status} onChange={(v) => updateFilter("status", v)} options={filterOptions.statuses} />
           <Dropdown
-            label="Phương thức xác thực 2FA"
+            label="2FA Method"
             value={filters.twoFactorMethod}
             onChange={(v) => updateFilter("twoFactorMethod", v)}
             options={filterOptions.twoFactorMethods}
@@ -148,13 +148,13 @@ function AdminUserManagement() {
                 <th className="py-2 pr-2">
                   <input type="checkbox" className="h-3.5 w-3.5 accent-[#1d5fe5]" />
                 </th>
-                <th className="py-2 pr-2">Mã & Danh tính nhân viên/khách</th>
-                <th className="py-2 pr-2">Vai trò & Phân cấp</th>
-                <th className="py-2 pr-2">Phạm vi cơ sở cấp phép</th>
-                <th className="py-2 pr-2">Phương thức 2FA</th>
-                <th className="py-2 pr-2">Trạng thái</th>
-                <th className="py-2 pr-2">Đăng nhập gần nhất & IP</th>
-                <th className="py-2 pr-2">Thao tác</th>
+                <th className="py-2 pr-2">Identity &amp; Code</th>
+                <th className="py-2 pr-2">Role &amp; Tier</th>
+                <th className="py-2 pr-2">Facility Scope</th>
+                <th className="py-2 pr-2">2FA Security</th>
+                <th className="py-2 pr-2">Status</th>
+                <th className="py-2 pr-2">Last Login &amp; IP</th>
+                <th className="py-2 pr-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -188,8 +188,8 @@ function AdminUserManagement() {
                   </td>
                   <td className="py-2.5 pr-2">
                     <div className="flex items-center gap-1.5 text-[#8996a9]">
-                      <span className="material-symbols-outlined text-[15px]">edit</span>
-                      <span className="material-symbols-outlined text-[15px]">lock</span>
+                      <span className="material-symbols-outlined text-[15px] cursor-pointer hover:text-[#1d5fe5]">edit</span>
+                      <span className="material-symbols-outlined text-[15px] cursor-pointer hover:text-red-600">lock</span>
                     </div>
                   </td>
                 </tr>
@@ -197,7 +197,7 @@ function AdminUserManagement() {
               {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-6 text-center text-[11px] text-[#8996a9]">
-                    Không tìm thấy người dùng phù hợp.
+                    No users match the selected filters.
                   </td>
                 </tr>
               )}
@@ -206,7 +206,7 @@ function AdminUserManagement() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
-          <span>{footnote} • Số dòng: {filteredUsers.length}/{totalUsers}</span>
+          <span>{footnote} • Records: {filteredUsers.length}/{totalUsers}</span>
           <div className="flex items-center gap-1 font-semibold">
             <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">
               <span className="material-symbols-outlined text-[13px]">chevron_left</span>
@@ -239,8 +239,8 @@ function AdminUserManagement() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="rounded-[8px] border border-[#dfe7f5] px-3 py-1.5 text-[10px] font-semibold text-[#3a475a]">Xem Lịch sử Đăng nhập</button>
-            <button className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">Chỉnh sửa Quyền chi tiết</button>
+            <button className="rounded-[8px] border border-[#dfe7f5] px-3 py-1.5 text-[10px] font-semibold text-[#3a475a]">View Login History</button>
+            <button className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">Edit Permissions</button>
           </div>
         </div>
 

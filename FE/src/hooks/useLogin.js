@@ -46,6 +46,7 @@ export function useLogin() {
 
       const user = res?.data?.user;
       const roles = user?.roles || [];
+      const returnUrl = location.state?.from?.pathname;
 
       setTimeout(() => {
         if (roles.includes("admin") || roles.includes("system_admin")) {
@@ -57,7 +58,7 @@ export function useLogin() {
         ) {
           navigate("/staff-dashboard");
         } else {
-          navigate("/home");
+          navigate(returnUrl || "/home");
         }
       }, 700);
     } catch (err) {

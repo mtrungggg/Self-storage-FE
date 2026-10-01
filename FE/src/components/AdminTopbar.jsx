@@ -11,7 +11,7 @@ function AdminTopbar({ activeHub, statusBanner, profile }) {
       <div className="flex flex-1 items-center gap-1.5 rounded-[8px] bg-[#f5f7fd] px-3 py-1.5">
         <span className="material-symbols-outlined text-[15px] text-[#8996a9]">search</span>
         <input
-          placeholder="Tìm theo tên, số hợp đồng, CCCD, tên khách..."
+          placeholder="Search by name, contract #, ID, customer..."
           className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
         />
       </div>

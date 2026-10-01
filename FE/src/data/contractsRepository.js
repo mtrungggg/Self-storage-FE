@@ -1,57 +1,57 @@
 // Data layer: content source for the Admin Contracts & Customers CRM page.
 export function getStatusBanner() {
-  return { label: "Hồ sơ khách thuê & Khế ước tài sản", detail: "Chi nhánh Hub #04 Downtown Metro" };
+  return { label: "Tenant Records & Asset Agreements", detail: "Branch Hub #04 Downtown Metro" };
 }
 
 export function getOverviewHeader() {
-  return { title: "Hợp đồng & Khách hàng CRM" };
+  return { title: "Contracts & Customer CRM" };
 }
 
 export function getHeaderActions() {
   return [
-    { id: "debt_report", icon: "receipt_long", label: "Xuất báo cáo công nợ" },
-    { id: "remind", icon: "campaign", label: "Gửi nhắc hạn hàng loạt (28)" },
-    { id: "new_contract", icon: "add", label: "Tạo hợp đồng mới" },
+    { id: "debt_report", icon: "receipt_long", label: "Export Debt Report" },
+    { id: "remind", icon: "campaign", label: "Send Batch Reminders (28)" },
+    { id: "new_contract", icon: "add", label: "New Contract" },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "active", icon: "verified_user", label: "Hợp đồng hiệu lực", value: "415", trend: "+98.2%", sub: "Tỷ lệ lấp đầy kho • Cộng dồn 2024" },
-    { id: "expiring", icon: "event_upcoming", label: "Sắp hết hạn (≤30 ngày)", value: "28", sub: "12 HĐ trong 7 ngày tới • Cần gia hạn", alert: true },
-    { id: "overdue", icon: "lock_clock", label: "Hợp đồng nợ quá hạn", value: "08", sub: "Tổng nợ đọng: 48.600.000 đ • 3 khóa Latch", alert: true },
-    { id: "new_sales", icon: "trending_up", label: "Doanh số ký mới tháng này", value: "+145.2M đ", trend: "+22.4%", sub: "So tháng trước • 19 HĐ mới" },
+    { id: "active", icon: "verified_user", label: "Active Contracts", value: "415", trend: "+98.2%", sub: "Storage occupancy rate • 2024 cumulative" },
+    { id: "expiring", icon: "event_upcoming", label: "Expiring (≤30 days)", value: "28", sub: "12 contracts within 7 days • Renewal required", alert: true },
+    { id: "overdue", icon: "lock_clock", label: "Overdue Accounts", value: "08", sub: "Outstanding balance: 48,600,000 ₫ • 3 Latch locked", alert: true },
+    { id: "new_sales", icon: "trending_up", label: "New Signings This Month", value: "+145.2M ₫", trend: "+22.4%", sub: "MoM increase • 19 new contracts" },
   ];
 }
 
 export function getFilterOptions() {
   return {
     audiences: [
-      { id: "all", label: "Tất cả đối tượng" },
-      { id: "b2b", label: "Doanh nghiệp (B2B)" },
-      { id: "b2c", label: "Cá nhân (B2C)" },
+      { id: "all", label: "All Customer Types" },
+      { id: "b2b", label: "Business (B2B)" },
+      { id: "b2c", label: "Individual (B2C)" },
     ],
     cycles: [
-      { id: "all", label: "Mọi chu kỳ thanh toán" },
-      { id: "monthly", label: "01 Tháng/lần" },
-      { id: "quarterly", label: "03 Tháng/lần" },
-      { id: "biannual", label: "06 Tháng/lần" },
-      { id: "yearly", label: "12 Tháng trả trước" },
+      { id: "all", label: "All Billing Cycles" },
+      { id: "monthly", label: "Monthly" },
+      { id: "quarterly", label: "Quarterly" },
+      { id: "biannual", label: "Semi-Annual (6 mo)" },
+      { id: "yearly", label: "Annual Prepaid (12 mo)" },
     ],
     validity: [
-      { id: "all", label: "Mọi hiệu lực" },
-      { id: "active", label: "Bình thường" },
-      { id: "renewal", label: "Sắp tái ký" },
-      { id: "locked", label: "Khóa & tự động" },
+      { id: "all", label: "All Statuses" },
+      { id: "active", label: "Active / Normal" },
+      { id: "renewal", label: "Expiring Soon" },
+      { id: "locked", label: "Locked / Delinquent" },
     ],
   };
 }
 
 export function getContractLegend() {
   return [
-    { id: "active", label: "Bình thường", color: "#2dd4a0" },
-    { id: "renewal", label: "Sắp tái ký", color: "#f5a524" },
-    { id: "locked", label: "Khóa và tự động", color: "#e5484d" },
+    { id: "active", label: "Active / Normal", color: "#2dd4a0" },
+    { id: "renewal", label: "Expiring Soon", color: "#f5a524" },
+    { id: "locked", label: "Locked / Delinquent", color: "#e5484d" },
   ];
 }
 
@@ -59,116 +59,116 @@ export function getContracts() {
   return [
     {
       id: "#CTR-2024-8890",
-      signMethod: "Ký điện tử • eKYC OK",
-      customer: "Công ty TNHH TechLogix VN",
+      signMethod: "E-Signed • eKYC Verified",
+      customer: "TechLogix Vietnam LLC",
       audience: "b2b",
-      contact: "Vũ Hải Đăng • 0918.423.889",
-      taxOrEmail: "MST: 0314986231 • contact@techlogix.vn",
-      unit: "Kho #B-204",
-      unitNote: "Tầng 2 • Máy lạnh 24/7 • #LC-9902",
+      contact: "Vu Hai Dang • 0918.423.889",
+      taxOrEmail: "Tax ID: 0314986231 • contact@techlogix.vn",
+      unit: "Unit B-204",
+      unitNote: "Floor 2 • 24/7 Climate • #LC-9902",
       term: "15/05/2023 → 14/05/2024",
-      daysLeft: "Còn 4 ngày",
-      alertNote: "Chưa gửi phiếu tái ký",
+      daysLeft: "4 days left",
+      alertNote: "Renewal notice pending",
       cycle: "monthly",
-      value: "16.500.000 đ",
-      totalValue: "33.000.000 đ",
-      cycleNote: "Chu kỳ 06 tháng/lần • VAT 10% điện tử",
-      depositStatus: "Đang giữ cọc",
+      value: "16,500,000 ₫",
+      totalValue: "33,000,000 ₫",
+      cycleNote: "6-month billing cycle • Electronic VAT 10%",
+      depositStatus: "Deposit Held",
       validity: "renewal",
     },
     {
       id: "#CTR-2024-8821",
-      signMethod: "Ký công chứng văn phòng",
-      customer: "Công ty CP Kiến Trúc An Lạc",
+      signMethod: "Notarized Office Agreement",
+      customer: "An Lac Architecture JSC",
       audience: "b2b",
-      contact: "Lê Hoàng Long • 0903.112.556",
-      taxOrEmail: "MST: 0108992144 • ketoan@anlacarch.com",
-      unit: "Kho #A-102",
-      unitNote: "Tầng trệt • Drive-up Container • #LC-1004",
+      contact: "Le Hoang Long • 0903.112.556",
+      taxOrEmail: "Tax ID: 0108992144 • ketoan@anlacarch.com",
+      unit: "Unit A-102",
+      unitNote: "Ground Floor • Container Drive-up • #LC-1004",
       term: "01/01/2024 → 31/12/2024",
-      daysLeft: "Còn 234 ngày",
-      alertNote: "Cam kết thuê hạn 2 năm",
+      daysLeft: "234 days left",
+      alertNote: "2-year term commitment",
       cycle: "yearly",
-      value: "24.000.000 đ",
-      totalValue: "48.000.000 đ",
-      cycleNote: "Chu kỳ 12 tháng trả trước • Ưu đãi chiết khấu 10%",
-      depositStatus: "Đang giữ cọc",
+      value: "24,000,000 ₫",
+      totalValue: "48,000,000 ₫",
+      cycleNote: "12-month prepaid • 10% discount applied",
+      depositStatus: "Deposit Held",
       validity: "active",
     },
     {
       id: "#CTR-2024-7712",
-      signMethod: "Hợp đồng điện tử Smart App",
-      customer: "Nguyễn Thảo Ly",
+      signMethod: "Smart App Digital Agreement",
+      customer: "Nguyen Thao Ly",
       audience: "b2c",
-      contact: "0986.761.320 • Lưu trữ cá nhân",
-      taxOrEmail: "CCCD: 079194002931 • thaoly.art@gmail.com",
-      unit: "Kho #D-118",
-      unitNote: "Tầng 1 • Kiểm soát ẩm, đèn LED cảm ứng • #LC-4419",
+      contact: "0986.761.320 • Personal Storage",
+      taxOrEmail: "National ID: 079194002931 • thaoly.art@gmail.com",
+      unit: "Unit D-118",
+      unitNote: "Floor 1 • Dehumidified & LED sensor • #LC-4419",
       term: "20/11/2023 → 19/05/2024",
-      daysLeft: "Còn 11 ngày",
-      alertNote: "Đã gửi SMS nhắc hạn",
+      daysLeft: "11 days left",
+      alertNote: "SMS reminder sent",
       cycle: "monthly",
-      value: "5.800.000 đ",
-      totalValue: "5.800.000 đ",
-      cycleNote: "Chu kỳ 01 tháng/lần • Tự động trừ thẻ Napas",
-      depositStatus: "Đang giữ cọc",
+      value: "5,800,000 ₫",
+      totalValue: "5,800,000 ₫",
+      cycleNote: "Monthly cycle • Auto-debit via Napas",
+      depositStatus: "Deposit Held",
       validity: "renewal",
     },
     {
       id: "#CTR-2024-6510",
-      signMethod: "Khế ước Master Doanh nghiệp",
-      customer: "Dược Phẩm & Thiết Bị Y Tế Nam Đô",
+      signMethod: "Corporate Master Lease",
+      customer: "Nam Do Medical Devices & Pharma",
       audience: "b2b",
-      contact: "DS. Trần Quốc Tuấn • 0972.909.111",
-      taxOrEmail: "MST: 0300918872 • supply@namdopharma.vn",
-      unit: "Cụm Kho #C-01 & #C-02",
-      unitNote: "Chuẩn GDP • 18-22°C, Dual Smart Locks • #LC-3011, #LC-3012",
+      contact: "Pharm. Tran Quoc Tuan • 0972.909.111",
+      taxOrEmail: "Tax ID: 0300918872 • supply@namdopharma.vn",
+      unit: "Cluster Units C-01 & C-02",
+      unitNote: "GDP Certified • 18-22°C, Dual Smart Locks • #LC-3011, #LC-3012",
       term: "15/02/2024 → 14/02/2025",
-      daysLeft: "Còn 279 ngày",
-      alertNote: "Bảo trì cảm biến định kỳ OK",
+      daysLeft: "279 days left",
+      alertNote: "Periodic sensor calibration OK",
       cycle: "quarterly",
-      value: "42.500.000 đ",
-      totalValue: "85.000.000 đ",
-      cycleNote: "Chu kỳ 03 tháng/lần • Thanh toán qua VietQR PRO",
-      depositStatus: "Đang giữ cọc",
+      value: "42,500,000 ₫",
+      totalValue: "85,000,000 ₫",
+      cycleNote: "Quarterly cycle • VietQR PRO transfer",
+      depositStatus: "Deposit Held",
       validity: "active",
     },
     {
       id: "#CTR-2024-5109",
-      signMethod: "Ký tại quầy Lễ tân Hub #04",
-      customer: "Phạm Thành Đạt",
+      signMethod: "Front Desk Walk-in Hub #04",
+      customer: "Pham Thanh Dat",
       audience: "b2c",
-      contact: "0933.456.789 • Lưu trữ nội chuyển nhà",
-      taxOrEmail: "CCCD: 001085007421 • dat.pham@outlook.com",
-      unit: "Kho #B-108",
-      unitNote: "Tầng 1 • Tiêu chuẩn khô ráo, camera riêng • #LC-2198",
+      contact: "0933.456.789 • Relocation Holding",
+      taxOrEmail: "National ID: 001085007421 • dat.pham@outlook.com",
+      unit: "Unit B-108",
+      unitNote: "Floor 1 • Standard Dry, Dedicated Camera • #LC-2198",
       term: "10/10/2023 → 09/10/2024",
-      daysLeft: "Còn 151 ngày",
-      alertNote: "Đã gia hạn lần 1",
+      daysLeft: "151 days left",
+      alertNote: "Extended once",
       cycle: "quarterly",
-      value: "7.200.000 đ",
-      totalValue: "7.200.000 đ",
-      cycleNote: "Chu kỳ 03 tháng/lần • Đã xuất hóa đơn lần 1",
-      depositStatus: "Đang giữ cọc",
+      value: "7,200,000 ₫",
+      totalValue: "7,200,000 ₫",
+      cycleNote: "Quarterly cycle • Initial invoice issued",
+      depositStatus: "Deposit Held",
       validity: "locked",
     },
   ];
 }
 
 export function getContractFootnote() {
-  return { totalDeposit: "Tổng cọc an ninh giữ hộ: 2.840.000.000 đ" };
+  return { totalDeposit: "Total Security Deposits in Escrow: 2,840,000,000 ₫" };
 }
 
 export function getEmergencyActions() {
   return [
-    { id: "lockout", icon: "lock", label: "Khóa điện tử cưỡng chế (Latch Lockout)" },
-    { id: "bulk_renew", icon: "autorenew", label: "Gia hạn hàng loạt hợp đồng B2B" },
-    { id: "handover_report", icon: "description", label: "Biên bản bàn giao & hoàn trả cọc" },
+    { id: "lockout", icon: "lock", label: "Forced Lockout (Latch Lockout)" },
+    { id: "bulk_renew", icon: "autorenew", label: "Batch Renew B2B Contracts" },
+    { id: "handover_report", icon: "description", label: "Handover & Deposit Refund Record" },
   ];
 }
 
 export function getIotStatusNote() {
-  return "Online (100% Khóa IoT) • Port 8084";
+  return "Online (100% IoT Locks Connected) • Port 8084";
 }
 
 export function getActivityLog() {
@@ -176,27 +176,27 @@ export function getActivityLog() {
     {
       id: "log-1",
       type: "success",
-      title: "Gia hạn thành công #CTR-2023-4...",
-      detail: "Kho #A-109 • KH Trần Nhật Minh (+12 tháng)",
-      time: "10 phút trước",
-      actor: "Ops Trần Minh Hoàng",
+      title: "Successfully extended #CTR-2023-4...",
+      detail: "Unit A-109 • Tran Nhat Minh (+12 months)",
+      time: "10 mins ago",
+      actor: "Ops Tran Minh Hoang",
     },
     {
       id: "log-2",
       type: "failed",
-      title: "Từ chối kích hoạt HĐ mới #B-204",
-      detail: "Công ty TNHH TechLogix VN • Quá hạn 5 ngày",
-      time: "42 phút trước",
-      actor: "Hệ thống tự động",
+      title: "Rejected contract activation #B-204",
+      detail: "TechLogix Vietnam LLC • Past due 5 days",
+      time: "42 mins ago",
+      actor: "Automated System",
     },
   ];
 }
 
 export function getComplianceInfo() {
   return {
-    badge: "Luật Kinh doanh BĐS 2024",
-    title: "Hồ sơ eKYC & Hợp đồng số",
-    note: "100% hợp đồng mới tuân thủ chuẩn số hóa, tích hợp chữ ký số VNPT-CA và mã hóa SHA-256.",
-    tags: ["CA Ký số", "IoT"],
+    badge: "Real Estate Law 2024",
+    title: "eKYC & Digital Contract Archive",
+    note: "100% of new contracts adhere to digital compliance standards, integrating VNPT-CA signatures and SHA-256 encryption.",
+    tags: ["Digital CA", "IoT Verified"],
   };
 }

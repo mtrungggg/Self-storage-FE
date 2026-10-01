@@ -1,8 +1,8 @@
 // Data layer: content source for the Admin System Activity & Audit Log page.
 export function getBreadcrumb() {
   return {
-    parent: "Quản trị Hệ thống",
-    current: "Lịch sử Hoạt động & Nhật ký Kiểm toán (Audit Logs)",
+    parent: "System Administration",
+    current: "System Activity & Audit Logs",
     siemStatus: "SIEM STREAM: TLS 1.3 ACTIVE",
     ledgerHash: "LedgerHash: #0x8f4c...c29b",
   };
@@ -10,57 +10,57 @@ export function getBreadcrumb() {
 
 export function getOverviewHeader() {
   return {
-    title: "Lịch sử Hoạt động & Nhật ký Kiểm toán Hệ thống",
+    title: "System Activity & Audit Trail Logs",
     subtitle:
-      "Ghi nhận 100% biến động dữ liệu, truy cập khóa số IoT, điều chỉnh biểu phí và cảnh báo xâm nhập, băm SHA-256 bất biến theo chuẩn SOC 2 Type II.",
+      "Capturing 100% of data mutations, IoT lock access events, rate adjustments, and intrusion alerts with immutable SHA-256 hashing per SOC 2 Type II standards.",
   };
 }
 
 export function getHeaderActions() {
   return [
-    { id: "live", icon: "sensors", label: "Live Stream: Đang bật" },
-    { id: "verify", icon: "verified", label: "Kiểm tra Tính toàn vẹn SHA-256" },
-    { id: "export", icon: "download", label: "Xuất Log (.CSV/.JSON/Syslog)" },
+    { id: "live", icon: "sensors", label: "Live Stream: Active" },
+    { id: "verify", icon: "verified", label: "Verify SHA-256 Integrity" },
+    { id: "export", icon: "download", label: "Export Log (.CSV/.JSON/Syslog)" },
   ];
 }
 
 export function getSectionTabs() {
   return [
-    { id: "users", label: "Bảng Quản lý Người dùng", count: "3,842", active: false },
-    { id: "audit", label: "Lịch sử Hoạt động toàn hệ thống (Audit Logs)", badge: "Live Stream", active: true },
+    { id: "users", label: "User Management Table", count: "3,842", active: false },
+    { id: "audit", label: "System-wide Audit Logs", badge: "Live Stream", active: true },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "events", icon: "database", label: "Sự kiện hôm nay", value: "18,940", sub: "4.2 sự kiện/giây • 99.94% OK" },
-    { id: "iot", icon: "lock", label: "Tác vụ IoT khóa điện tử", value: "342 lệnh", sub: "Cưỡng chế: 18 • Cấp OTP: 312 • BLE: 12" },
-    { id: "waf", icon: "shield", label: "Cảnh báo an ninh & WAF", value: "02 mối đe dọa", sub: "Tor Exit Node & Bruteforce • Đã auto-drop IP", alert: true },
-    { id: "hash", icon: "verified_user", label: "Chuỗi xác thực băm", value: "Hợp lệ 100%", sub: "0 block lỗi kiểm toán • SHA-256 Validated" },
+    { id: "events", icon: "database", label: "Today's Events", value: "18,940", sub: "4.2 events/sec • 99.94% OK" },
+    { id: "iot", icon: "lock", label: "IoT Smart Lock Actions", value: "342 orders", sub: "Lockouts: 18 • OTP Issued: 312 • BLE: 12" },
+    { id: "waf", icon: "shield", label: "Security & WAF Alerts", value: "02 threats", sub: "Tor Exit Node & Bruteforce • IP auto-dropped", alert: true },
+    { id: "hash", icon: "verified_user", label: "Cryptographic Hash Chain", value: "100% Valid", sub: "0 block errors • SHA-256 Validated" },
   ];
 }
 
 export function getFilterOptions() {
   return {
-    timeRanges: [{ id: "today", label: "Hôm nay (Thời gian thực)" }],
+    timeRanges: [{ id: "today", label: "Today (Real-time)" }],
     categories: [
-      { id: "all", label: "Tất cả danh mục nghiệp vụ" },
-      { id: "storage", label: "Quản lý kho" },
-      { id: "pricing", label: "Cấu hình biểu phí" },
-      { id: "iot", label: "Tự động hóa IoT" },
-      { id: "intrusion", label: "Cảnh báo xâm nhập" },
-      { id: "hardware", label: "Điều khiển phần cứng" },
+      { id: "all", label: "All Operational Categories" },
+      { id: "storage", label: "Storage Management" },
+      { id: "pricing", label: "Rate Configurations" },
+      { id: "iot", label: "IoT Automation" },
+      { id: "intrusion", label: "Intrusion Alerts" },
+      { id: "hardware", label: "Hardware Controls" },
     ],
     statuses: [
-      { id: "all", label: "Tất cả trạng thái phản hồi" },
-      { id: "success", label: "Thành công" },
-      { id: "blocked", label: "Đã chặn" },
+      { id: "all", label: "All Response Statuses" },
+      { id: "success", label: "Success" },
+      { id: "blocked", label: "Blocked" },
     ],
     actors: [
-      { id: "all", label: "Tất cả người thực hiện/tác nhân" },
-      { id: "staff", label: "Nhân sự nội bộ" },
-      { id: "system", label: "Hệ thống tự động" },
-      { id: "unknown", label: "Không xác định / Đáng ngờ" },
+      { id: "all", label: "All Actors / Initiators" },
+      { id: "staff", label: "Internal Staff" },
+      { id: "system", label: "Automated Daemon" },
+      { id: "unknown", label: "Unknown / Suspicious" },
     ],
   };
 }
@@ -68,9 +68,9 @@ export function getFilterOptions() {
 export function getQuickFilters() {
   return [
     { id: "unit", label: "#B-204 (Metro)", value: "#B-204" },
-    { id: "iot_force", label: "IoT Cưỡng chế", value: "cưỡng chế" },
-    { id: "blocked_ip", label: "IP Bị chặn (2)", value: "chặn IP" },
-    { id: "fee_q4", label: "Sửa biểu phí Q4", value: "biểu phí" },
+    { id: "iot_force", label: "IoT Forced Lock", value: "forced" },
+    { id: "blocked_ip", label: "Blocked IPs (2)", value: "block" },
+    { id: "fee_q4", label: "Q4 Fee Adjustment", value: "fee" },
   ];
 }
 
@@ -80,12 +80,12 @@ export function getAuditEvents() {
       id: "evt-1",
       time: "14:32:15.820",
       date: "15/10/2023",
-      actor: "Vũ Phương Thảo",
-      actorRole: "Quản lý Hub #04",
+      actor: "Vu Phuong Thao",
+      actorRole: "Hub #04 Manager",
       actorType: "staff",
       category: "storage",
-      categoryLabel: "Quản lý Kho",
-      action: "Đã gán kho #B-204 cho khách Alex Morgan. HĐ #CTR-2024-8890 • 12 tháng • Bảo hiểm Diamond Safe 50,000 USD.",
+      categoryLabel: "Storage Ops",
+      action: "Assigned unit #B-204 to tenant Alex Morgan. Contract #CTR-2024-8890 • 12 months • Diamond Safe Insurance $50,000 USD.",
       ip: "192.168.4.11",
       device: "Hub #04 Kiosk",
       status: "success",
@@ -94,12 +94,12 @@ export function getAuditEvents() {
       id: "evt-2",
       time: "14:15:00.104",
       date: "15/10/2023",
-      actor: "Nguyễn Hoàng Nam",
+      actor: "Nguyen Hoang Nam",
       actorRole: "Super Admin Root",
       actorType: "staff",
       category: "pricing",
-      categoryLabel: "Cấu hình Biểu phí",
-      action: "Tăng phí trễ hạn 3% → 5% chu kỳ Q4/2025. Theo tờ trình HĐQT #VSP-RES-2025-09 • Áp dụng toàn bộ 04 Hub.",
+      categoryLabel: "Rate Policy",
+      action: "Increased late penalty 3% → 5% for Q4/2025. Per Board Resolution #VSP-RES-2025-09 • Applied across all 04 Hubs.",
       ip: "113.161.42.9",
       device: "HQ Executive Network",
       status: "success",
@@ -112,8 +112,8 @@ export function getAuditEvents() {
       actorRole: "Automated Cron Daemon",
       actorType: "system",
       category: "iot",
-      categoryLabel: "Tự động hóa IoT",
-      action: "Khóa chốt điện tử cưỡng chế kho #D-112 do nợ cước quá hạn 7 ngày, tự động vô hiệu mã PIN khách hàng.",
+      categoryLabel: "IoT Automation",
+      action: "Forced electrical lock engagement on unit #D-112 due to 7 days overdue balance, auto-revoked tenant PIN credentials.",
       ip: "10.0.1.254",
       device: "Cloud Internal VPC",
       status: "success",
@@ -126,8 +126,8 @@ export function getAuditEvents() {
       actorRole: "Tor Exit Node Alert",
       actorType: "unknown",
       category: "intrusion",
-      categoryLabel: "Cảnh báo Xâm nhập",
-      action: "Đăng nhập sai quá 5 lần qua API Gateway /auth/v2/admin-login. WAF #882 chặn IP vĩnh viễn 24h, báo SOC Telegram.",
+      categoryLabel: "Intrusion Alert",
+      action: "Failed login exceeded 5 attempts on API Gateway /auth/v2/admin-login. WAF rule #882 blocked IP for 24h, alerted SOC Telegram.",
       ip: "203.113.152.88",
       device: "Frankfurt DE (Tor Exit Node)",
       status: "blocked",
@@ -136,12 +136,12 @@ export function getAuditEvents() {
       id: "evt-5",
       time: "12:11:30.012",
       date: "15/10/2023",
-      actor: "Trần Tuấn Anh",
-      actorRole: "KTV Kiosk Hub #01",
+      actor: "Tran Tuan Anh",
+      actorRole: "Hub #01 Kiosk Tech",
       actorType: "staff",
       category: "hardware",
-      categoryLabel: "Điều khiển Phần cứng",
-      action: "Mở khóa khẩn cấp Dock #02 tại Hub #01 cho đội xe #TK-DISPATCH-990. Cảm biến xác nhận xe rời dock sau 18 phút.",
+      categoryLabel: "Hardware Control",
+      action: "Emergency dock override for Dock #02 at Hub #01 for fleet #TK-DISPATCH-990. Sensor verified departure after 18 mins.",
       ip: "192.168.1.55",
       device: "Hub #01 Subnet Control",
       status: "success",
@@ -150,13 +150,13 @@ export function getAuditEvents() {
 }
 
 export function getAuditFootnote() {
-  return "Hiển thị 1-20 trên tổng số 18,940 sự kiện được mã hóa";
+  return "Showing 1-20 of 18,940 cryptographically logged events";
 }
 
 export function getComplianceCards() {
   return [
-    { id: "syslog", icon: "cloud_sync", title: "Syslog SIEM Forwarder", detail: "Cổng UDP 514 • Splunk & Datadog Relay", status: "connected", statusLabel: "Connected" },
-    { id: "certified", icon: "workspace_premium", title: "Chứng nhận Bảo mật Chuẩn", detail: "SOC 2 Type II • ISO 27001", status: "audited", statusLabel: "Audited 2025" },
-    { id: "worm", icon: "inventory_2", title: "WORM Storage Archive", detail: "Lưu trữ bất biến 10 năm tại Cloud HSM", status: "locked", statusLabel: "Locked" },
+    { id: "syslog", icon: "cloud_sync", title: "Syslog SIEM Forwarder", detail: "UDP Port 514 • Splunk & Datadog Relay", status: "connected", statusLabel: "Connected" },
+    { id: "certified", icon: "workspace_premium", title: "Security Standards Certification", detail: "SOC 2 Type II • ISO 27001", status: "audited", statusLabel: "Audited 2025" },
+    { id: "worm", icon: "inventory_2", title: "WORM Storage Archive", detail: "10-year immutable archive on Cloud HSM", status: "locked", statusLabel: "Locked" },
   ];
 }

@@ -119,13 +119,13 @@ function AdminAuditLog() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Tìm theo IP, mã kho #B-204, hợp đồng #CTR..."
+            placeholder="Search by IP, unit code #B-204, contract #CTR..."
             className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
           />
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Bộ lọc nhanh:</span>
+          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Quick Filters:</span>
           {quickFilters.map((chip) => (
             <button
               key={chip.id}
@@ -141,11 +141,11 @@ function AdminAuditLog() {
           <table className="w-full min-w-[880px] text-left text-[11px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Thời gian (UTC+7)</th>
-                <th className="py-2 pr-2">Người thực hiện / Tác nhân</th>
-                <th className="py-2 pr-2">Danh mục</th>
-                <th className="py-2 pr-2">Hành động & Dữ liệu Payload</th>
-                <th className="py-2 pr-2">IP nguồn & Thiết bị</th>
+                <th className="py-2 pr-2">Timestamp (UTC+7)</th>
+                <th className="py-2 pr-2">Actor / Initiator</th>
+                <th className="py-2 pr-2">Category</th>
+                <th className="py-2 pr-2">Action &amp; Payload Data</th>
+                <th className="py-2 pr-2">Source IP &amp; Device</th>
               </tr>
             </thead>
             <tbody>
@@ -170,7 +170,7 @@ function AdminAuditLog() {
               {filteredEvents.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-6 text-center text-[11px] text-[#8996a9]">
-                    Không có sự kiện nào phù hợp bộ lọc.
+                    No audit events match the selected filters.
                   </td>
                 </tr>
               )}
@@ -179,9 +179,9 @@ function AdminAuditLog() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
-          <span>{auditFootnote} ({filteredEvents.length}/{totalEvents} hiển thị)</span>
+          <span>{auditFootnote} ({filteredEvents.length}/{totalEvents} shown)</span>
           <div className="flex items-center gap-1 font-semibold">
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Trước</button>
+            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Previous</button>
             <span className="rounded-[6px] bg-[#0b1c30] px-2 py-1 text-white">1</span>
             <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">2</button>
             <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">3</button>

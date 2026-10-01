@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { useStaffScheduling } from "../hooks/useStaffScheduling";
 
-const SHIFT_LABEL = { morning: "Sáng", afternoon: "Chiều", night: "Đêm", off: "OFF" };
+const SHIFT_LABEL = { morning: "Morning", afternoon: "Afternoon", night: "Night", off: "OFF" };
 const SHIFT_STYLES = {
   morning: "bg-[#f0f3fa] text-[#3a475a]",
   afternoon: "bg-[#1d5fe5] text-white",
@@ -78,20 +78,20 @@ function AdminStaffScheduling() {
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="rounded-[12px] border border-[#dfe7f5] bg-white p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)]">
           <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-            Nhân lực toàn Hub
+            Facility Workforce
             <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">groups</span>
           </div>
           <div className="mt-1 text-[19px] font-bold">{totalStaff}</div>
-          <div className="mt-0.5 text-[10px] text-[#8996a9]">Sẵn sàng điều động • 100% khả dụng</div>
+          <div className="mt-0.5 text-[10px] text-[#8996a9]">Ready to deploy • 100% available</div>
         </div>
 
         <div className="rounded-[12px] border border-[#dfe7f5] bg-white p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)]">
           <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-            Đang trực hiện trường
+            On-Duty Today
             <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">location_on</span>
           </div>
           <div className="mt-1 text-[19px] font-bold">{onDutyToday} / {totalStaff}</div>
-          <div className="mt-0.5 text-[10px] text-[#8996a9]">Ca Chiều (15:00 - 23:00)</div>
+          <div className="mt-0.5 text-[10px] text-[#8996a9]">Afternoon Shift (15:00 - 23:00)</div>
         </div>
 
         {kpis.slice(1).map((kpi) => (
@@ -112,11 +112,11 @@ function AdminStaffScheduling() {
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-[14px] font-bold">Bảng Điều phối Ca trực Hàng tuần</div>
-            <p className="text-[10px] text-[#8996a9]">Tự động đối soát GPS & Biometric</p>
+            <div className="text-[14px] font-bold">Weekly Shift Dispatch Schedule</div>
+            <p className="text-[10px] text-[#8996a9]">Automated GPS &amp; Biometric Attendance Matching</p>
           </div>
           <span className="rounded-full bg-[#0b1c30] px-2.5 py-1 text-[10px] font-bold text-white">
-            Hôm nay: Thứ 4, 16/10
+            Today: Wednesday, Oct 16
           </span>
         </div>
 
@@ -124,10 +124,10 @@ function AdminStaffScheduling() {
           <table className="w-full min-w-[880px] text-left text-[11px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Nhân sự / Vai trò</th>
+                <th className="py-2 pr-2">Staff Member / Role</th>
                 {weekDays.map((day) => (
                   <th key={day.id} className={`py-2 px-1 text-center ${day.isToday ? "text-[#1d5fe5]" : ""}`}>
-                    {day.isToday ? "HÔM NAY" : day.label}
+                    {day.isToday ? "TODAY" : day.label}
                     <div className="font-semibold normal-case">{day.date}</div>
                   </th>
                 ))}
@@ -138,7 +138,7 @@ function AdminStaffScheduling() {
                 <Fragment key={department.id}>
                   <tr className="bg-[#f8faff]">
                     <td colSpan={weekDays.length + 1} className="py-1.5 pr-2 text-[9px] font-bold uppercase tracking-[0.04em] text-[#58657a]">
-                      {department.label} ({String(department.count).padStart(2, "0")} NV)
+                      {department.label} ({String(department.count).padStart(2, "0")} Staff)
                     </td>
                   </tr>
                   {department.staff.map((member) => (
@@ -167,14 +167,14 @@ function AdminStaffScheduling() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-[#eef1f8] pt-2 text-[10px] font-semibold text-[#58657a]">
-          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Quy ước màu ca:</span>
+          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Shift Color Legend:</span>
           {shiftLegend.map((item) => (
             <span key={item.id} className="flex items-center gap-1">
               <span className={`h-2.5 w-2.5 rounded-[3px] ${SHIFT_STYLES[item.id]}`} />
               {item.label}
             </span>
           ))}
-          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Chấm công:</span>
+          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Attendance:</span>
           {attendanceLegend.map((item) => (
             <span key={item.id} className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
@@ -188,11 +188,11 @@ function AdminStaffScheduling() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div className="text-[14px] font-bold">Nhiệm vụ Hiện trường Trong ngày</div>
-              <p className="text-[10px] text-[#8996a9]">Phân công cho {onDutyToday} nhân sự ca hôm nay (16/10)</p>
+              <div className="text-[14px] font-bold">Today's Field Tasks</div>
+              <p className="text-[10px] text-[#8996a9]">Assigned to {onDutyToday} staff on duty today (16/10)</p>
             </div>
             <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[10px] font-bold text-[#1d5fe5]">
-              {taskProgress.completed}/{taskProgress.total} Hoàn tất
+              {taskProgress.completed}/{taskProgress.total} Completed
             </span>
           </div>
 
@@ -220,14 +220,14 @@ function AdminStaffScheduling() {
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[10px] text-[#8996a9]">
-            <span>Tự động đồng bộ với máy quét mã cầm tay của KTV</span>
-            <span className="font-bold text-[#1d5fe5]">+ Thêm nhiệm vụ</span>
+            <span>Syncs automatically with technician handheld scanners</span>
+            <span className="font-bold text-[#1d5fe5] cursor-pointer hover:underline">+ Add Task</span>
           </div>
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center justify-between">
-            <div className="text-[14px] font-bold">Nhật ký Bàn giao Ca Điện tử</div>
+            <div className="text-[14px] font-bold">Digital Shift Handover Log</div>
             <span className="rounded-full bg-[#0b1c30] px-2.5 py-1 text-[9px] font-bold text-white">{handoverTag}</span>
           </div>
 
@@ -249,7 +249,7 @@ function AdminStaffScheduling() {
           </div>
 
           <div className="mt-3 rounded-[8px] border border-dashed border-[#dfe7f5] p-2.5 text-[10px] text-[#58657a]">
-            <div className="font-bold uppercase tracking-[0.04em] text-[#8996a9]">Ghi chú ca tiếp theo</div>
+            <div className="font-bold uppercase tracking-[0.04em] text-[#8996a9]">Next Shift Handover Notes</div>
             <p className="mt-1">{handoverNote}</p>
           </div>
 
@@ -260,7 +260,7 @@ function AdminStaffScheduling() {
               onChange={(event) => setTwoFactorConfirmed(event.target.checked)}
               className="h-3.5 w-3.5 accent-[#1d5fe5]"
             />
-            Xác thực 2 chữ ký số
+            Dual Digital Signature Verification
           </label>
 
           <button
@@ -268,7 +268,7 @@ function AdminStaffScheduling() {
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:bg-[#c7d1e6]"
           >
             <span className="material-symbols-outlined text-[14px]">draw</span>
-            Ký Duyệt Bàn Giao Ca
+            Sign &amp; Approve Shift Handover
           </button>
         </div>
       </div>

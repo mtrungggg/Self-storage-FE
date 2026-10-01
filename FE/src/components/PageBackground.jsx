@@ -1,16 +1,17 @@
-// Fixed, full-viewport warehouse photo backdrop shared by the customer-facing pages.
 function PageBackground() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1920&q=80')",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0b1c30]/45 via-white/60 to-[#f5f7fd]/85" />
-    </div>
+    <div
+      className="pointer-events-none fixed inset-0 -z-10 bg-white"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(229,231,235,0.8) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(229,231,235,0.8) 1px, transparent 1px),
+          radial-gradient(circle 500px at 20% 100%, rgba(139,92,246,0.3), transparent),
+          radial-gradient(circle 500px at 100% 80%, rgba(59,130,246,0.3), transparent)
+        `,
+        backgroundSize: "48px 48px, 48px 48px, 100% 100%, 100% 100%",
+      }}
+    />
   );
 }
 

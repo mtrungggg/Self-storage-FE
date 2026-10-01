@@ -1,93 +1,93 @@
 // Data layer: content source for the Admin Operations & Revenue Overview page.
 export function getLiveBanner() {
-  return { label: "LIVE CENTRAL OPERATIONS", detail: "Cập nhật 15 giây trước" };
+  return { label: "LIVE CENTRAL OPERATIONS", detail: "Updated 15 seconds ago" };
 }
 
 export function getOverviewHeader() {
   return {
-    title: "Tổng quan Quản lý Vận hành & Doanh thu Cơ sở",
-    subtitle: "Báo cáo real-time chuỗi kho VaultSpace • Hub #04 Downtown Metro & toàn mạng lưới",
+    title: "Facility Operations & Revenue Overview",
+    subtitle: "Real-time reports across VaultSpace chain • Hub #04 Downtown Metro & network-wide",
   };
 }
 
 export function getOverviewActions() {
   return [
-    { id: "sync", icon: "sync", label: "Đồng bộ giá thị trường" },
-    { id: "export", icon: "file_download", label: "Xuất báo cáo (Excel/PDF)" },
-    { id: "add", icon: "add", label: "Thêm kho / cơ sở mới" },
+    { id: "sync", icon: "sync", label: "Sync Market Rates" },
+    { id: "export", icon: "file_download", label: "Export Report (Excel/PDF)" },
+    { id: "add", icon: "add", label: "Add Unit / Facility" },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "total", icon: "warehouse", label: "Tổng số kho quản lý", value: "480", trend: "+12 kho", sub: "120 kho Hub #04 đang khai thác" },
-    { id: "occupancy", icon: "pie_chart", label: "Tỷ lệ lấp đầy kho", value: "86.4%", trend: "+4.2%", sub: "415 thuê • 45 trống • 20 giữ chỗ" },
-    { id: "mrr", icon: "payments", label: "Doanh thu định kỳ (MRR)", value: "1.845 tỷ đ", trend: "+12.8% YoY", sub: "ARPU 3,850,000 đ/hợp đồng" },
-    { id: "overdue", icon: "lock_clock", label: "Nợ quá hạn & khóa chốt", value: "8 ca", trend: "cần xử lý", sub: "48,200,000 đ • 2 khóa Latch" },
+    { id: "total", icon: "warehouse", label: "Total Managed Units", value: "480", trend: "+12 units", sub: "120 units at Hub #04 active" },
+    { id: "occupancy", icon: "pie_chart", label: "Occupancy Rate", value: "86.4%", trend: "+4.2%", sub: "415 rented • 45 vacant • 20 reserved" },
+    { id: "mrr", icon: "payments", label: "Monthly Recurring Revenue (MRR)", value: "1.845B ₫", trend: "+12.8% YoY", sub: "ARPU 3,850,000 ₫/contract" },
+    { id: "overdue", icon: "lock_clock", label: "Overdue & Locked Units", value: "8 units", trend: "Action required", sub: "48,200,000 ₫ • 2 Latch locked" },
   ];
 }
 
 export function getRevenueTrend() {
   return {
-    months: ["T10/24", "T11/24", "T12/24", "T01/25", "T02/25", "T03/25 (Nay)"],
+    months: ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar (Now)"],
     hub04: [0.62, 0.64, 0.72, 0.7, 0.74, 0.82],
     otherHubs: [0.86, 0.88, 0.96, 0.98, 1.0, 1.0238],
     target: 2.1,
-    growthLabel: "Tăng trưởng ròng Hub #04: +18.4%",
-    gapLabel: "Khoảng trống doanh thu tới mục tiêu Q1: 255,000,000 đ",
+    growthLabel: "Net growth Hub #04: +18.4%",
+    gapLabel: "Revenue gap to Q1 target: 255,000,000 ₫",
   };
 }
 
 export function getRevenueMix() {
   return {
-    yield: { label: "Hiệu suất sàn (Yield/m²)", value: "390,000 đ/m²/tháng", trend: "+6.8% MoM" },
+    yield: { label: "Floor Yield (Yield/m²)", value: "390,000 ₫/m²/mo", trend: "+6.8% MoM" },
     categories: [
-      { id: "climate", label: "Kho Climate Control (Máy lạnh)", pct: 48, amount: "885 triệu đ" },
-      { id: "standard", label: "Kho Tiêu chuẩn Căn hộ", pct: 28, amount: "516 triệu đ" },
-      { id: "garage", label: "Garage Ô tô & Xe tải", pct: 18, amount: "332 triệu đ" },
-      { id: "mini", label: "Kho Mini Box (1-2m²)", pct: 6, amount: "112 triệu đ" },
+      { id: "climate", label: "Climate Controlled Units", pct: 48, amount: "885M ₫" },
+      { id: "standard", label: "Standard Apartment Storage", pct: 28, amount: "516M ₫" },
+      { id: "garage", label: "Vehicle & Truck Garage", pct: 18, amount: "332M ₫" },
+      { id: "mini", label: "Mini Box Storage (1-2m²)", pct: 6, amount: "112M ₫" },
     ],
-    recommendation: "Khuyến nghị: tăng tỷ lệ Climate Control thêm 15%",
+    recommendation: "Recommendation: increase Climate Control ratio by 15%",
   };
 }
 
 export function getFloorFilters() {
   return {
-    sizes: [{ id: "5x10", label: "5'x10' (Tiêu chuẩn)" }],
+    sizes: [{ id: "5x10", label: "5'x10' (Standard)" }],
     floors: [
-      { id: "floor1", label: "Tầng 1 (Trệt)" },
-      { id: "floor2", label: "Tầng 2 (Lửng máy lạnh)" },
+      { id: "floor1", label: "Floor 1 (Ground)" },
+      { id: "floor2", label: "Floor 2 (Climate Mezzanine)" },
     ],
   };
 }
 
 export function getFloorStatusTabs() {
   return [
-    { id: "all", label: "Tất cả" },
-    { id: "occupied", label: "Đã thuê" },
-    { id: "available", label: "Trống" },
-    { id: "alert", label: "Khóa/Nợ" },
+    { id: "all", label: "All" },
+    { id: "occupied", label: "Occupied" },
+    { id: "available", label: "Available" },
+    { id: "alert", label: "Locked/Delinquent" },
   ];
 }
 
 export function getFloorZoneLabel() {
-  return "Khu vực B - Dãy hành lang Trung tâm Hub #04";
+  return "Zone B - Central Corridor Hub #04";
 }
 
 export function getFloorUnits() {
   return [
-    { id: "B-201", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Cty Logis..." },
-    { id: "B-202", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Phạm Th..." },
-    { id: "B-203", floor: "floor2", status: "available", size: "5'x10'", price: "2.58M", occupant: "Trống" },
+    { id: "B-201", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Logis Corp..." },
+    { id: "B-202", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Pham Th..." },
+    { id: "B-203", floor: "floor2", status: "available", size: "5'x10'", price: "2.58M", occupant: "Available" },
     { id: "B-204", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Alex Mor..." },
-    { id: "B-205", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Trịnh Gia..." },
-    { id: "B-206", floor: "floor2", status: "alert", size: "5'x10'", price: "2.58M", occupant: "Khóa nợ..." },
+    { id: "B-205", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Trinh Gia..." },
+    { id: "B-206", floor: "floor2", status: "alert", size: "5'x10'", price: "2.58M", occupant: "Past due..." },
     { id: "B-207", floor: "floor2", status: "occupied", size: "10'x15'", price: "4.2M", occupant: "David Va..." },
     { id: "B-208", floor: "floor2", status: "occupied", size: "10'x15'", price: "4.2M", occupant: "Studio N..." },
-    { id: "B-209", floor: "floor2", status: "available", size: "5'x10'", price: "2.58M", occupant: "Trống" },
-    { id: "B-210", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Nguyễn..." },
-    { id: "B-211", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Cửa hàng..." },
-    { id: "B-212", floor: "floor2", status: "alert", size: "5'x10'", price: "2.58M", occupant: "Bảo trì..." },
+    { id: "B-209", floor: "floor2", status: "available", size: "5'x10'", price: "2.58M", occupant: "Available" },
+    { id: "B-210", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Nguyen..." },
+    { id: "B-211", floor: "floor2", status: "occupied", size: "5'x10'", price: "2.58M", occupant: "Storefront..." },
+    { id: "B-212", floor: "floor2", status: "alert", size: "5'x10'", price: "2.58M", occupant: "Maintenance..." },
   ];
 }
 
@@ -95,22 +95,22 @@ export function getUnitDetails() {
   return {
     "B-204": {
       unit: "B-204",
-      operationalStatus: "Đang hoạt động",
-      sizeLabel: "5'x10' Climate Controlled • Tầng 2 Khu B",
+      operationalStatus: "Active",
+      sizeLabel: "5'x10' Climate Controlled • Floor 2 Zone B",
       tenant: "Alex Morgan",
       contract: "#CTR-2024-8890",
       term: "15/06/24 - 15/06/25",
-      paidThrough: "Đã trả hết T03/25",
-      price: "2,580,000 đ / tháng",
-      sensor: "21.5°C • Độ ẩm 48%",
-      lockStatus: "ĐÓNG",
-      statusOption: "Đã cho thuê (Active Tenant)",
+      paidThrough: "Paid through Mar 2025",
+      price: "2,580,000 ₫ / month",
+      sensor: "21.5°C • 48% RH",
+      lockStatus: "LOCKED",
+      statusOption: "Rented (Active Tenant)",
     },
   };
 }
 
 export function getFloorFootnote() {
-  return { shown: "Hiển thị 12/120 kho thuộc Zone B Hub #04", breakdown: "68% Đã thuê • 24% Khả dụng • 8% Bất thường" };
+  return { shown: "Displaying 12/120 units in Zone B Hub #04", breakdown: "68% Occupied • 24% Available • 8% Alert" };
 }
 
 export function getPolicyDefaults() {
@@ -128,32 +128,32 @@ export function getVouchers() {
     {
       id: "VAULT-SUMMER50",
       status: "active",
-      statusLabel: "Đang chạy",
-      description: "Giảm 50% phí thuê tháng đầu tiên",
+      statusLabel: "Active",
+      description: "50% off first month rental",
       used: 142,
       total: 200,
-      note: "Hết hạn: 31/07/2025",
-      actionLabel: "Tạm dừng",
+      note: "Expires: Jul 31, 2025",
+      actionLabel: "Pause",
     },
     {
       id: "BIZ-YEARLY20",
       status: "active",
-      statusLabel: "Đang chạy",
-      description: "Giảm 20% cho hợp đồng doanh nghiệp 1 năm",
+      statusLabel: "Active",
+      description: "20% off 1-year corporate contracts",
       used: 28,
       total: null,
-      note: "Khách B2B thanh toán trước",
-      actionLabel: "Chi tiết",
+      note: "Prepaid B2B clients",
+      actionLabel: "Details",
     },
     {
       id: "EARLYBIRD-HUB04",
       status: "hub_only",
-      statusLabel: "Riêng Hub #04",
-      description: "Tặng 1 tháng miễn phí khi ký 6 tháng",
+      statusLabel: "Hub #04 Only",
+      description: "1 free month when signing 6 months",
       used: 18,
       total: 50,
-      note: "Khai trương phân khu B",
-      actionLabel: "Sửa quy tắc",
+      note: "Zone B grand opening",
+      actionLabel: "Edit Rules",
     },
   ];
 }

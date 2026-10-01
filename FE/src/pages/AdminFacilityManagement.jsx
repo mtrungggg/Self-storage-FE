@@ -97,17 +97,17 @@ function AdminFacilityManagement() {
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex items-center justify-between">
-          <div className="text-[12px] font-bold">Bộ lọc thuộc tính kho</div>
+          <div className="text-[12px] font-bold">Storage Filter Attributes</div>
           <button onClick={resetFilters} className="flex items-center gap-1 text-[10px] font-bold text-[#1d5fe5]">
             <span className="material-symbols-outlined text-[13px]">filter_alt_off</span>
-            Xóa tất cả bộ lọc
+            Clear all filters
           </button>
         </div>
         <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Dropdown label="Tầng cơ sở" value={filters.floor} onChange={(v) => updateFilter("floor", v)} options={filterOptions.floors} />
-          <Dropdown label="Phân khu chức năng" value={filters.zone} onChange={(v) => updateFilter("zone", v)} options={filterOptions.zones} />
-          <Dropdown label="Kích thước quy chuẩn" value={filters.size} onChange={(v) => updateFilter("size", v)} options={filterOptions.sizes} />
-          <Dropdown label="Tình trạng vận hành" value={filters.status} onChange={(v) => updateFilter("status", v)} options={filterOptions.statuses} />
+          <Dropdown label="Facility Floor" value={filters.floor} onChange={(v) => updateFilter("floor", v)} options={filterOptions.floors} />
+          <Dropdown label="Facility Zone" value={filters.zone} onChange={(v) => updateFilter("zone", v)} options={filterOptions.zones} />
+          <Dropdown label="Standard Size" value={filters.size} onChange={(v) => updateFilter("size", v)} options={filterOptions.sizes} />
+          <Dropdown label="Operational Status" value={filters.status} onChange={(v) => updateFilter("status", v)} options={filterOptions.statuses} />
         </div>
       </div>
 
@@ -115,9 +115,9 @@ function AdminFacilityManagement() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-bold">Danh sách Căn kho chi tiết</span>
+              <span className="text-[13px] font-bold">Detailed Unit Inventory</span>
               <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">
-                {filteredUnits.length} bản ghi
+                {filteredUnits.length} records
               </span>
             </div>
             <div className="flex items-center gap-2 text-[#8996a9]">
@@ -130,12 +130,12 @@ function AdminFacilityManagement() {
             <table className="w-full min-w-[680px] text-left text-[11px]">
               <thead>
                 <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                  <th className="py-2 pr-2">Mã kho</th>
-                  <th className="py-2 pr-2">Loại & Kích thước</th>
-                  <th className="py-2 pr-2">Tầng / Phân khu</th>
-                  <th className="py-2 pr-2">Khách thuê / Trạng thái</th>
-                  <th className="py-2 pr-2">Giá niêm yết</th>
-                  <th className="py-2 pr-2">IoT vi khí hậu</th>
+                  <th className="py-2 pr-2">Unit Code</th>
+                  <th className="py-2 pr-2">Type &amp; Dimensions</th>
+                  <th className="py-2 pr-2">Floor / Zone</th>
+                  <th className="py-2 pr-2">Tenant / Status</th>
+                  <th className="py-2 pr-2">Listed Rate</th>
+                  <th className="py-2 pr-2">IoT Climate</th>
                 </tr>
               </thead>
               <tbody>
@@ -172,7 +172,7 @@ function AdminFacilityManagement() {
                 {filteredUnits.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-[11px] text-[#8996a9]">
-                      Không có kho nào phù hợp bộ lọc.
+                      No storage units match the selected filters.
                     </td>
                   </tr>
                 )}
@@ -181,7 +181,7 @@ function AdminFacilityManagement() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
-            <span>Hiển thị 1-{filteredUnits.length} trên {totalUnits} kho</span>
+            <span>Showing 1-{filteredUnits.length} of {totalUnits} units</span>
             <div className="flex items-center gap-1 font-semibold">
               <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">
                 <span className="material-symbols-outlined text-[13px]">chevron_left</span>
@@ -199,7 +199,7 @@ function AdminFacilityManagement() {
         {selectedUnit ? (
           <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c]">{selectedUnit.statusLabel}</span>
-            <div className="mt-1 text-[15px] font-bold">Căn kho #{selectedUnit.unit}</div>
+            <div className="mt-1 text-[15px] font-bold">Unit {selectedUnit.unit}</div>
             <div className="text-[10px] text-[#8996a9]">{selectedUnit.locationLabel}</div>
 
             <div className="mt-2 flex h-24 items-center justify-center rounded-[10px] bg-[#0b1c30] text-[9px] font-semibold text-white/70">
@@ -212,31 +212,31 @@ function AdminFacilityManagement() {
                 <span className="rounded-full bg-[#e7f8ee] px-1.5 py-0.5 text-[9px] font-bold text-[#0e7b4c]">{selectedUnit.lock.status}</span>
               </div>
               <div className="mt-1 flex flex-wrap gap-x-3 text-[9px] text-[#58657a]">
-                <span>Pin {selectedUnit.lock.battery}</span>
+                <span>Battery {selectedUnit.lock.battery}</span>
                 <span>Zigbee {selectedUnit.lock.signal}</span>
                 <span>FW {selectedUnit.lock.firmware}</span>
               </div>
               <div className="mt-2 flex gap-2">
-                <button className="flex-1 rounded-[8px] bg-[#1d5fe5] py-1.5 text-[10px] font-bold text-white">Mở khóa từ xa</button>
-                <button className="flex-1 rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Cấp mã OTP</button>
+                <button className="flex-1 rounded-[8px] bg-[#1d5fe5] py-1.5 text-[10px] font-bold text-white">Remote Unlock</button>
+                <button className="flex-1 rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Generate OTP</button>
               </div>
             </div>
 
             <div className="mt-2 rounded-[10px] border border-[#eef1f8] p-2.5">
               <div className="flex items-center justify-between text-[11px] font-bold">
-                Điều hòa vi khí hậu ({selectedUnit.climate.unit})
-                <span className="text-[9px] font-semibold text-[#8996a9]">Mục tiêu: {selectedUnit.climate.target}</span>
+                Climate Control ({selectedUnit.climate.unit})
+                <span className="text-[9px] font-semibold text-[#8996a9]">Target: {selectedUnit.climate.target}</span>
               </div>
               <div className="mt-1 flex gap-x-3 text-[9px] text-[#58657a]">
-                <span>Nhiệt độ {selectedUnit.climate.temp}</span>
-                <span>Độ ẩm {selectedUnit.climate.humidity}</span>
+                <span>Temp {selectedUnit.climate.temp}</span>
+                <span>Humidity {selectedUnit.climate.humidity}</span>
               </div>
               <div className="mt-1 text-[9px] text-[#0e7b4c]">{selectedUnit.climate.note}</div>
             </div>
 
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">Lịch sử mở khóa gần nhất</span>
-              <span className="text-[10px] font-bold text-[#1d5fe5]">Xem toàn bộ</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">Recent Access Log</span>
+              <span className="text-[10px] font-bold text-[#1d5fe5]">View All</span>
             </div>
             <div className="mt-1.5 space-y-1.5">
               {selectedUnit.accessLog.map((log) => (
@@ -251,13 +251,13 @@ function AdminFacilityManagement() {
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Chỉnh sửa thông số</button>
-              <button className="rounded-[8px] bg-[#0b1c30] py-1.5 text-[10px] font-bold text-white">Hợp đồng</button>
+              <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Edit Parameters</button>
+              <button className="rounded-[8px] bg-[#0b1c30] py-1.5 text-[10px] font-bold text-white">Contract</button>
             </div>
           </div>
         ) : (
           <div className="rounded-[16px] border border-dashed border-[#dfe7f5] bg-white p-6 text-center text-[11px] text-[#8996a9]">
-            Chọn một kho trong danh sách để xem chi tiết.
+            Select a unit from the list to view details.
           </div>
         )}
       </div>

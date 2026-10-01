@@ -89,13 +89,13 @@ function AdminOperationsOverview() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div className="text-[14px] font-bold">Xu hướng Doanh thu MRR 6 tháng</div>
-              <p className="text-[10px] text-[#8996a9]">So sánh Hub #04 với các Hub khác so với mục tiêu {revenueTrend.target}B</p>
+              <div className="text-[14px] font-bold">6-Month MRR Revenue Trend</div>
+              <p className="text-[10px] text-[#8996a9]">Compare Hub #04 with other Hubs vs {revenueTrend.target}B target</p>
             </div>
             <div className="flex items-center gap-3 text-[10px] font-semibold">
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-[3px] bg-[#1d5fe5]" /> Hub #04</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-[3px] bg-[#c7d1e6]" /> Hub khác</span>
-              <span className="flex items-center gap-1"><span className="h-0.5 w-3 border-t-2 border-dashed border-[#8996a9]" /> Mục tiêu</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-[3px] bg-[#c7d1e6]" /> Other Hubs</span>
+              <span className="flex items-center gap-1"><span className="h-0.5 w-3 border-t-2 border-dashed border-[#8996a9]" /> Target</span>
             </div>
           </div>
 
@@ -132,8 +132,8 @@ function AdminOperationsOverview() {
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-          <div className="text-[14px] font-bold">Cơ cấu Doanh thu theo loại kho</div>
-          <p className="text-[10px] text-[#8996a9]">Hiệu suất khai thác từng danh mục</p>
+          <div className="text-[14px] font-bold">Revenue Mix by Storage Category</div>
+          <p className="text-[10px] text-[#8996a9]">Yield performance across unit types</p>
 
           <div className="mt-3 rounded-[10px] bg-[#effcf6] p-3">
             <div className="text-[9px] font-bold uppercase tracking-[0.05em] text-[#0e7b4c]">{revenueMix.yield.label}</div>
@@ -165,7 +165,7 @@ function AdminOperationsOverview() {
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[14px] font-bold">Sơ đồ Mặt bằng Kho & Điều phối thời gian thực</div>
+          <div className="text-[14px] font-bold">Facility Floor Map &amp; Real-time Dispatch</div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[10px] font-semibold text-[#58657a]">
               {floorFilters.sizes[0].label}
@@ -205,7 +205,7 @@ function AdminOperationsOverview() {
         <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
           {filteredUnits.length === 0 ? (
             <div className="rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-              Không có kho nào phù hợp bộ lọc.
+              No units match the selected filters.
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -228,7 +228,7 @@ function AdminOperationsOverview() {
           {selectedUnit ? (
             <div className="rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-3.5">
               <div className="flex items-center justify-between">
-                <div className="text-[13px] font-bold">Kho #{selectedUnit.unit}</div>
+                <div className="text-[13px] font-bold">Unit {selectedUnit.unit}</div>
                 <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c]">
                   {selectedUnit.operationalStatus}
                 </span>
@@ -236,20 +236,20 @@ function AdminOperationsOverview() {
               <div className="text-[10px] text-[#8996a9]">{selectedUnit.sizeLabel}</div>
 
               <div className="mt-2 border-t border-[#eef1f8] pt-2 text-[10px] text-[#3a475a]">
-                <div className="font-bold uppercase tracking-[0.04em] text-[#8996a9]">Khách hàng đang thuê</div>
+                <div className="font-bold uppercase tracking-[0.04em] text-[#8996a9]">Current Tenant</div>
                 <div className="mt-1 font-semibold">{selectedUnit.tenant} • {selectedUnit.contract}</div>
                 <div className="mt-1 flex items-center justify-between">
-                  <span className="text-[#8996a9]">Kỳ hạn</span>
+                  <span className="text-[#8996a9]">Term</span>
                   <span className="font-semibold">{selectedUnit.term}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#8996a9]">Tình trạng thu</span>
+                  <span className="text-[#8996a9]">Billing Status</span>
                   <span className="font-semibold text-[#0e7b4c]">{selectedUnit.paidThrough}</span>
                 </div>
               </div>
 
               <div className="mt-2 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[11px]">
-                <span className="text-[#8996a9]">Giá thuê niêm yết</span>
+                <span className="text-[#8996a9]">Listed Rate</span>
                 <span className="font-bold">{selectedUnit.price}</span>
               </div>
               <div className="mt-1 flex items-center justify-between text-[10px] text-[#3a475a]">
@@ -266,12 +266,12 @@ function AdminOperationsOverview() {
 
               <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white">
                 <span className="material-symbols-outlined text-[14px]">group_add</span>
-                Gán kho cho khách hàng mới
+                Assign Unit to New Customer
               </button>
             </div>
           ) : (
             <div className="rounded-[12px] border border-dashed border-[#dfe7f5] p-4 text-center text-[10px] text-[#8996a9]">
-              Chọn một kho để xem chi tiết.
+              Select a unit to view details.
             </div>
           )}
         </div>
@@ -284,26 +284,26 @@ function AdminOperationsOverview() {
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[14px] font-bold">Cấu hình Chính sách, Tiền cọc & Mã khuyến mãi</div>
+          <div className="text-[14px] font-bold">Policy Configuration, Security Deposit &amp; Promotions</div>
           <div className="flex gap-2">
             <button className="rounded-[8px] border border-[#dfe7f5] px-3 py-1.5 text-[10px] font-semibold text-[#3a475a]">
-              Khôi phục mặc định
+              Reset to Default
             </button>
-            <button className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">Lưu thay đổi</button>
+            <button className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">Save Changes</button>
           </div>
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Tiền cọc an ninh</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Mức ký quỹ đảm bảo tài sản & khóa thông minh</p>
+            <div className="text-[11px] font-bold">Security Deposit</div>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">Escrow deposit protecting assets and smart lock hardware</p>
             <div className="mt-2 flex items-center gap-1.5">
               <input
                 value={policy.depositPercent}
                 onChange={(event) => updatePolicy("depositPercent", event.target.value)}
                 className="w-16 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px] font-semibold"
               />
-              <span className="text-[10px] text-[#8996a9]">% giá thuê 1 tháng</span>
+              <span className="text-[10px] text-[#8996a9]">% of 1 month rental</span>
             </div>
             <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
@@ -312,20 +312,20 @@ function AdminOperationsOverview() {
                 onChange={(event) => updatePolicy("exemptB2B", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Miễn cọc cho hợp đồng B2B thanh toán trước ≥ 12 tháng
+              Exempt deposit for B2B contracts prepaid ≥ 12 months
             </label>
           </div>
 
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Phí phạt trễ hạn & khóa số</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Chế tài tự động với tài khoản nợ quá hạn</p>
+            <div className="text-[11px] font-bold">Late Penalty &amp; Lockout</div>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automated enforcement on delinquent accounts</p>
             <div className="mt-2 flex items-center gap-1.5">
               <input
                 value={policy.penaltyPercent}
                 onChange={(event) => updatePolicy("penaltyPercent", event.target.value)}
                 className="w-16 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px] font-semibold"
               />
-              <span className="text-[10px] text-[#8996a9]">% sau 5 ngày quá hạn</span>
+              <span className="text-[10px] text-[#8996a9]">% after 5 days past due</span>
             </div>
             <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
@@ -334,13 +334,13 @@ function AdminOperationsOverview() {
                 onChange={(event) => updatePolicy("autoLockEnabled", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Tự động khóa PIN & Latch nếu quá hạn 7 ngày
+              Auto-lock PIN &amp; Latch after 7 days past due
             </label>
           </div>
 
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Chính sách hủy & hoàn cọc</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Quy định hoàn trả khi khách đặt giữ chỗ trước</p>
+            <div className="text-[11px] font-bold">Cancellation &amp; Refund Policy</div>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">Refund rules when customer books reservation in advance</p>
             <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
                 type="radio"
@@ -349,7 +349,7 @@ function AdminOperationsOverview() {
                 onChange={() => updatePolicy("cancellationPolicy", "flexible")}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Hủy linh hoạt (&gt;48h): hoàn 100% cọc giữ chỗ
+              Flexible cancellation (&gt;48h): 100% hold fee refund
             </label>
             <label className="mt-1.5 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
@@ -359,7 +359,7 @@ function AdminOperationsOverview() {
                 onChange={() => updatePolicy("cancellationPolicy", "late")}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Hủy muộn (&lt;48h): thu 20% tiền đặt cọc
+              Late cancellation (&lt;48h): forfeit 20% deposit
             </label>
           </div>
         </div>
@@ -367,10 +367,10 @@ function AdminOperationsOverview() {
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[14px] font-bold">Quản lý Mã Giảm giá & Voucher</div>
+          <div className="text-[14px] font-bold">Manage Coupons &amp; Vouchers</div>
           <button className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">
             <span className="material-symbols-outlined text-[14px]">add</span>
-            Thêm mã khuyến mãi
+            Add Promo Code
           </button>
         </div>
 
@@ -393,10 +393,10 @@ function AdminOperationsOverview() {
                       style={{ width: `${(voucher.used / voucher.total) * 100}%` }}
                     />
                   </div>
-                  <div className="mt-1 text-[9px] text-[#8996a9]">{voucher.used}/{voucher.total} lượt sử dụng</div>
+                  <div className="mt-1 text-[9px] text-[#8996a9]">{voucher.used}/{voucher.total} redemptions</div>
                 </>
               ) : (
-                <div className="mt-2 text-[9px] text-[#8996a9]">{voucher.used} lượt sử dụng (không giới hạn)</div>
+                <div className="mt-2 text-[9px] text-[#8996a9]">{voucher.used} redemptions (unlimited)</div>
               )}
 
               <div className="mt-1 flex items-center justify-between text-[9px]">

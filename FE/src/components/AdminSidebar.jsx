@@ -16,7 +16,7 @@ function AdminSidebar({ navGroups, activeId, footer, sectionBadge, networkStatus
 
       <div className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-semibold text-[#0e7b4c]">
         <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-        Hệ thống Sẵn sàng
+        System Ready
         <span className="ml-auto text-[9px] text-[#8996a9]">{footer.version}</span>
       </div>
 

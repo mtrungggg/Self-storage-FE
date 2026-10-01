@@ -4,17 +4,17 @@ import pricingService from "../api/pricingService";
 import reservationService from "../api/reservationService";
 import paymentService from "../api/paymentService";
 
-const WEEKDAYS_VI = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function toISODate(date) {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
-function formatDateVN(date) {
-  return `${WEEKDAYS_VI[date.getDay()]}, ${String(date.getDate()).padStart(2, "0")}/${String(
-    date.getMonth() + 1
-  ).padStart(2, "0")}/${date.getFullYear()}`;
+function formatDateCompact(date) {
+  const dayStr = String(date.getDate()).padStart(2, "0");
+  const monthStr = String(date.getMonth() + 1).padStart(2, "0");
+  return `${WEEKDAYS_SHORT[date.getDay()]}, ${monthStr}/${dayStr}/${date.getFullYear()}`;
 }
 
 function addDays(date, days) {
@@ -25,7 +25,8 @@ function addDays(date, days) {
 
 function nextFriday(base) {
   const day = base.getDay();
-  const diff = (5 - day + 7) % 7 || 7;
+  let diff = (5 - day + 7) % 7 || 7;
+  if (diff <= 1) diff += 7;
   return addDays(base, diff);
 }
 
@@ -44,22 +45,22 @@ export function useStorageDetail() {
       unitTypeId: 1,
       unitCode: "A-102",
       facilityName: "Thu Duc Self Storage",
-      address: "01 Võ Văn Ngân, TP. Thủ Đức, TP. Hồ Chí Minh",
-      floor: "Tầng 1 • Khu A",
+      address: "01 Vo Van Ngan, Thu Duc City, HCMC",
+      floor: "Floor 1 • Zone A",
       dimension: "1.5m x 2.0m",
       sizeLabel: "1.5m x 2.0m",
       volume: "8.4 m³",
       height: "2.8m",
       areaM2: 3.0,
-      typeName: "Kho Tiêu Chuẩn 3 m²",
-      fitNote: "Phù hợp chứa 20-30 thùng carton, đồ gia dụng nhỏ, xe máy, tài liệu.",
+      typeName: "Standard Unit 3 m²",
+      fitNote: "Fits 20-30 boxes, small appliances, motorcycle, files.",
       rentPrice: 2000,
       depositPrice: 2000,
       policies: [
-        "Hủy miễn phí trước 24h",
-        "Khóa điện tử bảo mật 24/7",
-        "Tiền cọc hoàn trả 100% khi thanh lý hợp đồng",
-        "Cam kết không phát sinh phụ phí",
+        "Free cancellation within 24h",
+        "Keyless 24/7 digital access",
+        "100% refundable security deposit",
+        "No hidden fees guarantee",
       ],
       image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
     };
@@ -72,6 +73,14 @@ export function useStorageDetail() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [agreeLock, setAgreeLock] = useState(true);
 
+  // 15-minute hold countdown (starts when page mounts)
+  const [holdCountdown, setHoldCountdown] = useState(15 * 60);
+  useEffect(() => {
+    if (holdCountdown <= 0) return;
+    const id = setInterval(() => setHoldCountdown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [holdCountdown]);
+
   // Move-in date calculation
   const today = useMemo(() => new Date(new Date().setHours(0, 0, 0, 0)), []);
   const tomorrow = useMemo(() => addDays(today, 1), [today]);
@@ -81,10 +90,10 @@ export function useStorageDetail() {
 
   const moveInOptions = useMemo(
     () => [
-      { id: "today", label: `Hôm nay (${formatDateVN(today)})` },
-      { id: "tomorrow", label: `Ngày mai (${formatDateVN(tomorrow)})` },
-      { id: "fri", label: formatDateVN(friday) },
-      { id: "custom", label: "Chọn ngày khác" },
+      { id: "today", label: `Today (${formatDateCompact(today)})` },
+      { id: "tomorrow", label: `Tomorrow (${formatDateCompact(tomorrow)})` },
+      { id: "fri", label: formatDateCompact(friday) },
+      { id: "custom", label: "Custom Date" },
     ],
     [today, tomorrow, friday]
   );
@@ -100,6 +109,10 @@ export function useStorageDetail() {
   }, [moveInOption, today, tomorrow, friday, customDate]);
 
   const isCustomDateInvalid = moveInOption === "custom" && (!customDate || customDate < minCustomDateISO);
+
+  // Derived display values
+  const holdCountdownStr = `${String(Math.floor(holdCountdown / 60)).padStart(2, "0")}:${String(holdCountdown % 60).padStart(2, "0")}`;
+  const resolvedStartDateLabel = formatDateCompact(resolvedStartDate);
 
   // Real pricing quote from the backend
   const [pricing, setPricing] = useState(null);
@@ -168,7 +181,7 @@ export function useStorageDetail() {
         paymentMethod: "vietqr",
       });
       setBooking({ reservation, checkout });
-      navigate("/billing", { state: { checkout, reservation } });
+      navigate("/checkout", { state: { checkout, reservation } });
       return { reservation, checkout };
     } catch (err) {
       if (err?.status === 409) {
@@ -194,6 +207,8 @@ export function useStorageDetail() {
     minCustomDateISO,
     isCustomDateInvalid,
     resolvedStartDate,
+    resolvedStartDateLabel,
+    holdCountdownStr,
     durationMonths,
     setDurationMonths,
     voucherInput,

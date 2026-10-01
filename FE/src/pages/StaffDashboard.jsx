@@ -1,4 +1,5 @@
 import { useStaffDashboard } from "../hooks/useStaffDashboard";
+import PageBackground from "../components/PageBackground";
 
 const STATUS_STYLES = {
   available: "border-[#2dd4a0] bg-[#effcf6]",
@@ -33,7 +34,8 @@ function StaffDashboard() {
   } = useStaffDashboard();
 
   return (
-    <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
+    <div className="relative min-h-screen text-[#0b1c30]">
+      <PageBackground />
       <header className="border-b border-[#e6ebf5] bg-white">
         <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex items-center gap-2">
@@ -67,7 +69,7 @@ function StaffDashboard() {
             <span className="hidden text-[11px] font-semibold tabular-nums text-[#8996a9] md:block">{currentTime}</span>
             <button className="hidden items-center gap-1.5 rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[11px] font-bold text-white md:flex">
               <span className="material-symbols-outlined text-[14px]">sync_alt</span>
-              Bàn giao ca
+              Shift Handover
             </button>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
@@ -99,7 +101,7 @@ function StaffDashboard() {
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
           <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-[14px] font-bold">Sơ đồ mặt bằng</div>
+              <div className="text-[14px] font-bold">Floor Map</div>
               <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
                 {floors.map((floor) => (
                   <button
@@ -140,7 +142,7 @@ function StaffDashboard() {
 
             {filteredUnits.length === 0 ? (
               <div className="mt-3 rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-                Không có khoang nào ở khu vực này.
+                No units in this zone.
               </div>
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -157,10 +159,10 @@ function StaffDashboard() {
 
           <div className="rounded-[16px] border border-[#f5a524]/40 bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <div className="flex items-center justify-between">
-              <span className="rounded-full bg-[#fff2d8] px-2 py-0.5 text-[9px] font-bold text-[#a15c00]">Chờ bàn giao</span>
+              <span className="rounded-full bg-[#fff2d8] px-2 py-0.5 text-[9px] font-bold text-[#a15c00]">Pending Handover</span>
               <span className="text-[10px] font-semibold text-[#8996a9]">{handover.code}</span>
             </div>
-            <div className="mt-2 text-[15px] font-bold">Kho #{handover.unit}</div>
+            <div className="mt-2 text-[15px] font-bold">Unit {handover.unit}</div>
 
             <div className="mt-2 flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
@@ -174,19 +176,19 @@ function StaffDashboard() {
 
             <div className="mt-3 space-y-1.5 text-[11px] text-[#3a475a]">
               <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Kích thước</span>
+                <span className="text-[#8996a9]">Dimensions</span>
                 <span className="font-semibold">{handover.size}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Cọc & Thanh toán</span>
+                <span className="text-[#8996a9]">Deposit &amp; Payment</span>
                 <span className="font-semibold">{handover.deposit} · {handover.payment}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Mã PIN kích hoạt</span>
+                <span className="text-[#8996a9]">Activation PIN</span>
                 <span className="font-semibold">{handover.pin}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Pin khóa cửa</span>
+                <span className="text-[#8996a9]">Lock Battery</span>
                 <span className="font-semibold">{handover.battery}</span>
               </div>
             </div>
@@ -208,15 +210,15 @@ function StaffDashboard() {
             <div className="mt-3 space-y-2">
               <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white">
                 <span className="material-symbols-outlined text-[14px]">nfc</span>
-                Cấp thẻ NFC & Gửi OTP
+                Issue NFC Card &amp; Send OTP
               </button>
               <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#0e7b4c] py-2 text-[11px] font-bold text-white">
                 <span className="material-symbols-outlined text-[14px]">task_alt</span>
-                Xác nhận bàn giao & Ký nhận
+                Confirm Handover &amp; Sign Off
               </button>
               <div className="grid grid-cols-2 gap-2">
-                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Báo sự cố</button>
-                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Lưu tạm</button>
+                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Report Issue</button>
+                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Save Draft</button>
               </div>
             </div>
 
@@ -226,7 +228,7 @@ function StaffDashboard() {
 
         <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-[14px] font-bold">Lịch trình tiếp nhận & trả kho</div>
+            <div className="text-[14px] font-bold">Move-in &amp; Move-out Schedule</div>
             <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
               {scheduleTabs.map((tab) => (
                 <button
@@ -265,7 +267,7 @@ function StaffDashboard() {
             ))}
             {filteredSchedule.length === 0 && (
               <div className="rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-                Không có tác vụ nào trong mục này.
+                No schedule tasks in this category.
               </div>
             )}
           </div>
@@ -276,4 +278,3 @@ function StaffDashboard() {
 }
 
 export default StaffDashboard;
-

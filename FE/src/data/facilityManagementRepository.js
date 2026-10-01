@@ -1,56 +1,56 @@
 // Data layer: content source for the Admin Facility & Unit Management page.
 export function getStatusBanner() {
-  return { label: "Hạ tầng kho thực tế", detail: "Mesh Gateway hoạt động" };
+  return { label: "Physical Facility Infrastructure", detail: "Mesh Gateway Online" };
 }
 
 export function getOverviewHeader() {
-  return { title: "Quản trị Căn kho & Mặt bằng Hub #04 Metro" };
+  return { title: "Unit & Facility Floor Management Hub #04 Metro" };
 }
 
 export function getHeaderActions() {
   return [
-    { id: "map", icon: "map", label: "Bản đồ số 2D/3D" },
-    { id: "import", icon: "upload_file", label: "Nhập Excel" },
-    { id: "new_unit", icon: "add", label: "Thêm căn kho mới" },
+    { id: "map", icon: "map", label: "2D/3D Digital Map" },
+    { id: "import", icon: "upload_file", label: "Import Excel" },
+    { id: "new_unit", icon: "add", label: "Add New Unit" },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "total", icon: "warehouse", label: "Tổng số kho Hub #04", value: "120", sub: "Diện tích: 4.850 m²" },
-    { id: "occupied", icon: "check_circle", label: "Đang cho thuê", value: "92", trend: "76.7%", sub: "" },
-    { id: "available", icon: "lock_open", label: "Sẵn sàng đón khách", value: "18", sub: "Đang niêm yết cho thuê" },
-    { id: "pending", icon: "assignment", label: "Chờ bàn giao", value: "6", sub: "Check-in trong 48h tới" },
-    { id: "maintenance", icon: "warning", label: "Bảo trì / Cần khắc phục", value: "4", sub: "Pin Latch yếu • Cảm biến lỗi", alert: true },
+    { id: "total", icon: "warehouse", label: "Total Units Hub #04", value: "120", sub: "Floor Area: 4,850 m²" },
+    { id: "occupied", icon: "check_circle", label: "Occupied Units", value: "92", trend: "76.7%", sub: "" },
+    { id: "available", icon: "lock_open", label: "Ready for Move-in", value: "18", sub: "Currently listed" },
+    { id: "pending", icon: "assignment", label: "Pending Handover", value: "6", sub: "Check-in within 48h" },
+    { id: "maintenance", icon: "warning", label: "Maintenance / Alert", value: "4", sub: "Low Latch battery • Sensor error", alert: true },
   ];
 }
 
 export function getFilters() {
   return {
     floors: [
-      { id: "all", label: "Tất cả các tầng (G & M)" },
-      { id: "floor1", label: "Tầng 1 (Trệt)" },
-      { id: "floor2", label: "Tầng 2 (Lửng)" },
+      { id: "all", label: "All Floors (G & M)" },
+      { id: "floor1", label: "Floor 1 (Ground)" },
+      { id: "floor2", label: "Floor 2 (Mezzanine)" },
     ],
     zones: [
-      { id: "all", label: "Tất cả phân khu (A, B, C, D)" },
-      { id: "A", label: "Khu A - Tiêu chuẩn" },
-      { id: "B", label: "Khu B - Máy lạnh" },
-      { id: "C", label: "Khu C - Mini Box" },
-      { id: "D", label: "Khu D - Garage & Drive-up" },
+      { id: "all", label: "All Zones (A, B, C, D)" },
+      { id: "A", label: "Zone A - Standard" },
+      { id: "B", label: "Zone B - Climate Controlled" },
+      { id: "C", label: "Zone C - Mini Box" },
+      { id: "D", label: "Zone D - Garage & Drive-up" },
     ],
     sizes: [
-      { id: "all", label: "Tất cả kích cỡ" },
+      { id: "all", label: "All Sizes" },
       { id: "small", label: "5'x5' - 5'x10'" },
       { id: "medium", label: "10'x15' - 10'x20'" },
       { id: "large", label: "10'x30'" },
     ],
     statuses: [
-      { id: "all", label: "Tất cả tình trạng (120)" },
-      { id: "occupied", label: "Đang cho thuê" },
-      { id: "available", label: "Đang trống" },
-      { id: "pending", label: "Chờ bàn giao" },
-      { id: "alert", label: "Cảnh báo kỹ thuật" },
+      { id: "all", label: "All Statuses (120)" },
+      { id: "occupied", label: "Occupied" },
+      { id: "available", label: "Available" },
+      { id: "pending", label: "Pending Handover" },
+      { id: "alert", label: "Technical Alert" },
     ],
   };
 }
@@ -63,12 +63,12 @@ export function getUnits() {
       zone: "B",
       size: "medium",
       sizeLabel: "10'x15' (14m²)",
-      locationLabel: "Tầng 2 (Lửng) • Khu B - Điều hòa",
-      tenant: "Công ty TNHH LogicTech VN",
-      contract: "HĐ: HD-2023-9941",
+      locationLabel: "Floor 2 (Mezzanine) • Zone B - Climate",
+      tenant: "LogicTech Vietnam LLC",
+      contract: "Contract: #HD-2023-9941",
       status: "occupied",
       statusNote: null,
-      price: "3,450,000 đ/tháng",
+      price: "3,450,000 ₫/month",
       sensor: "21.4°C • 52%",
     },
     {
@@ -77,12 +77,12 @@ export function getUnits() {
       zone: "A",
       size: "small",
       sizeLabel: "5'x10' (4.6m²)",
-      locationLabel: "Tầng 1 (Trệt) • Khu A - Tiêu chuẩn",
+      locationLabel: "Floor 1 (Ground) • Zone A - Standard",
       tenant: null,
       contract: null,
       status: "available",
-      statusNote: "Đang trống • Sẵn sàng đón khách",
-      price: "1,250,000 đ/tháng",
+      statusNote: "Vacant • Ready for move-in",
+      price: "1,250,000 ₫/month",
       sensor: "28.1°C • 58%",
     },
     {
@@ -91,12 +91,12 @@ export function getUnits() {
       zone: "C",
       size: "small",
       sizeLabel: "5'x5' (2.3m²)",
-      locationLabel: "Tầng 1 (Trệt) • Khu C - Mini Box",
-      tenant: "Bà Nguyễn Mai Anh",
-      contract: "HĐ: HD-2024-0112",
+      locationLabel: "Floor 1 (Ground) • Zone C - Mini Box",
+      tenant: "Ms. Nguyen Mai Anh",
+      contract: "Contract: #HD-2024-0112",
       status: "occupied",
       statusNote: null,
-      price: "750,000 đ/tháng",
+      price: "750,000 ₫/month",
       sensor: "26.0°C • 60%",
     },
     {
@@ -105,12 +105,12 @@ export function getUnits() {
       zone: "D",
       size: "large",
       sizeLabel: "10'x30' (28m²)",
-      locationLabel: "Tầng 1 (Trệt) • Khu D - Garage & Kho hàng lớn",
-      tenant: "Chuỗi Nhà hàng RedSun",
+      locationLabel: "Floor 1 (Ground) • Zone D - Garage & Large Cargo",
+      tenant: "RedSun Restaurant Group",
       contract: null,
       status: "alert",
-      statusNote: "Cảnh báo: Pin khóa <12%",
-      price: "6,200,000 đ/tháng",
+      statusNote: "Alert: Battery < 12%",
+      price: "6,200,000 ₫/month",
       sensor: "31.5°C • 69%",
     },
     {
@@ -119,12 +119,12 @@ export function getUnits() {
       zone: "B",
       size: "medium",
       sizeLabel: "10'x20' (18.5m²)",
-      locationLabel: "Tầng 1 (Trệt) • Khu B - Mặt bằng thương phẩm",
-      tenant: "Dược phẩm Minh Châu",
+      locationLabel: "Floor 1 (Ground) • Zone B - Commercial Retail",
+      tenant: "Minh Chau Pharma",
       contract: null,
       status: "pending",
-      statusNote: "Nhận bàn giao: 08:30 ngày mai",
-      price: "4,900,000 đ/tháng",
+      statusNote: "Move-in schedule: 08:30 Tomorrow",
+      price: "4,900,000 ₫/month",
       sensor: "22.0°C • 50%",
     },
   ];
@@ -134,15 +134,15 @@ export function getUnitDetails() {
   return {
     "B-204": {
       unit: "B-204",
-      statusLabel: "Đang thuê",
-      locationLabel: "Khu B Máy lạnh • Tầng 2 Lửng • Cửa cuốn tự động",
-      camera: "Camera góc hành lang Hub04-Cam-14",
-      lock: { name: "Latch BLE Pro", status: "Đang hoạt động", battery: "92%", signal: "-58dBm", firmware: "v2.1.4" },
-      climate: { unit: "AHU-02", target: "22°C", temp: "21.4°C", humidity: "52% RH", note: "Bộ lọc HEPA đã kiểm tra 12 ngày trước • Đạt chuẩn" },
+      statusLabel: "Occupied",
+      locationLabel: "Zone B Climate • Floor 2 Mezzanine • Automatic Shutter",
+      camera: "Corridor Camera Hub04-Cam-14",
+      lock: { name: "Latch BLE Pro", status: "Operational", battery: "92%", signal: "-58dBm", firmware: "v2.1.4" },
+      climate: { unit: "AHU-02", target: "22°C", temp: "21.4°C", humidity: "52% RH", note: "HEPA filter inspected 12 days ago • Passed" },
       accessLog: [
-        { name: "Lê Quốc Tuấn", role: "Kỹ thuật viên", method: "Thẻ BLE Master #TL-88", time: "14:22 Hôm nay" },
-        { name: "Nguyễn Văn Đạt", role: "Đại diện LogicTech", method: "VaultSpace Mobile App", time: "09:16 Hôm nay" },
-        { name: "Mã PIN một lần (OTP giao hàng)", role: "GrabExpress Pro", method: "OTP", time: "16:40 Hôm qua" },
+        { name: "Le Quoc Tuan", role: "Technician", method: "BLE Master Card #TL-88", time: "14:22 Today" },
+        { name: "Nguyen Van Dat", role: "LogicTech Rep", method: "VaultSpace Mobile App", time: "09:16 Today" },
+        { name: "One-Time Delivery PIN", role: "GrabExpress Pro", method: "OTP", time: "16:40 Yesterday" },
       ],
     },
   };

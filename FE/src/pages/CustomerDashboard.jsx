@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useCustomerDashboard } from "../hooks/useCustomerDashboard";
 import { useAuth } from "../hooks/useAuth";
@@ -21,24 +23,28 @@ function CustomerDashboard() {
     copyFeedbackMap,
     copyPinToClipboard,
     handleChangePin,
-    tempPath,
-    humidityPath,
   } = useCustomerDashboard();
 
-  const onPromptChangePin = async (rental) => {
-    const currentPin = credentialsMap[rental.agreementId]?.keypadPin;
-    const newPin = window.prompt(`Nhập mã PIN mới (6 chữ số) cho Kho #${rental.unitCode}:`, currentPin || "");
-    if (!newPin) return;
-    const trimmed = newPin.trim();
+  // Custom PIN change modal
+  const [pinModal, setPinModal] = useState(null); // { rental, newPin, error, loading }
+
+  const openPinModal = (rental) =>
+    setPinModal({ rental, newPin: "", error: "", loading: false });
+  const closePinModal = () => setPinModal(null);
+
+  const submitPinChange = async () => {
+    if (!pinModal) return;
+    const trimmed = pinModal.newPin.trim();
     if (!/^\d{6}$/.test(trimmed)) {
-      window.alert("Mã PIN phải bao gồm đúng 6 chữ số.");
+      setPinModal((m) => ({ ...m, error: "PIN code must be exactly 6 digits." }));
       return;
     }
+    setPinModal((m) => ({ ...m, loading: true, error: "" }));
     try {
-      await handleChangePin(rental.agreementId, trimmed);
-      window.alert(`Đổi mã PIN cho Kho #${rental.unitCode} thành công! Mã mới: ${trimmed}`);
+      await handleChangePin(pinModal.rental.agreementId, trimmed);
+      closePinModal();
     } catch (err) {
-      window.alert(err?.message || "Đổi mã PIN thất bại. Vui lòng thử lại.");
+      setPinModal((m) => ({ ...m, loading: false, error: err?.message || "Failed to update PIN code." }));
     }
   };
 
@@ -48,11 +54,11 @@ function CustomerDashboard() {
       <Header active="dashboard" />
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
-        {/* Tiêu đề chào đón */}
+        {/* Welcome header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
-              Chào {user?.fullName || user?.email || "bạn"}
+            <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-[#0b1c30]">
+              Welcome, {user?.fullName || user?.email || "Customer"}
             </h1>
             {user?.id && (
               <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
@@ -66,7 +72,7 @@ function CustomerDashboard() {
             className="flex items-center gap-1.5 rounded-[10px] bg-white/90 px-3.5 py-2 text-[12px] font-bold text-[#1d5fe5] shadow-sm backdrop-blur-md transition hover:bg-white hover:shadow"
           >
             <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            {activeRentals.length > 0 ? "Đặt thuê thêm kho" : "Khám phá kho trống"}
+            {activeRentals.length > 0 ? "Rent Another Unit" : "Explore Available Units"}
           </button>
         </div>
 
@@ -76,34 +82,29 @@ function CustomerDashboard() {
           </div>
         )}
 
-        {/* Trạng thái tải dữ liệu */}
         {rentalsLoading && (
           <div className="mt-3 flex items-center gap-2 rounded-[12px] border border-[#dfe7f5] bg-white px-4 py-3 text-[13px] text-[#58657a]">
             <span className="material-symbols-outlined animate-spin text-[18px] text-[#1d5fe5]">progress_activity</span>
-            Đang tải dữ liệu kho của bạn từ hệ thống...
+            Loading your storage units...
           </div>
         )}
 
-
-        {/* Danh sách kho đang sở hữu */}
+        {/* Rental cards */}
         <div className="mt-6 space-y-6">
           {!rentalsLoading && activeRentals.length === 0 ? (
-            /* Giao diện khi chưa có kho */
             <div className="flex flex-col items-center justify-center rounded-[16px] border border-[#dfe7f5] bg-white p-10 text-center shadow-sm">
-              <span className="material-symbols-outlined text-[54px] text-[#1d5fe5]">
-                inventory_2
-              </span>
+              <span className="material-symbols-outlined text-[54px] text-[#1d5fe5]">inventory_2</span>
               <h2 className="mt-3 text-[19px] font-bold text-[#0b1c30]">
-                Bạn chưa có hợp đồng thuê kho nào đang hoạt động
+                You don't have any active storage rentals
               </h2>
               <p className="mt-2 max-w-[460px] text-[13px] leading-relaxed text-[#58657a]">
-                Hệ thống kho tự quản thông minh với giá thuê chỉ từ 1.000đ/tháng, mở khóa bằng mã PIN bàn phím số cá nhân.
+                Smart self-storage facility with keyless 24/7 keypad PIN access. Secure, convenient, and flexible.
               </p>
               <button
                 onClick={() => navigate("/")}
                 className="mt-5 rounded-[10px] bg-[#1d5fe5] px-6 py-2.5 text-[13px] font-bold text-white shadow transition hover:bg-[#174fc7]"
               >
-                Khám phá kho trống &amp; Đặt ngay
+                Find &amp; Rent a Storage Unit
               </button>
             </div>
           ) : (
@@ -111,15 +112,10 @@ function CustomerDashboard() {
               const cred = credentialsMap[rental.agreementId];
               const pin = cred?.keypadPin;
               const isVisible = Boolean(showPinMap[rental.agreementId]);
-              const isCopied = Boolean(copyFeedbackMap[rental.agreementId]);
               const pinText = credentialsLoading
-                ? "Đang tải..."
+                ? "Loading..."
                 : isVisible
-                ? pin
-                  ? pin
-                  : "Chưa tạo PIN"
-                : pin
-                ? "• • • • • •"
+                ? pin || "No PIN set"
                 : "• • • • • •";
 
               return (
@@ -127,115 +123,74 @@ function CustomerDashboard() {
                   key={rental.agreementId || rental.unitCode || index}
                   className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]"
                 >
-                  {/* Header kho */}
+                  {/* Card header */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
                         <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">
-                          {index === 0 ? "Kho chính" : `Kho #${index + 1}`}
+                          {index === 0 ? "Primary Unit" : `Unit ${index + 1}`}
                         </span>
-                        Khu vực Zone {rental.zoneLabel || "A"} • Tầng {rental.floorLabel || "1"} • {rental.facilityName || "Thu Duc Self Storage"}
+                        {rental.facilityName || "Thu Duc Self Storage"}
                       </div>
                       <h2 className="mt-1 text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
-                        Kho #{rental.unitCode} ({rental.unitTypeName})
+                        Unit {rental.unitCode}
                       </h2>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[11px] font-bold text-[#1d5fe5]">
-                        Hợp đồng #{rental.agreementNo}
+                        Agreement #{rental.agreementNo}
                       </span>
                       <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1.5 text-[#0e7b4c]">
                         <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-                        <span className="text-[12px] font-bold">Đang hiệu lực</span>
+                        <span className="text-[12px] font-bold">Active</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Hình ảnh và 6 thông số kỹ thuật */}
-                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
-                    <div className="relative overflow-hidden rounded-[12px] border border-[#eef1f8]">
-                      <div
-                        className="h-full min-h-[190px] w-full bg-cover bg-center"
-                        style={{
-                          backgroundImage:
-                            "linear-gradient(180deg, rgba(15,30,45,0.05), rgba(15,30,45,0.4)), url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80')",
-                        }}
-                      />
-                      <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#0b1c30] shadow-sm">
-                        Camera 24/7
+                  {/* 4 stat tiles */}
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Area</div>
+                      <div className="text-[14px] font-bold text-[#0b1c30]">
+                        {rental.areaM2 ? `${rental.areaM2} m²` : "—"}
                       </div>
+                      <div className="text-[10px] text-[#8996a9]">{rental.dimensions || ""}</div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Diện tích
-                        </div>
-                        <div className="text-[14px] font-bold text-[#0b1c30]">
-                          {rental.areaM2 ? `${rental.areaM2} m²` : "3.0 m²"}
-                        </div>
-                        <div className="text-[10px] text-[#8996a9]">
-                          {rental.dimensions || "1.5 × 2.0m"}
-                        </div>
+                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Volume</div>
+                      <div className="text-[14px] font-bold text-[#0b1c30]">
+                        {rental.volumeM3
+                          ? `${rental.volumeM3} m³`
+                          : rental.areaM2
+                          ? `${(Number(rental.areaM2) * 2.5).toFixed(1)} m³`
+                          : "—"}
                       </div>
+                      <div className="truncate text-[10px] text-[#8996a9]">{rental.unitTypeName}</div>
+                    </div>
 
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Thể tích lưu trữ
-                        </div>
-                        <div className="text-[14px] font-bold text-[#0b1c30]">
-                          {rental.volumeM3 ? `${rental.volumeM3} m³` : `${Number(rental.areaM2 || 3) * 2.5} m³`}
-                        </div>
-                        <div className="truncate text-[10px] text-[#8996a9]">
-                          {rental.unitTypeName}
-                        </div>
-                      </div>
+                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Climate</div>
+                      <div className="text-[14px] font-bold text-[#0b1c30]">20° – 22°C</div>
+                      <div className="text-[10px] font-semibold text-[#0e7b4c]">Regulated</div>
+                    </div>
 
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Pin khóa cửa
-                        </div>
-                        <div className="text-[14px] font-bold text-[#0b1c30]">100%</div>
-                        <div className="text-[10px] font-semibold text-[#0e7b4c]">Tốt</div>
-                      </div>
-
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Nhiệt độ
-                        </div>
-                        <div className="text-[14px] font-bold text-[#0b1c30]">20° – 22°C</div>
-                        <div className="text-[10px] text-[#8996a9]">Ổn định</div>
-                      </div>
-
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Cảm biến an ninh
-                        </div>
-                        <div className="text-[14px] font-bold text-[#0b1c30]">Hồng ngoại</div>
-                        <div className="text-[10px] font-semibold text-[#0e7b4c]">Đang bảo vệ</div>
-                      </div>
-
-                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Giá thuê
-                        </div>
-                        <div className="text-[14px] font-bold text-[#1d5fe5]">
-                          {formatVnd(rental.monthlyRate)}
-                        </div>
-                        <div className="text-[10px] text-[#8996a9]">Hàng tháng</div>
-                      </div>
+                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">Monthly Rate</div>
+                      <div className="text-[14px] font-bold text-[#1d5fe5]">{formatVnd(rental.monthlyRate)}</div>
+                      <div className="text-[10px] text-[#8996a9]">per month</div>
                     </div>
                   </div>
 
-                  {/* Mã PIN bàn phím mở cửa kho */}
+                  {/* PIN section */}
                   <div className="mt-4 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4">
                     <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                      Mã PIN bàn phím mở cửa kho #{rental.unitCode}
+                      Keypad PIN — Unit {rental.unitCode}
                       <button
                         onClick={() => toggleShowPin(rental.agreementId)}
                         className="font-bold text-[#1d5fe5] hover:underline"
                       >
-                        {isVisible ? "Ẩn PIN" : "Hiện PIN"}
+                        {isVisible ? "Hide PIN" : "Show PIN"}
                       </button>
                     </div>
 
@@ -243,45 +198,13 @@ function CustomerDashboard() {
                       <span>{pinText}</span>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3">
                       <button
-                        onClick={() => onPromptChangePin(rental)}
+                        onClick={() => openPinModal(rental)}
                         className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"
                       >
-                        Đổi mã PIN
+                        Change PIN
                       </button>
-                    </div>
-                  </div>
-
-                  {/* Biểu đồ nhiệt độ & độ ẩm thời gian thực */}
-                  <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#fafcff] p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-[13px] font-bold text-[#0b1c30]">
-                        Nhiệt độ &amp; Độ ẩm (#{rental.unitCode})
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] font-semibold text-[#3a475a]">
-                        <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">24 giờ qua</span>
-                        <span className="flex items-center gap-1 text-[#0e7b4c]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-                          Ổn định
-                        </span>
-                      </div>
-                    </div>
-
-                    <svg viewBox="0 0 320 70" className="mt-3 h-[90px] w-full">
-                      <path d={tempPath} fill="none" stroke="#1d5fe5" strokeWidth="2" />
-                      <path d={humidityPath} fill="none" stroke="#0e7b4c" strokeWidth="2" />
-                    </svg>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] font-semibold text-[#3a475a]">
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-[#1d5fe5]" />
-                        Nhiệt độ: 21.2°C
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-[#0e7b4c]" />
-                        Độ ẩm: 48%
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -292,6 +215,69 @@ function CustomerDashboard() {
       </main>
 
       <Footer />
+
+      {/* PIN Change Modal */}
+      {pinModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={(e) => e.target === e.currentTarget && closePinModal()}
+          >
+            <div className="w-full max-w-[380px] rounded-[20px] border border-[#dfe7f5] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.14)] animate-in fade-in zoom-in-95 duration-200">
+              {/* Modal header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[16px] font-bold text-[#0b1c30]">Change Keypad PIN</div>
+                  <div className="mt-0.5 text-[12px] text-[#8996a9]">Unit {pinModal.rental.unitCode}</div>
+                </div>
+                <button
+                  onClick={closePinModal}
+                  className="material-symbols-outlined text-[20px] text-[#8996a9] hover:text-[#0b1c30]"
+                >
+                  close
+                </button>
+              </div>
+
+              {/* PIN input */}
+              <div className="mt-5">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pinModal.newPin}
+                  onChange={(e) =>
+                    setPinModal((m) => ({ ...m, newPin: e.target.value.replace(/\D/g, "").slice(0, 6) }))
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && submitPinChange()}
+                  placeholder="Enter 6 digits"
+                  className="w-full rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] px-4 py-3 text-center text-[22px] font-bold tracking-[0.3em] text-[#0b1c30] outline-none focus:border-[#1d5fe5] focus:bg-white focus:ring-4 focus:ring-[#1d5fe5]/10 transition"
+                  autoFocus
+                />
+                {pinModal.error && (
+                  <div className="mt-2 text-[12px] font-semibold text-[#b3261e]">{pinModal.error}</div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-5 flex gap-2">
+                <button
+                  onClick={closePinModal}
+                  className="flex-1 rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-semibold text-[#3a475a] transition hover:bg-[#f8faff]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitPinChange}
+                  disabled={pinModal.loading || pinModal.newPin.length !== 6}
+                  className="flex-1 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow transition hover:bg-[#154ec1] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {pinModal.loading ? "Saving..." : "Confirm PIN"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

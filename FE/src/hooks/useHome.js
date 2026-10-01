@@ -83,23 +83,32 @@ export function useHome() {
 
   const locations = useMemo(
     () => [
-      { id: "all", label: "Tất cả vị trí" },
+      { id: "all", label: "All Locations" },
       ...facilities.map((f) => ({ id: String(f.id), label: `${f.name} • ${f.city}` })),
     ],
     [facilities]
   );
 
-  const storageTypes = useMemo(
-    () => [
-      { id: "all", label: "Tất cả loại kho", icon: "warehouse" },
-      ...unitTypes.map((t) => ({
+  const storageTypes = useMemo(() => {
+    const list = [{ id: "all", label: "All Unit Types", icon: "warehouse" }];
+    const seen = new Set();
+    unitTypes.forEach((t) => {
+      let label = t.name || "";
+      if (label.toLowerCase().startsWith("extra large")) label = "Extra Large";
+      else if (label.toLowerCase().includes("máy lạnh") || label.toLowerCase().includes("climate")) label = "Medium Climate";
+      else if (label.toLowerCase().startsWith("large")) label = "Large";
+      else if (label.toLowerCase().startsWith("medium")) label = "Medium";
+      else if (label.toLowerCase().startsWith("mini")) label = "Mini";
+      else if (label.toLowerCase().startsWith("small")) label = "Small";
+
+      list.push({
         id: String(t.id),
-        label: t.name,
+        label,
         icon: t.climateControlled ? "device_thermostat" : "warehouse",
-      })),
-    ],
-    [unitTypes]
-  );
+      });
+    });
+    return list;
+  }, [unitTypes]);
 
   // Adapt raw storage units (backend shape) into the shape the UI cards expect
   const allUnits = useMemo(() => {
@@ -116,7 +125,16 @@ export function useHome() {
           .filter(Boolean)
           .join(" • "),
         unitTypeId: u.unitTypeId,
-        typeName: unitType?.name || "",
+        typeName: (() => {
+          let name = unitType?.name || "";
+          if (name.toLowerCase().includes("extra large")) return "Extra Large";
+          if (name.toLowerCase().includes("máy lạnh") || name.toLowerCase().includes("climate")) return "Medium Climate";
+          if (name.toLowerCase().startsWith("large")) return "Large";
+          if (name.toLowerCase().startsWith("medium")) return "Medium";
+          if (name.toLowerCase().startsWith("small")) return "Small";
+          if (name.toLowerCase().startsWith("mini")) return "Mini";
+          return name.replace(/\s*16\s*m[2²]/gi, "").trim();
+        })(),
         climateControlled: Boolean(unitType?.climateControlled),
         type: unitType?.climateControlled ? "climate" : "standard",
         sizeCategory: sizeCategoryOf(unitType?.areaM2),

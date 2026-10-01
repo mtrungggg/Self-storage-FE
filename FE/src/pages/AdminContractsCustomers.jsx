@@ -100,7 +100,7 @@ function AdminContractsCustomers() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Tìm nhanh theo Mã HĐ, Tên khách..."
+            placeholder="Search by Contract ID, Customer Name..."
             className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
           />
         </div>
@@ -113,8 +113,8 @@ function AdminContractsCustomers() {
       <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-bold">Danh sách hợp đồng cho thuê đang quản lý</span>
-            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">{filteredContracts.length} hồ sơ</span>
+            <span className="text-[13px] font-bold">Managed Storage Lease Contracts</span>
+            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">{filteredContracts.length} records</span>
           </div>
           <div className="flex items-center gap-3 text-[10px] font-semibold text-[#58657a]">
             {contractLegend.map((item) => (
@@ -130,12 +130,12 @@ function AdminContractsCustomers() {
           <table className="w-full min-w-[880px] text-left text-[11px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Mã hợp đồng</th>
-                <th className="py-2 pr-2">Khách hàng & Pháp nhân</th>
-                <th className="py-2 pr-2">Kho & Hub</th>
-                <th className="py-2 pr-2">Thời hạn & Cảnh báo</th>
-                <th className="py-2 pr-2">Giá trị & Chu kỳ</th>
-                <th className="py-2 pr-2">Ký quỹ an ninh</th>
+                <th className="py-2 pr-2">Contract ID</th>
+                <th className="py-2 pr-2">Customer &amp; Entity</th>
+                <th className="py-2 pr-2">Unit &amp; Hub</th>
+                <th className="py-2 pr-2">Term &amp; Alerts</th>
+                <th className="py-2 pr-2">Value &amp; Billing Cycle</th>
+                <th className="py-2 pr-2">Security Deposit</th>
               </tr>
             </thead>
             <tbody>
@@ -149,7 +149,7 @@ function AdminContractsCustomers() {
                     <div className="flex items-center gap-1.5 font-semibold">
                       {contract.customer}
                       <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[8px] font-bold text-[#1d5fe5]">
-                        {contract.audience === "b2b" ? "B2B" : "Cá nhân B2C"}
+                        {contract.audience === "b2b" ? "B2B" : "Individual B2C"}
                       </span>
                     </div>
                     <div className="text-[9px] text-[#8996a9]">{contract.contact}</div>
@@ -166,7 +166,7 @@ function AdminContractsCustomers() {
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-bold">{contract.value}</div>
-                    <div className="text-[9px] text-[#8996a9]">Tổng: {contract.totalValue}</div>
+                    <div className="text-[9px] text-[#8996a9]">Total: {contract.totalValue}</div>
                     <div className="text-[9px] text-[#8996a9]">{contract.cycleNote}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
@@ -180,7 +180,7 @@ function AdminContractsCustomers() {
               {filteredContracts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-[11px] text-[#8996a9]">
-                    Không tìm thấy hợp đồng phù hợp.
+                    No matching contracts found.
                   </td>
                 </tr>
               )}
@@ -190,14 +190,14 @@ function AdminContractsCustomers() {
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
           <span>
-            Hiển thị 1-{filteredContracts.length} trên tổng số {totalContracts} hợp đồng • {contractFootnote.totalDeposit}
+            Showing 1-{filteredContracts.length} of {totalContracts} contracts • {contractFootnote.totalDeposit}
           </span>
           <div className="flex items-center gap-1 font-semibold">
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Trước</button>
+            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Previous</button>
             <span className="rounded-[6px] bg-[#0b1c30] px-2 py-1 text-white">1</span>
             <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">2</button>
             <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">3</button>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Sau</button>
+            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Next</button>
           </div>
         </div>
       </div>
@@ -206,9 +206,9 @@ function AdminContractsCustomers() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="material-symbols-outlined text-[16px] text-[#f5a524]">bolt</span>
-            Tác vụ khẩn cấp & Tự động
+            Automated &amp; Emergency Tasks
           </div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">Siết nợ và mở khóa cơ sở qua giao thức IoT Latch VaultSpace.</p>
+          <p className="mt-1 text-[10px] text-[#8996a9]">Debt enforcement and lock override via VaultSpace IoT Latch protocol.</p>
 
           <div className="mt-3 space-y-2">
             {emergencyActions.map((action) => (
@@ -226,14 +226,14 @@ function AdminContractsCustomers() {
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px] text-[#8996a9]">
-            <span>Giao thức kết nối: {iotStatusNote}</span>
+            <span>Connection Protocol: {iotStatusNote}</span>
           </div>
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#2dd4a0]" />
-            Nhật ký biến động thuê mới nhất
+            Recent Lease Activity Log
           </div>
 
           <div className="mt-3 space-y-2.5">
@@ -249,7 +249,7 @@ function AdminContractsCustomers() {
             ))}
           </div>
 
-          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5]">Xem toàn bộ 148 hoạt động hôm nay</div>
+          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">View all 148 activities today</div>
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
@@ -265,7 +265,7 @@ function AdminContractsCustomers() {
             ))}
           </div>
 
-          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5]">Tải mẫu chuẩn HĐ</div>
+          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">Download Contract Template</div>
         </div>
       </div>
     </>

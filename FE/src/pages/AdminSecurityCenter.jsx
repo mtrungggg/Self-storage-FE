@@ -60,16 +60,16 @@ function AdminSecurityCenter() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">1</span>
-            Ma trận Phân quyền Chi tiết (Role Permission Matrix)
+            Role-Based Access Control Matrix (RBAC)
           </div>
-          <span className="text-[10px] font-bold text-[#1d5fe5]">Chế độ Khóa chính sách RBAC</span>
+          <span className="text-[10px] font-bold text-[#1d5fe5]">RBAC Policy Lock Active</span>
         </div>
 
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-[10px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Phân hệ chức năng</th>
+                <th className="py-2 pr-2">Functional Module</th>
                 {permissionRoles.map((role) => (
                   <th key={role.id} className="py-2 px-2 text-center">
                     {role.label}
@@ -105,16 +105,16 @@ function AdminSecurityCenter() {
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex items-center gap-1.5 text-[13px] font-bold">
           <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">2</span>
-          Cấu hình An ninh Khóa chốt IoT & Cổng điện tử
+          IoT Smart Lock &amp; Access Gate Security
         </div>
-        <p className="mt-1 text-[10px] text-[#8996a9]">Thiết lập tham số mã OTP Kiosk, quy tắc tự động hóa và chế độ phòng chống đột nhập.</p>
+        <p className="mt-1 text-[10px] text-[#8996a9]">Configure temporary guest PIN credentials, automated revocations, and perimeter intrusion deterrence.</p>
 
         <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Quy định Cấp mã PIN / OTP Tạm thời cho khách</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Tự động sinh mã qua SMS/App khi hợp đồng bắt đầu hiệu lực</p>
+            <div className="text-[11px] font-bold">Temporary Guest PIN / OTP Dispatch</div>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automatically dispatched via SMS/App upon active contract commencement</p>
 
-            <div className="mt-2 text-[9px] font-bold uppercase text-[#8996a9]">Thời gian sống mã OTP</div>
+            <div className="mt-2 text-[9px] font-bold uppercase text-[#8996a9]">OTP Time-To-Live (TTL)</div>
             <div className="mt-1 inline-flex rounded-[8px] bg-[#f0f3fa] p-0.5">
               {otpTtlOptions.map((option) => (
                 <button
@@ -136,7 +136,7 @@ function AdminSecurityCenter() {
                 onChange={(event) => updateGuestPinPolicy("autoRevokeOnCheckout", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Tự động hủy quyền truy cập sau khi trả kho
+              Automatically revoke PIN credentials upon contract check-out
             </label>
             <label className="mt-1.5 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
@@ -145,22 +145,22 @@ function AdminSecurityCenter() {
                 onChange={(event) => updateGuestPinPolicy("limitUnlocksPerShift", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Giới hạn số lần mở cửa kho trong ca (cảnh báo nếu &gt;8 lần/2 giờ)
+              Limit door unlock frequency per shift (alert if &gt; 8 times in 2 hours)
             </label>
           </div>
 
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Cảnh báo Xâm nhập Trái phép & Còi Báo động</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Phản ứng tự động khi phát hiện cửa/khoang bị mở sai lệch</p>
+            <div className="text-[11px] font-bold">Intrusion Detection &amp; Siren Deterrence</div>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automated response when abnormal door tampering or force is detected</p>
 
             <div className="mt-2 flex items-center gap-1.5">
-              <span className="text-[9px] text-[#8996a9]">Khóa Kiosk sau số lần nhập sai PIN:</span>
+              <span className="text-[9px] text-[#8996a9]">Lockout keypad after failed PIN attempts:</span>
               <input
                 value={intrusionPolicy.maxFailedPinAttempts}
                 onChange={(event) => updateIntrusionPolicy("maxFailedPinAttempts", event.target.value)}
                 className="w-12 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-center text-[11px] font-semibold"
               />
-              <span className="text-[9px] text-[#8996a9]">lần</span>
+              <span className="text-[9px] text-[#8996a9]">times</span>
             </div>
 
             <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
@@ -170,7 +170,7 @@ function AdminSecurityCenter() {
                 onChange={(event) => updateIntrusionPolicy("sirenEnabled", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Kích hoạt còi báo động trạm (Siren 110dB)
+              Trigger facility perimeter siren (110dB Siren)
             </label>
             <label className="mt-1.5 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
               <input
@@ -179,7 +179,7 @@ function AdminSecurityCenter() {
                 onChange={(event) => updateIntrusionPolicy("notifyAuthoritiesEnabled", event.target.checked)}
                 className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
               />
-              Đẩy cảnh báo tới Bảo vệ trạm & cơ quan chức năng kèm ảnh camera
+              Dispatch instant alert to Facility Guard &amp; Authorities with CCTV snapshots
             </label>
           </div>
         </div>

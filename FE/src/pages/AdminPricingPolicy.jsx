@@ -1,7 +1,7 @@
 import { usePricingPolicy } from "../hooks/usePricingPolicy";
 
 function formatCurrency(value) {
-  return `${value.toLocaleString("vi-VN")} đ`;
+  return `${value.toLocaleString("vi-VN")} ₫`;
 }
 
 function AdminPricingPolicy() {
@@ -35,7 +35,7 @@ function AdminPricingPolicy() {
         <span className="rounded-full bg-[#0b1c30] px-2 py-0.5 text-[9px] font-bold text-white">{versionBanner.version}</span>
         <span>{versionBanner.scope}</span>
         <span className="ml-auto text-[#8996a9]">
-          {versionBanner.editor} ({versionBanner.timestamp}) • <span className="font-bold text-[#1d5fe5]">Xem lịch sử</span>
+          {versionBanner.editor} ({versionBanner.timestamp}) • <span className="font-bold text-[#1d5fe5] cursor-pointer hover:underline">View History</span>
         </span>
       </div>
 
@@ -43,7 +43,7 @@ function AdminPricingPolicy() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-[20px] font-bold">{header.title}</h1>
-            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">TOÀN HỆ THỐNG</span>
+            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">SYSTEM-WIDE</span>
           </div>
           <p className="mt-1 max-w-[560px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
         </div>
@@ -67,13 +67,13 @@ function AdminPricingPolicy() {
           <div>
             <div className="flex items-center gap-1.5 text-[13px] font-bold">
               <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">1</span>
-              Ma trận Biểu phí Thuê kho theo Thời hạn & Dòng kho
+              Rental Rate Matrix by Term &amp; Unit Category
             </div>
-            <p className="mt-1 text-[10px] text-[#8996a9]">Sửa giá 1 tháng — các kỳ hạn khác tự tính chiết khấu. Đơn vị: VND/tháng (đã gồm VAT).</p>
+            <p className="mt-1 text-[10px] text-[#8996a9]">Edit 1-month base price — extended terms calculate discounts dynamically. Unit: VND/month (VAT incl.).</p>
           </div>
           <button className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[10px] font-semibold text-[#3a475a]">
             <span className="material-symbols-outlined text-[14px]">sync</span>
-            Cập nhật tỷ giá
+            Sync Exchange Rates
           </button>
         </div>
 
@@ -81,8 +81,8 @@ function AdminPricingPolicy() {
           <table className="w-full min-w-[720px] text-left text-[11px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Dòng kho & Quy cách</th>
-                <th className="py-2 pr-2">Thể tích</th>
+                <th className="py-2 pr-2">Category &amp; Dimensions</th>
+                <th className="py-2 pr-2">Volume</th>
                 {priceTerms.map((term) => (
                   <th key={term.id} className={`py-2 px-2 text-right ${term.highlight ? "text-[#1d5fe5]" : ""}`}>
                     {term.label}
@@ -128,55 +128,55 @@ function AdminPricingPolicy() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">2</span>
-            Quy định Tiền cọc & Cơ chế Phạt trễ hạn
+            Security Deposit &amp; Late Penalty Policies
           </div>
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-[10px] border border-[#eef1f8] p-3">
-              <div className="text-[11px] font-bold">Tỷ lệ Cọc Bảo an</div>
-              <p className="mt-0.5 text-[9px] text-[#8996a9]">Bảo chứng tài sản & khóa điện tử thông minh</p>
+              <div className="text-[11px] font-bold">Security Deposit Ratio</div>
+              <p className="mt-0.5 text-[9px] text-[#8996a9]">Protects facility property &amp; IoT lock hardware</p>
               <div className="mt-2 flex items-center gap-1.5">
                 <input
                   value={depositPercent}
                   onChange={(event) => setDepositPercent(event.target.value)}
                   className="w-16 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px] font-semibold"
                 />
-                <span className="text-[10px] text-[#8996a9]">% = 01 tháng giá thuê</span>
+                <span className="text-[10px] text-[#8996a9]">% = 01 month rental rate</span>
               </div>
             </div>
 
             <div className="rounded-[10px] border border-[#eef1f8] p-3">
-              <div className="text-[11px] font-bold">Tỷ lệ Phạt Trả Chậm</div>
-              <p className="mt-0.5 text-[9px] text-[#8996a9]">Lũy kế theo chu kỳ thanh toán trễ hẹn</p>
+              <div className="text-[11px] font-bold">Late Penalty Rate</div>
+              <p className="mt-0.5 text-[9px] text-[#8996a9]">Accrues daily after past due threshold</p>
               <div className="mt-2 flex items-center gap-1.5">
                 <input
                   value={latePenaltyPercent}
                   onChange={(event) => setLatePenaltyPercent(event.target.value)}
                   className="w-16 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px] font-semibold"
                 />
-                <span className="text-[10px] text-[#8996a9]">% / ngày quá hạn</span>
+                <span className="text-[10px] text-[#8996a9]">% / day past due</span>
               </div>
             </div>
           </div>
 
           <div className="mt-3 rounded-[10px] border border-[#eef1f8] p-3">
             <div className="flex items-center justify-between">
-              <div className="text-[11px] font-bold">Tự động đình chỉ mã PIN Latch</div>
-              <span className="rounded-full bg-[#fdecec] px-1.5 py-0.5 text-[8px] font-bold text-[#c0362c]">Hệ thống IoT</span>
+              <div className="text-[11px] font-bold">Automated Latch PIN Suspension</div>
+              <span className="rounded-full bg-[#fdecec] px-1.5 py-0.5 text-[8px] font-bold text-[#c0362c]">IoT System</span>
             </div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Hết thời gian ân hạn chưa thanh toán, hệ thống tự khóa PIN & quyền truy cập.</p>
+            <p className="mt-0.5 text-[9px] text-[#8996a9]">If payment remains outstanding past grace period, lock PIN and access rights are automatically revoked.</p>
             <div className="mt-2 flex items-center gap-1.5">
               <input
                 value={graceDays}
                 onChange={(event) => setGraceDays(event.target.value)}
                 className="w-16 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px] font-semibold"
               />
-              <span className="text-[10px] text-[#8996a9]">ngày ân hạn</span>
+              <span className="text-[10px] text-[#8996a9]">days grace period</span>
             </div>
           </div>
 
           <div className="mt-3">
-            <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">Biểu phí dịch vụ vận hành & phụ trợ</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">Ancillary &amp; Operating Service Fees</div>
             <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {serviceFees.map((fee) => (
                 <div key={fee.id} className="rounded-[8px] border border-[#eef1f8] p-2">
@@ -191,9 +191,9 @@ function AdminPricingPolicy() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">3</span>
-            Chính sách Hủy Đặt chỗ & Hoàn cọc
+            Reservation Cancellation &amp; Deposit Refund Policy
           </div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">Phân bổ tỷ lệ hoàn tiền giữ chỗ theo thời gian hủy trước hạn nhận thực tế.</p>
+          <p className="mt-1 text-[10px] text-[#8996a9]">Calculates refund percentage according to cancellation notice timeframe prior to move-in.</p>
 
           <div className="mt-3 space-y-2">
             {cancellationPolicy.map((rule) => (
@@ -211,14 +211,14 @@ function AdminPricingPolicy() {
                       : "bg-[#fff2d8] text-[#a15c00]"
                   }`}
                 >
-                  Hoàn {rule.refundPercent}%
+                  {rule.refundPercent}% Refund
                 </span>
               </div>
             ))}
           </div>
 
           <div className="mt-3 rounded-[8px] bg-[#eef4ff] p-2.5 text-[10px] text-[#3a475a]">
-            <span className="font-bold text-[#1d5fe5]">Quy trình hoàn tiền B2B: </span>
+            <span className="font-bold text-[#1d5fe5]">B2B Refund Procedure: </span>
             {cancellationNote}
           </div>
         </div>
@@ -229,13 +229,13 @@ function AdminPricingPolicy() {
           <div>
             <div className="flex items-center gap-1.5 text-[13px] font-bold">
               <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">4</span>
-              Chiến dịch Khuyến mại & Mã Voucher (Active Promotions)
+              Promotional Campaigns &amp; Active Vouchers
             </div>
-            <p className="mt-1 text-[10px] text-[#8996a9]">Quản lý hiệu suất chiến dịch, kiểm soát hạn ngân sách chiết khấu.</p>
+            <p className="mt-1 text-[10px] text-[#8996a9]">Track campaign conversion rates and manage promotional discount budgets.</p>
           </div>
           <button className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">
             <span className="material-symbols-outlined text-[14px]">add</span>
-            Tạo Chiến dịch Voucher Mới
+            Create New Voucher Campaign
           </button>
         </div>
 
@@ -270,14 +270,14 @@ function AdminPricingPolicy() {
                   <div className="h-1.5 rounded-full bg-[#1d5fe5]" style={{ width: `${(voucher.used / voucher.total) * 100}%` }} />
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[9px] text-[#8996a9]">
-                  <span>Lượt sử dụng: {voucher.used}/{voucher.total}</span>
-                  <span>Hết hạn: {voucher.expiry}</span>
+                  <span>Redemptions: {voucher.used}/{voucher.total}</span>
+                  <span>Expires: {voucher.expiry}</span>
                 </div>
-                <div className="text-[9px] text-[#8996a9]">Doanh thu: {voucher.revenue}</div>
+                <div className="text-[9px] text-[#8996a9]">Revenue: {voucher.revenue}</div>
 
                 <div className="mt-2 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px]">
                   <span className="font-semibold text-[#58657a]">{voucher.condition}</span>
-                  <span className="material-symbols-outlined text-[14px] text-[#8996a9]">edit</span>
+                  <span className="material-symbols-outlined text-[14px] text-[#8996a9] cursor-pointer">edit</span>
                 </div>
               </div>
             );
@@ -286,24 +286,24 @@ function AdminPricingPolicy() {
       </div>
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-        <div className="text-[13px] font-bold">Cân đối Tỷ lệ Lấp đầy Tự động (Dynamic Yield)</div>
+        <div className="text-[13px] font-bold">Dynamic Yield &amp; Occupancy Balancing</div>
         <p className="mt-1 max-w-[640px] text-[10px] text-[#8996a9]">{yieldRecommendation.note}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-6">
           <div>
-            <div className="text-[9px] font-bold uppercase text-[#8996a9]">Công suất Hub #04</div>
+            <div className="text-[9px] font-bold uppercase text-[#8996a9]">Hub #04 Capacity</div>
             <div className="text-[19px] font-bold">{yieldRecommendation.occupancy}</div>
           </div>
           <div>
-            <div className="text-[9px] font-bold uppercase text-[#8996a9]">Đề xuất tăng giá</div>
+            <div className="text-[9px] font-bold uppercase text-[#8996a9]">Recommended Rate Increase</div>
             <div className="text-[19px] font-bold text-[#0e7b4c]">{yieldRecommendation.suggestion}</div>
           </div>
           <div className="flex flex-1 flex-wrap gap-3">
             <div className="flex h-16 flex-1 items-center justify-center rounded-[10px] bg-[#0b1c30] px-3 text-center text-[9px] font-semibold text-white/70">
-              Khu vực A - Kho Lạnh Dãy Lầu 1 Climate Zone
+              Zone A - Floor 1 Cold Storage Climate Zone
             </div>
             <div className="flex h-16 flex-1 items-center justify-center rounded-[10px] bg-[#0b1c30] px-3 text-center text-[9px] font-semibold text-white/70">
-              Khu vực B & Drive-up Garage - Sảnh Tải Trọng Nặng
+              Zone B &amp; Drive-up Garage - Heavy Duty Bay
             </div>
           </div>
         </div>

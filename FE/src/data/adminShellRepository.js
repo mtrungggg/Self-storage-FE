@@ -1,6 +1,6 @@
 // Data layer: shared chrome (sidebar + topbar) content for all Admin console pages.
 export function getAdminProfile() {
-  return { name: "Minh Hoàng", role: "Quản trị Vận hành (Ops Director)" };
+  return { name: "Minh Hoang", role: "Operations Director" };
 }
 
 export function getActiveHub() {
@@ -8,38 +8,37 @@ export function getActiveHub() {
 }
 
 export function getSystemStatusBanner() {
-  return { label: "Hệ thống bình thường", detail: "Đang đồng bộ • 2 phút trước" };
+  return { label: "System Operational", detail: "Synced • 2 mins ago" };
 }
 
 export function getSidebarNav() {
   return [
     {
       id: "operations",
-      label: "Điều hành & Khai thác",
+      label: "Operations & Management",
       items: [
-        { id: "overview", label: "Tổng quan & Báo cáo", icon: "dashboard", to: "/admin-overview" },
-        { id: "facilities", label: "Quản lý Cơ sở & Kho", icon: "warehouse", to: "/admin-facilities" },
-        { id: "contracts", label: "Hợp đồng & Khách hàng", icon: "description", to: "/admin-contracts" },
-        { id: "staffing", label: "Phân công Nhân sự & Ca trực", icon: "groups", to: "/admin-staffing" },
+        { id: "overview", label: "Overview & Reports", icon: "dashboard", to: "/admin-overview" },
+        { id: "facilities", label: "Facilities & Units", icon: "warehouse", to: "/admin-facilities" },
+        { id: "contracts", label: "Contracts & Customers", icon: "description", to: "/admin-contracts" },
+        { id: "staffing", label: "Staff Scheduling & Shifts", icon: "groups", to: "/admin-staffing" },
       ],
     },
     {
       id: "system",
-      label: "Hệ thống & Cấu hình",
+      label: "System & Configuration",
       items: [
-        { id: "pricing", label: "Cấu hình Giá & Chính sách", icon: "tune", to: "/admin-pricing" },
-        { id: "security", label: "Phân quyền & Bảo mật", icon: "admin_panel_settings", to: "/admin-system" },
-        { id: "users", label: "Quản lý Người dùng", icon: "manage_accounts", to: "/admin-users" },
-        { id: "audit_log", label: "Lịch sử Hoạt động & Audit Log", icon: "history", to: "/admin-audit-log" },
+        { id: "pricing", label: "Pricing & Policies", icon: "tune", to: "/admin-pricing" },
+        { id: "security", label: "Access & Security", icon: "admin_panel_settings", to: "/admin-system" },
+        { id: "users", label: "User Management", icon: "manage_accounts", to: "/admin-users" },
+        { id: "audit_log", label: "Activity & Audit Log", icon: "history", to: "/admin-audit-log" },
       ],
     },
   ];
 }
 
 export function getSidebarSectionBadge() {
-  return { label: "Phân hệ Quản trị", tag: "SYS-ROOT" };
+  return { label: "Admin Console", tag: "SYS-ROOT" };
 }
-
 
 export function getSidebarFooter() {
   return { version: "v4.8.2-PRO" };

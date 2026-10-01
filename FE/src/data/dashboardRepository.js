@@ -14,7 +14,7 @@ export function getDashboardAccessLogs(primaryRental) {
   return [
     {
       icon: "lock_open",
-      title: `Mở kho #${unitCode}`,
+      title: `Mở kho ${unitCode}`,
       time: "14:45",
       note: "Bàn phím • Mã PIN",
     },
@@ -26,7 +26,7 @@ export function getDashboardAccessLogs(primaryRental) {
     },
     {
       icon: "local_shipping",
-      title: `Xác thực kho #${unitCode}`,
+      title: `Xác thực kho ${unitCode}`,
       time: "Hôm nay",
       note: "Đã cấp quyền ra vào",
     },

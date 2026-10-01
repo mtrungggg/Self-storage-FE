@@ -1,44 +1,44 @@
 // Data layer: content source for the Admin Staff Scheduling (shift roster) page.
 export function getStatusBanner() {
-  return { label: "Vận hành trực thời thực", week: "Tuần 42 (14/10 - 20/10/2024)" };
+  return { label: "Real-time Operations Shift", week: "Week 42 (Oct 14 - Oct 20, 2024)" };
 }
 
 export function getOverviewHeader() {
   return {
-    title: "Phân công Nhân sự & Ca trực",
-    subtitle: "Điều phối lịch trực, định mức giờ công chuẩn ISO 27001 và nhật ký bàn giao an ninh toàn Hub.",
+    title: "Staff Scheduling & Shift Roster",
+    subtitle: "Coordinate duty schedules, ISO 27001 standard working hours, and facility security handover logs.",
   };
 }
 
 export function getWeekRangeLabel() {
-  return "14 Th10 - 20 Th10, 2024";
+  return "Oct 14 - Oct 20, 2024";
 }
 
 export function getHeaderActions() {
   return [
-    { id: "norms", icon: "rule", label: "Định mức ca" },
-    { id: "export", icon: "file_download", label: "Xuất báo cáo" },
-    { id: "new_shift", icon: "add", label: "Phân ca trực mới" },
+    { id: "norms", icon: "rule", label: "Shift Standards" },
+    { id: "export", icon: "file_download", label: "Export Roster" },
+    { id: "new_shift", icon: "add", label: "Schedule New Shift" },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "staff", icon: "groups", label: "Nhân lực toàn Hub", value: "18", trend: "Sẵn sàng điều động", sub: "100% khả dụng" },
-    { id: "shift_structure", icon: "schedule", label: "Cấu trúc 3 ca / ngày", value: "3 ca", trend: "Giám sát 24/7", sub: "Sáng 07-15 • Chiều 15-23 • Đêm 23-07" },
-    { id: "coverage", icon: "shield", label: "Tỷ lệ phủ ca tuần", value: "100%", trend: "0 vi phạm", sub: "Chuẩn an toàn" },
+    { id: "staff", icon: "groups", label: "Facility Workforce", value: "18", trend: "Ready to deploy", sub: "100% available" },
+    { id: "shift_structure", icon: "schedule", label: "3 Shifts / Day Roster", value: "3 Shifts", trend: "24/7 Monitoring", sub: "Morning 07-15 • Afternoon 15-23 • Night 23-07" },
+    { id: "coverage", icon: "shield", label: "Weekly Shift Coverage", value: "100%", trend: "0 violations", sub: "Safety Standard Met" },
   ];
 }
 
 export function getWeekDays() {
   return [
-    { id: "mon", label: "Thứ 2", date: "14/10" },
-    { id: "tue", label: "Thứ 3", date: "15/10" },
-    { id: "wed", label: "Thứ 4", date: "16/10", isToday: true },
-    { id: "thu", label: "Thứ 5", date: "17/10" },
-    { id: "fri", label: "Thứ 6", date: "18/10" },
-    { id: "sat", label: "Thứ 7", date: "19/10" },
-    { id: "sun", label: "CN", date: "20/10" },
+    { id: "mon", label: "Mon", date: "14/10" },
+    { id: "tue", label: "Tue", date: "15/10" },
+    { id: "wed", label: "Wed", date: "16/10", isToday: true },
+    { id: "thu", label: "Thu", date: "17/10" },
+    { id: "fri", label: "Fri", date: "18/10" },
+    { id: "sat", label: "Sat", date: "19/10" },
+    { id: "sun", label: "Sun", date: "20/10" },
   ];
 }
 
@@ -46,33 +46,33 @@ export function getDepartments() {
   return [
     {
       id: "mgmt",
-      label: "Khối Quản lý & Trưởng ca vận hành",
+      label: "Management & Operations Leads",
       count: 3,
       staff: [
         {
           id: "MNG-01",
-          name: "Nguyễn Quốc Thái",
-          role: "Trưởng ca Vận hành",
+          name: "Nguyen Quoc Thai",
+          role: "Shift Supervisor",
           shifts: {
             mon: { type: "morning" },
             tue: { type: "morning" },
-            wed: { type: "afternoon", note: "Đang trực" },
-            thu: { type: "morning", note: "Duyệt bù" },
-            fri: { type: "off", note: "Nghỉ bù" },
+            wed: { type: "afternoon", note: "On Duty" },
+            thu: { type: "morning", note: "Overtime" },
+            fri: { type: "off", note: "Day Off" },
             sat: { type: "morning" },
             sun: { type: "off" },
           },
         },
         {
           id: "MNG-04",
-          name: "Võ Bích Phượng",
-          role: "Phó Giám sát Kho",
+          name: "Vo Bich Phuong",
+          role: "Deputy Warehouse Supervisor",
           shifts: {
             mon: { type: "afternoon" },
             tue: { type: "afternoon" },
-            wed: { type: "morning", note: "Đã xong" },
+            wed: { type: "morning", note: "Completed" },
             thu: { type: "morning" },
-            fri: { type: "afternoon", note: "Cuối tuần" },
+            fri: { type: "afternoon", note: "Weekend Shift" },
             sat: { type: "off" },
             sun: { type: "off" },
           },
@@ -81,31 +81,31 @@ export function getDepartments() {
     },
     {
       id: "iot",
-      label: "Khối Kỹ thuật IoT, HVAC & Bảo trì điện",
+      label: "IoT Engineering, HVAC & Electrical Maintenance",
       count: 5,
       staff: [
         {
           id: "ENG-12",
-          name: "Trương Hoàng Long",
-          role: "KTV Vi khí hậu",
+          name: "Truong Hoang Long",
+          role: "Climate Control Tech",
           shifts: {
             mon: { type: "morning", note: "07:01" },
             tue: { type: "morning", note: "06:52" },
-            wed: { type: "afternoon", note: "Bảo trì" },
+            wed: { type: "afternoon", note: "Maintenance" },
             thu: { type: "afternoon" },
-            fri: { type: "morning", note: "Trực chốt" },
+            fri: { type: "morning", note: "Gate Duty" },
             sat: { type: "off" },
             sun: { type: "off" },
           },
         },
         {
           id: "ENG-18",
-          name: "Đặng Văn Sơn",
-          role: "KTV Cơ giới Dock",
+          name: "Dang Van Son",
+          role: "Loading Dock Tech",
           shifts: {
-            mon: { type: "off", note: "Nghỉ bù" },
-            tue: { type: "afternoon", note: "Trễ giờ" },
-            wed: { type: "afternoon", note: "Kiểm định" },
+            mon: { type: "off", note: "Day Off" },
+            tue: { type: "afternoon", note: "Delayed" },
+            wed: { type: "afternoon", note: "Inspection" },
             thu: { type: "afternoon" },
             fri: { type: "morning" },
             sat: { type: "off" },
@@ -116,17 +116,17 @@ export function getDepartments() {
     },
     {
       id: "frontoffice",
-      label: "Khối Lễ tân Dịch vụ & Bàn giao mặt bằng",
+      label: "Front Desk & Unit Handover Staff",
       count: 4,
       staff: [
         {
           id: "FO-05",
-          name: "Lê Thu Hà",
-          role: "Lễ tân B2B",
+          name: "Le Thu Ha",
+          role: "B2B Receptionist",
           shifts: {
             mon: { type: "morning" },
             tue: { type: "morning" },
-            wed: { type: "afternoon", note: "Bàn giao #B-204" },
+            wed: { type: "afternoon", note: "Handover #B-204" },
             thu: { type: "morning" },
             fri: { type: "off" },
             sat: { type: "off" },
@@ -137,18 +137,18 @@ export function getDepartments() {
     },
     {
       id: "security",
-      label: "Khối An ninh & Giám sát trung tâm SOC",
+      label: "Security & Central SOC Surveillance",
       count: 6,
       staff: [
         {
           id: "SEC-03",
-          name: "Phạm Quốc An",
-          role: "Trưởng An ninh SOC",
+          name: "Pham Quoc An",
+          role: "Lead SOC Security Officer",
           shifts: {
-            mon: { type: "night", note: "Tuần tra" },
+            mon: { type: "night", note: "Patrol" },
             tue: { type: "night", note: "22:00" },
-            wed: { type: "night", note: "Bắt đầu 23:00" },
-            thu: { type: "off", note: "Nghỉ đôi ca" },
+            wed: { type: "night", note: "Starts 23:00" },
+            thu: { type: "off", note: "Double Shift Rest" },
             fri: { type: "off" },
             sat: { type: "night" },
             sun: { type: "night" },
@@ -161,17 +161,17 @@ export function getDepartments() {
 
 export function getShiftLegend() {
   return [
-    { id: "morning", label: "Ca Sáng (07:00-15:00)" },
-    { id: "afternoon", label: "Ca Chiều (15:00-23:00)" },
-    { id: "night", label: "Ca Đêm (23:00-07:00)" },
+    { id: "morning", label: "Morning (07:00-15:00)" },
+    { id: "afternoon", label: "Afternoon (15:00-23:00)" },
+    { id: "night", label: "Night (23:00-07:00)" },
   ];
 }
 
 export function getAttendanceLegend() {
   return [
-    { id: "ontime", label: "Đúng giờ", color: "#2dd4a0" },
-    { id: "late", label: "Trễ ca", color: "#e5484d" },
-    { id: "leave", label: "Phép năm", color: "#f5a524" },
+    { id: "ontime", label: "On-time", color: "#2dd4a0" },
+    { id: "late", label: "Late", color: "#e5484d" },
+    { id: "leave", label: "Paid Leave", color: "#f5a524" },
   ];
 }
 
@@ -179,46 +179,46 @@ export function getFieldTasks() {
   return [
     {
       id: 1,
-      title: "Kiểm tra cảm biến ẩm vi khí hậu Khu B",
-      note: "Kho rượu vang B10-B40",
-      assignee: "KTV Long (#ENG-12)",
-      detail: "Hoàn tất lúc 11:30",
+      title: "Inspect climate humidity sensors in Zone B",
+      note: "Wine Storage units B10-B40",
+      assignee: "Tech Long (#ENG-12)",
+      detail: "Completed at 11:30",
       status: "done",
-      statusLabel: "ĐÃ ĐẠT",
+      statusLabel: "PASSED",
     },
     {
       id: 2,
-      title: "Hỗ trợ xe nâng & tiếp nhận Pallet tại Dock #02",
-      note: "Ưu tiên cao",
-      assignee: "KTV Sơn (#ENG-18)",
-      detail: "Đang bốc dỡ 14 kiện hàng",
+      title: "Forklift assistance & Pallet receiving at Dock #02",
+      note: "High priority",
+      assignee: "Tech Son (#ENG-18)",
+      detail: "Unloading 14 pallets",
       status: "doing",
-      statusLabel: "ĐANG LÀM",
+      statusLabel: "IN PROGRESS",
     },
     {
       id: 3,
-      title: "Bàn giao & ký biên bản niêm phong kho #B-204",
-      note: "Khách: VinLogistics JSC",
-      assignee: "Lễ tân Hà (#FO-05)",
-      detail: "Dự kiến khách đến: 16:30",
+      title: "Handover inspection & seal unit #B-204",
+      note: "Customer: VinLogistics JSC",
+      assignee: "Receptionist Ha (#FO-05)",
+      detail: "Expected arrival: 16:30",
       status: "waiting",
-      statusLabel: "CHỜ KHÁCH",
+      statusLabel: "WAITING",
     },
   ];
 }
 
 export function getHandoverTag() {
-  return "Ca Chiều → Đêm";
+  return "Afternoon → Night Shift";
 }
 
 export function getHandoverChecklist() {
   return [
-    { id: "keys", label: "Chùm chìa khóa Master & Thẻ NFC khẩn cấp", detail: "Đã kiểm đếm (12/12)" },
-    { id: "fire", label: "Hệ thống PCCC & Báo khói lạnh kho", detail: "Áp lực ổn định 1.2 MPa" },
-    { id: "cctv", label: "Hệ thống 148 Camera CCTV Hub", detail: "148/148 Online" },
+    { id: "keys", label: "Master Keyring & Emergency NFC Tokens", detail: "Count verified (12/12)" },
+    { id: "fire", label: "Fire Suppression & Cold Smoke Sensors", detail: "Pressure stable at 1.2 MPa" },
+    { id: "cctv", label: "Facility 148 CCTV Cameras Network", detail: "148 / 148 Online" },
   ];
 }
 
 export function getHandoverNote() {
-  return "Khách VinLogistics JSC có thể lấy thêm 2 pallet lúc 23:45. Ca đêm quét QR + vân tay trước khi mở barrier Dock #02.";
+  return "VinLogistics JSC client may retrieve 2 additional pallets at 23:45. Night shift must verify QR code + fingerprint before opening Dock #02 barrier.";
 }
