@@ -1,13 +1,4 @@
 // Data layer: content & pricing config source for the StorageDetail (booking) page.
-export function getMoveInOptions() {
-  return [
-    { id: "today", label: "Hôm nay (Ngay lập tức)" },
-    { id: "tomorrow", label: "Ngày mai" },
-    { id: "fri", label: "Thứ 6, 01/11/2025" },
-    { id: "custom", label: "Chọn ngày khác" },
-  ];
-}
-
 export function getTimeSlots() {
   return [
     { id: "morning", label: "09:00 SA – 11:00 SA", note: "Khoảng sáng vắng vẻ" },
@@ -23,15 +14,15 @@ export function getProtectionPlans() {
       id: "standard",
       badge: "PHỔ BIẾN",
       name: "Bảo vệ Tiêu chuẩn",
-      text: "Bảo hiểm tài sản đến $2,000: ngập nước, hỏa hoạn, mất cắp.",
-      price: 12,
+      text: "Bảo hiểm tài sản đến 48.000.000 đ: ngập nước, hỏa hoạn, mất cắp.",
+      price: 288000,
     },
     {
       id: "premium",
       badge: "MỞ RỘNG",
       name: "Bảo hiểm Cao cấp Cộng",
-      text: "Bảo hiểm thay thế đến $5,000, khấu trừ $0.",
-      price: 24,
+      text: "Bảo hiểm thay thế đến 120.000.000 đ, khấu trừ 0 đ.",
+      price: 576000,
     },
     {
       id: "own",

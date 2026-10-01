@@ -3,46 +3,37 @@ export function getDashboardAccessLogs() {
   return [
     {
       icon: "lock_open",
-      title: "Mở chốt kho #B-204",
-      time: "Hôm nay 14:45",
-      note: "Mạng Bluetooth di động • Alex Morgan (Chủ sở hữu)",
+      title: "Mở kho #B-204",
+      time: "14:45",
+      note: "Bluetooth • Alex Morgan",
     },
     {
       icon: "directions_car",
-      title: "Xe vào Cổng Nam",
-      time: "Hôm nay 14:41",
-      note: "Quét thẻ Apple Wallet NFC • Đã cấp quyền",
+      title: "Vào Cổng Nam",
+      time: "14:41",
+      note: "Apple Wallet NFC",
     },
     {
       icon: "local_shipping",
-      title: "Mã PIN chuyển đồ thanh thực đúng",
-      time: "18/10, 10:12",
-      note: "Đơn vị vận chuyển • Khóa hết hạn sau 24h",
+      title: "Xác thực mã PIN",
+      time: "18/10",
+      note: "Đơn vị vận chuyển",
     },
     {
       icon: "receipt_long",
-      title: "Tự động gia hạn hợp đồng thuê hàng tháng",
-      time: "01/10, 00:00",
-      note: "$101.00 USD đã thanh toán qua Visa • Hóa đơn #VS-3918",
+      title: "Gia hạn hợp đồng",
+      time: "01/10",
+      note: "$101.00 • Visa",
     },
   ];
 }
 
 export function getDashboardQuickActions() {
   return [
-    { icon: "expand", title: "Nâng cấp diện tích", text: "Đổi hoặc thuê thêm kho" },
-    { icon: "shopping_cart", title: "Cửa hàng phụ kiện dọn kho", text: "Thùng, khóa, xe đẩy" },
-    { icon: "event_note", title: "Thông báo trả kho", text: "Hẹn ngày trả kho" },
-    { icon: "support_agent", title: "Hỗ trợ trực tiếp tại kho", text: "Điều phối công trực tiếp 24/7" },
-  ];
-}
-
-export function getDashboardTrustBadges() {
-  return [
-    { icon: "verified", title: "Chứng nhận ISO 27001", text: "Bảo mật dữ liệu & cơ sở" },
-    { icon: "lock", title: "Mã hóa SSL 256-Bit", text: "Truy cập khóa thiết bị quản trị" },
-    { icon: "videocam", title: "Camera giám sát 24/7", text: "Giám sát liên tục các khoang" },
-    { icon: "health_and_safety", title: "Bảo hiểm toàn diện", text: "Bảo vệ tài sản lên đến $50,000" },
+    { icon: "swap_horiz", title: "Đổi kho" },
+    { icon: "shopping_cart", title: "Mua phụ kiện" },
+    { icon: "event_note", title: "Báo trả kho" },
+    { icon: "support_agent", title: "Hỗ trợ 24/7" },
   ];
 }
 

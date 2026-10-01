@@ -103,12 +103,3 @@ export function getSupportTickets() {
     },
   ];
 }
-
-export function getSupportTrustBadges() {
-  return [
-    { icon: "verified", title: "Chứng nhận ISO 27001", text: "Bảo vệ Dữ liệu & Cơ sở" },
-    { icon: "lock", title: "Mã hóa SSL 256-Bit", text: "Khóa an toàn tuyệt đối" },
-    { icon: "videocam", title: "Camera giám sát 24/7", text: "Hệ thống CCTV liên tục" },
-    { icon: "health_and_safety", title: "Bảo hiểm toàn diện", text: "Bảo vệ tài sản lên đến $50,000" },
-  ];
-}

@@ -4,7 +4,6 @@ import {
   getSupportUnits,
   getTicketTabs,
   getSupportTickets,
-  getSupportTrustBadges,
 } from "../data/supportRepository";
 import { filterUnitsByStatus, filterTicketsByStatus } from "../domain/usecases/filterSupportRecords";
 
@@ -14,7 +13,6 @@ export function useSupport() {
   const units = getSupportUnits();
   const ticketTabs = getTicketTabs();
   const tickets = getSupportTickets();
-  const trustBadges = getSupportTrustBadges();
 
   const [activeUnitTab, setActiveUnitTab] = useState("all");
   const [activeTicketTab, setActiveTicketTab] = useState("all");
@@ -30,7 +28,6 @@ export function useSupport() {
   return {
     unitTabs,
     ticketTabs,
-    trustBadges,
     activeUnitTab,
     setActiveUnitTab,
     activeTicketTab,

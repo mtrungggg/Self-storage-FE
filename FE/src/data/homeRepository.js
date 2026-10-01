@@ -1,77 +1,29 @@
-// Data layer: content & listing source for the Home (storage search) page.
-export function getFacilities() {
+// Data layer: content & listing source for the Home (storage search & reservation) page.
+
+export function getSizeFilters() {
   return [
-    {
-      id: "downtown",
-      badge: "Premium Facility",
-      distance: "0.8 mi",
-      rating: "4.9",
-      reviews: 342,
-      tag: "Modern & Clean",
-      name: "VaultSpace Downtown",
-      address: "410 S Congress Ave, Austin, TX 78704",
-      perks: ["Smart Bluetooth", "Climate Controlled", "24/7 CCTV", "Drive-up Access"],
-      note: "Only 3 units left",
-      noteTone: "text-[#b45309]",
-      sizes: [
-        { label: "5' x 5' (2.3m²)", price: "$49/mo" },
-        { label: "5' x 10' (4.6m²)", price: "$89/mo" },
-        { label: "10' x 10' (9.3m²)", price: "$139/mo" },
-        { label: "10' x 20' (18.6m²)", price: "$220/mo" },
-      ],
-      from: "$49/mo",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: "north-tech",
-      badge: "Best Value",
-      distance: "2.1 mi",
-      rating: "4.8",
-      reviews: 198,
-      tag: "Modern High-Ceiling",
-      name: "VaultSpace North Tech",
-      address: "9400 Research Blvd, Austin, TX 78759",
-      perks: ["Keyless Entry", "Freight Elevator", "Full AC Climate", "Covered Loading"],
-      note: "Move-in today",
-      noteTone: "text-[#0e7b4c]",
-      sizes: [
-        { label: "5' x 10'", price: "$39.50/mo" },
-        { label: "10' x 10'", price: "$125/mo" },
-        { label: "10' x 15'", price: "$175/mo" },
-        { label: "10' x 25'", price: "$245/mo" },
-      ],
-      from: "$39.50/mo",
-      image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: "riverside",
-      badge: "Drive-Up Access",
-      distance: "3.4 mi",
-      rating: "4.9",
-      reviews: 215,
-      tag: "Direct Ground Access",
-      name: "VaultSpace East Riverside",
-      address: "2100 E Riverside Dr, Austin, TX 78741",
-      perks: ["Spacious Parking", "Security Roll-up Doors", "Keypad Gate Entry", "EV Charging Station"],
-      note: "Vehicle capacity",
-      noteTone: "text-[#1d5fe5]",
-      sizes: [
-        { label: "10' x 10'", price: "$119/mo" },
-        { label: "10' x 20'", price: "$195/mo" },
-        { label: "10' x 30'", price: "$279/mo" },
-        { label: "Vehicle Parking", price: "$160/mo" },
-      ],
-      from: "$119/mo",
-      image: "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
-    },
+    { id: "all", label: "Tất cả kích thước", subtext: "Mọi diện tích" },
+    { id: "small", label: "Nhỏ (< 5 m²)", subtext: "Tủ cá nhân, đồ theo mùa" },
+    { id: "medium", label: "Vừa (5 - 10 m²)", subtext: "Căn hộ 1-2 phòng ngủ" },
+    { id: "large", label: "Lớn (10 - 20 m²)", subtext: "Căn hộ 3PN, nhà phố" },
+    { id: "vehicle", label: "Kho xe / Rất lớn (> 20 m²)", subtext: "Ô tô, hàng thương mại" },
+  ];
+}
+
+export function getRentalTerms() {
+  return [
+    { id: "month", label: "Từng tháng linh hoạt", discount: "0%" },
+    { id: "quarter", label: "3 tháng (Giảm 5%)", discount: "5%" },
+    { id: "half-year", label: "6 tháng (Giảm 10%)", discount: "10%" },
+    { id: "year", label: "12 tháng (Giảm 15%)", discount: "15%" },
   ];
 }
 
 export function getSizeGuideTabs() {
   return [
-    { id: "studio", label: "5' x 10' (Studio)" },
-    { id: "1-2br", label: "10' x 10' (1-2 Phòng ngủ)" },
-    { id: "house", label: "10' x 20' (Nguyên căn nhà)" },
+    { id: "studio", label: "5' x 10' (4.6 m²)", title: "Căn hộ Studio / 1 Phòng ngủ", desc: "Chứa được giường queen, ghế sofa, bàn trà, tủ quần áo và 15-20 thùng carton." },
+    { id: "1-2br", label: "10' x 10' (9.3 m²)", title: "Căn hộ 2 Phòng ngủ", desc: "Chứa đồ đạc 2 phòng ngủ hoàn chỉnh, tủ lạnh, máy giặt, bàn ăn và xe đạp." },
+    { id: "house", label: "10' x 20' (18.6 m²)", title: "Nhà phố / Nguyên căn", desc: "Tương đương garage 1 xe hơi. Chứa toàn bộ nội thất nhà 3-4 phòng ngủ hoặc hàng hóa kinh doanh." },
   ];
 }
 
@@ -79,32 +31,23 @@ export function getHomeHighlights() {
   return [
     {
       icon: "event_available",
-      title: "Không ràng buộc dài hạn",
-      text: "Lưu kho 1 tháng hay 5 năm tùy ý, đổi hoặc trả kho online bất cứ lúc nào.",
+      title: "Hợp đồng linh hoạt",
+      text: "Thuê theo tháng, hủy bất cứ lúc nào trực tuyến không phí phạt.",
     },
     {
       icon: "toll",
-      title: "Không phụ phí ẩn",
-      text: "Báo giá minh bạch, cố định, không phát sinh phí ẩn.",
+      title: "Minh bạch tuyệt đối",
+      text: "Không phụ phí phát sinh, tiền cọc được hoàn trả đúng hẹn.",
     },
     {
       icon: "local_shipping",
-      title: "Miễn phí xe tải chuyển đồ (4h)",
-      text: "Miễn phí xe tải 4h cho hợp đồng thuê kho từ 10x10 trở lên.",
+      title: "Hỗ trợ vận chuyển",
+      text: "Tặng 2 giờ xe tải chuyển đồ cho hợp đồng từ 3 tháng.",
     },
     {
       icon: "lock_open",
-      title: "Mở khóa thông minh tiện lợi",
-      text: "Mở cổng và cửa cuốn tự động chỉ với 1 chạm trên điện thoại.",
+      title: "Khóa số thông minh",
+      text: "Mở cổng và ô kho 24/7 trực tiếp qua điện thoại hoặc mã PIN.",
     },
-  ];
-}
-
-export function getHomeTrustBadges() {
-  return [
-    { icon: "verified", title: "Chứng nhận ISO 27001", text: "Bảo vệ Dữ liệu & Cơ sở" },
-    { icon: "lock", title: "Mã hóa SSL 256-Bit", text: "Khóa an ninh cấp độ quân sự" },
-    { icon: "videocam", title: "Camera CCTV giám sát 24/7", text: "Giám sát liên tục các dãy kho" },
-    { icon: "health_and_safety", title: "Bảo hiểm toàn diện", text: "Gói bảo hiểm lên đến $50,000" },
   ];
 }

@@ -2,19 +2,20 @@ import apiClient from "./apiClient";
 
 export const paymentService = {
   /**
-   * Khởi tạo thông tin thanh toán VietQR / SePay
-   * @param {{ invoiceId: number, paymentMethod: string }} data
+   * Khởi tạo thông tin thanh toán (VietQR / SePay) cho một đơn đặt chỗ
+   * @param {{ reservationId: number, paymentMethod?: string }} data
    */
   async createCheckout(data) {
-    return await apiClient.post("/customer/payments/create-checkout", data);
+    const res = await apiClient.post("/customer/payments/create-checkout", data);
+    return res?.data ?? null;
   },
 
   /**
-   * Kiểm tra trạng thái thanh toán của hóa đơn
-   * @param {number|string} invoiceId
+   * Lấy lịch sử thanh toán của tài khoản đang đăng nhập
    */
-  async getInvoiceStatus(invoiceId) {
-    return await apiClient.get(`/customer/payments/invoice/${invoiceId}/status`);
+  async getPaymentHistory() {
+    const res = await apiClient.get("/customer/payments/my-history");
+    return res?.data ?? [];
   },
 };
 

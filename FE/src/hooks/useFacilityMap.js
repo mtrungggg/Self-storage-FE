@@ -5,7 +5,6 @@ import {
   getRightUnits,
   getWayfindingSteps,
   getFacilityAmenities,
-  getFacilityMapTrustBadges,
 } from "../data/facilityMapRepository";
 
 // Application layer: encapsulates FacilityMap page state and data wiring.
@@ -15,7 +14,6 @@ export function useFacilityMap() {
   const rightUnits = getRightUnits();
   const steps = getWayfindingSteps();
   const amenities = getFacilityAmenities();
-  const trustBadges = getFacilityMapTrustBadges();
 
   const [activeFloor, setActiveFloor] = useState("floor2");
   const [layers, setLayers] = useState({ route: true, cctv: true, carts: true });
@@ -28,7 +26,6 @@ export function useFacilityMap() {
     rightUnits,
     steps,
     amenities,
-    trustBadges,
     activeFloor,
     setActiveFloor,
     layers,

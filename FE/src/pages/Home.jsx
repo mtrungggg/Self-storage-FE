@@ -1,198 +1,543 @@
+import { Link } from "react-router-dom";
 import { useHome } from "../hooks/useHome";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import PageBackground from "../components/PageBackground";
+import { formatVnd } from "../lib/utils";
 
 function Home() {
-  const { facilities, goToStorageDetail } = useHome();
+  const {
+    selectedLocation,
+    setSelectedLocation,
+    selectedType,
+    setSelectedType,
+    selectedSize,
+    setSelectedSize,
+    selectedTerm,
+    setSelectedTerm,
+    searchKeyword,
+    setSearchKeyword,
+    resetFilters,
+
+    activeTab,
+    setActiveTab,
+    sortBy,
+    setSortBy,
+    activeSizeTab,
+    setActiveSizeTab,
+
+    locations,
+    storageTypes,
+    sizeFilters,
+    rentalTerms,
+    filteredUnits,
+    filteredFacilities,
+    sizeGuideTabs,
+    highlights,
+
+    loading,
+    error,
+
+    handleSelectUnit,
+  } = useHome();
+
+  const isFiltering =
+    selectedLocation !== "all" ||
+    selectedType !== "all" ||
+    selectedSize !== "all" ||
+    selectedTerm !== "month" ||
+    Boolean(searchKeyword.trim());
 
   return (
-    <div className="min-h-screen bg-[#f5f7fd] text-[#0b1c30]">
-      <Header active="rent" subtitle="Kho tự an ninh" showExpandIcon />
+    <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
+      <PageBackground />
+      <Header active="rent" subtitle="Kho tự quản thông minh" />
 
-      <main className="mx-auto max-w-[1280px] px-4 py-8 lg:px-6">
-        <div>
-          <h1 className="text-[28px] sm:text-[32px] font-bold leading-tight tracking-[-0.03em] text-[#0b1c30]">
-            Find Secure &amp; Smart Storage Near You
-          </h1>
-        </div>
+      {/* Hero Section & Search Header */}
+      <section className="border-b border-[#e2e8f4] bg-white">
+        <div className="mx-auto max-w-[1280px] px-4 py-8 lg:px-6">
+          <div className="max-w-3xl">
+            <h1 className="mt-3 text-[26px] sm:text-[34px] font-extrabold leading-tight tracking-[-0.03em] text-[#0b1c30]">
+              Tìm &amp; Đặt Ô Kho Tự Quản
+            </h1>
+          </div>
 
-        <div className="mt-6 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.04)]">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.4fr_1fr_1fr_auto]">
-            <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#8996a9]">Location or Zip Code</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">location_on</span>
-                <input
-                  defaultValue="Austin, TX (Metro Area)"
-                  className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-28 text-[13px] outline-none focus:border-[#3b82f6]"
-                />
-                <button type="button" className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#eef4ff] px-2 py-1 text-[11px] font-semibold text-[#1d5fe5]">
-                  <span className="material-symbols-outlined text-[14px]">my_location</span>
-                  Auto-locate
+          {/* Search Box (Bước i: Tìm kiếm theo Vị trí, Loại kho, Kích thước, Thời gian thuê) */}
+          <div className="mt-6 rounded-[16px] border border-[#dfe7f5] bg-[#fafcff] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Tiêu chí 1: Vị trí */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#64748b]">
+                  <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">location_on</span>
+                  Vị trí kho
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    className="w-full appearance-none rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 pl-3.5 pr-8 text-[13px] font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5] focus:ring-1 focus:ring-[#1d5fe5]"
+                  >
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
+                    expand_more
+                  </span>
+                </div>
+              </div>
+
+              {/* Tiêu chí 2: Loại kho */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#64748b]">
+                  <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">warehouse</span>
+                  Loại kho
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="w-full appearance-none rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 pl-3.5 pr-8 text-[13px] font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5] focus:ring-1 focus:ring-[#1d5fe5]"
+                  >
+                    {storageTypes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
+                    expand_more
+                  </span>
+                </div>
+              </div>
+
+              {/* Tiêu chí 3: Kích thước */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#64748b]">
+                  <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">straighten</span>
+                  Kích thước mong muốn
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedSize}
+                    onChange={(e) => setSelectedSize(e.target.value)}
+                    className="w-full appearance-none rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 pl-3.5 pr-8 text-[13px] font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5] focus:ring-1 focus:ring-[#1d5fe5]"
+                  >
+                    {sizeFilters.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
+                    expand_more
+                  </span>
+                </div>
+              </div>
+
+              {/* Tiêu chí 4: Thời gian thuê */}
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#64748b]">
+                  <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">calendar_month</span>
+                  Thời gian thuê
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedTerm}
+                    onChange={(e) => setSelectedTerm(e.target.value)}
+                    className="w-full appearance-none rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 pl-3.5 pr-8 text-[13px] font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5] focus:ring-1 focus:ring-[#1d5fe5]"
+                  >
+                    {rentalTerms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8996a9]">
+                    expand_more
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-bar: Search keyword & Quick chips */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f8] pt-3.5">
+              <div className="flex flex-1 items-center gap-2">
+                <div className="relative w-full max-w-sm">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-[#8996a9]">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Tìm theo mã kho, tên kho, địa chỉ..."
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    className="w-full rounded-[8px] border border-[#dfe7f5] bg-white py-1.5 pl-9 pr-3 text-[12px] outline-none focus:border-[#1d5fe5]"
+                  />
+                </div>
+
+                <div className="hidden items-center gap-1.5 md:flex">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType(selectedType === "climate" ? "all" : "climate")}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                      selectedType === "climate"
+                        ? "bg-[#0b1c30] text-white"
+                        : "border border-[#dfe7f5] bg-white text-[#58657a] hover:bg-[#f0f4fc]"
+                    }`}
+                  >
+                    Kho máy lạnh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType(selectedType === "driveup" ? "all" : "driveup")}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                      selectedType === "driveup"
+                        ? "bg-[#0b1c30] text-white"
+                        : "border border-[#dfe7f5] bg-white text-[#58657a] hover:bg-[#f0f4fc]"
+                    }`}
+                  >
+                    Kho Drive-up
+                  </button>
+                </div>
+              </div>
+
+              {isFiltering && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-[#b45309] hover:underline"
+                >
+                  <span className="material-symbols-outlined text-[14px]">refresh</span>
+                  Đặt lại bộ lọc
                 </button>
-              </div>
+              )}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#8996a9]">Move-in Date</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">calendar_month</span>
-                <input
-                  defaultValue="Today, Oct 24, 2025"
-                  className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] outline-none focus:border-[#3b82f6]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#8996a9]">Rental Term</label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">event_repeat</span>
-                <select className="w-full appearance-none rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-3 pl-10 pr-4 text-[13px] outline-none focus:border-[#3b82f6]">
-                  <option>Month-to-month (flexible)</option>
-                  <option>Quarterly</option>
-                  <option>Yearly</option>
-                </select>
-              </div>
-            </div>
+      {/* Main Content (Bước ii: Hiển thị danh sách điểm kho và ô kho trống phù hợp kèm thông tin chi tiết) */}
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 lg:px-6">
+        {error && (
+          <div className="mb-4 rounded-[12px] border border-[#fecdca] bg-[#fff1f1] px-4 py-3 text-[13px] font-semibold text-[#b3261e]">
+            {error}
+          </div>
+        )}
+        {loading ? (
+          <div className="flex items-center justify-center rounded-[16px] border border-[#dfe7f5] bg-white p-16">
+            <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5]">progress_activity</span>
+            <span className="ml-3 text-[13px] font-semibold text-[#58657a]">Đang tải dữ liệu điểm kho...</span>
+          </div>
+        ) : (
+        <>
+        {/* Results Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e2e8f4] pb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("units")}
+              className={`flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-[13px] font-bold transition ${
+                activeTab === "units"
+                  ? "bg-[#0b1c30] text-white shadow-sm"
+                  : "bg-white text-[#58657a] border border-[#dfe7f5] hover:bg-[#f8faff]"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">grid_view</span>
+              Ô kho trống phù hợp
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] ${
+                  activeTab === "units" ? "bg-white/20 text-white" : "bg-[#f0f4fc] text-[#1d5fe5]"
+                }`}
+              >
+                {filteredUnits.length}
+              </span>
+            </button>
 
             <button
-              type="button"
-              className="flex items-center justify-center gap-2 rounded-[10px] bg-[#0b1c30] px-6 py-3 text-[13px] font-bold text-white transition hover:bg-[#132741]"
+              onClick={() => setActiveTab("facilities")}
+              className={`flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-[13px] font-bold transition ${
+                activeTab === "facilities"
+                  ? "bg-[#0b1c30] text-white shadow-sm"
+                  : "bg-white text-[#58657a] border border-[#dfe7f5] hover:bg-[#f8faff]"
+              }`}
             >
-              <span className="material-symbols-outlined text-[18px]">search</span>
-              Find Storage
+              <span className="material-symbols-outlined text-[16px]">domain</span>
+              Điểm kho (Cơ sở)
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] ${
+                  activeTab === "facilities" ? "bg-white/20 text-white" : "bg-[#f0f4fc] text-[#1d5fe5]"
+                }`}
+              >
+                {filteredFacilities.length}
+              </span>
             </button>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#eef1f8] pt-4 text-[12px] font-semibold">
-            <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#8996a9]">Unit Size:</span>
-            <span className="rounded-full bg-[#0b1c30] px-3 py-1 text-white">All Sizes (18)</span>
-            <span className="rounded-full border border-[#dfe7f5] px-3 py-1 text-[#3a475a]">Small (5x5, 5x10)</span>
-            <span className="rounded-full border border-[#dfe7f5] px-3 py-1 text-[#3a475a]">Medium (10x10, 10x15)</span>
-            <span className="rounded-full border border-[#dfe7f5] px-3 py-1 text-[#3a475a]">Large (10x20, 10x30)</span>
-            <span className="rounded-full border border-[#dfe7f5] px-3 py-1 text-[#3a475a]">Vehicle &amp; Auto</span>
-
-            <span className="mx-2 h-4 w-px bg-[#e6ebf5]" />
-
-            <label className="flex items-center gap-1.5 text-[#3a475a]">
-              <input type="checkbox" defaultChecked className="h-3.5 w-3.5 accent-[#1d5fe5]" />
-              Climate Controlled
-            </label>
-            <label className="flex items-center gap-1.5 text-[#3a475a]">
-              <input type="checkbox" className="h-3.5 w-3.5 accent-[#1d5fe5]" />
-              Drive-up Access
-            </label>
-            <label className="flex items-center gap-1.5 text-[#3a475a]">
-              <input type="checkbox" defaultChecked className="h-3.5 w-3.5 accent-[#1d5fe5]" />
-              24/7 Smart Lock
-            </label>
-            <label className="flex items-center gap-1.5 text-[#3a475a]">
-              <input type="checkbox" defaultChecked className="h-3.5 w-3.5 accent-[#1d5fe5]" />
-              50% Off Promo
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
-          <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
-            <span>Sort by:</span>
-            <select className="rounded-md border border-[#dfe7f5] bg-white px-2 py-1.5 outline-none">
-              <option>Recommended</option>
-              <option>Price: Low to High</option>
-              <option>Highest Rated</option>
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-semibold text-[#8996a9]">Sắp xếp:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[12px] font-semibold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+            >
+              <option value="recommended">Đề xuất tốt nhất</option>
+              <option value="price-asc">Giá thuê: Thấp đến Cao</option>
+              <option value="price-desc">Giá thuê: Cao đến Thấp</option>
+              <option value="size">Diện tích: Lớn nhất</option>
             </select>
-            <span className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white p-1">
-              <span className="material-symbols-outlined rounded bg-[#eef4ff] p-1 text-[16px] text-[#1d5fe5]">grid_view</span>
-              <span className="material-symbols-outlined p-1 text-[16px] text-[#8996a9]">view_list</span>
-            </span>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {facilities.map((f) => (
-            <div key={f.id} className="overflow-hidden rounded-[14px] border border-[#dfe7f5] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="relative h-[140px] w-full bg-cover bg-center" style={{ backgroundImage: `url('${f.image}')` }}>
-                <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-[#0b1c30]">
-                  {f.badge} • {f.distance}
-                </span>
-                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-[#0b1c30]">
-                  <span className="material-symbols-outlined text-[12px] text-[#f4b740]">star</span>
-                  {f.rating} ({f.reviews})
-                </span>
+        {/* Tab 1: Ô kho trống phù hợp (Hiển thị chi tiết: kích thước, giá thuê, phí cọc, chính sách) */}
+        {activeTab === "units" && (
+          <div className="mt-6">
+            {filteredUnits.length === 0 ? (
+              <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-12 text-center shadow-sm">
+                <span className="material-symbols-outlined text-[48px] text-[#cbd5e1]">inventory_2</span>
+                <h3 className="mt-2 text-[16px] font-bold text-[#0b1c30]">Không tìm thấy ô kho phù hợp</h3>
+                <p className="mt-1 text-[13px] text-[#58657a]">
+                  Vui lòng thử điều chỉnh vị trí, loại kho hoặc kích thước mong muốn.
+                </p>
+                <button
+                  onClick={resetFilters}
+                  className="mt-4 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#174fc7]"
+                >
+                  Xem tất cả ô kho
+                </button>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {filteredUnits.map((u, index) => (
+                  <div
+                    key={u.id}
+                    className="flex flex-col justify-between overflow-hidden rounded-[16px] border border-[#dfe7f5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.03)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(15,23,42,0.07)]"
+                  >
+                    <div>
+                      {/* Top banner / Image */}
+                      <div
+                        className="relative h-[150px] w-full bg-cover bg-center"
+                        style={{ backgroundImage: `url('${u.image}')` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                        
+                        <div className="absolute left-3 top-3 flex items-center gap-1.5">
+                          <span className="rounded-md bg-[#0b1c30]/90 px-2 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+                            {u.unitCode}
+                          </span>
+                          <span className="rounded-md bg-[#0e7b4c] px-2 py-1 text-[11px] font-bold text-white">
+                            Sẵn sàng
+                          </span>
+                        </div>
 
-              <div className="p-4">
-                <div className="text-[11px] font-semibold text-[#1d5fe5]">{f.tag}</div>
-                <div className="mt-1 text-[16px] font-bold text-[#0b1c30]">{f.name}</div>
-                <div className="text-[12px] text-[#8996a9]">{f.address}</div>
+                        {u.discountTag && (
+                          <div className="absolute right-3 top-3 rounded-md bg-[#fff1e6] px-2 py-0.5 text-[10px] font-bold text-[#b45309] shadow-sm">
+                            {u.discountTag}
+                          </div>
+                        )}
 
-                <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-[#3a475a]">
-                  {f.perks.map((perk) => (
-                    <span key={perk} className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">check_circle</span>
-                      {perk}
-                    </span>
-                  ))}
-                </div>
+                        <div className="absolute bottom-2.5 left-3 text-white">
+                          <div className="text-[12px] font-semibold opacity-90">{u.facilityName}</div>
+                          <div className="text-[11px] text-white/80">{u.floor}</div>
+                        </div>
+                      </div>
 
-                <div className="mt-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                  <span>Popular Sizes:</span>
-                  <span className={f.noteTone}>{f.note}</span>
-                </div>
+                      {/* Detail Body */}
+                      <div className="p-4">
+                        <div className="flex items-center justify-end">
+                          <span className="text-[11px] font-semibold text-[#8996a9]">
+                            {u.volume} ({u.height})
+                          </span>
+                        </div>
 
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
-                  {f.sizes.map((s) => (
-                    <div key={s.label} className="rounded-[8px] border border-[#eef1f8] bg-[#f8faff] px-2 py-1.5">
-                      <div className="font-semibold text-[#0b1c30]">{s.label}</div>
-                      <div className="text-[#1d5fe5]">{s.price}</div>
+                        {/* Kích thước */}
+                        <div className="mt-2.5">
+                          <div className="text-[17px] font-extrabold text-[#0b1c30]">
+                            Kho {index + 1}
+                          </div>
+                        </div>
+
+                        {/* Bảng Giá thuê & Phí cọc */}
+                        <div className="mt-4 grid grid-cols-2 gap-2 rounded-[12px] border border-[#eef2f8] bg-[#f8faff] p-2.5">
+                          <div>
+                            <span className="block text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                              Giá thuê
+                            </span>
+                            <div className="mt-0.5 flex items-baseline gap-1">
+                              <span className="text-[15px] font-black text-[#0b1c30]">{formatVnd(u.rentPrice)}</span>
+                              <span className="text-[11px] font-semibold text-[#8996a9]">/tháng</span>
+                            </div>
+                          </div>
+                          <div className="border-l border-[#e2e8f4] pl-2.5">
+                            <span className="block text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                              Phí cọc (Hoàn trả)
+                            </span>
+                            <div className="mt-0.5 flex items-baseline gap-1">
+                              <span className="text-[12px] font-bold text-[#0e7b4c]">Tính khi đặt chỗ</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+
+                    {/* Footer / Action Button */}
+                    <div className="border-t border-[#edf1f8] bg-[#fafcff] p-3.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectUnit(u)}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow-[0_8px_16px_rgba(29,95,229,0.2)] transition hover:bg-[#174fc7]"
+                        >
+                          <span>Đặt chỗ ngay</span>
+                          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </button>
+                        <Link
+                          to="/facility-map"
+                          title="Xem sơ đồ vị trí"
+                          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#dfe7f5] bg-white text-[#58657a] hover:bg-[#f0f4fc] hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">map</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Danh sách Điểm kho (Cơ sở chi nhánh) */}
+        {activeTab === "facilities" && (
+          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {filteredFacilities.map((f) => (
+              <div
+                key={f.id}
+                className="overflow-hidden rounded-[16px] border border-[#dfe7f5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.03)] transition hover:shadow-md"
+              >
+                <div
+                  className="relative h-[160px] w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url('${f.image}')` }}
+                >
+                  <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#0b1c30]">
+                    {f.badge}
+                  </span>
+                  <span className={`absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold ${f.noteTone}`}>
+                    {f.note}
+                  </span>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] uppercase text-[#8996a9]">From</div>
-                    <div className="text-[16px] font-bold text-[#0b1c30]">{f.from}</div>
+                <div className="p-4">
+                  <div className="text-[16px] font-bold text-[#0b1c30]">{f.name}</div>
+                  <div className="mt-1 text-[12px] text-[#64748b]">{f.address}</div>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {f.perks.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded-md border border-[#e2e8f4] bg-[#f8faff] px-2 py-0.5 text-[10px] font-semibold text-[#58657a]"
+                      >
+                        {p}
+                      </span>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="text-[12px] font-semibold text-[#1d5fe5] hover:underline">View all</button>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-[#f0f3f8] pt-3">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                        Giá khởi điểm
+                      </div>
+                      <div className="text-[16px] font-extrabold text-[#0b1c30]">
+                        {f.fromValue != null ? `${formatVnd(f.fromValue)}/tháng` : "Liên hệ"}
+                      </div>
+                    </div>
                     <button
-                      onClick={goToStorageDetail}
-                      className="flex items-center gap-1 rounded-[8px] bg-[#0b1c30] px-3 py-2 text-[12px] font-bold text-white transition hover:bg-[#132741]"
+                      type="button"
+                      onClick={() => {
+                        setSelectedLocation(String(f.id));
+                        setActiveTab("units");
+                      }}
+                      className="flex items-center gap-1.5 rounded-[9px] bg-[#0b1c30] px-3.5 py-2 text-[12px] font-bold text-white transition hover:bg-[#132741]"
                     >
-                      Reserve Now
+                      Xem các ô kho trống
                       <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </button>
                   </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        </>
+        )}
+
+        {/* Size Guide Section: Trợ giúp chọn kích thước trực quan */}
+        <section className="mt-12 rounded-[16px] border border-[#dfe7f5] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
+                Gợi ý lựa chọn
+              </div>
+              <h2 className="text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
+                Hướng dẫn kích thước kho phù hợp với nhu cầu
+              </h2>
+            </div>
+            <div className="flex gap-1.5 rounded-[10px] bg-[#f0f4fc] p-1">
+              {sizeGuideTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSizeTab(tab.id)}
+                  className={`rounded-[8px] px-3 py-1.5 text-[12px] font-bold transition ${
+                    activeSizeTab === tab.id ? "bg-[#0b1c30] text-white" : "text-[#58657a] hover:text-[#0b1c30]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-[12px] border border-[#eef2f8] bg-[#f8faff] p-4 text-[13px]">
+            {sizeGuideTabs
+              .filter((t) => t.id === activeSizeTab)
+              .map((item) => (
+                <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <span className="font-bold text-[#0b1c30]">{item.title}:</span>{" "}
+                    <span className="text-[#58657a]">{item.desc}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (item.id === "studio") setSelectedSize("medium");
+                      if (item.id === "1-2br") setSelectedSize("large");
+                      if (item.id === "house") setSelectedSize("large");
+                      setActiveTab("units");
+                    }}
+                    className="shrink-0 font-bold text-[#1d5fe5] hover:underline"
+                  >
+                    Xem ô kho kích thước này →
+                  </button>
+                </div>
+              ))}
+          </div>
+        </section>
+
+        {/* Highlights & Trust badges */}
+        <section className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {highlights.map((h, i) => (
+            <div key={i} className="rounded-[12px] border border-[#dfe7f5] bg-white p-4">
+              <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">{h.icon}</span>
+              <div className="mt-2 text-[13px] font-bold text-[#0b1c30]">{h.title}</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#64748b]">{h.text}</p>
             </div>
           ))}
-        </div>
+        </section>
       </main>
 
-      <Footer
-        tagline="Được thiết kế cho các giải pháp lưu trữ cá nhân và thương mại tiêu chuẩn doanh nghiệp. Tường rào kiên cố, ủy quyền truy cập chặt chẽ, không có ngoại lệ."
-        hotline={{ label: "ĐƯỜNG DÂY NÓNG KHẨN CẤP", phone: "1-800-555-VAULT (24/7)" }}
-        columns={[
-          {
-            title: "Cổng khách hàng",
-            items: ["Kho tôi đang thuê", "Mã PIN & Mã cổng", "Cài đặt thanh toán & Hóa đơn", "Trạng thái khóa điện tử", "Ủy quyền khách vào kho"],
-          },
-          {
-            title: "Cơ sở & Kích thước",
-            items: ["Hướng dẫn chọn kích thước kho", "Tiêu chuẩn kiểm soát khí hậu", "Lối xe vào & Chỗ đậu xe", "Đặt lịch khu vực bốc dỡ", "Các gói bảo hiểm & Yêu cầu bồi thường"],
-          },
-          {
-            title: "Hỗ trợ & Tin cậy",
-            items: ["Trò chuyện hỗ trợ trực tiếp", "Cửa hàng vật tư đóng gói", "Tài liệu chính sách kho", "Điều khoản quyền riêng tư & Giám sát", "Chính sách quyền riêng tư & Giám sát"],
-          },
-        ]}
-        bottomText="© 2025 VaultSpace Logistics Technologies, Inc. Đã đăng ký bản quyền. Đơn vị cung cấp kho hoạt động theo pháp luật."
-        bottomLinks={[{ label: "Điều khoản dịch vụ", to: "/login" }, { label: "Quy trình an toàn" }, { label: "Biện pháp bảo vệ" }]}
-        statusText="Trạng thái: Ổn định"
-      />
+      <Footer />
     </div>
   );
 }
