@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function AvailableUnitsSearch({ facilities, unitTypes }) {
+export default function AvailableUnitsSearch({ facilities, unitTypes, onSelectUnit }) {
   const [filters, setFilters] = useState({ facilityId: '', unitTypeId: '', facilityAreaId: '' });
   const [state, setState] = useState({ loading: false, error: '', units: null });
   const request = useRef(null);
@@ -46,13 +46,13 @@ export default function AvailableUnitsSearch({ facilities, unitTypes }) {
     <p className="mt-3 text-sm text-[#58657a]">Kết quả theo trạng thái khả dụng do hệ thống trả về; chưa kiểm tra khoảng thời gian thuê.</p>
     {state.error && <p role="alert" className="mt-3 text-red-700">{state.error}</p>}
     {state.units && <div className="mt-4"><p role="status">{state.units.length === 0 ? 'Không tìm thấy ô kho phù hợp. Thử bỏ bộ lọc phân khu hoặc đổi cơ sở.' : `Tìm thấy ${state.units.length} ô kho.`}</p>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">{state.units.map((unit, index) => <AvailableUnit key={unit.id ?? unit.unitId ?? index} unit={unit} />)}</div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">{state.units.map((unit, index) => <AvailableUnit key={unit.id ?? unit.unitId ?? index} unit={unit} onSelect={onSelectUnit} />)}</div>
     </div>}
   </section>;
 }
 
 // Provisional aliases until a non-empty API response confirms the DTO.
-function AvailableUnit({ unit }) {
+function AvailableUnit({ unit, onSelect }) {
   const code = unit.unitCode ?? unit.unit_code;
   const id = unit.id ?? unit.unitId;
   const status = unit.physicalStatus ?? unit.physical_status;
@@ -62,7 +62,9 @@ function AvailableUnit({ unit }) {
     {(unit.unitTypeName ?? unit.unit_type_name) && <p>{unit.unitTypeName ?? unit.unit_type_name}</p>}
     {(unit.floorLabel ?? unit.floor_label) != null && <p>Tầng: {unit.floorLabel ?? unit.floor_label}</p>}
     {(unit.zoneLabel ?? unit.zone_label) != null && <p>Dãy: {unit.zoneLabel ?? unit.zone_label}</p>}
+    {unit.monthlyRate != null && <p className="mt-2 font-bold text-blue-700">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(unit.monthlyRate))} / tháng</p>}
     {status && <p>Trạng thái: {status}</p>}
     {!code && id == null && <p className="text-sm">Chưa nhận được mã định danh ô kho để hiển thị chi tiết.</p>}
+    {id != null && <button type="button" onClick={() => onSelect?.({ storageUnitId: id, facilityId: unit.facilityId ?? unit.facility_id, unitTypeId: unit.unitTypeId ?? unit.unit_type_id, unitCode: code })} className="mt-3 rounded-lg bg-[#0b1c30] px-4 py-2 text-sm font-semibold text-white">Chọn ô này để đặt</button>}
   </article>;
 }

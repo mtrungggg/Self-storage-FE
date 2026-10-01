@@ -1,129 +1,52 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import AvailableUnitsSearch from './AvailableUnitsSearch';
 import PricingCalculator from './PricingCalculator';
 import CreateReservation from './CreateReservation';
-import { Link } from 'react-router-dom';
-import StorageTerms from './StorageTerms';
-import RentalScheduleNotice from './RentalScheduleNotice';
-import StoragePromotions from './StoragePromotions';
-import { getStorageTermsData } from '../data/storageTermsRepository';
 import { getStorageSearchData } from '../data/storageSearchRepository';
-import { searchStorageUnits, validateStorageSearch } from '../domain/usecases/searchStorageUnits';
-
-const initialFilters = { location: '', unitTypeId: '', minArea: '', maxArea: '', startDate: '', endDate: '', climateControlled: false };
-const inputClass = 'mt-1 w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3 text-sm text-[#0b1c30] outline-none focus:border-blue-500';
 
 export default function StorageSearch({ records, loading = false, loadError = '', unitTypesError = '' }) {
   const data = getStorageSearchData(records);
-  const termsData = getStorageTermsData(records);
-  const connected = records != null;
-  const hasUnits = Array.isArray(records?.storage_units) && Array.isArray(records?.unit_types);
-  const [draft, setDraft] = useState(initialFilters);
-  const [applied, setApplied] = useState(initialFilters);
-  const [error, setError] = useState('');
-  const [sort, setSort] = useState('code');
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const pricingDate = applied.startDate || today;
-  const update = (key, value) => { setDraft((previous) => ({ ...previous, [key]: value })); setError(''); };
-  const results = searchStorageUnits(data, applied).sort((a, b) => sort === 'area' ? a.type.area_m2 - b.type.area_m2 : a.unit_code.localeCompare(b.unit_code));
-  const submit = (event) => {
-    event.preventDefault();
-    const message = validateStorageSearch(draft);
-    setError(message);
-    if (!message) setApplied({ ...draft });
-  };
-  const reset = () => { setDraft(initialFilters); setApplied(initialFilters); setError(''); setSort('code'); };
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  if (loading) return <p role="status" className="mt-6 rounded-xl border bg-white p-5">Đang tải cơ sở và loại kho…</p>;
+  if (loadError) return <div role="alert" className="mt-6 rounded-xl border bg-white p-5"><p className="text-red-700">Không tải được dữ liệu danh mục kho.</p><p className="mt-1 text-sm text-[#58657a]">{loadError}</p><button onClick={() => window.location.reload()} className="mt-3 text-blue-700 underline">Tải lại trang</button></div>;
+  if (!records) return <p role="status" className="mt-6 rounded-xl border bg-white p-5 text-amber-800">Chưa cấu hình nguồn dữ liệu kho.</p>;
 
-  return <section aria-label="Tìm kiếm kho" className="mt-6">
-    <form onSubmit={submit} className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-bold">Tìm kho phù hợp</h2>
-      <p className="mt-1 text-sm text-[#58657a]">Tìm ô kho theo vị trí, loại kho và diện tích.</p>
-      {loading ? <p role="status" className="mt-3">Đang tải dữ liệu kho và bảng giá…</p> : loadError ? <p role="alert" className="mt-3 text-red-700">Không tải được dữ liệu. Vui lòng thử lại sau.</p> : !connected && <p role="status" className="mt-3 text-amber-800">Chưa kết nối nguồn dữ liệu kho và bảng giá.</p>}
-      <fieldset disabled={!connected || !hasUnits || loading || Boolean(loadError)} className="disabled:opacity-60">
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="text-sm font-semibold">Vị trí
-          <input className={inputClass} value={draft.location} onChange={(e) => update('location', e.target.value)} placeholder="Tên cơ sở, địa chỉ, quận hoặc thành phố" />
-        </label>
-        <label className="text-sm font-semibold">Loại kho
-          <select className={inputClass} value={draft.unitTypeId} onChange={(e) => update('unitTypeId', e.target.value)}>
-            <option value="">Tất cả loại kho</option>
-            {data.unit_types.filter((type) => type.is_active).map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-          </select>
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm font-semibold">Diện tích từ (m²)<input type="number" min="0" step="any" className={inputClass} value={draft.minArea} onChange={(e) => update('minArea', e.target.value)} placeholder="Không giới hạn" /></label>
-          <label className="text-sm font-semibold">Đến (m²)<input type="number" min="0" step="any" className={inputClass} value={draft.maxArea} onChange={(e) => update('maxArea', e.target.value)} placeholder="Không giới hạn" /></label>
-        </div>
-        <label className="text-sm font-semibold">Ngày bắt đầu thuê<input type="date" className={inputClass} value={draft.startDate} onChange={(e) => update('startDate', e.target.value)} /></label>
-        <label className="text-sm font-semibold">Ngày kết thúc thuê<input type="date" className={inputClass} value={draft.endDate} onChange={(e) => update('endDate', e.target.value)} /></label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.climateControlled} onChange={(e) => update('climateControlled', e.target.checked)} />Có kiểm soát khí hậu</label>
-      </div>
-      <p className="mt-3 text-xs text-[#58657a]">Khoảng thuê được đối chiếu với dữ liệu đặt chỗ/hợp đồng nếu có. Lịch trống của từng ô cần được xác nhận.</p>
-      {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
-      <div className="mt-4 flex gap-3">
-        <button type="submit" className="rounded-lg bg-[#0b1c30] px-6 py-3 text-sm font-bold text-white hover:bg-[#132741]">Tìm kho ngay</button>
-        <button type="button" onClick={reset} className="rounded-lg border border-[#dfe7f5] px-4 py-3 text-sm">Xóa bộ lọc</button>
-      </div>
-      </fieldset>
-    </form>
-    {connected && !loading && !loadError && !hasUnits && <section className="mt-5">
-      <AvailableUnitsSearch facilities={data.facilities} unitTypes={data.unit_types} />
-      <PricingCalculator facilities={data.facilities} unitTypes={data.unit_types} />
-      <CreateReservation facilities={data.facilities} unitTypes={data.unit_types} />
-      <h2 className="text-lg font-bold">Các loại kho</h2>
-      {unitTypesError ? <p role="alert" className="mt-2 text-red-700">{unitTypesError}</p> : !Array.isArray(records.unit_types) ? <p>Chưa kết nối danh sách loại kho.</p> : data.unit_types.length === 0 ? <p>Chưa có loại kho.</p> : <div className="my-4 grid gap-4 md:grid-cols-3">
-        {data.unit_types.map((type) => <article key={type.id} className="rounded-xl border bg-white p-5">
-          <h3 className="font-bold">{type.name} · {type.code}</h3>
-          <p className="mt-2">Dài × rộng × cao: {type.length_m} × {type.width_m} × {type.height_m} m</p>
+  return <div className="mt-6 space-y-6">
+    <AvailableUnitsSearch facilities={data.facilities} unitTypes={data.unit_types} onSelectUnit={setSelectedUnit} />
+    <PricingCalculator facilities={data.facilities} unitTypes={data.unit_types} />
+    <CreateReservation key={selectedUnit?.storageUnitId ?? 'none'} facilities={data.facilities} unitTypes={data.unit_types} selection={selectedUnit} />
+
+    <section className="rounded-xl border bg-white p-5">
+      <h2 className="text-lg font-bold">Loại kho ({data.unit_types.length})</h2>
+      {unitTypesError && <p role="alert" className="mt-2 text-red-700">{unitTypesError}</p>}
+      {!unitTypesError && data.unit_types.length === 0 && <p className="mt-3">Chưa có loại kho.</p>}
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        {data.unit_types.map((type) => <article key={type.id} className="rounded-xl border border-[#dfe7f5] bg-[#f8faff] p-5">
+          <h3 className="font-bold">{type.name}</h3>
+          <p className="text-sm text-[#58657a]">Mã: {type.code}</p>
+          <p className="mt-3">Dài × rộng × cao: {type.length_m} × {type.width_m} × {type.height_m} m</p>
           <p>Diện tích: {type.area_m2} m² · Thể tích: {type.volume_m3} m³</p>
           <p>Tải trọng tối đa: {type.max_weight_kg ?? 'Chưa cập nhật'} kg</p>
-          <p>{type.climate_controlled === true ? 'Có kiểm soát khí hậu' : type.climate_controlled === false ? 'Không kiểm soát khí hậu' : 'Chưa có thông tin kiểm soát khí hậu'}</p>
-          <p className="mt-2 text-sm">{type.description}</p>
+          <p>{type.climate_controlled === true ? 'Có kiểm soát khí hậu' : type.climate_controlled === false ? 'Không kiểm soát khí hậu' : 'Chưa cập nhật kiểm soát khí hậu'}</p>
+          {type.description && <p className="mt-2 text-sm text-[#58657a]">{type.description}</p>}
         </article>)}
-      </div>}
-      <h2 className="text-lg font-bold">Các cơ sở kho ({data.facilities.length})</h2>
-      <p className="mt-2 text-sm">Đã tải cơ sở. Chưa kết nối danh sách ô kho và bảng giá để tìm kiếm hoặc xem chi tiết ô kho.</p>
+      </div>
+    </section>
+
+    <section className="rounded-xl border bg-white p-5">
+      <h2 className="text-lg font-bold">Cơ sở kho ({data.facilities.length})</h2>
       {data.facilities.length === 0 && <p className="mt-3">Chưa có cơ sở kho.</p>}
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        {data.facilities.map((facility) => <article key={facility.id} className="rounded-xl border bg-white p-5">
+        {data.facilities.map((facility) => <article key={facility.id} className="rounded-xl border border-[#dfe7f5] p-5">
           <h3 className="font-bold">{facility.name}</h3>
-          <p>{facility.code}</p>
-          <p>{[facility.address_line, facility.city].filter(Boolean).join(', ')}</p>
-          <p>Giờ mở cửa: {facility.opening_time ?? 'Chưa có thông tin'} – {facility.closing_time ?? 'Chưa có thông tin'}</p>
-          <p className="mt-2 font-semibold">Số ô kho trống: {facility.available_unit_count ?? 'Chưa có thông tin'}</p>
-          <p className="text-xs">Theo dữ liệu cơ sở, chưa đối chiếu khoảng thuê.</p>
-          <Link to={`/facilities/${encodeURIComponent(facility.id)}`} className="mt-4 inline-block rounded-lg bg-[#0b1c30] px-4 py-2 text-sm text-white">Xem cơ sở</Link>
+          <p className="text-sm text-[#58657a]">{facility.code}</p>
+          <p className="mt-2">{[facility.address_line, facility.city].filter(Boolean).join(', ')}</p>
+          <p>Giờ mở cửa: {facility.opening_time ?? 'Chưa cập nhật'} – {facility.closing_time ?? 'Chưa cập nhật'}</p>
+          <p className="mt-2 font-semibold">Số ô đang khả dụng: {facility.available_unit_count ?? 'Chưa cập nhật'}</p>
+          <Link to={`/facilities/${encodeURIComponent(facility.id)}`} className="mt-4 inline-block rounded-lg bg-[#0b1c30] px-4 py-2 text-sm font-semibold text-white">Xem cơ sở</Link>
         </article>)}
       </div>
-    </section>}
-    {connected && hasUnits && !loading && !loadError && <>
-    <StoragePromotions data={termsData} date={pricingDate} />
-    <div className="my-5 flex flex-wrap items-center justify-between gap-3">
-      <div role="status" className="text-sm">
-        <p><strong>{results.length} ô kho</strong> phù hợp bộ lọc tại {new Set(results.map((unit) => unit.facility_id)).size} cơ sở.</p>
-        {applied.startDate && <p className="mt-1 text-amber-800">Yêu cầu thuê: {applied.startDate} → {applied.endDate}. Chưa xác nhận lịch trống.</p>}
-      </div>
-      <label className="text-sm">Sắp xếp theo <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-[#dfe7f5] bg-white p-2"><option value="code">Mã kho</option><option value="area">Diện tích tăng dần</option></select></label>
-    </div>
-    {results.length === 0 && <div className="rounded-xl border border-dashed border-[#dfe7f5] bg-white p-8 text-center"><h3 className="font-bold">Không tìm thấy ô kho phù hợp</h3><p className="mt-2 text-sm">Thử đổi vị trí, loại kho hoặc mở rộng khoảng diện tích.</p><button onClick={reset} className="mt-3 text-blue-700 underline">Xóa bộ lọc</button></div>}
-    {results.length > 0 && <p className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-[#58657a]">Đơn vị hiển thị: VND. Tra cứu hiệu lực tại {pricingDate} ({applied.startDate ? 'ngày bắt đầu thuê' : 'hôm nay'}). Giá thuê tại cơ sở và khoảng giá theo loại kho được hiển thị riêng. Chưa tính tổng tiền thuê hoặc giá theo ngày.</p>}
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {results.map((unit) => <article key={unit.id} className="rounded-xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold text-blue-700">{unit.facility.name}</p>
-        <h3 className="mt-1 text-lg font-bold">{unit.unit_code} · {unit.type.name}</h3>
-        <p className="mt-2 text-sm text-[#58657a]">{[unit.facility.address_line, unit.facility.ward, unit.facility.district, unit.facility.city].filter(Boolean).join(', ')}</p>
-        <p className="mt-2 text-sm">Khu vực: {unit.area?.name ?? 'Chưa phân khu'}</p>
-        <p className="mt-3 font-bold">{unit.type.area_m2} m² · {unit.type.volume_m3} m³</p>
-        <p className="mt-1 text-sm">Rộng × dài × cao: {unit.type.width_m} × {unit.type.length_m} × {unit.type.height_m} m</p>
-        <p className="mt-1 text-sm">Tải trọng tối đa: {unit.type.max_weight_kg} kg</p>
-        <p className="mt-1 text-sm">{unit.type.climate_controlled ? 'Có kiểm soát khí hậu' : 'Không kiểm soát khí hậu'}</p>
-        <p className="mt-3 text-sm text-[#58657a]">{unit.type.description}</p>
-        <p className="mt-3 text-xs font-semibold text-emerald-800">Trạng thái hiện tại: {unit.physical_status}</p>
-        <StorageTerms data={termsData} unit={unit} date={pricingDate} />
-        <RentalScheduleNotice data={data} unit={unit} startDate={applied.startDate} endDate={applied.endDate} supplied={Array.isArray(records?.reservations) && Array.isArray(records?.rental_agreements)} />
-      </article>)}
-    </div>
-    </>}
-  </section>;
+    </section>
+  </div>;
 }

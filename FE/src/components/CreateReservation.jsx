@@ -8,8 +8,8 @@ const dateTime = (value) => {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 };
 
-export default function CreateReservation({ facilities, unitTypes }) {
-  const [form, setForm] = useState({ facilityId: '', unitTypeId: '', storageUnitId: '', startDate: '', durationMonths: '1', promotionCode: '' });
+export default function CreateReservation({ facilities, unitTypes, selection }) {
+  const [form, setForm] = useState({ facilityId: String(selection?.facilityId ?? ''), unitTypeId: String(selection?.unitTypeId ?? ''), storageUnitId: String(selection?.storageUnitId ?? ''), startDate: '', durationMonths: '1', promotionCode: '' });
   const [state, setState] = useState({ loading: false, error: '', reservation: null });
   const request = useRef(null);
   useEffect(() => () => request.current?.abort(), []);
@@ -59,7 +59,8 @@ export default function CreateReservation({ facilities, unitTypes }) {
   const result = state.reservation;
   return <section className="mt-6 rounded-xl border bg-white p-5" aria-label="Tạo đặt chỗ">
     <h2 className="text-lg font-bold">Đặt ô kho</h2>
-    <p className="mt-1 text-sm text-[#58657a]">Tìm ô kho trống phía trên, sau đó nhập ID ô kho để giữ chỗ.</p>
+    <p className="mt-1 text-sm text-[#58657a]">Chọn một ô trong kết quả tìm kiếm phía trên để điền tự động thông tin đặt chỗ.</p>
+    {selection?.unitCode && <p role="status" className="mt-3 rounded-lg bg-blue-50 p-3 text-sm">Đã chọn ô kho <strong>{selection.unitCode}</strong>.</p>}
     <form onSubmit={submit} className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <label>Cơ sở<select required value={form.facilityId} onChange={(event) => update('facilityId', event.target.value)} className="mt-1 w-full rounded-lg border p-3"><option value="">Chọn cơ sở</option>{facilities.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Loại kho<select required value={form.unitTypeId} onChange={(event) => update('unitTypeId', event.target.value)} className="mt-1 w-full rounded-lg border p-3"><option value="">Chọn loại kho</option>{unitTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
