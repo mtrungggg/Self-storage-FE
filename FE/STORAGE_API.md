@@ -6,6 +6,14 @@ Customer checkout is configured through `VITE_PAYMENT_CREATE_CHECKOUT_URL`. The 
 
 Customer payment history is configured through `VITE_PAYMENT_HISTORY_URL`. It uses same-origin credentials and displays only the authenticated customer's payments.
 
+Customer rentals are configured through `VITE_CUSTOMER_RENTALS_URL`. The dashboard displays agreements returned for the authenticated customer; access credentials remain a separate protected request.
+
+Access credentials use `GET {VITE_CUSTOMER_RENTALS_URL}/{agreementId}/access-credentials`. PIN and gate QR tokens stay in component memory and are not persisted to browser storage.
+
+PIN changes use `PUT {VITE_CUSTOMER_RENTALS_URL}/{agreementId}/change-pin` with `{ currentPin, newPin }`. Both values are kept only in controlled password inputs and cleared after success.
+
+Handover details use `GET {VITE_CUSTOMER_RENTALS_URL}/{agreementId}/handover` and display signatures, notes, inspection results, photos, and item charges.
+
 The frontend currently expects one JSON object with arrays named after the supplied tables:
 
 - Required: `facilities`, `facility_areas`, `storage_units`, `unit_types`, `facility_rates`.
