@@ -1,9 +1,21 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getStorageTerms, isEffective } from './getStorageTerms.js';
-import { getStorageTermsData } from '../../data/storageTermsRepository.js';
+import { getStorageTermsData } from '../../../tests/fixtures/storageTerms.js';
 
 const unit = { facility_id: 'f1', unit_type_id: 't2' };
+test('price ranges match type, validate bounds and flag overlaps', () => {
+  const data = getStorageTermsData();
+  const range = { id: 'range1', unit_type_id: 't2', min_monthly_rate: '100', max_monthly_rate: '200', valid_from: '2026-01-01', valid_to: null };
+  data.price_ranges = [range, { ...range, id: 'other', unit_type_id: 't3' }];
+  assert.equal(getStorageTerms(data, unit, '2026-10-01').priceRange.id, 'range1');
+  range.min_monthly_rate = '300';
+  assert.equal(getStorageTerms(data, unit, '2026-10-01').rangeInvalid, true);
+  range.min_monthly_rate = '100';
+  data.price_ranges.push({ ...range, id: 'duplicate' });
+  assert.equal(getStorageTerms(data, unit, '2026-10-01').rangeConflict, true);
+  assert.equal(getStorageTerms(data, unit, '2026-10-01').priceRange, null);
+});
 test('matches both facility and unit type and filters inactive fees', () => {
   const data = getStorageTermsData();
   data.fee_rules[0].is_active = false;
@@ -36,3 +48,4 @@ test('overlapping prices and policy versions are explicitly flagged', () => {
   assert.equal(result.rateConflict, true);
   assert.equal(result.policyConflict, true);
 });
+

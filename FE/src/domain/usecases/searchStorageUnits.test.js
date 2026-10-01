@@ -1,6 +1,6 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getStorageSearchData } from '../../data/storageSearchRepository.js';
+import { getStorageSearchData } from '../../../tests/fixtures/storageSearch.js';
 import { searchStorageUnits, validateStorageSearch } from './searchStorageUnits.js';
 
 const filters = { location: '', unitTypeId: '', minArea: '', maxArea: '', startDate: '', endDate: '', climateControlled: false };
@@ -38,3 +38,4 @@ test('rental dates do not fabricate availability without reservation data', () =
   const data = getStorageSearchData();
   assert.deepEqual(searchStorageUnits(data, { ...filters, startDate: '2026-10-10', endDate: '2026-11-10' }), searchStorageUnits(data, filters));
 });
+

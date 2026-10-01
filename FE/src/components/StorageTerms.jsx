@@ -5,14 +5,18 @@ const labels = { Deposit: 'Tiền cọc', Service: 'Phí dịch vụ', Managemen
 const validity = (record) => `${record.valid_from} → ${record.valid_to || 'Không giới hạn'}`;
 
 export default function StorageTerms({ data, unit, date }) {
-  const { rate, rateConflict, fees, policies, policyConflict } = getStorageTerms(data, unit, date);
+  const { rate, rateConflict, priceRange, rangeConflict, rangeInvalid, fees, policies, policyConflict } = getStorageTerms(data, unit, date);
   return <div className="mt-4 border-t border-[#dfe7f5] pt-4 text-sm">
-    <h4 className="font-bold">Giá thuê tham khảo</h4>
+    <h4 className="font-bold">Giá thuê tại cơ sở</h4>
     {rate ? <>
       <p className="mt-2 text-lg font-bold text-blue-700">{money(rate.monthly_rate)} / tháng</p>
       <dl className="mt-2 grid grid-cols-2 gap-2"><dt>Cọc theo bảng giá</dt><dd className="text-right">{money(rate.deposit_amount)}</dd><dt>Phí đặt chỗ</dt><dd className="text-right">{money(rate.booking_fee)}</dd></dl>
       <p className="mt-2 text-xs text-[#58657a]">Hiệu lực: {validity(rate)}</p>
     </> : <p className="mt-2 text-amber-800">{rateConflict ? 'Có bảng giá trùng hiệu lực, cần xác nhận giá.' : 'Chưa có bảng giá có hiệu lực cho ngày đã chọn.'}</p>}
+    <div className="mt-3 rounded-lg border border-[#dfe7f5] p-3">
+      <h4 className="font-semibold">Khoảng giá theo loại kho</h4>
+      {priceRange ? <><p className="mt-1">{money(priceRange.min_monthly_rate)} – {money(priceRange.max_monthly_rate)} / tháng</p><p className="mt-1 text-xs text-[#58657a]">Hiệu lực: {validity(priceRange)}</p></> : <p className="mt-1 text-[#58657a]">{rangeConflict ? 'Có khoảng giá trùng hiệu lực, cần xác nhận.' : rangeInvalid ? 'Khoảng giá không hợp lệ, cần xác nhận.' : 'Chưa có khoảng giá có hiệu lực.'}</p>}
+    </div>
     <details className="mt-4 rounded-lg bg-[#f8faff] p-3">
       <summary className="cursor-pointer font-semibold">Quy định phí ({fees.length})</summary>
       <p className="mt-2 text-xs text-[#58657a]">Các quy định dưới đây chưa cộng vào giá hoặc cọc. Cần xác nhận điều kiện và cách tính trước khi thanh toán.</p>

@@ -4,12 +4,13 @@ import { getStorageTermsData } from '../data/storageTermsRepository';
 import { getStorageSearchData } from '../data/storageSearchRepository';
 import { searchStorageUnits, validateStorageSearch } from '../domain/usecases/searchStorageUnits';
 
-const data = getStorageSearchData();
-const termsData = getStorageTermsData();
 const initialFilters = { location: '', unitTypeId: '', minArea: '', maxArea: '', startDate: '', endDate: '', climateControlled: false };
 const inputClass = 'mt-1 w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3 text-sm text-[#0b1c30] outline-none focus:border-blue-500';
 
-export default function StorageSearch() {
+export default function StorageSearch({ records, loading = false, loadError = '' }) {
+  const data = getStorageSearchData(records);
+  const termsData = getStorageTermsData(records);
+  const connected = records != null;
   const [draft, setDraft] = useState(initialFilters);
   const [applied, setApplied] = useState(initialFilters);
   const [error, setError] = useState('');
@@ -30,7 +31,9 @@ export default function StorageSearch() {
   return <section aria-label="Tìm kiếm kho" className="mt-6">
     <form onSubmit={submit} className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
       <h2 className="text-lg font-bold">Tìm kho phù hợp</h2>
-      <p className="mt-1 text-sm text-[#58657a]">Dữ liệu minh họa, chưa kết nối hệ thống kho thực tế.</p>
+      <p className="mt-1 text-sm text-[#58657a]">Tìm ô kho theo vị trí, loại kho và diện tích.</p>
+      {loading ? <p role="status" className="mt-3">Đang tải dữ liệu kho và bảng giá…</p> : loadError ? <p role="alert" className="mt-3 text-red-700">Không tải được dữ liệu. Vui lòng thử lại sau.</p> : !connected && <p role="status" className="mt-3 text-amber-800">Chưa kết nối nguồn dữ liệu kho và bảng giá.</p>}
+      <fieldset disabled={!connected || loading || Boolean(loadError)} className="disabled:opacity-60">
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <label className="text-sm font-semibold">Vị trí
           <input className={inputClass} value={draft.location} onChange={(e) => update('location', e.target.value)} placeholder="Tên cơ sở, địa chỉ, quận hoặc thành phố" />
@@ -55,16 +58,18 @@ export default function StorageSearch() {
         <button type="submit" className="rounded-lg bg-[#0b1c30] px-6 py-3 text-sm font-bold text-white hover:bg-[#132741]">Tìm kho ngay</button>
         <button type="button" onClick={reset} className="rounded-lg border border-[#dfe7f5] px-4 py-3 text-sm">Xóa bộ lọc</button>
       </div>
+      </fieldset>
     </form>
+    {connected && !loading && !loadError && <>
     <div className="my-5 flex flex-wrap items-center justify-between gap-3">
       <div role="status" className="text-sm">
-        <p><strong>{results.length} ô kho</strong> phù hợp bộ lọc tại {new Set(results.map((unit) => unit.facility_id)).size} cơ sở (dữ liệu mẫu).</p>
+        <p><strong>{results.length} ô kho</strong> phù hợp bộ lọc tại {new Set(results.map((unit) => unit.facility_id)).size} cơ sở.</p>
         {applied.startDate && <p className="mt-1 text-amber-800">Yêu cầu thuê: {applied.startDate} → {applied.endDate}. Chưa xác nhận lịch trống.</p>}
       </div>
       <label className="text-sm">Sắp xếp theo <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-[#dfe7f5] bg-white p-2"><option value="code">Mã kho</option><option value="area">Diện tích tăng dần</option></select></label>
     </div>
     {results.length === 0 && <div className="rounded-xl border border-dashed border-[#dfe7f5] bg-white p-8 text-center"><h3 className="font-bold">Không tìm thấy ô kho phù hợp</h3><p className="mt-2 text-sm">Thử đổi vị trí, loại kho hoặc mở rộng khoảng diện tích.</p><button onClick={reset} className="mt-3 text-blue-700 underline">Xóa bộ lọc</button></div>}
-    {results.length > 0 && <p className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-[#58657a]">Giá, phí và chính sách là dữ liệu minh họa. Đơn vị: VND. Tra cứu hiệu lực tại {pricingDate} ({applied.startDate ? 'ngày bắt đầu thuê' : 'hôm nay'}), bao gồm ngày kết thúc hiệu lực. Chưa tính tổng tiền thuê hoặc giá theo ngày.</p>}
+    {results.length > 0 && <p className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-[#58657a]">Đơn vị hiển thị: VND. Tra cứu hiệu lực tại {pricingDate} ({applied.startDate ? 'ngày bắt đầu thuê' : 'hôm nay'}). Giá thuê tại cơ sở và khoảng giá theo loại kho được hiển thị riêng. Chưa tính tổng tiền thuê hoặc giá theo ngày.</p>}
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {results.map((unit) => <article key={unit.id} className="rounded-xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold text-blue-700">{unit.facility.name}</p>
@@ -76,9 +81,10 @@ export default function StorageSearch() {
         <p className="mt-1 text-sm">Tải trọng tối đa: {unit.type.max_weight_kg} kg</p>
         <p className="mt-1 text-sm">{unit.type.climate_controlled ? 'Có kiểm soát khí hậu' : 'Không kiểm soát khí hậu'}</p>
         <p className="mt-3 text-sm text-[#58657a]">{unit.type.description}</p>
-        <p className="mt-3 text-xs font-semibold text-emerald-800">Trạng thái hiện tại: Available (dữ liệu mẫu)</p>
+        <p className="mt-3 text-xs font-semibold text-emerald-800">Trạng thái hiện tại: {unit.physical_status}</p>
         <StorageTerms data={termsData} unit={unit} date={pricingDate} />
       </article>)}
     </div>
+    </>}
   </section>;
 }
