@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import StorageTerms from './StorageTerms';
+import RentalScheduleNotice from './RentalScheduleNotice';
 import StoragePromotions from './StoragePromotions';
 import { getStorageTermsData } from '../data/storageTermsRepository';
 import { getStorageSearchData } from '../data/storageSearchRepository';
@@ -53,7 +54,7 @@ export default function StorageSearch({ records, loading = false, loadError = ''
         <label className="text-sm font-semibold">Ngày kết thúc thuê<input type="date" className={inputClass} value={draft.endDate} onChange={(e) => update('endDate', e.target.value)} /></label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.climateControlled} onChange={(e) => update('climateControlled', e.target.checked)} />Có kiểm soát khí hậu</label>
       </div>
-      <p className="mt-3 text-xs text-[#58657a]">Thời gian thuê chỉ ghi nhận nhu cầu; chưa kiểm tra được lịch trống khi chưa có dữ liệu đặt chỗ/hợp đồng.</p>
+      <p className="mt-3 text-xs text-[#58657a]">Khoảng thuê được đối chiếu với dữ liệu đặt chỗ/hợp đồng nếu có. Lịch trống của từng ô cần được xác nhận.</p>
       {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
       <div className="mt-4 flex gap-3">
         <button type="submit" className="rounded-lg bg-[#0b1c30] px-6 py-3 text-sm font-bold text-white hover:bg-[#132741]">Tìm kho ngay</button>
@@ -85,6 +86,7 @@ export default function StorageSearch({ records, loading = false, loadError = ''
         <p className="mt-3 text-sm text-[#58657a]">{unit.type.description}</p>
         <p className="mt-3 text-xs font-semibold text-emerald-800">Trạng thái hiện tại: {unit.physical_status}</p>
         <StorageTerms data={termsData} unit={unit} date={pricingDate} />
+        <RentalScheduleNotice data={data} unit={unit} startDate={applied.startDate} endDate={applied.endDate} supplied={Array.isArray(records?.reservations) && Array.isArray(records?.rental_agreements)} />
       </article>)}
     </div>
     </>}

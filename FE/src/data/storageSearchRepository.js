@@ -5,5 +5,7 @@ export function getStorageSearchData(records = {}) {
     facility_areas: records?.facility_areas ?? [],
     unit_types: records?.unit_types ?? [],
     storage_units: records?.storage_units ?? [],
+    reservations: records?.reservations ?? [],
+    rental_agreements: records?.rental_agreements ?? [],
   };
 }
