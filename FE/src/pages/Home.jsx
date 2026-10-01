@@ -23,8 +23,6 @@ function Home() {
     setActiveTab,
     sortBy,
     setSortBy,
-    activeSizeTab,
-    setActiveSizeTab,
 
     locations,
     storageTypes,
@@ -32,8 +30,6 @@ function Home() {
     rentalTerms,
     filteredUnits,
     filteredFacilities,
-    sizeGuideTabs,
-    highlights,
 
     loading,
     error,
@@ -473,68 +469,6 @@ function Home() {
         </>
         )}
 
-        {/* Size Guide Section: Trợ giúp chọn kích thước trực quan */}
-        <section className="mt-12 rounded-[16px] border border-[#dfe7f5] bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
-                Gợi ý lựa chọn
-              </div>
-              <h2 className="text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
-                Hướng dẫn kích thước kho phù hợp với nhu cầu
-              </h2>
-            </div>
-            <div className="flex gap-1.5 rounded-[10px] bg-[#f0f4fc] p-1">
-              {sizeGuideTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveSizeTab(tab.id)}
-                  className={`rounded-[8px] px-3 py-1.5 text-[12px] font-bold transition ${
-                    activeSizeTab === tab.id ? "bg-[#0b1c30] text-white" : "text-[#58657a] hover:text-[#0b1c30]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-[12px] border border-[#eef2f8] bg-[#f8faff] p-4 text-[13px]">
-            {sizeGuideTabs
-              .filter((t) => t.id === activeSizeTab)
-              .map((item) => (
-                <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <span className="font-bold text-[#0b1c30]">{item.title}:</span>{" "}
-                    <span className="text-[#58657a]">{item.desc}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (item.id === "studio") setSelectedSize("medium");
-                      if (item.id === "1-2br") setSelectedSize("large");
-                      if (item.id === "house") setSelectedSize("large");
-                      setActiveTab("units");
-                    }}
-                    className="shrink-0 font-bold text-[#1d5fe5] hover:underline"
-                  >
-                    Xem ô kho kích thước này →
-                  </button>
-                </div>
-              ))}
-          </div>
-        </section>
-
-        {/* Highlights & Trust badges */}
-        <section className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {highlights.map((h, i) => (
-            <div key={i} className="rounded-[12px] border border-[#dfe7f5] bg-white p-4">
-              <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">{h.icon}</span>
-              <div className="mt-2 text-[13px] font-bold text-[#0b1c30]">{h.title}</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#64748b]">{h.text}</p>
-            </div>
-          ))}
-        </section>
       </main>
 
       <Footer />
