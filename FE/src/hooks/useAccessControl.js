@@ -64,7 +64,7 @@ export function useAccessControl() {
     [rentals, activeRentals, selectedRentalId]
   );
 
-  const currentUnitCode = selectedRental?.unitCode || "A-101";
+  const currentUnitCode = selectedRental?.unitCode || "";
   const guestPins = useMemo(() => getGuestPins(currentUnitCode), [currentUnitCode]);
   const accessLogs = useMemo(() => getAccessControlLogs(currentUnitCode), [currentUnitCode]);
 
@@ -123,6 +123,7 @@ export function useAccessControl() {
     guestPins,
     accessLogs,
     rentals,
+    rentalsLoading,
     activeRentals,
     selectedRental,
     selectedRentalId,

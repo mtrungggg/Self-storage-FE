@@ -86,8 +86,22 @@ export function useCustomerDashboard() {
   const tempPath = useMemo(() => buildChartPath(temperature, 20.5, 22, 320, 90), [temperature]);
   const humidityPath = useMemo(() => buildChartPath(humidity, 40, 55, 320, 90), [humidity]);
 
+  const [lockedUnits, setLockedUnits] = useState({});
+
+  const toggleUnitLock = (unitCode) => {
+    setLockedUnits((prev) => ({
+      ...prev,
+      [unitCode]: prev[unitCode] === false ? true : false,
+    }));
+  };
+
+  const isUnitLocked = (unitCode) => {
+    return lockedUnits[unitCode] !== false;
+  };
+
   const copyPinToClipboard = () => {
-    const pin = credentials?.keypadPin || "482910";
+    const pin = credentials?.keypadPin;
+    if (!pin) return;
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(pin);
       setCopyFeedback(true);
@@ -109,6 +123,9 @@ export function useCustomerDashboard() {
     setMainLocked,
     garageLocked,
     setGarageLocked,
+    lockedUnits,
+    toggleUnitLock,
+    isUnitLocked,
     tempPath,
     humidityPath,
     rentals,

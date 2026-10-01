@@ -7,7 +7,8 @@ export function getWallets() {
   ];
 }
 
-export function getGuestPins(unitCode = "A-101") {
+export function getGuestPins(unitCode) {
+  if (!unitCode) return [];
   return [
     {
       id: "express",
@@ -39,7 +40,8 @@ export function getGuestPins(unitCode = "A-101") {
   ];
 }
 
-export function getAccessControlLogs(unitCode = "A-101") {
+export function getAccessControlLogs(unitCode) {
+  if (!unitCode) return [];
   return [
     {
       icon: "lock_open",

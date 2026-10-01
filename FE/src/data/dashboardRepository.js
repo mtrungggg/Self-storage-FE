@@ -1,11 +1,15 @@
 // Data layer: content source for the CustomerDashboard ("Kho của tôi") page.
 export function getDashboardAccessLogs(primaryRental) {
-  const unitCode = primaryRental?.unitCode || "A-101";
-  const facility = primaryRental?.facilityName || "Thu Duc Self Storage";
-  const agreementNo = primaryRental?.agreementNo || "AGR-HCM-2026-0001";
-  const rateText = primaryRental?.monthlyRate
+  if (!primaryRental || !primaryRental.unitCode) {
+    return [];
+  }
+
+  const unitCode = primaryRental.unitCode;
+  const facility = primaryRental.facilityName || "Cơ sở lưu trữ";
+  const agreementNo = primaryRental.agreementNo || "HĐ";
+  const rateText = primaryRental.monthlyRate
     ? `${Number(primaryRental.monthlyRate).toLocaleString("vi-VN")} đ`
-    : "2.000 đ";
+    : "";
 
   return [
     {
@@ -18,7 +22,7 @@ export function getDashboardAccessLogs(primaryRental) {
       icon: "directions_car",
       title: `Vào ${facility}`,
       time: "14:41",
-      note: "Cổng kiểm soát xe • Mã QR",
+      note: "Cổng kiểm soát • Mã QR",
     },
     {
       icon: "local_shipping",
@@ -29,8 +33,8 @@ export function getDashboardAccessLogs(primaryRental) {
     {
       icon: "receipt_long",
       title: `Hợp đồng #${agreementNo}`,
-      time: "01/10",
-      note: `${rateText} • Đã thanh toán`,
+      time: "Kỳ hiện tại",
+      note: rateText ? `${rateText} • Đã thanh toán` : "Đang hiệu lực",
     },
   ];
 }
