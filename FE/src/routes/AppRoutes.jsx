@@ -5,7 +5,6 @@ import Home from "../pages/Home";
 import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
 import PaymentCheckout from "../pages/PaymentCheckout";
-import CustomerDashboard from "../pages/CustomerDashboard";
 import AccessControl from "../pages/AccessControl";
 import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
@@ -45,7 +44,6 @@ function AppRoutes() {
             <Route path="/checkout" element={<PaymentCheckout />} />
             <Route path="/payment" element={<PaymentCheckout />} />
             <Route path="/billing" element={<Billing />} />
-            <Route path="/dashboard" element={<CustomerDashboard />} />
             <Route path="/access-control" element={<AccessControl />} />
           </Route>
         </Route>

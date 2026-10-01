@@ -110,7 +110,7 @@ function PaymentCheckout() {
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/access-control")}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#12b76a] px-6 py-3 text-[14px] font-bold text-white shadow-md transition hover:bg-[#0e9f5d]"
               >
                 <span className="material-symbols-outlined text-[20px]">inventory_2</span>

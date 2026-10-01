@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import rentalService from "../api/rentalService";
-import { formatVnd } from "../lib/utils";
 
 const TICKET_STORAGE_KEY = "vaultspace_support_tickets";
 
@@ -49,19 +48,10 @@ export function useSupport() {
   const units = useMemo(() => {
     return activeRentals.map((r) => ({
       id: r.unitCode,
-      agreementId: r.agreementId,
-      location: `Floor ${r.floorLabel || "1"} • Zone ${r.zoneLabel || "A"} • ${r.facilityName || "Storage Facility"}`,
       status: "active",
       statusLabel: "Active",
-      size: `${r.areaM2 || "3.0"} m² (${r.dimensions || "Standard"})`,
-      sizeNote: r.unitTypeName || "Standard Self-Storage",
-      climate: "20° – 22°C • Digital Lock",
-      contractLabel: "Contract Term",
       contractDate: `Agreement #${r.agreementNo || "AGR-2026"}`,
       contractLeft: r.endDate ? `Valid until ${new Date(r.endDate).toLocaleDateString("en-US")}` : "Active Term",
-      payment: `${formatVnd(r.monthlyRate)}/month • Auto-Pay`,
-      primaryAction: "View PIN / Keypad Access",
-      footerLinks: ["Report Issue", "Renew Lease"],
     }));
   }, [activeRentals]);
 
@@ -76,7 +66,7 @@ export function useSupport() {
   const [priority, setPriority] = useState("normal");
   const [allowMasterKey, setAllowMasterKey] = useState(false);
   const [selectedUnitCode, setSelectedUnitCode] = useState("");
-  const [category, setCategory] = useState("PIN Code error / Digital Keypad not responding");
+  const [category, setCategory] = useState("PIN / Keypad");
   const [description, setDescription] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
