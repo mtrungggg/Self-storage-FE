@@ -25,12 +25,6 @@ function CustomerDashboard() {
     humidityPath,
   } = useCustomerDashboard();
 
-  const nextBillingDate = primaryRental?.endDate
-    ? new Date(primaryRental.endDate).toLocaleDateString("vi-VN")
-    : "—";
-
-  const primaryPin = primaryRental ? credentialsMap[primaryRental.agreementId]?.keypadPin : null;
-
   const onPromptChangePin = async (rental) => {
     const currentPin = credentialsMap[rental.agreementId]?.keypadPin;
     const newPin = window.prompt(`Nhập mã PIN mới (6 chữ số) cho Kho #${rental.unitCode}:`, currentPin || "");
@@ -90,62 +84,6 @@ function CustomerDashboard() {
           </div>
         )}
 
-        {/* 4 Thẻ chỉ số tổng quan */}
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
-            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">home</span>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Kho đang thuê
-            </div>
-            <div className="text-[17px] font-bold text-[#0b1c30]">
-              {activeRentals.length} kho
-            </div>
-            <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {activeRentals.length > 0
-                ? activeRentals.map((r) => `#${r.unitCode}`).join(" • ")
-                : "Chưa có kho nào"}
-            </div>
-          </div>
-
-          <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
-            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">pin</span>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Mã PIN bàn phím
-            </div>
-            <div className="text-[17px] font-bold text-[#1d5fe5]">
-              {credentialsLoading ? "Đang tải..." : primaryPin ? `#${primaryPin}` : "Chưa cấp"}
-            </div>
-            <div className="text-[11px] font-medium text-[#58657a]">
-              Nhập tại cửa kho &amp; cổng
-            </div>
-          </div>
-
-          <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
-            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">credit_card</span>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Kỳ thanh toán tới
-            </div>
-            <div className="text-[17px] font-bold text-[#0b1c30]">
-              {nextBillingDate}
-            </div>
-            <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {primaryRental ? `${formatVnd(primaryRental.monthlyRate)}` : "—"}
-            </div>
-          </div>
-
-          <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
-            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">thermostat</span>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Môi trường kho
-            </div>
-            <div className="text-[17px] font-bold text-[#0b1c30]">
-              {primaryRental ? "21.1°C • 48%" : "—"}
-            </div>
-            <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {primaryRental?.unitTypeName || "Kiểm soát độ ẩm tốt"}
-            </div>
-          </div>
-        </div>
 
         {/* Danh sách kho đang sở hữu */}
         <div className="mt-6 space-y-6">
