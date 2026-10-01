@@ -4,7 +4,7 @@ export function getRegisterFaqs() {
     {
       icon: "schedule",
       title: "Bao lâu sau đăng ký tôi có thể vào kho?",
-      text: "Ngay lập tức. Mã PIN và khóa Bluetooth được cấp tự động sau khi thanh toán.",
+      text: "Ngay lập tức. Mã PIN bàn phím số được cấp tự động sau khi thanh toán.",
     },
     {
       icon: "description",

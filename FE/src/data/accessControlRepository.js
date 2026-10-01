@@ -47,14 +47,14 @@ export function getAccessControlLogs(unitCode) {
       icon: "lock_open",
       title: `Mở kho #${unitCode}`,
       time: "14:45 hôm nay",
-      note: "Bluetooth • Ứng dụng điện thoại",
+      note: "Bàn phím mã PIN tại cửa",
       dot: "#2dd4a0",
     },
     {
       icon: "directions_car",
       title: "Vào Barrier Cổng Chính",
       time: "14:41 hôm nay",
-      note: "NFC / Quét mã QR",
+      note: "Bàn phím mã PIN barrier",
       dot: "#1d5fe5",
     },
     {

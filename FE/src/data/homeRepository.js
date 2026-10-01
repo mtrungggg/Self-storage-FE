@@ -45,9 +45,9 @@ export function getHomeHighlights() {
       text: "Tặng 2 giờ xe tải chuyển đồ cho hợp đồng từ 3 tháng.",
     },
     {
-      icon: "lock_open",
-      title: "Khóa số thông minh",
-      text: "Mở cổng và ô kho 24/7 trực tiếp qua điện thoại hoặc mã PIN.",
+      icon: "lock",
+      title: "Mã PIN bàn phím số",
+      text: "Mở cổng và ô kho 24/7 trực tiếp qua bàn phím mã PIN tiện lợi.",
     },
   ];
 }

@@ -36,7 +36,7 @@ export function getWayfindingSteps(unitCode = "A-101") {
     {
       title: "Cổng an ninh cơ sở",
       tag: "Tầng trệt",
-      text: "Quét mã PIN hoặc dùng ứng dụng để mở barrier tự động 24/7.",
+      text: "Nhập mã PIN tại bàn phím số để mở barrier tự động 24/7.",
     },
     {
       title: "Bến bốc dỡ hàng (Dock 1)",

@@ -13,10 +13,6 @@ function CustomerDashboard() {
     accessLogs,
     showPin,
     setShowPin,
-    mainLocked,
-    setMainLocked,
-    toggleUnitLock,
-    isUnitLocked,
     tempPath,
     humidityPath,
     activeRentals,
@@ -27,14 +23,9 @@ function CustomerDashboard() {
     rentalsError,
     copyFeedback,
     copyPinToClipboard,
-    gateFeedback,
-    handleOpenGate,
   } = useCustomerDashboard();
 
   const facilityName = primaryRental?.facilityName || "";
-  const facilityAddress = primaryRental?.facilityAddress
-    ? `${primaryRental.facilityAddress}, ${primaryRental.facilityCity || "TP. Hồ Chí Minh"}`
-    : "";
 
   const nextBillingDate = primaryRental?.endDate
     ? new Date(primaryRental.endDate).toLocaleDateString("vi-VN")
@@ -54,7 +45,7 @@ function CustomerDashboard() {
       <Header active="dashboard" />
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
-        {/* Top bar thông báo cơ sở & mở cổng nhanh */}
+        {/* Top bar thông báo cơ sở */}
         {primaryRental ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#dfe7f5] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#3a475a]">
             <div className="flex flex-wrap items-center gap-3">
@@ -65,24 +56,17 @@ function CustomerDashboard() {
               <span className="hidden sm:inline">•</span>
               <span>Tự động thanh toán: {primaryRental?.autoRenew ? "Bật" : "Tiêu chuẩn"}</span>
               <span className="hidden sm:inline">•</span>
-              <span className="flex items-center gap-1 text-[#1d5fe5]">
-                <span className="material-symbols-outlined text-[15px]">location_on</span>
+              <span className="text-[#1d5fe5]">
                 {facilityName}
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-[12px] font-semibold text-[#0b1c30]">
-                Cổng chính • {facilityName}
-              </div>
-              <button
-                onClick={handleOpenGate}
-                className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-3.5 py-1.5 text-[12px] font-bold text-white transition hover:bg-[#174fc7] active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[16px]">sensor_door</span>
-                Mở cổng
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/access-control")}
+              className="rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1 text-[11px] font-bold text-[#1d5fe5] hover:bg-[#eef4ff]"
+            >
+              Xem mã PIN ra vào
+            </button>
           </div>
         ) : (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#dfe7f5] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#3a475a]">
@@ -96,13 +80,6 @@ function CustomerDashboard() {
             >
               Khám phá kho ngay &rarr;
             </button>
-          </div>
-        )}
-
-        {gateFeedback && (
-          <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-2.5 text-[13px] font-semibold text-[#15803d]">
-            <span className="material-symbols-outlined text-[18px]">check_circle</span>
-            {gateFeedback}
           </div>
         )}
 
@@ -175,7 +152,7 @@ function CustomerDashboard() {
           </div>
         )}
 
-        {/* 4 Thẻ chỉ số tổng quan (Tự động cập nhật theo dữ liệu thật) */}
+        {/* 4 Thẻ chỉ số tổng quan */}
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
             <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">home</span>
@@ -190,26 +167,18 @@ function CustomerDashboard() {
                 ? activeRentals.map((r) => `#${r.unitCode}`).join(" • ")
                 : "Chưa có kho nào"}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#0e7b4c]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-              {activeRentals.length > 0 ? "Đang hoạt động" : "Sẵn sàng thuê"}
-            </div>
           </div>
 
           <div className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
-            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">key</span>
-            <div className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Khóa điện tử
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
+            <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">pin</span>
+            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+              Mã PIN bàn phím
             </div>
-            <div className="text-[17px] font-bold text-[#0b1c30]">
-              {activeRentals.length > 0 ? `${activeRentals.length} khóa` : "0 khóa"}
+            <div className="text-[17px] font-bold text-[#1d5fe5]">
+              {credentials?.keypadPin ? `#${credentials.keypadPin}` : "Chưa cấp"}
             </div>
             <div className="text-[11px] font-medium text-[#58657a]">
-              {activeRentals.length > 0 ? "Mã PIN • Cổng QR tự động" : "Chưa kích hoạt"}
-            </div>
-            <div className="mt-2 text-[11px] font-semibold text-[#1d5fe5]">
-              {activeRentals.length > 0 ? "Bảo mật 2 lớp 24/7" : "Chưa có quyền ra vào"}
+              Nhập tại cửa kho &amp; cổng
             </div>
           </div>
 
@@ -222,10 +191,7 @@ function CustomerDashboard() {
               {nextBillingDate}
             </div>
             <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {primaryRental ? `${formatVnd(primaryRental.monthlyRate)} • VietQR` : "Không có kỳ hạn"}
-            </div>
-            <div className="mt-2 text-[11px] font-semibold text-[#0e7b4c]">
-              {primaryRental ? "Đã thanh toán đủ" : "Không có dư nợ"}
+              {primaryRental ? `${formatVnd(primaryRental.monthlyRate)}` : "—"}
             </div>
           </div>
 
@@ -238,11 +204,7 @@ function CustomerDashboard() {
               {primaryRental ? "21.1°C • 48%" : "—"}
             </div>
             <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {primaryRental?.unitTypeName || "Chưa kết nối cảm biến"}
-            </div>
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#0e7b4c]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-              {primaryRental ? "Kiểm soát độ ẩm tốt" : "Sẵn sàng kết nối"}
+              {primaryRental?.unitTypeName || "—"}
             </div>
           </div>
         </div>
@@ -260,7 +222,7 @@ function CustomerDashboard() {
                   Bạn chưa có hợp đồng thuê kho nào đang hoạt động
                 </h2>
                 <p className="mt-2 max-w-[460px] text-[13px] leading-relaxed text-[#58657a]">
-                  Hệ thống kho tự quản thông minh với giá thuê chỉ từ 1.000đ/tháng, kiểm soát ra vào 24/7 qua mã PIN cá nhân và camera an ninh độc lập.
+                  Hệ thống kho tự quản thông minh với giá thuê chỉ từ 1.000đ/tháng, mở khóa bằng mã PIN bàn phím số cá nhân.
                 </p>
                 <button
                   onClick={() => navigate("/")}
@@ -271,7 +233,7 @@ function CustomerDashboard() {
               </div>
             ) : (
               <>
-                {/* THẺ KHO CHÍNH (Đồng bộ từ database) */}
+                {/* THẺ KHO CHÍNH */}
                 {primaryRental && (
                   <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -286,13 +248,9 @@ function CustomerDashboard() {
                           Kho #{primaryRental.unitCode} ({primaryRental.unitTypeName})
                         </h2>
                       </div>
-                      <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2 text-[#0e7b4c]">
-                        <span className="material-symbols-outlined text-[18px]">
-                          {mainLocked ? "lock" : "lock_open"}
-                        </span>
-                        <span className="text-[12px] font-bold">
-                          {mainLocked ? "Đã khóa an toàn" : "Đang mở"}
-                        </span>
+                      <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1.5 text-[#0e7b4c]">
+                        <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
+                        <span className="text-[12px] font-bold">Đang hiệu lực</span>
                       </div>
                     </div>
 
@@ -306,7 +264,6 @@ function CustomerDashboard() {
                           }}
                         />
                         <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#0b1c30] shadow-sm">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
                           Camera 24/7
                         </div>
                       </div>
@@ -372,148 +329,124 @@ function CustomerDashboard() {
                       </div>
                     </div>
 
-                    {/* Điều khiển khóa & Xem mã PIN thật */}
-                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <div className="flex flex-col justify-between rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-3.5">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Khóa thông minh Bluetooth
-                        </div>
+                    {/* Mã PIN bàn phím số chính */}
+                    <div className="mt-4 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4">
+                      <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                        Mã PIN bàn phím mở cửa kho #{primaryRental.unitCode}
                         <button
-                          onClick={() => setMainLocked((v) => !v)}
-                          className="mt-2 flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white transition hover:bg-[#174fc7]"
+                          onClick={() => setShowPin((v) => !v)}
+                          className="font-bold text-[#1d5fe5] hover:underline"
                         >
-                          <span className="material-symbols-outlined text-[16px]">
-                            {mainLocked ? "lock_open" : "lock"}
-                          </span>
-                          {mainLocked ? "Mở khóa kho" : "Khóa lại kho"}
+                          {showPin ? "Ẩn PIN" : "Hiện PIN"}
                         </button>
                       </div>
 
-                      <div className="rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-3.5">
-                        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                          Mã PIN bàn phím số
-                          <button
-                            onClick={() => setShowPin((v) => !v)}
-                            className="font-bold text-[#1d5fe5] hover:underline"
-                          >
-                            {showPin ? "Ẩn PIN" : "Hiện PIN"}
-                          </button>
-                        </div>
-
-                        <div className="mt-1 flex items-center gap-2.5 text-[16px] font-bold tracking-[0.15em] text-[#0b1c30]">
-                          <span>{pinDisplay}</span>
-                          {credentials?.keypadPin && (
-                            <button
-                              onClick={copyPinToClipboard}
-                              title="Sao chép mã PIN"
-                              className="rounded p-1 text-[#8996a9] transition hover:bg-white hover:text-[#1d5fe5]"
-                            >
-                              <span className="material-symbols-outlined text-[17px]">
-                                {copyFeedback ? "done" : "content_copy"}
-                              </span>
-                            </button>
-                          )}
-                          {copyFeedback && (
-                            <span className="text-[11px] font-bold text-[#0e7b4c]">Đã chép!</span>
-                          )}
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex items-center gap-3 text-[20px] font-bold tracking-[0.2em] text-[#0b1c30]">
+                        <span>{pinDisplay}</span>
+                        {credentials?.keypadPin && (
                           <button
                             onClick={copyPinToClipboard}
-                            disabled={!credentials?.keypadPin}
-                            className="flex-1 rounded-md border border-[#dfe7f5] bg-white px-2 py-1.5 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f5f7fd] disabled:opacity-50"
+                            title="Sao chép mã PIN"
+                            className="rounded p-1 text-[#8996a9] transition hover:bg-white hover:text-[#1d5fe5]"
                           >
-                            Sao chép mã
+                            <span className="material-symbols-outlined text-[18px]">
+                              {copyFeedback ? "done" : "content_copy"}
+                            </span>
                           </button>
-                          <button
-                            onClick={() => navigate("/access-control")}
-                            className="flex-1 rounded-md border border-[#dfe7f5] bg-white px-2 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"
-                          >
-                            Đổi mã PIN
-                          </button>
-                        </div>
+                        )}
+                        {copyFeedback && (
+                          <span className="text-[11px] font-bold text-[#0e7b4c]">Đã chép!</span>
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          onClick={copyPinToClipboard}
+                          disabled={!credentials?.keypadPin}
+                          className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f5f7fd] disabled:opacity-50"
+                        >
+                          Sao chép mã PIN
+                        </button>
+                        <button
+                          onClick={() => navigate("/access-control")}
+                          className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"
+                        >
+                          Đổi mã PIN
+                        </button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* CÁC KHO PHỤ KHÁC (Tự động lặp qua activeRentals.slice(1)) */}
-                {activeRentals.slice(1).map((rental, index) => {
-                  const locked = isUnitLocked(rental.unitCode);
-                  return (
-                    <div
-                      key={rental.agreementId || index}
-                      className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">
-                              Kho #{index + 2}
-                            </span>
-                            Khu vực Zone {rental.zoneLabel || "B"} • Tầng {rental.floorLabel || "1"}
-                          </div>
-                          <h2 className="mt-1 text-[18px] sm:text-[19px] font-bold text-[#0b1c30]">
-                            Kho #{rental.unitCode} ({rental.unitTypeName})
-                          </h2>
+                {/* CÁC KHO PHỤ KHÁC */}
+                {activeRentals.slice(1).map((rental, index) => (
+                  <div
+                    key={rental.agreementId || index}
+                    className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                          <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">
+                            Kho #{index + 2}
+                          </span>
+                          Khu vực Zone {rental.zoneLabel || "B"} • Tầng {rental.floorLabel || "1"}
                         </div>
-                        <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2 text-[#0e7b4c]">
-                          <span className="material-symbols-outlined text-[18px]">
-                            {locked ? "shield_lock" : "lock_open"}
-                          </span>
-                          <span className="text-[12px] font-bold">
-                            {locked ? "Đã kích hoạt" : "Đang mở"}
-                          </span>
+                        <h2 className="mt-1 text-[18px] sm:text-[19px] font-bold text-[#0b1c30]">
+                          Kho #{rental.unitCode} ({rental.unitTypeName})
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1.5 text-[#0e7b4c]">
+                        <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
+                        <span className="text-[12px] font-bold">Đang hiệu lực</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Diện tích
+                        </div>
+                        <div className="text-[13px] font-bold text-[#0b1c30]">
+                          {rental.areaM2 ? `${rental.areaM2} m²` : "—"}
+                        </div>
+                        <div className="text-[10px] text-[#8996a9]">
+                          {rental.dimensions || "Chuẩn quy cách"}
                         </div>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                            Diện tích
-                          </div>
-                          <div className="text-[13px] font-bold text-[#0b1c30]">
-                            {rental.areaM2 ? `${rental.areaM2} m²` : "—"}
-                          </div>
-                          <div className="text-[10px] text-[#8996a9]">
-                            {rental.dimensions || "Chuẩn quy cách"}
-                          </div>
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Giá thuê
                         </div>
-
-                        <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                            Giá thuê
-                          </div>
-                          <div className="text-[13px] font-bold text-[#1d5fe5]">
-                            {formatVnd(rental.monthlyRate)}/tháng
-                          </div>
-                          <div className="text-[10px] text-[#8996a9]">Hợp đồng #{rental.agreementNo}</div>
+                        <div className="text-[13px] font-bold text-[#1d5fe5]">
+                          {formatVnd(rental.monthlyRate)}/tháng
                         </div>
-
-                        <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                            Hạn thuê
-                          </div>
-                          <div className="text-[13px] font-bold text-[#0b1c30]">
-                            {rental.endDate ? new Date(rental.endDate).toLocaleDateString("vi-VN") : "—"}
-                          </div>
-                          <div className="text-[10px] font-semibold text-[#0e7b4c]">Đang hiệu lực</div>
-                        </div>
+                        <div className="text-[10px] text-[#8996a9]">Hợp đồng #{rental.agreementNo}</div>
                       </div>
 
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Hạn thuê
+                        </div>
+                        <div className="text-[13px] font-bold text-[#0b1c30]">
+                          {rental.endDate ? new Date(rental.endDate).toLocaleDateString("vi-VN") : "—"}
+                        </div>
+                        <div className="text-[10px] font-semibold text-[#0e7b4c]">Đang hiệu lực</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between rounded-[8px] bg-[#f8faff] p-3 text-[12px]">
+                      <span className="text-[#58657a]">Dùng chung mã PIN bàn phím tài khoản để mở cửa kho #{rental.unitCode}</span>
                       <button
-                        onClick={() => toggleUnitLock(rental.unitCode)}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-bold text-[#0b1c30] transition hover:bg-[#f8faff] md:w-auto md:px-6"
+                        onClick={() => navigate("/access-control")}
+                        className="font-bold text-[#1d5fe5] hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">
-                          {locked ? "lock_open" : "lock"}
-                        </span>
-                        {locked ? `Mở khóa kho #${rental.unitCode}` : `Khóa lại kho #${rental.unitCode}`}
+                        Quản lý mã PIN &rarr;
                       </button>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
 
                 {/* Biểu đồ nhiệt độ & độ ẩm thời gian thực */}
                 {primaryRental && (
@@ -523,7 +456,6 @@ function CustomerDashboard() {
                         <div className="text-[14px] font-bold text-[#0b1c30]">
                           Nhiệt độ &amp; Độ ẩm (#{primaryRental.unitCode})
                         </div>
-                        <p className="text-[11px] text-[#8996a9]">Cảm biến 24h thời gian thực</p>
                       </div>
                       <div className="flex items-center gap-2 text-[11px] font-semibold text-[#3a475a]">
                         <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">24 giờ qua</span>
@@ -566,6 +498,7 @@ function CustomerDashboard() {
                   </div>
                   <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
                 </div>
+
                 <div className="mt-3 space-y-2 text-[11px] text-[#58657a]">
                   <div className="flex items-center justify-between">
                     <span>Mã bàn phím cổng:</span>
@@ -582,17 +515,10 @@ function CustomerDashboard() {
                 </div>
 
                 <button
-                  onClick={handleOpenGate}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[12px] font-bold text-white transition hover:bg-[#174fc7] active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[16px]">sensor_door</span>
-                  Mở Cổng Chính
-                </button>
-                <button
                   onClick={() => navigate("/access-control")}
-                  className="mt-2 w-full rounded-[10px] border border-[#dfe7f5] py-2 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f8faff]"
+                  className="mt-3 w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] py-2 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#eef4ff]"
                 >
-                  Quản lý quyền ra vào
+                  Quản lý mã PIN ra vào
                 </button>
               </div>
             ) : (
@@ -602,7 +528,7 @@ function CustomerDashboard() {
                   Cổng ra vào cơ sở
                 </div>
                 <p className="mt-2 text-[12px] leading-relaxed text-[#58657a]">
-                  Chưa kích hoạt quyền ra vào. Mã PIN cổng và khóa thông minh sẽ tự động cấp sau khi bạn hoàn tất đặt thuê kho.
+                  Mã PIN cổng sẽ tự động cấp sau khi bạn hoàn tất đặt thuê kho.
                 </p>
                 <button
                   onClick={() => navigate("/")}

@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  getWallets,
   getGuestPins,
   getAccessControlLogs,
 } from "../data/accessControlRepository";
 import rentalService from "../api/rentalService";
 
-// Application layer: encapsulates AccessControl (PIN & smart lock) page state and data wiring.
+// Application layer: encapsulates AccessControl (Keypad PIN) page state and data wiring.
 export function useAccessControl() {
-  const wallets = getWallets();
-
   const [showPin, setShowPin] = useState(false);
-  const [unlocking, setUnlocking] = useState(false);
   const [alerts, setAlerts] = useState({ doorOpen: true, wrongPin: true, afterHours: true });
 
   // Real rentals
@@ -95,11 +91,6 @@ export function useAccessControl() {
     };
   }, [selectedRentalId]);
 
-  const handleUnlock = () => {
-    setUnlocking(true);
-    setTimeout(() => setUnlocking(false), 1200);
-  };
-
   const handleChangePin = async (newPin, currentPin) => {
     if (!selectedRentalId) return;
     setPinChanging(true);
@@ -119,7 +110,6 @@ export function useAccessControl() {
   const toggleAlert = (key) => setAlerts((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return {
-    wallets,
     guestPins,
     accessLogs,
     rentals,
@@ -131,8 +121,6 @@ export function useAccessControl() {
     currentUnitCode,
     showPin,
     setShowPin,
-    unlocking,
-    handleUnlock,
     alerts,
     toggleAlert,
     credentials,
