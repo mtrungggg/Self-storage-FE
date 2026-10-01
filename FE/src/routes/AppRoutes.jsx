@@ -7,6 +7,8 @@ import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
 import CustomerDashboard from "../pages/CustomerDashboard";
 import RentalHandoverPage from '../pages/RentalHandoverPage';
+import ReservationsPage from '../pages/ReservationsPage';
+import ReservationDetailPage from '../pages/ReservationDetailPage';
 import AccessControl from "../pages/AccessControl";
 import FacilityMap from "../pages/FacilityMap";
 import Support from "../pages/Support";
@@ -37,6 +39,8 @@ function AppRoutes() {
         <Route path="/storage-detail" element={<StorageDetail />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/dashboard" element={<CustomerDashboard />} />
+        <Route path="/reservations" element={<ReservationsPage />} />
+        <Route path="/reservations/:reservationId" element={<ReservationDetailPage />} />
         <Route path="/rentals/:agreementId/handover" element={<RentalHandoverPage />} />
         <Route path="/access-control" element={<AccessControl />} />
         <Route path="/facility-map" element={<FacilityMap />} />

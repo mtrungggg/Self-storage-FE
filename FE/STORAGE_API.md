@@ -14,6 +14,14 @@ PIN changes use `PUT {VITE_CUSTOMER_RENTALS_URL}/{agreementId}/change-pin` with 
 
 Handover details use `GET {VITE_CUSTOMER_RENTALS_URL}/{agreementId}/handover` and display signatures, notes, inspection results, photos, and item charges.
 
+Reservation creation uses `POST VITE_CUSTOMER_RESERVATIONS_URL` with facility, unit type, storage unit, start date, duration, and optional promotion code. A successful reservation links to checkout using its `reservationId`.
+
+The customer's reservation list uses `GET {VITE_CUSTOMER_RESERVATIONS_URL}/my` with an optional `status` query parameter.
+
+Reservation details use `GET {VITE_CUSTOMER_RESERVATIONS_URL}/{id}` and show price snapshots, check-in credentials, invoices, and invoice lines.
+
+Reservation cancellation uses `POST {VITE_CUSTOMER_RESERVATIONS_URL}/{id}/cancel` with `{ reason }`. The UI requires an explicit confirmation and reloads reservation status after success.
+
 The frontend currently expects one JSON object with arrays named after the supplied tables:
 
 - Required: `facilities`, `facility_areas`, `storage_units`, `unit_types`, `facility_rates`.

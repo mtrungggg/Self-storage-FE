@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 const money = (value, currency = 'VND') => value == null ? 'Chưa có thông tin' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: currency || 'VND' }).format(Number(value));
 
 export default function PaymentCheckout() {
-  const [reservationId, setReservationId] = useState('');
+  const [query] = useSearchParams();
+  const [reservationId, setReservationId] = useState(() => query.get('reservationId') || '');
   const [paymentMethod, setPaymentMethod] = useState('SEPAY');
   const [state, setState] = useState({ loading: false, error: '', checkout: null });
   const request = useRef(null);

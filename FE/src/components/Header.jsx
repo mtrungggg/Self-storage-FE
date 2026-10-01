@@ -4,6 +4,7 @@ import { BRAND_NAME } from "../constants/brand";
 const NAV_ITEMS = [
   { key: "dashboard", label: "Kho của tôi", to: "/dashboard", style: "soft" },
   { key: "rent", label: "Thuê kho", to: "/home", style: "soft" },
+  { key: "reservations", label: "Đặt chỗ", to: "/reservations", style: "soft" },
   { key: "billing", label: "Hóa đơn & Tự động thanh toán", to: "/billing", style: "hard" },
   { key: "access", label: "Mã PIN & Khóa điện tử", to: "/access-control", style: "hard" },
   { key: "facility", label: "Sơ đồ cơ sở", to: "/facility-map", style: "hard" },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AvailableUnitsSearch from './AvailableUnitsSearch';
 import PricingCalculator from './PricingCalculator';
+import CreateReservation from './CreateReservation';
 import { Link } from 'react-router-dom';
 import StorageTerms from './StorageTerms';
 import RentalScheduleNotice from './RentalScheduleNotice';
@@ -69,6 +70,7 @@ export default function StorageSearch({ records, loading = false, loadError = ''
     {connected && !loading && !loadError && !hasUnits && <section className="mt-5">
       <AvailableUnitsSearch facilities={data.facilities} unitTypes={data.unit_types} />
       <PricingCalculator facilities={data.facilities} unitTypes={data.unit_types} />
+      <CreateReservation facilities={data.facilities} unitTypes={data.unit_types} />
       <h2 className="text-lg font-bold">Các loại kho</h2>
       {unitTypesError ? <p role="alert" className="mt-2 text-red-700">{unitTypesError}</p> : !Array.isArray(records.unit_types) ? <p>Chưa kết nối danh sách loại kho.</p> : data.unit_types.length === 0 ? <p>Chưa có loại kho.</p> : <div className="my-4 grid gap-4 md:grid-cols-3">
         {data.unit_types.map((type) => <article key={type.id} className="rounded-xl border bg-white p-5">
