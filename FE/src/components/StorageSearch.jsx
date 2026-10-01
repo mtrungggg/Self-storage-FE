@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import StorageTerms from './StorageTerms';
+import StoragePromotions from './StoragePromotions';
 import { getStorageTermsData } from '../data/storageTermsRepository';
 import { getStorageSearchData } from '../data/storageSearchRepository';
 import { searchStorageUnits, validateStorageSearch } from '../domain/usecases/searchStorageUnits';
@@ -61,6 +62,7 @@ export default function StorageSearch({ records, loading = false, loadError = ''
       </fieldset>
     </form>
     {connected && !loading && !loadError && <>
+    <StoragePromotions data={termsData} date={pricingDate} />
     <div className="my-5 flex flex-wrap items-center justify-between gap-3">
       <div role="status" className="text-sm">
         <p><strong>{results.length} ô kho</strong> phù hợp bộ lọc tại {new Set(results.map((unit) => unit.facility_id)).size} cơ sở.</p>
