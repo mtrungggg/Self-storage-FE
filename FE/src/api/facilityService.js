@@ -25,16 +25,6 @@ export const facilityService = {
     const res = await apiClient.get("/customer/unit-types");
     return res?.data ?? [];
   },
-
-  /**
-   * Lấy sơ đồ mặt bằng của một điểm kho
-   * @param {string|number} facilityId
-   * @param {{ areaId?: number, floor?: string }} [params]
-   */
-  async getFacilityMap(facilityId, params = {}) {
-    const res = await apiClient.get(`/customer/facilities/${facilityId}/map`, { params });
-    return res?.data ?? null;
-  },
 };
 
 export default facilityService;

@@ -60,11 +60,6 @@ function StorageDetail() {
               <div className="text-[12px] text-[#58657a]">{unit.floor}</div>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
-            <Link to="/facility-map" className="flex items-center gap-1 text-[#1d5fe5] hover:underline">
-              Sơ đồ kho &rarr;
-            </Link>
-          </div>
         </div>
       </div>
 

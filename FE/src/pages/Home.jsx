@@ -383,18 +383,11 @@ function Home() {
                         <button
                           type="button"
                           onClick={() => handleSelectUnit(u)}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow-[0_8px_16px_rgba(29,95,229,0.2)] transition hover:bg-[#174fc7]"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow-[0_8px_16px_rgba(29,95,229,0.2)] transition hover:bg-[#174fc7]"
                         >
                           <span>Đặt chỗ ngay</span>
                           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                         </button>
-                        <Link
-                          to="/facility-map"
-                          title="Xem sơ đồ vị trí"
-                          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#dfe7f5] bg-white text-[#58657a] hover:bg-[#f0f4fc] hover:text-[#1d5fe5]"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">map</span>
-                        </Link>
                       </div>
                     </div>
                   </div>

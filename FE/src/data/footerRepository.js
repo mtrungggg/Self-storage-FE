@@ -1,6 +1,6 @@
 import { SUPPORT_EMAIL } from "../constants/brand";
 
-// Data layer: footer column links shared by Billing, AccessControl and FacilityMap pages.
+// Data layer: footer column links shared by Billing and AccessControl pages.
 export function getDefaultFooterColumns() {
   return [
     {

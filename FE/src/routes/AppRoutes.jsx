@@ -5,7 +5,6 @@ import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
 import CustomerDashboard from "../pages/CustomerDashboard";
 import AccessControl from "../pages/AccessControl";
-import FacilityMap from "../pages/FacilityMap";
 import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
 import AdminOperationsOverview from "../pages/AdminOperationsOverview";
@@ -34,7 +33,6 @@ function AppRoutes() {
         <Route path="/billing" element={<Billing />} />
         <Route path="/dashboard" element={<CustomerDashboard />} />
         <Route path="/access-control" element={<AccessControl />} />
-        <Route path="/facility-map" element={<FacilityMap />} />
         <Route path="/support" element={<Support />} />
       </Route>
 

@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { key: "rent", label: "Thuê kho", to: "/home", style: "soft" },
   { key: "billing", label: "Hóa đơn", to: "/billing", style: "hard" },
   { key: "access", label: "Mã PIN", to: "/access-control", style: "hard" },
-  { key: "facility", label: "Sơ đồ", to: "/facility-map", style: "hard" },
 ];
 
 const ACTIVE_CLASS = {
