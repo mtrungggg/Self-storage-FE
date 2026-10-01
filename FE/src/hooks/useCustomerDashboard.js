@@ -1,32 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  getDashboardAccessLogs,
-  getDashboardQuickActions,
-  getClimateChartData,
-} from "../data/dashboardRepository";
+import { getClimateChartData } from "../data/dashboardRepository";
 import { buildChartPath } from "../domain/usecases/buildChartPath";
 import rentalService from "../api/rentalService";
 
-// Application layer: encapsulates CustomerDashboard ("Kho của tôi") page state and data wiring.
+// Application layer: encapsulates CustomerDashboard ("Kho của tôi") page state and BE API wiring.
 export function useCustomerDashboard() {
   const { temperature, humidity } = getClimateChartData();
-  const quickActions = getDashboardQuickActions();
-
-  const [showPin, setShowPin] = useState(false);
-  const [mainLocked, setMainLocked] = useState(true);
-  const [garageLocked, setGarageLocked] = useState(true);
-  const [copyFeedback, setCopyFeedback] = useState(false);
-  const [gateFeedback, setGateFeedback] = useState("");
 
   // Real hợp đồng thuê kho của khách hàng (backend: GET /customer/rentals)
   const [rentals, setRentals] = useState([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [rentalsError, setRentalsError] = useState("");
 
-  // Real access credentials (PIN & Gate QR) cho kho chính
-  const [credentials, setCredentials] = useState(null);
+  // Map credentials cho từng hợp đồng: { [agreementId]: AccessCredentialDto }
+  const [credentialsMap, setCredentialsMap] = useState({});
   const [credentialsLoading, setCredentialsLoading] = useState(false);
 
+  // Trạng thái ẩn/hiện mã PIN cho từng kho: { [agreementId]: boolean }
+  const [showPinMap, setShowPinMap] = useState({});
+
+  // Trạng thái phản hồi sao chép PIN: { [agreementId]: boolean }
+  const [copyFeedbackMap, setCopyFeedbackMap] = useState({});
+
+  // Tải danh sách hợp đồng thuê
   useEffect(() => {
     let active = true;
     setRentalsLoading(true);
@@ -37,7 +33,7 @@ export function useCustomerDashboard() {
         if (active) setRentals(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
-        if (active) setRentalsError(err?.message || "Không thể tải danh sách kho đang thuê.");
+        if (active) setRentalsError(err?.message || "Không thể tải danh sách kho đang thuê từ hệ thống.");
       })
       .finally(() => {
         if (active) setRentalsLoading(false);
@@ -52,66 +48,90 @@ export function useCustomerDashboard() {
     [rentals]
   );
   const primaryRental = activeRentals[0] || null;
-  const secondaryRental = activeRentals[1] || null;
 
-  // Lấy mã PIN thật từ API cho hợp đồng chính
+  // Gọi đồng thời API lấy mã PIN cho TẤT CẢ các kho mà khách hàng đang sở hữu
   useEffect(() => {
     let active = true;
-    if (primaryRental?.agreementId) {
+    if (activeRentals.length > 0) {
       setCredentialsLoading(true);
-      rentalService
-        .getAccessCredentials(primaryRental.agreementId)
-        .then((data) => {
-          if (active) setCredentials(data);
-        })
-        .catch((err) => {
-          console.warn("Lỗi khi tải mã PIN truy cập:", err);
+      Promise.all(
+        activeRentals.map((r) =>
+          rentalService
+            .getAccessCredentials(r.agreementId)
+            .then((cred) => ({ agreementId: r.agreementId, cred }))
+            .catch((err) => {
+              console.warn(`Lỗi khi tải mã PIN cho kho #${r.unitCode}:`, err);
+              return { agreementId: r.agreementId, cred: null };
+            })
+        )
+      )
+        .then((results) => {
+          if (!active) return;
+          const nextMap = {};
+          results.forEach(({ agreementId, cred }) => {
+            if (cred) nextMap[agreementId] = cred;
+          });
+          setCredentialsMap(nextMap);
         })
         .finally(() => {
           if (active) setCredentialsLoading(false);
         });
     } else {
-      setCredentials(null);
+      setCredentialsMap({});
     }
+
     return () => {
       active = false;
     };
-  }, [primaryRental?.agreementId]);
+  }, [activeRentals]);
 
-  const accessLogs = useMemo(
-    () => getDashboardAccessLogs(primaryRental),
-    [primaryRental]
-  );
+  const tempPath = useMemo(() => buildChartPath(temperature, 20.5, 22, 320, 70), [temperature]);
+  const humidityPath = useMemo(() => buildChartPath(humidity, 40, 55, 320, 70), [humidity]);
 
-  const tempPath = useMemo(() => buildChartPath(temperature, 20.5, 22, 320, 90), [temperature]);
-  const humidityPath = useMemo(() => buildChartPath(humidity, 40, 55, 320, 90), [humidity]);
+  const toggleShowPin = (agreementId) => {
+    setShowPinMap((prev) => ({
+      ...prev,
+      [agreementId]: !prev[agreementId],
+    }));
+  };
 
-  const copyPinToClipboard = () => {
-    const pin = credentials?.keypadPin;
+  const copyPinToClipboard = (pin, agreementId) => {
     if (!pin) return;
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(pin);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
+      setCopyFeedbackMap((prev) => ({ ...prev, [agreementId]: true }));
+      setTimeout(() => {
+        setCopyFeedbackMap((prev) => ({ ...prev, [agreementId]: false }));
+      }, 2000);
     }
   };
 
+  // Đổi mã PIN trực tiếp qua API Backend PUT /customer/rentals/{agreementId}/change-pin
+  const handleChangePin = async (agreementId, newPin) => {
+    const res = await rentalService.changePin(agreementId, { newPin });
+    setCredentialsMap((prev) => ({
+      ...prev,
+      [agreementId]: prev[agreementId]
+        ? { ...prev[agreementId], keypadPin: newPin }
+        : { agreementId, keypadPin: newPin },
+    }));
+    return res;
+  };
+
   return {
-    accessLogs,
-    quickActions,
-    showPin,
-    setShowPin,
-    tempPath,
-    humidityPath,
     rentals,
     activeRentals,
     primaryRental,
-    secondaryRental,
-    credentials,
+    credentialsMap,
     credentialsLoading,
     rentalsLoading,
     rentalsError,
-    copyFeedback,
+    showPinMap,
+    toggleShowPin,
+    copyFeedbackMap,
     copyPinToClipboard,
+    handleChangePin,
+    tempPath,
+    humidityPath,
   };
 }

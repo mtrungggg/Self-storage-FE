@@ -25,10 +25,21 @@ function AccessControl() {
     handleChangePin,
   } = useAccessControl();
 
-  const onChangePin = () => {
-    const newPin = window.prompt("Nhập mã PIN mới (6 chữ số):");
+  const onChangePin = async () => {
+    const currentPin = credentials?.keypadPin;
+    const newPin = window.prompt(`Nhập mã PIN mới (6 chữ số) cho Kho #${currentUnitCode}:`, currentPin || "");
     if (!newPin) return;
-    handleChangePin(newPin).catch(() => {});
+    const trimmed = newPin.trim();
+    if (!/^\d{6}$/.test(trimmed)) {
+      window.alert("Mã PIN phải bao gồm đúng 6 chữ số.");
+      return;
+    }
+    try {
+      await handleChangePin(trimmed);
+      window.alert(`Đổi mã PIN cho Kho #${currentUnitCode} thành công! Mã mới: ${trimmed}`);
+    } catch (err) {
+      window.alert(err?.message || "Đổi mã PIN thất bại. Vui lòng thử lại.");
+    }
   };
 
   return (

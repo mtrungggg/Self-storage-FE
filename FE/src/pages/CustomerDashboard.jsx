@@ -10,31 +10,43 @@ function CustomerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
-    showPin,
-    setShowPin,
-    tempPath,
-    humidityPath,
     activeRentals,
     primaryRental,
-    credentials,
+    credentialsMap,
     credentialsLoading,
     rentalsLoading,
     rentalsError,
-    copyFeedback,
+    showPinMap,
+    toggleShowPin,
+    copyFeedbackMap,
     copyPinToClipboard,
+    handleChangePin,
+    tempPath,
+    humidityPath,
   } = useCustomerDashboard();
 
   const nextBillingDate = primaryRental?.endDate
     ? new Date(primaryRental.endDate).toLocaleDateString("vi-VN")
     : "—";
 
-  const pinDisplay = credentialsLoading
-    ? "Đang tải..."
-    : showPin
-    ? credentials?.keypadPin
-      ? `${credentials.keypadPin} #`
-      : "Chưa tạo PIN #"
-    : "• • • • • • #";
+  const primaryPin = primaryRental ? credentialsMap[primaryRental.agreementId]?.keypadPin : null;
+
+  const onPromptChangePin = async (rental) => {
+    const currentPin = credentialsMap[rental.agreementId]?.keypadPin;
+    const newPin = window.prompt(`Nhập mã PIN mới (6 chữ số) cho Kho #${rental.unitCode}:`, currentPin || "");
+    if (!newPin) return;
+    const trimmed = newPin.trim();
+    if (!/^\d{6}$/.test(trimmed)) {
+      window.alert("Mã PIN phải bao gồm đúng 6 chữ số.");
+      return;
+    }
+    try {
+      await handleChangePin(rental.agreementId, trimmed);
+      window.alert(`Đổi mã PIN cho Kho #${rental.unitCode} thành công! Mã mới: ${trimmed}`);
+    } catch (err) {
+      window.alert(err?.message || "Đổi mã PIN thất bại. Vui lòng thử lại.");
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -101,7 +113,7 @@ function CustomerDashboard() {
               Mã PIN bàn phím
             </div>
             <div className="text-[17px] font-bold text-[#1d5fe5]">
-              {credentials?.keypadPin ? `#${credentials.keypadPin}` : "Chưa cấp"}
+              {credentialsLoading ? "Đang tải..." : primaryPin ? `#${primaryPin}` : "Chưa cấp"}
             </div>
             <div className="text-[11px] font-medium text-[#58657a]">
               Nhập tại cửa kho &amp; cổng
@@ -130,14 +142,14 @@ function CustomerDashboard() {
               {primaryRental ? "21.1°C • 48%" : "—"}
             </div>
             <div className="truncate text-[11px] font-medium text-[#58657a]">
-              {primaryRental?.unitTypeName || "—"}
+              {primaryRental?.unitTypeName || "Kiểm soát độ ẩm tốt"}
             </div>
           </div>
         </div>
 
         {/* Danh sách kho đang sở hữu */}
         <div className="mt-6 space-y-6">
-          {activeRentals.length === 0 ? (
+          {!rentalsLoading && activeRentals.length === 0 ? (
             /* Giao diện khi chưa có kho */
             <div className="flex flex-col items-center justify-center rounded-[16px] border border-[#dfe7f5] bg-white p-10 text-center shadow-sm">
               <span className="material-symbols-outlined text-[54px] text-[#1d5fe5]">
@@ -157,191 +169,207 @@ function CustomerDashboard() {
               </button>
             </div>
           ) : (
-            activeRentals.map((rental, index) => (
-              <div
-                key={rental.agreementId || rental.unitCode || index}
-                className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]"
-              >
-                {/* Header kho */}
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                      <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">
-                        {index === 0 ? "Kho chính" : `Kho #${index + 1}`}
-                      </span>
-                      Khu vực Zone {rental.zoneLabel || "A"} • Tầng {rental.floorLabel || "1"} • {rental.facilityName || "Thu Duc Self Storage"}
-                    </div>
-                    <h2 className="mt-1 text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
-                      Kho #{rental.unitCode} ({rental.unitTypeName})
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[11px] font-bold text-[#1d5fe5]">
-                      Hợp đồng #{rental.agreementNo}
-                    </span>
-                    <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1.5 text-[#0e7b4c]">
-                      <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
-                      <span className="text-[12px] font-bold">Đang hiệu lực</span>
-                    </div>
-                  </div>
-                </div>
+            activeRentals.map((rental, index) => {
+              const cred = credentialsMap[rental.agreementId];
+              const pin = cred?.keypadPin;
+              const isVisible = Boolean(showPinMap[rental.agreementId]);
+              const isCopied = Boolean(copyFeedbackMap[rental.agreementId]);
+              const pinText = credentialsLoading
+                ? "Đang tải..."
+                : isVisible
+                ? pin
+                  ? `${pin} #`
+                  : "Chưa tạo PIN #"
+                : pin
+                ? "• • • • • • #"
+                : "• • • • • • #";
 
-                {/* Hình ảnh và 6 thông số kỹ thuật */}
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
-                  <div className="relative overflow-hidden rounded-[12px] border border-[#eef1f8]">
-                    <div
-                      className="h-full min-h-[190px] w-full bg-cover bg-center"
-                      style={{
-                        backgroundImage:
-                          "linear-gradient(180deg, rgba(15,30,45,0.05), rgba(15,30,45,0.4)), url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80')",
-                      }}
-                    />
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#0b1c30] shadow-sm">
-                      Camera 24/7
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Diện tích
-                      </div>
-                      <div className="text-[14px] font-bold text-[#0b1c30]">
-                        {rental.areaM2 ? `${rental.areaM2} m²` : "3.0 m²"}
-                      </div>
-                      <div className="text-[10px] text-[#8996a9]">
-                        {rental.dimensions || "1.5 × 2.0m"}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Thể tích lưu trữ
-                      </div>
-                      <div className="text-[14px] font-bold text-[#0b1c30]">
-                        {rental.volumeM3 ? `${rental.volumeM3} m³` : `${Number(rental.areaM2 || 3) * 2.5} m³`}
-                      </div>
-                      <div className="truncate text-[10px] text-[#8996a9]">
-                        {rental.unitTypeName}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Pin khóa cửa
-                      </div>
-                      <div className="text-[14px] font-bold text-[#0b1c30]">100%</div>
-                      <div className="text-[10px] font-semibold text-[#0e7b4c]">Tốt</div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Nhiệt độ
-                      </div>
-                      <div className="text-[14px] font-bold text-[#0b1c30]">20° – 22°C</div>
-                      <div className="text-[10px] text-[#8996a9]">Ổn định</div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Cảm biến an ninh
-                      </div>
-                      <div className="text-[14px] font-bold text-[#0b1c30]">Hồng ngoại</div>
-                      <div className="text-[10px] font-semibold text-[#0e7b4c]">Đang bảo vệ</div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                        Giá thuê
-                      </div>
-                      <div className="text-[14px] font-bold text-[#1d5fe5]">
-                        {formatVnd(rental.monthlyRate)}
-                      </div>
-                      <div className="text-[10px] text-[#8996a9]">Hàng tháng</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mã PIN bàn phím mở cửa kho */}
-                <div className="mt-4 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4">
-                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                    Mã PIN bàn phím mở cửa kho #{rental.unitCode}
-                    <button
-                      onClick={() => setShowPin((v) => !v)}
-                      className="font-bold text-[#1d5fe5] hover:underline"
-                    >
-                      {showPin ? "Ẩn PIN" : "Hiện PIN"}
-                    </button>
-                  </div>
-
-                  <div className="mt-2 flex items-center gap-3 text-[20px] font-bold tracking-[0.2em] text-[#0b1c30]">
-                    <span>{pinDisplay}</span>
-                    {credentials?.keypadPin && (
-                      <button
-                        onClick={copyPinToClipboard}
-                        title="Sao chép mã PIN"
-                        className="rounded p-1 text-[#8996a9] transition hover:bg-white hover:text-[#1d5fe5]"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {copyFeedback ? "done" : "content_copy"}
+              return (
+                <div
+                  key={rental.agreementId || rental.unitCode || index}
+                  className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]"
+                >
+                  {/* Header kho */}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                        <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">
+                          {index === 0 ? "Kho chính" : `Kho #${index + 1}`}
                         </span>
-                      </button>
-                    )}
-                    {copyFeedback && (
-                      <span className="text-[11px] font-bold text-[#0e7b4c]">Đã chép!</span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      onClick={copyPinToClipboard}
-                      disabled={!credentials?.keypadPin}
-                      className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f5f7fd] disabled:opacity-50"
-                    >
-                      Sao chép mã PIN
-                    </button>
-                    <button
-                      onClick={() => navigate("/access-control")}
-                      className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"
-                    >
-                      Đổi mã PIN
-                    </button>
-                  </div>
-                </div>
-
-                {/* Biểu đồ nhiệt độ & độ ẩm thời gian thực */}
-                <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#fafcff] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-[13px] font-bold text-[#0b1c30]">
-                      Nhiệt độ &amp; Độ ẩm (#{rental.unitCode})
+                        Khu vực Zone {rental.zoneLabel || "A"} • Tầng {rental.floorLabel || "1"} • {rental.facilityName || "Thu Duc Self Storage"}
+                      </div>
+                      <h2 className="mt-1 text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
+                        Kho #{rental.unitCode} ({rental.unitTypeName})
+                      </h2>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-semibold text-[#3a475a]">
-                      <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">24 giờ qua</span>
-                      <span className="flex items-center gap-1 text-[#0e7b4c]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-                        Ổn định
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[11px] font-bold text-[#1d5fe5]">
+                        Hợp đồng #{rental.agreementNo}
+                      </span>
+                      <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-1.5 text-[#0e7b4c]">
+                        <span className="h-2 w-2 rounded-full bg-[#2dd4a0]" />
+                        <span className="text-[12px] font-bold">Đang hiệu lực</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hình ảnh và 6 thông số kỹ thuật */}
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
+                    <div className="relative overflow-hidden rounded-[12px] border border-[#eef1f8]">
+                      <div
+                        className="h-full min-h-[190px] w-full bg-cover bg-center"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(180deg, rgba(15,30,45,0.05), rgba(15,30,45,0.4)), url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80')",
+                        }}
+                      />
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#0b1c30] shadow-sm">
+                        Camera 24/7
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Diện tích
+                        </div>
+                        <div className="text-[14px] font-bold text-[#0b1c30]">
+                          {rental.areaM2 ? `${rental.areaM2} m²` : "3.0 m²"}
+                        </div>
+                        <div className="text-[10px] text-[#8996a9]">
+                          {rental.dimensions || "1.5 × 2.0m"}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Thể tích lưu trữ
+                        </div>
+                        <div className="text-[14px] font-bold text-[#0b1c30]">
+                          {rental.volumeM3 ? `${rental.volumeM3} m³` : `${Number(rental.areaM2 || 3) * 2.5} m³`}
+                        </div>
+                        <div className="truncate text-[10px] text-[#8996a9]">
+                          {rental.unitTypeName}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Pin khóa cửa
+                        </div>
+                        <div className="text-[14px] font-bold text-[#0b1c30]">100%</div>
+                        <div className="text-[10px] font-semibold text-[#0e7b4c]">Tốt</div>
+                      </div>
+
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Nhiệt độ
+                        </div>
+                        <div className="text-[14px] font-bold text-[#0b1c30]">20° – 22°C</div>
+                        <div className="text-[10px] text-[#8996a9]">Ổn định</div>
+                      </div>
+
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Cảm biến an ninh
+                        </div>
+                        <div className="text-[14px] font-bold text-[#0b1c30]">Hồng ngoại</div>
+                        <div className="text-[10px] font-semibold text-[#0e7b4c]">Đang bảo vệ</div>
+                      </div>
+
+                      <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                          Giá thuê
+                        </div>
+                        <div className="text-[14px] font-bold text-[#1d5fe5]">
+                          {formatVnd(rental.monthlyRate)}
+                        </div>
+                        <div className="text-[10px] text-[#8996a9]">Hàng tháng</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mã PIN bàn phím mở cửa kho */}
+                  <div className="mt-4 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
+                      Mã PIN bàn phím mở cửa kho #{rental.unitCode}
+                      <button
+                        onClick={() => toggleShowPin(rental.agreementId)}
+                        className="font-bold text-[#1d5fe5] hover:underline"
+                      >
+                        {isVisible ? "Ẩn PIN" : "Hiện PIN"}
+                      </button>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-3 text-[20px] font-bold tracking-[0.2em] text-[#0b1c30]">
+                      <span>{pinText}</span>
+                      {pin && (
+                        <button
+                          onClick={() => copyPinToClipboard(pin, rental.agreementId)}
+                          title="Sao chép mã PIN"
+                          className="rounded p-1 text-[#8996a9] transition hover:bg-white hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            {isCopied ? "done" : "content_copy"}
+                          </span>
+                        </button>
+                      )}
+                      {isCopied && (
+                        <span className="text-[11px] font-bold text-[#0e7b4c]">Đã chép!</span>
+                      )}
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={() => copyPinToClipboard(pin, rental.agreementId)}
+                        disabled={!pin}
+                        className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f5f7fd] disabled:opacity-50"
+                      >
+                        Sao chép mã PIN
+                      </button>
+                      <button
+                        onClick={() => onPromptChangePin(rental)}
+                        className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"
+                      >
+                        Đổi mã PIN
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Biểu đồ nhiệt độ & độ ẩm thời gian thực */}
+                  <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#fafcff] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[13px] font-bold text-[#0b1c30]">
+                        Nhiệt độ &amp; Độ ẩm (#{rental.unitCode})
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-[#3a475a]">
+                        <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[#1d5fe5]">24 giờ qua</span>
+                        <span className="flex items-center gap-1 text-[#0e7b4c]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
+                          Ổn định
+                        </span>
+                      </div>
+                    </div>
+
+                    <svg viewBox="0 0 320 70" className="mt-3 h-[90px] w-full">
+                      <path d={tempPath} fill="none" stroke="#1d5fe5" strokeWidth="2" />
+                      <path d={humidityPath} fill="none" stroke="#0e7b4c" strokeWidth="2" />
+                    </svg>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] font-semibold text-[#3a475a]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-[#1d5fe5]" />
+                        Nhiệt độ: 21.2°C
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-[#0e7b4c]" />
+                        Độ ẩm: 48%
                       </span>
                     </div>
                   </div>
-
-                  <svg viewBox="0 0 320 70" className="mt-3 h-[90px] w-full">
-                    <path d={tempPath} fill="none" stroke="#1d5fe5" strokeWidth="2" />
-                    <path d={humidityPath} fill="none" stroke="#0e7b4c" strokeWidth="2" />
-                  </svg>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] font-semibold text-[#3a475a]">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-[#1d5fe5]" />
-                      Nhiệt độ: 21.2°C
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-[#0e7b4c]" />
-                      Độ ẩm: 48%
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </main>
