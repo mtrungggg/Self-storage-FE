@@ -146,7 +146,6 @@ function AccessControl() {
                         Kho #{currentUnitCode}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-[#8996a9]">Mã hóa bảo mật 256-bit</p>
 
                     <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
                       <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
@@ -188,9 +187,6 @@ function AccessControl() {
                           </button>
                         </div>
                       </div>
-                      <div className="mt-2 text-[11px] text-[#8996a9]">
-                        Nhập trực tiếp trên bàn phím tại cửa kho.
-                      </div>
                     </div>
 
                     <div className="mt-4 rounded-[12px] bg-[#0b1c30] p-4 text-white">
@@ -199,12 +195,7 @@ function AccessControl() {
                         Mở khóa Bluetooth
                       </div>
                       <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <div className="text-[14px] font-bold">Mở khóa một chạm</div>
-                          <p className="mt-1 max-w-[380px] text-[11px] leading-relaxed text-[#c7d1e6]">
-                            Tự động nhận diện khi đến gần kho trong phạm vi 5 mét.
-                          </p>
-                        </div>
+                        <div className="text-[14px] font-bold">Mở khóa một chạm</div>
                         <button
                           onClick={handleUnlock}
                           className="flex items-center gap-2 rounded-[10px] bg-[#1d5fe5] px-4 py-2.5 text-[13px] font-bold text-white hover:bg-[#174fc7]"
@@ -250,12 +241,7 @@ function AccessControl() {
 
                   <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <div className="text-[15px] font-bold text-[#0b1c30]">Mã khách &amp; Ủy quyền</div>
-                        <p className="mt-0.5 max-w-[480px] text-[11px] text-[#8996a9]">
-                          Cấp quyền mở kho tạm thời cho đối tác hoặc người thân.
-                        </p>
-                      </div>
+                      <div className="text-[15px] font-bold text-[#0b1c30]">Mã khách &amp; Ủy quyền</div>
                       <button className="flex items-center gap-1 rounded-[10px] bg-[#1d5fe5] px-3.5 py-1.5 text-[12px] font-bold text-white hover:bg-[#174fc7]">
                         <span className="material-symbols-outlined text-[16px]">add</span>
                         Cấp mã mới

@@ -149,11 +149,11 @@ function CustomerDashboard() {
                 <div>
                   <span className="font-bold text-[#0b1c30]">Kho #{primaryRental.unitCode}</span>
                   <span className="text-[#58657a]">
-                    {" "}• {primaryRental.facilityName} • {formatVnd(primaryRental.monthlyRate)}/tháng
+                    {" "}• {formatVnd(primaryRental.monthlyRate)}/tháng
                   </span>
                   {activeRentals.length > 1 && (
                     <span className="ml-2 rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
-                      +{activeRentals.length - 1} kho khác đang hoạt động
+                      +{activeRentals.length - 1} kho khác
                     </span>
                   )}
                 </div>
@@ -285,9 +285,6 @@ function CustomerDashboard() {
                         <h2 className="mt-1 text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
                           Kho #{primaryRental.unitCode} ({primaryRental.unitTypeName})
                         </h2>
-                        <p className="text-[12px] text-[#8996a9]">
-                          {facilityName} • {facilityAddress}
-                        </p>
                       </div>
                       <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2 text-[#0e7b4c]">
                         <span className="material-symbols-outlined text-[18px]">
@@ -460,9 +457,6 @@ function CustomerDashboard() {
                           <h2 className="mt-1 text-[18px] sm:text-[19px] font-bold text-[#0b1c30]">
                             Kho #{rental.unitCode} ({rental.unitTypeName})
                           </h2>
-                          <p className="text-[12px] text-[#8996a9]">
-                            {rental.facilityName} • {rental.facilityAddress}
-                          </p>
                         </div>
                         <div className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2 text-[#0e7b4c]">
                           <span className="material-symbols-outlined text-[18px]">
@@ -572,13 +566,7 @@ function CustomerDashboard() {
                   </div>
                   <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
                 </div>
-                <div className="mt-1 text-[11px] text-[#8996a9]">{facilityName}</div>
-
                 <div className="mt-3 space-y-2 text-[11px] text-[#58657a]">
-                  <div className="flex items-start justify-between gap-2">
-                    <span>Địa chỉ:</span>
-                    <span className="text-right font-semibold text-[#0b1c30]">{facilityAddress}</span>
-                  </div>
                   <div className="flex items-center justify-between">
                     <span>Mã bàn phím cổng:</span>
                     <span className="font-semibold text-[#1d5fe5]">
@@ -586,7 +574,7 @@ function CustomerDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Khu vực:</span>
+                    <span>Vị trí kho:</span>
                     <span className="font-semibold text-[#0b1c30]">
                       Zone {primaryRental.zoneLabel || "A"} • Tầng {primaryRental.floorLabel || "1"}
                     </span>

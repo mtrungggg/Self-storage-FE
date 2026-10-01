@@ -70,8 +70,8 @@ function FacilityMap() {
                   <span className="text-[17px] font-bold text-white">Kho #{userUnitCode}</span>
                   <span className="rounded-full bg-[#0e7b4c] px-2 py-0.5 text-[10px] font-semibold text-white">Đã kích hoạt</span>
                 </div>
-                <div className="text-[11px] text-[#c7d1e6]">
-                  {facilityName} • {facilityAddress}
+                <div className="text-[12px] text-[#c7d1e6]">
+                  {facilityName}
                 </div>
               </div>
             </div>
@@ -80,23 +80,6 @@ function FacilityMap() {
               <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">near_me</span>
               Định vị vị trí
             </button>
-
-            <div className="flex items-center gap-5 text-[11px] font-semibold">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-[#7fd8b1]">directions_walk</span>
-                <div>
-                  <div className="text-[9px] uppercase tracking-wider text-[#8f9cbd]">Khoảng cách</div>
-                  <div>45m (~1 phút)</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-[#7fd8b1]">shopping_cart</span>
-                <div>
-                  <div className="text-[9px] uppercase tracking-wider text-[#8f9cbd]">Xe đẩy tại sảnh</div>
-                  <div>12 chiếc sẵn có</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

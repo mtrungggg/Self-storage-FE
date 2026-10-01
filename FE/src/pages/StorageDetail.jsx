@@ -56,10 +56,8 @@ function StorageDetail() {
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
           <div className="flex items-center gap-3">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                {unit.facilityName} • {unit.address}
-              </div>
-              <div className="text-[14px] font-bold text-[#0b1c30]">{unit.floor}</div>
+              <div className="text-[14px] font-bold text-[#0b1c30]">{unit.facilityName}</div>
+              <div className="text-[12px] text-[#58657a]">{unit.floor}</div>
             </div>
           </div>
           <div className="flex items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
@@ -158,11 +156,10 @@ function StorageDetail() {
 
             {/* Bước 1: Ngày chuyển vào */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <div className="text-[14px] font-bold text-[#0b1c30]">
                   1. Ngày nhận kho &amp; Chuyển vào
                 </div>
-                <span className="text-[11px] font-semibold text-[#1d5fe5]">Kích hoạt từ ngày chọn</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -193,7 +190,6 @@ function StorageDetail() {
                     <div className="text-[13px] font-semibold text-[#0b1c30]">
                       Bắt đầu: {resolvedStartDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
                     </div>
-                    <div className="text-[11px] text-[#8996a9]">Cổng barrier tự động mở 24/7 từ 06:00 sáng</div>
                   </div>
                 </div>
                 {moveInOption === "custom" && (
@@ -217,11 +213,10 @@ function StorageDetail() {
 
             {/* Bước 2: Thời hạn thuê & Mã khuyến mãi */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <div className="text-[14px] font-bold text-[#0b1c30]">
                   2. Thời hạn thuê &amp; Mã ưu đãi
                 </div>
-                <span className="text-[11px] text-[#8996a9]">Linh hoạt gia hạn</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -237,9 +232,6 @@ function StorageDetail() {
                     }`}
                   >
                     <span className="text-[14px] font-bold">{opt.label}</span>
-                    <span className="mt-0.5 text-[10px] text-[#8996a9]">
-                      {opt.months >= 6 ? "Ưu đãi dài hạn" : "Tiêu chuẩn"}
-                    </span>
                   </button>
                 ))}
               </div>
@@ -286,12 +278,7 @@ function StorageDetail() {
 
           {/* Sidebar */}
           <aside className="h-fit rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.04)] lg:sticky lg:top-4">
-            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              Bảng kê đặt chỗ
-              <span className="rounded-full bg-[#0b1c30] px-2 py-0.5 text-[10px] text-white">Giữ giá</span>
-            </div>
-
-            <div className="mt-2 text-[15px] font-bold text-[#0b1c30]">Chi phí thanh toán</div>
+            <div className="text-[15px] font-bold text-[#0b1c30]">Chi phí thanh toán</div>
 
             {/* Thời gian thuê */}
             <div className="mt-3 grid grid-cols-4 gap-1.5">
@@ -337,7 +324,6 @@ function StorageDetail() {
                   <span className="text-[#3a475a]">Tiền cọc</span>
                   <span className="text-right font-semibold text-[#0b1c30]">
                     {formatVnd(pricing?.securityDeposit)}
-                    <span className="block text-[10px] font-normal text-[#0e7b4c]">Hoàn trả khi trả kho</span>
                   </span>
                 </div>
                 {pricing?.bookingFee > 0 && (
@@ -358,16 +344,6 @@ function StorageDetail() {
             <div className="mt-4 flex items-center justify-between border-t border-[#eef1f8] pt-3">
               <span className="text-[14px] font-bold text-[#0b1c30]">Tổng lần đầu (thanh toán qua QR)</span>
               <span className="text-[20px] font-bold text-[#1d5fe5]">{formatVnd(totalToday)}</span>
-            </div>
-
-            <div className="mt-3 rounded-[10px] bg-[#f8faff] p-3 text-[11px] text-[#58657a]">
-              <div className="flex items-center justify-between text-[12px] font-semibold text-[#0b1c30]">
-                Hàng tháng tiếp theo
-                <span>{formatVnd(monthlyRent)}/tháng</span>
-              </div>
-              <div className="mt-1">
-                Hủy bất kỳ lúc nào trước khi nhận kho.
-              </div>
             </div>
 
             <div className="mt-4 space-y-2 text-[11px] text-[#58657a]">
@@ -399,10 +375,6 @@ function StorageDetail() {
             >
               {bookingLoading ? "Đang xử lý..." : "Xác nhận đặt chỗ & Thanh toán"}
             </button>
-
-            <div className="mt-2 text-center text-[11px] text-[#8996a9]">
-              Giữ chỗ theo thời hạn hiển thị khi đặt
-            </div>
           </aside>
         </div>
       </main>
