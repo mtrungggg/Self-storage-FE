@@ -116,11 +116,11 @@ function CustomerDashboard() {
                 ? "Đang tải..."
                 : isVisible
                 ? pin
-                  ? `${pin} #`
-                  : "Chưa tạo PIN #"
+                  ? pin
+                  : "Chưa tạo PIN"
                 : pin
-                ? "• • • • • • #"
-                : "• • • • • • #";
+                ? "• • • • • •"
+                : "• • • • • •";
 
               return (
                 <div
@@ -241,30 +241,9 @@ function CustomerDashboard() {
 
                     <div className="mt-2 flex items-center gap-3 text-[20px] font-bold tracking-[0.2em] text-[#0b1c30]">
                       <span>{pinText}</span>
-                      {pin && (
-                        <button
-                          onClick={() => copyPinToClipboard(pin, rental.agreementId)}
-                          title="Sao chép mã PIN"
-                          className="rounded p-1 text-[#8996a9] transition hover:bg-white hover:text-[#1d5fe5]"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">
-                            {isCopied ? "done" : "content_copy"}
-                          </span>
-                        </button>
-                      )}
-                      {isCopied && (
-                        <span className="text-[11px] font-bold text-[#0e7b4c]">Đã chép!</span>
-                      )}
                     </div>
 
                     <div className="mt-3 flex items-center gap-2">
-                      <button
-                        onClick={() => copyPinToClipboard(pin, rental.agreementId)}
-                        disabled={!pin}
-                        className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] transition hover:bg-[#f5f7fd] disabled:opacity-50"
-                      >
-                        Sao chép mã PIN
-                      </button>
                       <button
                         onClick={() => onPromptChangePin(rental)}
                         className="rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] transition hover:bg-[#f5f7fd]"

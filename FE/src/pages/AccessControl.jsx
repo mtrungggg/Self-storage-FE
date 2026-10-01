@@ -162,23 +162,12 @@ function AccessControl() {
                         </div>
                         <div className="ml-auto flex items-center gap-2">
                           <button
-                            onClick={() =>
-                              credentials?.keypadPin &&
-                              navigator.clipboard.writeText(credentials.keypadPin)
-                            }
-                            disabled={!credentials?.keypadPin}
-                            className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] disabled:opacity-50"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">content_copy</span>
-                            Sao chép
-                          </button>
-                          <button
                             onClick={onChangePin}
                             disabled={!credentials}
-                            className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] disabled:opacity-50"
+                            className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] hover:bg-[#f5f7fd] disabled:opacity-50"
                           >
                             <span className="material-symbols-outlined text-[14px]">autorenew</span>
-                            Tạo lại mã
+                            Đổi mã PIN
                           </button>
                         </div>
                       </div>

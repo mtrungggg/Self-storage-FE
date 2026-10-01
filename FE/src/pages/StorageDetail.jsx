@@ -53,38 +53,21 @@ function StorageDetail() {
 
       {/* Facility Header */}
       <div className="border-b border-[#e6ebf5] bg-white">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-[14px] font-bold text-[#0b1c30]">{unit.facilityName}</div>
-              <div className="text-[12px] text-[#58657a]">{unit.floor}</div>
-            </div>
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-2.5 lg:px-6">
+          <div className="text-[14px] font-bold text-[#0b1c30]">{unit.facilityName}</div>
+          <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3.5 py-1 text-[12px] font-bold text-[#b45309]">
+            Giữ chỗ: 15 phút
           </div>
         </div>
       </div>
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
-        {/* Breadcrumb & Reservation Status */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[12px] font-semibold text-[#58657a]">
-            <Link to="/home" className="hover:underline">Trang chủ</Link> / Kho {unit.unitCode}
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3.5 py-1 text-[12px] font-bold text-[#b45309]">
-            Giữ chỗ: 15 phút
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">
             {/* Unit Info Box */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                <span className="rounded-full bg-[#0e7b4c] px-2.5 py-1 text-white">Sẵn sàng</span>
-                <span className="rounded-full border border-[#dfe7f5] px-2.5 py-1 text-[#3a475a]">Tầng trệt</span>
-                <span className="rounded-full border border-[#dfe7f5] px-2.5 py-1 text-[#3a475a]">Khóa điện tử</span>
-              </div>
-
-              <h1 className="mt-3 text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
+              <h1 className="text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
                 Kho {unit.unitCode}
               </h1>
 
@@ -113,13 +96,9 @@ function StorageDetail() {
 
               {/* Đặc tính ô kho & Chèn ảnh kho thực tế */}
               <div className="mt-5 border-t border-[#eef1f8] pt-4">
-                <div className="text-[13px] font-bold text-[#0b1c30]">Mô tả sức chứa &amp; Không gian ô kho</div>
+                <div className="text-[13px] font-bold text-[#0b1c30]">Không gian &amp; Hình ảnh ô kho</div>
 
-                <div className="mt-2.5 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4 text-[13px]">
-                  <p className="leading-relaxed text-[#3a475a]">
-                    <span className="font-bold text-[#0b1c30]">{unit.typeName}:</span>{" "}
-                    {unit.fitNote || "Phù hợp lưu trữ hàng hóa, đồ đạc gia đình, tài liệu hồ sơ hoặc trang thiết bị cá nhân."}
-                  </p>
+                <div className="mt-3">
 
                   {/* Ảnh thực tế ô kho và cơ sở */}
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
