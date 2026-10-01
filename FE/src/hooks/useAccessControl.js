@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  getGuestPins,
   getAccessControlLogs,
 } from "../data/accessControlRepository";
 import rentalService from "../api/rentalService";
@@ -61,7 +60,6 @@ export function useAccessControl() {
   );
 
   const currentUnitCode = selectedRental?.unitCode || "";
-  const guestPins = useMemo(() => getGuestPins(currentUnitCode), [currentUnitCode]);
   const accessLogs = useMemo(() => getAccessControlLogs(currentUnitCode), [currentUnitCode]);
 
   useEffect(() => {
@@ -110,7 +108,6 @@ export function useAccessControl() {
   const toggleAlert = (key) => setAlerts((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return {
-    guestPins,
     accessLogs,
     rentals,
     rentalsLoading,

@@ -16,7 +16,7 @@ export function getDashboardAccessLogs(primaryRental) {
       icon: "lock_open",
       title: `Mở kho #${unitCode}`,
       time: "14:45",
-      note: "Khóa thông minh • Mã PIN điện tử",
+      note: "Bàn phím • Mã PIN",
     },
     {
       icon: "directions_car",

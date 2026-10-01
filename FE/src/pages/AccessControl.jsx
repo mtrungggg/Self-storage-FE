@@ -7,7 +7,6 @@ import PageBackground from "../components/PageBackground";
 function AccessControl() {
   const navigate = useNavigate();
   const {
-    guestPins,
     accessLogs,
     rentalsLoading,
     activeRentals,
@@ -55,10 +54,6 @@ function AccessControl() {
                 <span className="material-symbols-outlined text-[16px]">sync_alt</span>
                 {pinChanging ? "Đang đổi..." : "Đổi mã PIN"}
               </button>
-              <button className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7]">
-                <span className="material-symbols-outlined text-[16px]">add</span>
-                Cấp mã khách
-              </button>
             </div>
           )}
         </div>
@@ -87,7 +82,7 @@ function AccessControl() {
               Chưa có khóa điện tử hoặc kho nào được kích hoạt
             </h2>
             <p className="mt-2 max-w-[460px] text-[13px] leading-relaxed text-[#58657a]">
-              Mã PIN bàn phím số và phân quyền khách sẽ tự động hiển thị tại đây ngay khi bạn kích hoạt hợp đồng thuê kho.
+              Mã PIN bàn phím số sẽ tự động hiển thị tại đây ngay khi bạn kích hoạt hợp đồng thuê kho.
             </p>
             <button
               onClick={() => navigate("/")}
@@ -124,17 +119,9 @@ function AccessControl() {
                     </button>
                   ))}
                 </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
-                  <span>Bàn phím mã PIN</span>
-                  <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2.5 py-0.5 text-[11px] font-bold text-[#0e7b4c]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-                    Hoạt động
-                  </span>
-                </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
+              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
                 <div className="space-y-6">
                   <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -193,111 +180,31 @@ function AccessControl() {
                       </div>
                       <ul className="mt-2 space-y-1.5 pl-5 list-disc text-[12px] leading-relaxed">
                         <li>
-                          Nhập mã PIN 6 số trên bàn phím số tại barrier cổng chính hoặc tại ổ khóa ô kho.
+                          Nhập mã PIN 6 số trên bàn phím số tại barrier cổng hoặc tại ổ khóa ô kho.
                         </li>
                         <li>
                           Bấm phím <strong>#</strong> sau khi hoàn tất chuỗi số để xác nhận mở chốt.
                         </li>
                         <li>
-                          Không chia sẻ mã PIN chính cho người lạ; vui lòng sử dụng chức năng <strong>Cấp mã khách</strong> cho đơn vị giao hàng hoặc người thân.
+                          Không chia sẻ mã PIN cho người khác để đảm bảo an toàn cho tài sản trong kho.
                         </li>
                       </ul>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-[15px] font-bold text-[#0b1c30]">Mã khách &amp; Ủy quyền</div>
-                      <button className="flex items-center gap-1 rounded-[10px] bg-[#1d5fe5] px-3.5 py-1.5 text-[12px] font-bold text-white hover:bg-[#174fc7]">
-                        <span className="material-symbols-outlined text-[16px]">add</span>
-                        Cấp mã mới
-                      </button>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      {guestPins.length > 0 ? (
-                        guestPins.map((guest) => (
-                          <div
-                            key={guest.id}
-                            className={`rounded-[12px] border p-3.5 ${
-                              guest.status === "expired"
-                                ? "border-[#eef1f8] bg-[#f8faff] opacity-80"
-                                : "border-[#eef1f8] bg-white"
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-bold text-[#0b1c30]">{guest.name}</span>
-                                <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d5fe5]">
-                                  {guest.tag}
-                                </span>
-                              </div>
-                              {guest.status === "active" ? (
-                                <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0e7b4c]">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-                                  Hoạt động
-                                </span>
-                              ) : (
-                                <span className="rounded-full bg-[#eef1f8] px-2 py-0.5 text-[10px] font-semibold text-[#8996a9]">
-                                  Hết hạn
-                                </span>
-                              )}
-                            </div>
-                            <div className="mt-1 text-[11px] text-[#8996a9]">{guest.schedule}</div>
-                            <div className="mt-2 flex items-center justify-between">
-                              <span
-                                className={`text-[12px] font-semibold ${
-                                  guest.status === "expired" ? "text-[#8996a9] line-through" : "text-[#0b1c30]"
-                                }`}
-                              >
-                                Mã PIN: {guest.code}
-                              </span>
-                              <button
-                                className={`rounded-md px-3 py-1 text-[11px] font-semibold ${
-                                  guest.action === "Hủy mã"
-                                    ? "bg-[#fdecec] text-[#c0362c] hover:bg-[#fad7d7]"
-                                    : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-                                }`}
-                              >
-                                {guest.action}
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-4 text-center text-[12px] text-[#8996a9]">
-                          Chưa có mã khách nào được cấp cho kho này.
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
 
                 <aside className="space-y-6">
+                  {/* Gộp 3 phần thành 1 khối duy nhất: Cổng vào & Thang máy, Nhật ký mở khóa, Cảnh báo an ninh */}
                   <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+                    {/* Phần 1: Cổng vào & Thang máy */}
                     <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
                       Cổng vào &amp; Thang máy
                       <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d5fe5]">
-                        {selectedRental?.facilityName || "Cơ sở"}
+                        {selectedRental?.facilityName || "Thu Duc Self Storage"}
                       </span>
                     </div>
 
                     <div className="mt-3 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
-                          directions_car
-                        </span>
-                        <div>
-                          <div className="text-[12px] font-semibold text-[#0b1c30]">Barrier Cổng Vào</div>
-                          <div className="text-[10px] text-[#8996a9]">Dùng chung mã PIN kho để mở</div>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-[#e7f8ee] px-2.5 py-0.5 text-[10px] font-bold text-[#0e7b4c]">
-                        Tự động 24/7
-                      </span>
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
                           elevator
@@ -310,88 +217,73 @@ function AccessControl() {
                         check_circle
                       </span>
                     </div>
-                  </div>
 
-                  <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-                    <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
-                      Nhật ký mở khóa
-                      <span className="text-[10px] font-semibold text-[#8996a9]">Trực tiếp</span>
-                    </div>
+                    {/* Phần 2: Nhật ký mở khóa */}
+                    <div className="mt-5 border-t border-[#f0f3f8] pt-4">
+                      <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
+                        Nhật ký mở khóa
+                        <span className="text-[10px] font-semibold text-[#8996a9]">Trực tiếp</span>
+                      </div>
 
-                    <div className="mt-3 space-y-3">
-                      {accessLogs.length > 0 ? (
-                        accessLogs.map((log) => (
-                          <div key={log.title + log.time} className="flex gap-2.5">
-                            <span
-                              className="mt-1 h-2 w-2 shrink-0 rounded-full"
-                              style={{ backgroundColor: log.dot }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-2">
+                      <div className="mt-3 space-y-2.5">
+                        {accessLogs.length > 0 ? (
+                          accessLogs.map((log) => (
+                            <div key={log.title + log.time} className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 truncate">
+                                <span
+                                  className="h-2 w-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: log.dot }}
+                                />
                                 <span className="truncate text-[12px] font-semibold text-[#0b1c30]">
                                   {log.title}
                                 </span>
-                                <span className="shrink-0 text-[10px] text-[#8996a9]">{log.time}</span>
                               </div>
+                              <span className="shrink-0 text-[10px] text-[#8996a9]">{log.time}</span>
                             </div>
+                          ))
+                        ) : (
+                          <div className="py-2 text-center text-[12px] text-[#8996a9]">
+                            Chưa có lịch sử mở khóa nào.
                           </div>
-                        ))
-                      ) : (
-                        <div className="py-4 text-center text-[12px] text-[#8996a9]">
-                          Chưa có lịch sử mở khóa nào.
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
-                    {accessLogs.length > 0 && (
-                      <button className="mt-3 w-full rounded-[10px] border border-[#dfe7f5] py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff]">
-                        Xem tất cả lịch sử
-                      </button>
-                    )}
-                  </div>
+                    {/* Phần 3: Cảnh báo an ninh (ngắn gọn, không có các chú thích phụ) */}
+                    <div className="mt-5 border-t border-[#f0f3f8] pt-4">
+                      <div className="text-[13px] font-bold text-[#0b1c30]">Cảnh báo an ninh</div>
 
-                  <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-                    <div className="text-[13px] font-bold text-[#0b1c30]">Cảnh báo an ninh</div>
+                      <div className="mt-3 space-y-2">
+                        <label className="flex items-center justify-between gap-2 rounded-[8px] border border-[#eef1f8] bg-[#f8faff] px-3 py-2 cursor-pointer">
+                          <span className="text-[12px] font-medium text-[#0b1c30]">Cửa mở quá 15 phút</span>
+                          <input
+                            type="checkbox"
+                            checked={alerts.doorOpen}
+                            onChange={() => toggleAlert("doorOpen")}
+                            className="h-4 w-4 accent-[#1d5fe5]"
+                          />
+                        </label>
 
-                    <div className="mt-3 space-y-2.5">
-                      <label className="flex items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3 cursor-pointer">
-                        <div>
-                          <div className="text-[12px] font-semibold text-[#0b1c30]">Cửa mở quá 15 phút</div>
-                          <div className="text-[10px] text-[#8996a9]">Phát còi và gửi thông báo điện thoại</div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={alerts.doorOpen}
-                          onChange={() => toggleAlert("doorOpen")}
-                          className="h-4 w-4 accent-[#1d5fe5]"
-                        />
-                      </label>
+                        <label className="flex items-center justify-between gap-2 rounded-[8px] border border-[#eef1f8] bg-[#f8faff] px-3 py-2 cursor-pointer">
+                          <span className="text-[12px] font-medium text-[#0b1c30]">Sai mã PIN 5 lần</span>
+                          <input
+                            type="checkbox"
+                            checked={alerts.wrongPin}
+                            onChange={() => toggleAlert("wrongPin")}
+                            className="h-4 w-4 accent-[#1d5fe5]"
+                          />
+                        </label>
 
-                      <label className="flex items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3 cursor-pointer">
-                        <div>
-                          <div className="text-[12px] font-semibold text-[#0b1c30]">Sai mã PIN 5 lần</div>
-                          <div className="text-[10px] text-[#8996a9]">Khóa 30 phút và ghi hình camera</div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={alerts.wrongPin}
-                          onChange={() => toggleAlert("wrongPin")}
-                          className="h-4 w-4 accent-[#1d5fe5]"
-                        />
-                      </label>
-
-                      <label className="flex items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3 cursor-pointer">
-                        <div>
-                          <div className="text-[12px] font-semibold text-[#0b1c30]">Mở ngoài giờ (22h – 06h)</div>
-                          <div className="text-[10px] text-[#8996a9]">Cảnh báo trung tâm an ninh 24/7</div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={alerts.afterHours}
-                          onChange={() => toggleAlert("afterHours")}
-                          className="h-4 w-4 accent-[#1d5fe5]"
-                        />
-                      </label>
+                        <label className="flex items-center justify-between gap-2 rounded-[8px] border border-[#eef1f8] bg-[#f8faff] px-3 py-2 cursor-pointer">
+                          <span className="text-[12px] font-medium text-[#0b1c30]">Mở ngoài giờ (22h – 06h)</span>
+                          <input
+                            type="checkbox"
+                            checked={alerts.afterHours}
+                            onChange={() => toggleAlert("afterHours")}
+                            className="h-4 w-4 accent-[#1d5fe5]"
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </aside>

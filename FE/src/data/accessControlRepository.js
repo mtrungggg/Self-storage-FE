@@ -51,13 +51,6 @@ export function getAccessControlLogs(unitCode) {
       dot: "#2dd4a0",
     },
     {
-      icon: "directions_car",
-      title: "Vào Barrier Cổng Chính",
-      time: "14:41 hôm nay",
-      note: "Bàn phím mã PIN barrier",
-      dot: "#1d5fe5",
-    },
-    {
       icon: "dialpad",
       title: `Mở kho #${unitCode}`,
       time: "18/10, 10:12",
