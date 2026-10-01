@@ -20,6 +20,9 @@ import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
 
+// [BỔ SUNG]: Import trang Thanh toán & Xác nhận đặt chỗ (Flow 1 - Phần 5 & 6)
+import ReservationCheckout from "../pages/ReservationCheckout";
+
 // Central route table: public auth routes plus role-scoped route groups.
 function AppRoutes() {
   return (
@@ -36,6 +39,9 @@ function AppRoutes() {
         <Route path="/access-control" element={<AccessControl />} />
         <Route path="/facility-map" element={<FacilityMap />} />
         <Route path="/support" element={<Support />} />
+        
+        {/* [BỔ SUNG ROUTE MỚI CHO FLOW 1]: Đường dẫn thanh toán và nhận mã đặt chỗ */}
+        <Route path="/reservation-checkout" element={<ReservationCheckout />} />
       </Route>
 
       <Route element={<StaffLayouts />}>

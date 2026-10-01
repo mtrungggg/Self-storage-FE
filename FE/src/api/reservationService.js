@@ -34,6 +34,23 @@ export const reservationService = {
   async cancelReservation(id) {
     return await apiClient.delete(`/customer/reservations/${id}`);
   },
+
+  /**
+   * [BỔ SUNG - PHẦN 5]: Thực hiện thanh toán trực tuyến cho đơn đặt chỗ
+   * @param {number|string} reservationId
+   * @param {{ paymentMethod: string, amount: number }} paymentData
+   */
+  async payReservation(reservationId, paymentData) {
+    return await apiClient.post(`/customer/reservations/${reservationId}/pay`, paymentData);
+  },
+
+  /**
+   * [BỔ SUNG - PHẦN 6]: Ghi nhận thành công, sinh mã đặt chỗ và gửi xác nhận qua Email/SMS/App
+   * @param {number|string} reservationId
+   */
+  async confirmAndNotifyReservation(reservationId) {
+    return await apiClient.post(`/customer/reservations/${reservationId}/confirm`);
+  },
 };
 
 export default reservationService;
