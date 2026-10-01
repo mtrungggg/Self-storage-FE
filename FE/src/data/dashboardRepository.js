@@ -1,29 +1,36 @@
 // Data layer: content source for the CustomerDashboard ("Kho của tôi") page.
-export function getDashboardAccessLogs() {
+export function getDashboardAccessLogs(primaryRental) {
+  const unitCode = primaryRental?.unitCode || "A-101";
+  const facility = primaryRental?.facilityName || "Thu Duc Self Storage";
+  const agreementNo = primaryRental?.agreementNo || "AGR-HCM-2026-0001";
+  const rateText = primaryRental?.monthlyRate
+    ? `${Number(primaryRental.monthlyRate).toLocaleString("vi-VN")} đ`
+    : "2.000 đ";
+
   return [
     {
       icon: "lock_open",
-      title: "Mở kho #B-204",
+      title: `Mở kho #${unitCode}`,
       time: "14:45",
-      note: "Bluetooth • Alex Morgan",
+      note: "Khóa thông minh • Mã PIN điện tử",
     },
     {
       icon: "directions_car",
-      title: "Vào Cổng Nam",
+      title: `Vào ${facility}`,
       time: "14:41",
-      note: "Apple Wallet NFC",
+      note: "Cổng kiểm soát xe • Mã QR",
     },
     {
       icon: "local_shipping",
-      title: "Xác thực mã PIN",
-      time: "18/10",
-      note: "Đơn vị vận chuyển",
+      title: `Xác thực kho #${unitCode}`,
+      time: "Hôm nay",
+      note: "Đã cấp quyền ra vào",
     },
     {
       icon: "receipt_long",
-      title: "Gia hạn hợp đồng",
+      title: `Hợp đồng #${agreementNo}`,
       time: "01/10",
-      note: "$101.00 • Visa",
+      note: `${rateText} • Đã thanh toán`,
     },
   ];
 }

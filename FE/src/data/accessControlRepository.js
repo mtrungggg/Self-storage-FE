@@ -7,14 +7,14 @@ export function getWallets() {
   ];
 }
 
-export function getGuestPins() {
+export function getGuestPins(unitCode = "A-101") {
   return [
     {
       id: "express",
       name: "Giao vận Express",
       tag: "Dùng 1 lần",
       status: "active",
-      schedule: "14:00 – 17:00, 24/10/2025 • Kho #B-204",
+      schedule: `14:00 – 17:00, hôm nay • Kho #${unitCode}`,
       code: "481903#",
       action: "Hủy mã",
     },
@@ -29,44 +29,44 @@ export function getGuestPins() {
     },
     {
       id: "tech",
-      name: "Thợ bảo trì điện lạnh",
+      name: "Thợ bảo trì kho",
       tag: "Hết hạn",
       status: "expired",
-      schedule: "Đã sử dụng lúc 11:20, 23/10/2025",
+      schedule: "Đã sử dụng lúc 11:20",
       code: "119042#",
       action: "Cấp lại",
     },
   ];
 }
 
-export function getAccessControlLogs() {
+export function getAccessControlLogs(unitCode = "A-101") {
   return [
     {
       icon: "lock_open",
-      title: "Mở kho #B-204",
+      title: `Mở kho #${unitCode}`,
       time: "14:45 hôm nay",
-      note: "Bluetooth • Alex Morgan",
+      note: "Bluetooth • Ứng dụng điện thoại",
       dot: "#2dd4a0",
     },
     {
       icon: "directions_car",
-      title: "Vào Barrier Cổng Nam",
+      title: "Vào Barrier Cổng Chính",
       time: "14:41 hôm nay",
-      note: "Apple Wallet NFC",
+      note: "NFC / Quét mã QR",
       dot: "#1d5fe5",
     },
     {
       icon: "dialpad",
-      title: "Mở kho #B-204",
+      title: `Mở kho #${unitCode}`,
       time: "18/10, 10:12",
-      note: "Mã khách • GrabExpress",
+      note: "Mã khách • Giao vận Express",
       dot: "#8996a9",
     },
     {
       icon: "key",
-      title: "Mở kho #B-204",
+      title: `Mở kho #${unitCode}`,
       time: "10/10, 09:30",
-      note: "Bàn phím số tại cửa",
+      note: "Bàn phím mã PIN tại cửa",
       dot: "#8996a9",
     },
   ];

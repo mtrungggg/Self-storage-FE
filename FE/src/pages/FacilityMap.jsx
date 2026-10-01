@@ -30,6 +30,10 @@ function FacilityMap() {
     setActiveFloor,
     layers,
     toggleLayer,
+    primaryRental,
+    userUnitCode,
+    facilityName,
+    facilityAddress,
   } = useFacilityMap();
 
   return (
@@ -63,10 +67,12 @@ function FacilityMap() {
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[17px] font-bold text-white">Kho #B-204</span>
-                  <span className="rounded-full bg-[#0e7b4c] px-2 py-0.5 text-[10px] font-semibold text-white">Đã khóa</span>
+                  <span className="text-[17px] font-bold text-white">Kho #{userUnitCode}</span>
+                  <span className="rounded-full bg-[#0e7b4c] px-2 py-0.5 text-[10px] font-semibold text-white">Đã kích hoạt</span>
                 </div>
-                <div className="text-[11px] text-[#c7d1e6]">Tầng 2 • Hành lang Đông • Gần thang máy số 2</div>
+                <div className="text-[11px] text-[#c7d1e6]">
+                  {facilityName} • {facilityAddress}
+                </div>
               </div>
             </div>
 
@@ -128,9 +134,9 @@ function FacilityMap() {
 
         <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-            <span>Mặt bằng Tầng 2 (Lối B) • Hướng Bắc</span>
+            <span>Mặt bằng Tầng 1 (Khu vực Zone A) • {facilityName}</span>
             <span className="flex items-center gap-3 text-[10px] font-semibold normal-case text-[#3a475a]">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] bg-[#1d5fe5]" /> Kho của bạn (#B-204)</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] bg-[#1d5fe5]" /> Kho của bạn (#{userUnitCode})</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] bg-[#dbe3f5]" /> Đã thuê</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[3px] border border-[#dfe7f5] bg-white" /> Còn trống</span>
               {layers.route && <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 border-t-2 border-dashed border-[#1d5fe5]" /> Lộ trình</span>}
@@ -140,35 +146,46 @@ function FacilityMap() {
           <div className="relative mt-3 h-[380px] overflow-hidden rounded-[12px] border border-[#eef1f8] bg-[#f8faff]">
             <div className="relative mx-auto h-full w-full max-w-[560px]">
               {leftUnits.map((unit) => (
-                <UnitBox key={unit.id} unit={unit} side="left" />
+                <div
+                  key={unit.id}
+                  className={`absolute flex h-[62px] w-[70px] flex-col items-center justify-center rounded-[6px] text-center text-[10px] font-semibold ${
+                    unit.id === userUnitCode
+                      ? "border-2 border-[#1d5fe5] bg-[#eef4ff] font-bold text-[#1d5fe5] shadow-sm"
+                      : unit.taken
+                      ? "border-[#c7d1e6] bg-[#dbe3f5] text-[#3a475a]"
+                      : "border-[#dfe7f5] bg-white text-[#3a475a]"
+                  }`}
+                  style={{
+                    top: unit.top,
+                    left: unit.col === 2 ? 88 : 0,
+                  }}
+                >
+                  Kho #{unit.id}
+                  {unit.id === userUnitCode && (
+                    <span className="text-[8px] font-semibold text-[#0e7b4c]">Của bạn</span>
+                  )}
+                </div>
               ))}
 
               {rightUnits.map((unit) => (
                 <div
                   key={unit.id}
-                  className={`absolute flex h-[62px] w-[70px] items-center justify-center rounded-[6px] border text-center text-[10px] font-semibold ${
-                    unit.id === "B-204" ? "" : "border-[#dfe7f5] bg-white text-[#3a475a]"
-                  }`}
+                  className="absolute flex h-[62px] w-[70px] items-center justify-center rounded-[6px] border border-[#dfe7f5] bg-white text-center text-[10px] font-semibold text-[#3a475a]"
                   style={{ top: unit.top, right: unit.col === 2 ? 0 : 88 }}
                 >
                   Kho #{unit.id}
                 </div>
               ))}
 
-              <div className="absolute right-0 top-[210px] flex h-[62px] w-[70px] flex-col items-center justify-center rounded-[6px] border-2 border-[#1d5fe5] bg-[#eef4ff] text-center text-[10px] font-bold text-[#1d5fe5] shadow-sm">
-                Kho #B-204
-                <span className="text-[8px] font-semibold text-[#0e7b4c]">Đã khóa</span>
-              </div>
-
               <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-[8px] bg-[#0b1c30] px-3.5 py-1.5 text-center text-[10px] font-bold text-white shadow-md">
                 <span className="material-symbols-outlined text-[14px] text-[#7fd8b1]">elevator</span>
-                Thang máy #2 (Điểm xuất phát)
+                Lối vào chính (Điểm xuất phát)
               </div>
 
               {layers.route && (
                 <svg className="pointer-events-none absolute inset-0 h-full w-full">
                   <polyline
-                    points="280,330 280,240 480,240"
+                    points="280,330 280,100 80,100"
                     fill="none"
                     stroke="#1d5fe5"
                     strokeWidth="2.5"
@@ -185,7 +202,7 @@ function FacilityMap() {
               )}
 
               <div className="absolute right-2 top-2 rounded bg-[#fdecec] px-1.5 py-0.5 text-[8px] font-bold text-[#c0362c]">LỐI THOÁT HIỂM</div>
-              <div className="absolute -right-1 top-1/2 -translate-y-1/2 rotate-90 text-[9px] font-bold text-[#8996a9]">HÀNH LANG ĐÔNG</div>
+              <div className="absolute -right-1 top-1/2 -translate-y-1/2 rotate-90 text-[9px] font-bold text-[#8996a9]">HÀNH LANG ZONE A</div>
             </div>
           </div>
 
@@ -213,7 +230,7 @@ function FacilityMap() {
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="text-[15px] font-bold text-[#0b1c30]">Chỉ dẫn di chuyển đến kho #B-204</div>
+                  <div className="text-[15px] font-bold text-[#0b1c30]">Chỉ dẫn di chuyển đến kho #{userUnitCode}</div>
                 </div>
                 <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">4 bước</span>
               </div>
@@ -251,7 +268,7 @@ function FacilityMap() {
                     }}
                   />
                   <div className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold text-[#0b1c30]">
-                    Hành lang Đông (Trước kho #B-204)
+                    Hành lang Zone A (Trước kho #{userUnitCode})
                   </div>
                 </div>
                 <div className="relative overflow-hidden rounded-[12px] border border-[#eef1f8]">

@@ -8,8 +8,11 @@ function AccessControl() {
     wallets,
     guestPins,
     accessLogs,
-    activeUnit,
-    setActiveUnit,
+    activeRentals,
+    selectedRental,
+    selectedRentalId,
+    setSelectedRentalId,
+    currentUnitCode,
     showPin,
     setShowPin,
     unlocking,
@@ -64,25 +67,26 @@ function AccessControl() {
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[#dfe7f5] bg-white p-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setActiveUnit("main")}
-              className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
-                activeUnit === "main" ? "bg-[#0b1c30] text-white shadow-sm" : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-              }`}
-            >
-              <div>Kho chính #B-204</div>
-              <div className={`text-[10px] font-normal ${activeUnit === "main" ? "text-[#c7d1e6]" : "text-[#8996a9]"}`}>5' × 10' • Tầng 1</div>
-            </button>
-
-            <button
-              onClick={() => setActiveUnit("garage")}
-              className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
-                activeUnit === "garage" ? "bg-[#0b1c30] text-white shadow-sm" : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-              }`}
-            >
-              <div>Kho phụ #D-118</div>
-              <div className={`text-[10px] font-normal ${activeUnit === "garage" ? "text-[#c7d1e6]" : "text-[#8996a9]"}`}>10' × 20' • Ngoài trời</div>
-            </button>
+            {activeRentals.length > 0 ? (
+              activeRentals.map((r, idx) => (
+                <button
+                  key={r.agreementId}
+                  onClick={() => setSelectedRentalId(r.agreementId)}
+                  className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
+                    selectedRentalId === r.agreementId ? "bg-[#0b1c30] text-white shadow-sm" : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
+                  }`}
+                >
+                  <div>{idx === 0 ? "Kho chính" : "Kho phụ"} #{r.unitCode}</div>
+                  <div className={`text-[10px] font-normal ${selectedRentalId === r.agreementId ? "text-[#c7d1e6]" : "text-[#8996a9]"}`}>
+                    {r.unitTypeName || "Kho tự quản"} • Tầng {r.floorLabel || "1"}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="text-[12px] text-[#58657a] px-2 py-1">
+                Kho mặc định #{currentUnitCode}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
@@ -99,7 +103,9 @@ function AccessControl() {
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-[15px] font-bold text-[#0b1c30]">Bàn phím &amp; Khóa từ xa</div>
-                <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">Kho #B-204</span>
+                <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
+                  Kho #{currentUnitCode}
+                </span>
               </div>
               <p className="mt-0.5 text-[11px] text-[#8996a9]">Mã hóa bảo mật 256-bit</p>
 

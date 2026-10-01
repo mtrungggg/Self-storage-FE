@@ -31,27 +31,27 @@ export function getRightUnits() {
   ];
 }
 
-export function getWayfindingSteps() {
+export function getWayfindingSteps(unitCode = "A-101") {
   return [
     {
-      title: "Cổng an ninh phía Nam",
+      title: "Cổng an ninh cơ sở",
       tag: "Tầng trệt",
-      text: "Quét mã PIN #4829 hoặc dùng ứng dụng để mở cổng tự động 24/7.",
+      text: "Quét mã PIN hoặc dùng ứng dụng để mở barrier tự động 24/7.",
     },
     {
-      title: "Bến bốc dỡ hàng (Dock 2)",
+      title: "Bến bốc dỡ hàng (Dock 1)",
       tag: "Miễn phí 45p",
-      text: "Lùi xe vào khoang dỡ có mái che, sàn phẳng thuận tiện chuyển hàng.",
+      text: "Lùi xe vào khoang dỡ có mái che, sàn phẳng thuận tiện chuyển đồ.",
     },
     {
-      title: "Thang máy số 2 & Xe đẩy",
-      tag: "Tải trọng 3 tấn",
-      text: "Xe đẩy sẵn có tại sảnh. Quét mã PIN hoặc thẻ để kích hoạt thang lên tầng 2.",
+      title: "Hành lang Khoang Zone A",
+      tag: "Tầng 1",
+      text: "Xe đẩy sẵn có tại sảnh. Đi thẳng theo biển chỉ dẫn vào dãy kho.",
     },
     {
-      title: "Đến kho #B-204",
-      tag: "Rẽ phải 15m",
-      text: "Rời thang máy, rẽ phải vào Hành lang Đông. Kho #B-204 nằm ở vị trí thứ 2 bên trái.",
+      title: `Đến kho #${unitCode}`,
+      tag: "Dãy A",
+      text: `Đi vào Hành lang Zone A. Kho #${unitCode} nằm ở vị trí thuận tiện gần lối đi chính.`,
     },
   ];
 }

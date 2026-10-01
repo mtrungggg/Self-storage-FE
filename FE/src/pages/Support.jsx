@@ -17,7 +17,12 @@ function Support() {
     setAllowMasterKey,
     filteredUnits,
     filteredTickets,
+    facilityName,
+    activeRentals,
   } = useSupport();
+
+  const rentalCount = activeRentals.length > 0 ? activeRentals.length : filteredUnits.length;
+  const primaryUnitCode = activeRentals[0]?.unitCode || filteredUnits[0]?.id || "A-101";
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -30,7 +35,7 @@ function Support() {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
                 <span className="material-symbols-outlined text-[14px]">location_on</span>
-                Cơ sở An Phú Central
+                Cơ sở {facilityName}
                 <span className="ml-2 text-[#c7d1e6]">Cập nhật: Hôm nay</span>
               </div>
               <h1 className="mt-1 text-[22px] sm:text-[24px] font-bold tracking-[-0.02em]">Trung tâm Hỗ trợ Kỹ thuật</h1>
@@ -57,17 +62,17 @@ function Support() {
                 Kho quản lý
                 <span className="material-symbols-outlined text-[14px]">inventory_2</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">3 Kho thuê</div>
-              <div className="text-[10px] text-[#8f9cbd]">2 kho hoạt động tốt</div>
+              <div className="mt-1 text-[16px] font-bold">{rentalCount} Kho thuê</div>
+              <div className="text-[10px] text-[#8f9cbd]">{rentalCount} kho hoạt động tốt</div>
             </div>
 
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.06em] text-[#8f9cbd]">
-                Cần gia hạn
+                Kho chính
                 <span className="material-symbols-outlined text-[14px]">schedule</span>
               </div>
-              <div className="mt-1 text-[16px] font-bold">Kho #B-204</div>
-              <div className="text-[10px] text-[#f2b8a4]">⚠ Còn 3 ngày hạn</div>
+              <div className="mt-1 text-[16px] font-bold">Kho #{primaryUnitCode}</div>
+              <div className="text-[10px] text-[#7fd8b1]">✓ Trạng thái an toàn</div>
             </div>
 
             <div className="rounded-[12px] border border-white/10 bg-white/5 p-3">
@@ -207,9 +212,11 @@ function Support() {
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold text-[#0f172a]">Khoang lưu trữ gặp sự cố *</label>
                 <select className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2.5 text-[12px] outline-none focus:border-[#3b82f6]">
-                  <option>Khoang #A-102 (Tầng 1 - 5' x 10')</option>
-                  <option>Khoang #B-204 (Tầng 2 - 10' x 15')</option>
-                  <option>Khoang #D-118 (Garage - 10' x 20')</option>
+                  {filteredUnits.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      Khoang #{u.id} ({u.size})
+                    </option>
+                  ))}
                 </select>
               </div>
 
