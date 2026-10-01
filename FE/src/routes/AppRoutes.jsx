@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Home from "../pages/Home";
+import FacilityDetail from '../pages/FacilityDetail';
 import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
 import CustomerDashboard from "../pages/CustomerDashboard";
@@ -31,6 +32,7 @@ function AppRoutes() {
 
       <Route element={<CustomerLayouts />}>
         <Route path="/home" element={<Home />} />
+        <Route path="/facilities/:facilityId" element={<FacilityDetail />} />
         <Route path="/storage-detail" element={<StorageDetail />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/dashboard" element={<CustomerDashboard />} />

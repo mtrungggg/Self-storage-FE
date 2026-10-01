@@ -14,6 +14,14 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       open: '/',
+      proxy: {
+        '/backend': {
+          target: env.VITE_BACKEND_ORIGIN || 'https://localhost:51282',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/backend/, ''),
+        },
+      },
     },
   }
 })

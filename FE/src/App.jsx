@@ -1,10 +1,11 @@
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
+import { StorageCatalogProvider } from './hooks/useStorageCatalog';
 
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <StorageCatalogProvider><AppRoutes /></StorageCatalogProvider>
     </BrowserRouter>
   );
 }
