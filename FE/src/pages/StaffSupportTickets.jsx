@@ -21,6 +21,7 @@ export default function StaffSupportTickets() {
   const [statuses, setStatuses] = useState(["open", "in_progress", "resolved", "closed"]);
   const requestId = useRef(0);
   const assignLock = useRef(false);
+  const assignDialog = useRef(null);
   const [assigningId, setAssigningId] = useState(null);
   const [assignError, setAssignError] = useState("");
   const [assignSuccess, setAssignSuccess] = useState("");
@@ -49,7 +50,14 @@ export default function StaffSupportTickets() {
       setError("");
       setQuery((current) => ({ ...current }));
     } catch (err) {
-      setAssignError(err.message || "Unable to assign this ticket. Please try again.");
+      const message = err.message || "";
+      const alreadyAssigned = message.includes("ticket_assignments_one_active_uidx");
+      setAssignError(alreadyAssigned
+        ? "Ticket này đã được phân công cho nhân viên xử lý. Bạn không cần Assign lại. Hãy tải lại danh sách để xem trạng thái mới nhất."
+        : err.status >= 500
+          ? "Không thể nhận xử lý ticket lúc này. Vui lòng thử lại sau."
+          : message || "Không thể nhận xử lý ticket. Vui lòng thử lại.");
+      assignDialog.current?.showModal();
     } finally {
       assignLock.current = false;
       setAssigningId(null);
@@ -97,7 +105,6 @@ export default function StaffSupportTickets() {
         <section aria-label="Support ticket list" aria-busy={loading} className="mt-5">
           {assignSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{assignSuccess}</p>}
           {resolveSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{resolveSuccess}</p>}
-          {assignError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{assignError}</p>}
           {loading ? <p role="status">Loading tickets...</p> : error ? <div role="alert" className="rounded-xl bg-white p-4 text-red-600"><p>{error}</p><button type="button" onClick={() => load(query)} className="mt-2 underline">Try again</button></div> : tickets.length === 0 ? <p className="rounded-xl border bg-white p-8 text-center text-[#58657a]">No tickets match these filters.</p> : <>
             <p className="mb-3 text-sm text-[#58657a]">{tickets.length} tickets</p>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -119,6 +126,14 @@ export default function StaffSupportTickets() {
           </>}
         </section>
       </main>
+      <dialog ref={assignDialog} aria-labelledby="assign-error-title" aria-describedby="assign-error-description" className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white p-6 text-[#0b1c30] shadow-xl backdrop:bg-black/40">
+        <h2 id="assign-error-title" className="text-lg font-bold">Không thể phân công ticket</h2>
+        <p id="assign-error-description" className="mt-3 text-sm leading-6 text-[#58657a]">{assignError}</p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button type="button" onClick={() => assignDialog.current.close()} className="rounded-lg border border-[#dfe7f5] px-4 py-2 text-sm font-semibold">Đóng</button>
+          <button type="button" onClick={() => { assignDialog.current.close(); load(query); }} className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white">Tải lại danh sách</button>
+        </div>
+      </dialog>
     </div>
   );
 }
