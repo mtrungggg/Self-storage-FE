@@ -8,6 +8,7 @@ import PaymentCheckout from "../pages/PaymentCheckout";
 import AccessControl from "../pages/AccessControl";
 import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
+import StaffSupportTickets from "../pages/StaffSupportTickets";
 import AdminOperationsOverview from "../pages/AdminOperationsOverview";
 import AdminStaffScheduling from "../pages/AdminStaffScheduling";
 import AdminFacilityManagement from "../pages/AdminFacilityManagement";
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route element={<StaffLayouts />}>
             <Route path="/staff-dashboard" element={<StaffDashboard />} />
+            <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
           </Route>
         </Route>
 
