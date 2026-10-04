@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
 import staffSupportService from "../api/staffSupportService";
+import StaffTicketReply from "../components/StaffTicketReply";
 
 function formatDate(value) {
   const date = value ? new Date(value) : null;
@@ -98,6 +99,7 @@ export default function StaffSupportTickets() {
                 <button type="button" onClick={() => assignTicket(ticket)} disabled={assigningId != null} aria-label={`Assign ticket ${ticket.ticketNo || ticket.id}`} className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
                   {assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
                 </button>
+                <StaffTicketReply ticketId={ticket.id} />
               </article>)}
             </div>
           </>}

@@ -1,6 +1,14 @@
 import apiClient from "./apiClient";
 
 export default {
+  async sendMessage(id, { body, isInternal }) {
+    const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/messages`, { body, isInternal });
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to send this message.");
+    }
+    if (!response.data || response.data.id == null) throw new Error("The server did not return the sent message.");
+    return response.data;
+  },
   async assignTicket(id) {
     const response = await apiClient.put(`/staff/support-tickets/${encodeURIComponent(id)}/assign`);
     if (response?.success !== true) {
