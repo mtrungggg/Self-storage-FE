@@ -1,6 +1,12 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async getRefundPreview(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/refund-preview`);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load the refund estimate.");
+    if (!res.data || res.data.agreementId == null) throw new Error("The server did not return a refund estimate.");
+    return res.data;
+  },
   async requestMoveOut(agreementId, { requestedMoveOutDate, reason }) {
     const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/move-out`, { requestedMoveOutDate, reason });
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request move-out.");
