@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
+import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 
 import supportService from "../api/supportService";
 
@@ -87,7 +88,7 @@ export function useSupport() {
   const [priority, setPriority] = useState("normal");
   const [allowMasterKey, setAllowMasterKey] = useState(false);
   const [selectedUnitCode, setSelectedUnitCode] = useState("");
-  const [category, setCategory] = useState("PIN / Keypad");
+  const [category, setCategory] = useState("access");
   const [description, setDescription] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -136,6 +137,11 @@ export function useSupport() {
       setSubmitError("Please describe the issue.");
       return;
     }
+    const selectedCategory = SUPPORT_CATEGORIES.find((item) => item.value === category);
+    if (!selectedCategory) {
+      setSubmitError("Please select a valid issue category.");
+      return;
+    }
     submitLock.current = true;
     setSubmitting(true);
     try {
@@ -144,8 +150,8 @@ export function useSupport() {
         agreementId: rental.agreementId,
         storageUnitId: rental.storageUnitId,
         category,
-        priority: priority === "urgent" ? "Urgent" : "Normal",
-        subject: category + " on unit #" + rental.unitCode,
+        priority: priority === "urgent" ? "urgent" : "normal",
+        subject: selectedCategory.label + " on unit #" + rental.unitCode,
         description: description.trim() + (allowMasterKey ? "\n\nCustomer allows master key access while away." : ""),
         attachments: [],
       });

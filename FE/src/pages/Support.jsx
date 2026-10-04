@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
+import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
@@ -205,11 +206,9 @@ function Support() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2.5 text-[12px] outline-none transition focus:border-[#3b82f6]"
                 >
-                  <option>PIN / Keypad</option>
-                  <option>Door / Shutter</option>
-                  <option>Climate</option>
-                  <option>Invoice / Receipt</option>
-                  <option>Other</option>
+                  {SUPPORT_CATEGORIES.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
                 </select>
               </div>
 

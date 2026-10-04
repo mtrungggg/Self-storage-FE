@@ -18,7 +18,7 @@ export default function StaffSupportTickets() {
   const [query, setQuery] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statuses, setStatuses] = useState([]);
+  const [statuses, setStatuses] = useState(["open", "in_progress", "resolved", "closed"]);
   const requestId = useRef(0);
   const assignLock = useRef(false);
   const [assigningId, setAssigningId] = useState(null);
