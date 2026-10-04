@@ -29,6 +29,8 @@ function AdminStaffScheduling() {
     shiftLegend,
     attendanceLegend,
     fieldTasks,
+    updatingTaskId,
+    handleUpdateFieldTaskStatus,
     taskProgress,
     handoverTag,
     handoverChecklist,
@@ -211,9 +213,39 @@ function AdminStaffScheduling() {
                   </span>
                 </div>
                 <div className="mt-1 pl-[22px] text-[9px] text-[#8996a9]">{task.note}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 pl-[22px] text-[10px] text-[#3a475a]">
-                  <span className="font-semibold text-[#1d5fe5]">{task.assignee}</span>
-                  <span>• {task.detail}</span>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 pl-[22px] text-[10px] text-[#3a475a]">
+                  <div>
+                    <span className="font-semibold text-[#1d5fe5]">{task.assignee}</span>
+                    <span> • {task.detail}</span>
+                  </div>
+                  {task.isRealTask && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "in_progress"}
+                        onClick={() => handleUpdateFieldTaskStatus(task.id, "in_progress", 50)}
+                        className="rounded border border-[#1d5fe5] bg-white px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5] hover:bg-[#eef4ff] disabled:opacity-50"
+                      >
+                        In Progress
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "done"}
+                        onClick={() => handleUpdateFieldTaskStatus(task.id, "completed", 100)}
+                        className="rounded border border-[#0e7b4c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c] hover:bg-[#e7f8ee] disabled:opacity-50"
+                      >
+                        Completed
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "blocked"}
+                        onClick={() => handleUpdateFieldTaskStatus(task.id, "blocked", task.progressPercent || 0)}
+                        className="rounded border border-[#c0362c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#c0362c] hover:bg-[#fdecec] disabled:opacity-50"
+                      >
+                        Blocked
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

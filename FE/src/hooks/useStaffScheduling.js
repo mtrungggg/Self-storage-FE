@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getStatusBanner,
   getOverviewHeader,
@@ -14,8 +14,10 @@ import {
   getHandoverChecklist,
   getHandoverNote,
 } from "../data/staffSchedulingRepository";
+import { getTaskTypeMeta, getTaskStatusMeta } from "../data/staffDashboardRepository";
 import { countStaffOnDuty } from "../domain/usecases/countStaffOnDuty";
 import { calculateTaskProgress } from "../domain/usecases/calculateTaskProgress";
+import staffService from "../api/staffService";
 
 const TODAY_DAY_ID = "wed";
 
@@ -30,7 +32,7 @@ export function useStaffScheduling() {
   const departments = getDepartments();
   const shiftLegend = getShiftLegend();
   const attendanceLegend = getAttendanceLegend();
-  const fieldTasks = getFieldTasks();
+  const fallbackFieldTasks = getFieldTasks();
   const handoverTag = getHandoverTag();
   const handoverChecklist = getHandoverChecklist();
   const handoverNote = getHandoverNote();
@@ -39,6 +41,81 @@ export function useStaffScheduling() {
     () => new Set(handoverChecklist.map((item) => item.id))
   );
   const [twoFactorConfirmed, setTwoFactorConfirmed] = useState(false);
+
+  // Real Daily Staff Tasks from GET /api/staff/tasks & PUT /api/staff/tasks/{id}/status
+  const [apiTasks, setApiTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
+
+  const fetchTasks = useCallback(async () => {
+    setTasksLoading(true);
+    try {
+      const data = await staffService.getStaffTasks();
+      setApiTasks(Array.isArray(data) ? data : []);
+    } catch {
+      // Keep fallback tasks if user is not staff/manager or backend is unavailable
+    } finally {
+      setTasksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const fieldTasks = useMemo(() => {
+    if (apiTasks.length === 0) return fallbackFieldTasks;
+    return apiTasks.map((t) => {
+      const statusMeta = getTaskStatusMeta(t.status);
+      const typeMeta = getTaskTypeMeta(t.taskType);
+      const mappedStatus =
+        statusMeta.key === "done"
+          ? "done"
+          : statusMeta.key === "in_progress"
+          ? "doing"
+          : "waiting";
+      return {
+        id: t.id,
+        isRealTask: true,
+        rawStatus: statusMeta.key,
+        progressPercent: t.progressPercent ?? 0,
+        title: t.title,
+        status: mappedStatus,
+        statusLabel: `${statusMeta.displayLabel} (${t.progressPercent ?? 0}%)`,
+        note: `${typeMeta.label} • Cơ sở ${t.facilityCode || "#" + t.facilityId}`,
+        assignee: t.assignedEmployeeName || "Nhân viên ca trực",
+        detail: t.dueAt
+          ? `Hạn: ${new Date(t.dueAt).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}`
+          : "Trong ca trực",
+      };
+    });
+  }, [apiTasks, fallbackFieldTasks]);
+
+  const handleUpdateFieldTaskStatus = useCallback(
+    async (taskId, newStatus, progressPercent) => {
+      if (!taskId) return;
+      setUpdatingTaskId(taskId);
+      try {
+        const updated = await staffService.updateTaskStatus(taskId, {
+          status: newStatus,
+          progressPercent,
+        });
+        if (updated) {
+          setApiTasks((prev) =>
+            prev.map((item) => (Number(item.id) === Number(taskId) ? updated : item))
+          );
+        } else {
+          await fetchTasks();
+        }
+      } finally {
+        setUpdatingTaskId(null);
+      }
+    },
+    [fetchTasks]
+  );
 
   const onDutyToday = useMemo(() => countStaffOnDuty(departments, TODAY_DAY_ID), [departments]);
   const taskProgress = useMemo(() => calculateTaskProgress(fieldTasks), [fieldTasks]);
@@ -52,7 +129,8 @@ export function useStaffScheduling() {
     });
   };
 
-  const canApproveHandover = twoFactorConfirmed && checkedHandoverItems.size === handoverChecklist.length;
+  const canApproveHandover =
+    twoFactorConfirmed && checkedHandoverItems.size === handoverChecklist.length;
 
   return {
     statusBanner,
@@ -67,6 +145,9 @@ export function useStaffScheduling() {
     shiftLegend,
     attendanceLegend,
     fieldTasks,
+    tasksLoading,
+    updatingTaskId,
+    handleUpdateFieldTaskStatus,
     taskProgress,
     handoverTag,
     handoverChecklist,

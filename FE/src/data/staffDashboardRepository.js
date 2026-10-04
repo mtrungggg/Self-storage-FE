@@ -1,4 +1,6 @@
-// Data layer: content source for the Staff Dashboard (Facility Operations) page.
+import { normalizeTaskCategory } from "../domain/usecases/filterScheduleByType";
+
+// Data layer: content source & metadata helpers for the Staff Dashboard (Facility Operations) page.
 export function getStaffProfile() {
   return {
     name: "Nguyễn Thành Long",
@@ -8,10 +10,10 @@ export function getStaffProfile() {
   };
 }
 
-export function getNavTabs() {
+export function getNavTabs(activeTaskCount = 11) {
   return [
     { id: "map", label: "Sơ đồ & Trạng thái kho" },
-    { id: "handover", label: "Bàn giao & Tác vụ", count: 11 },
+    { id: "handover", label: "Bàn giao & Tác vụ", count: activeTaskCount },
     { id: "iot", label: "Báo cáo IoT", count: 3 },
     { id: "logs", label: "Nhật ký lưu kho" },
   ];
@@ -91,19 +93,152 @@ export function getHandover() {
   };
 }
 
-export function getScheduleTabs() {
+export function getTaskTypeMeta(taskType) {
+  const t = (taskType || "").toLowerCase();
+  switch (t) {
+    case "check_in":
+    case "checkin":
+      return {
+        category: "checkin",
+        label: "Check-in nhận kho",
+        icon: "vpn_key",
+        badgeClass: "bg-[#eef4ff] text-[#1d5fe5]",
+      };
+    case "check_out":
+    case "checkout":
+      return {
+        category: "checkout",
+        label: "Trả kho",
+        icon: "assignment_return",
+        badgeClass: "bg-[#fef3c7] text-[#b45309]",
+      };
+    case "inspection":
+      return {
+        category: "checkout",
+        label: "Kiểm tra trả kho",
+        icon: "fact_check",
+        badgeClass: "bg-[#fef3c7] text-[#b45309]",
+      };
+    case "support":
+      return {
+        category: "support",
+        label: "Ticket hỗ trợ",
+        icon: "support_agent",
+        badgeClass: "bg-[#fdecec] text-[#c0362c]",
+      };
+    case "maintenance":
+      return {
+        category: "maintenance",
+        label: "Vệ sinh / Bảo trì",
+        icon: "build",
+        badgeClass: "bg-[#f3e8ff] text-[#7e22ce]",
+      };
+    default:
+      return {
+        category: "maintenance",
+        label: "Nhiệm vụ khác",
+        icon: "task",
+        badgeClass: "bg-[#f1f5f9] text-[#475569]",
+      };
+  }
+}
+
+export function getTaskStatusMeta(status) {
+  const s = (status || "").toLowerCase();
+  if (s === "in_progress" || s === "in progress") {
+    return {
+      key: "in_progress",
+      displayLabel: "In Progress",
+      viLabel: "Đang thực hiện",
+      badgeClass: "bg-[#eef4ff] text-[#1d5fe5]",
+    };
+  }
+  if (s === "done" || s === "completed") {
+    return {
+      key: "done",
+      displayLabel: "Completed",
+      viLabel: "Đã hoàn tất",
+      badgeClass: "bg-[#e7f8ee] text-[#0e7b4c]",
+    };
+  }
+  if (s === "blocked") {
+    return {
+      key: "blocked",
+      displayLabel: "Blocked",
+      viLabel: "Bị chặn / Tạm hoãn",
+      badgeClass: "bg-[#fdecec] text-[#c0362c]",
+    };
+  }
+  if (s === "cancelled") {
+    return {
+      key: "cancelled",
+      displayLabel: "Cancelled",
+      viLabel: "Đã hủy",
+      badgeClass: "bg-[#e2e8f0] text-[#475569]",
+    };
+  }
+  return {
+    key: "todo",
+    displayLabel: "Todo",
+    viLabel: "Chờ thực hiện",
+    badgeClass: "bg-[#fff2d8] text-[#a15c00]",
+  };
+}
+
+export function getScheduleTabs(tasks = []) {
+  const countByCat = (cat) =>
+    tasks.filter((item) => normalizeTaskCategory(item.taskType || item.type) === cat).length;
+
   return [
-    { id: "checkin", label: "Nhận kho", count: 8 },
-    { id: "checkout", label: "Trả kho", count: 3 },
-    { id: "maintenance", label: "Bảo trì", count: 3 },
+    { id: "all", label: "Tất cả", count: tasks.length },
+    { id: "checkin", label: "Check-in nhận kho", count: countByCat("checkin") },
+    { id: "checkout", label: "Kiểm tra trả kho", count: countByCat("checkout") },
+    { id: "support", label: "Ticket cần xử lý", count: countByCat("support") },
+    { id: "maintenance", label: "Vệ sinh / Bảo trì", count: countByCat("maintenance") },
   ];
 }
 
 export function getScheduleItems() {
   return [
-    { id: "BK-9821", type: "checkin", name: "Alex Morgan", status: "Đang tới", unit: "B-204 · 5'x10' Lạnh", time: "11:00 (sớm 15p)", action: "Bàn giao ngay" },
-    { id: "BB-4421", type: "checkout", name: "Trần Thị Bích", status: "Hoàn tất 09:42", unit: "A-105 · 10'x15'", time: "Đã xong", action: "Xem biên bản" },
-    { id: "BK-9825", type: "checkin", name: "Lê Hoàng Nam", status: "Dự kiến 13:30", unit: "D-112 · 10'x30'", time: "13:30", action: "Chi tiết" },
-    { id: "BK-9818", type: "maintenance", name: "Cty FastTrack", status: "Chờ xe 15:00", unit: "D-210 · 10'x20'", time: "15:00", action: "Xếp bến Dock" },
+    {
+      id: 9821,
+      taskType: "check_in",
+      title: "Check-in bàn giao kho #B-204 cho KH Alex Morgan",
+      facilityCode: "FAC-01",
+      assignedEmployeeName: "Nguyễn Thành Long",
+      status: "in_progress",
+      progressPercent: 50,
+      dueAt: new Date().toISOString(),
+    },
+    {
+      id: 4421,
+      taskType: "inspection",
+      title: "Kiểm tra hiện trạng trả kho #A-105 (Trần Thị Bích)",
+      facilityCode: "FAC-01",
+      assignedEmployeeName: "Nguyễn Thành Long",
+      status: "done",
+      progressPercent: 100,
+      dueAt: new Date().toISOString(),
+    },
+    {
+      id: 8942,
+      taskType: "support",
+      title: "Xử lý Ticket lỗi bàn phím mã PIN kho #A-102",
+      facilityCode: "FAC-01",
+      assignedEmployeeName: "Trần Minh Quân",
+      status: "todo",
+      progressPercent: 0,
+      dueAt: new Date().toISOString(),
+    },
+    {
+      id: 9818,
+      taskType: "maintenance",
+      title: "Vệ sinh & bảo dưỡng định kỳ hệ thống hút ẩm Khu B",
+      facilityCode: "FAC-01",
+      assignedEmployeeName: "Vũ Văn Sơn",
+      status: "blocked",
+      progressPercent: 20,
+      dueAt: new Date().toISOString(),
+    },
   ];
 }
