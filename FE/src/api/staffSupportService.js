@@ -1,6 +1,13 @@
 import apiClient from "./apiClient";
 
 export default {
+  async resolveTicket(id, { resolution }) {
+    const response = await apiClient.put(`/staff/support-tickets/${encodeURIComponent(id)}/resolve`, { resolution });
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to resolve this ticket.");
+    }
+    return response.data;
+  },
   async proposeCharge(id, { description, amount }) {
     const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/propose-charge`, { description, amount });
     if (response?.success !== true) {

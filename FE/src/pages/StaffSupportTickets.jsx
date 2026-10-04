@@ -4,6 +4,7 @@ import PageBackground from "../components/PageBackground";
 import staffSupportService from "../api/staffSupportService";
 import StaffTicketReply from "../components/StaffTicketReply";
 import StaffTicketCharge from "../components/StaffTicketCharge";
+import StaffTicketResolve from "../components/StaffTicketResolve";
 
 function formatDate(value) {
   const date = value ? new Date(value) : null;
@@ -23,6 +24,15 @@ export default function StaffSupportTickets() {
   const [assigningId, setAssigningId] = useState(null);
   const [assignError, setAssignError] = useState("");
   const [assignSuccess, setAssignSuccess] = useState("");
+  const [resolveSuccess, setResolveSuccess] = useState("");
+
+  function handleResolved(ticket) {
+    setResolveSuccess(`Ticket ${ticket.ticketNo || ticket.id} resolved successfully.`);
+    requestId.current++;
+    setLoading(true);
+    setError("");
+    setQuery((current) => ({ ...current }));
+  }
 
   async function assignTicket(ticket) {
     if (assignLock.current) return;
@@ -86,6 +96,7 @@ export default function StaffSupportTickets() {
         </form>
         <section aria-label="Support ticket list" aria-busy={loading} className="mt-5">
           {assignSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{assignSuccess}</p>}
+          {resolveSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{resolveSuccess}</p>}
           {assignError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{assignError}</p>}
           {loading ? <p role="status">Loading tickets...</p> : error ? <div role="alert" className="rounded-xl bg-white p-4 text-red-600"><p>{error}</p><button type="button" onClick={() => load(query)} className="mt-2 underline">Try again</button></div> : tickets.length === 0 ? <p className="rounded-xl border bg-white p-8 text-center text-[#58657a]">No tickets match these filters.</p> : <>
             <p className="mb-3 text-sm text-[#58657a]">{tickets.length} tickets</p>
@@ -102,6 +113,7 @@ export default function StaffSupportTickets() {
                 </button>
                 <StaffTicketReply ticketId={ticket.id} />
                 <StaffTicketCharge ticketId={ticket.id} />
+                <StaffTicketResolve ticketId={ticket.id} onResolved={() => handleResolved(ticket)} />
               </article>)}
             </div>
           </>}
