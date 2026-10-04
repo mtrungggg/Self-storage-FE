@@ -1,7 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
 
-const TICKET_STORAGE_KEY = "vaultspace_support_tickets";
+import supportService from "../api/supportService";
+
+function toTicketView(ticket) {
+  const status = (ticket.status || ticket.displayStatus || "pending").toLowerCase().replace(/[ _-]/g, "");
+  return {
+    id: ticket.id,
+    ticketNo: ticket.ticketNo || String(ticket.id),
+    status: ["open", "new", "pendingreview"].includes(status) ? "pending" : status === "inprogress" ? "assigned" : status,
+    statusLabel: ticket.displayStatus || ticket.status || "Pending",
+    title: ticket.subject,
+    unit: ticket.facilityName,
+    time: "Reported: " + new Date(ticket.createdAt).toLocaleString("en-US"),
+    footer: "Priority: " + (ticket.priority || "Normal"),
+  };
+}
 
 // Application layer: encapsulates Support page state, filtering and data wiring.
 export function useSupport() {
@@ -9,15 +23,21 @@ export function useSupport() {
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [facilityNameState, setFacilityNameState] = useState("");
 
-  // Local storage persisted tickets so user submissions actually appear in real-time
-  const [tickets, setTickets] = useState(() => {
-    try {
-      const saved = localStorage.getItem(TICKET_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [ticketsError, setTicketsError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    supportService.getTickets()
+      .then((data) => { if (active) setTickets(data.map(toTicketView)); })
+      .catch((error) => { if (active) setTicketsError(error.message || "Unable to load tickets."); })
+      .finally(() => { if (active) setTicketsLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -33,7 +53,7 @@ export function useSupport() {
         }
       })
       .catch((err) => {
-        console.warn("Failed to load customer rentals for Support page:", err);
+        if (active) setSubmitError(err.message || "Unable to load your rentals.");
       })
       .finally(() => {
         if (active) setRentalsLoading(false);
@@ -47,7 +67,8 @@ export function useSupport() {
   // Map real rental data into Support view models (English)
   const units = useMemo(() => {
     return activeRentals.map((r) => ({
-      id: r.unitCode,
+      id: String(r.agreementId),
+      unitCode: r.unitCode,
       status: "active",
       statusLabel: "Active",
       contractDate: `Agreement #${r.agreementNo || "AGR-2026"}`,
@@ -102,30 +123,43 @@ export function useSupport() {
   const primaryRental = activeRentals[0] || null;
   const facilityName = facilityNameState || primaryRental?.facilityName || "Thu Duc Self Storage";
 
-  const addTicket = ({ unitCode, requestType, priorityLevel, issueDesc }) => {
-    const newId = `#TK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTicket = {
-      id: newId,
-      status: "pending",
-      statusLabel: "Pending Review",
-      title: `${requestType} on unit #${unitCode || "Primary"}`,
-      unit: `Unit: #${unitCode || "General"}`,
-      time: "Reported: Just now",
-      quote: issueDesc || "Customer submitted technical support request.",
-      footer: "Dispatch: Assigning on-duty facility technician",
-      eta: priorityLevel === "urgent" ? "Est. response: Within 15 mins" : "Est. response: Within 2-4 hours",
-    };
-
-    const nextTickets = [newTicket, ...tickets];
-    setTickets(nextTickets);
-    try {
-      localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(nextTickets));
-    } catch {
-      // ignore
+  const addTicket = async () => {
+    if (submitLock.current) return;
+    setSubmitSuccess(false);
+    setSubmitError("");
+    const rental = activeRentals.find((r) => String(r.agreementId) === selectedUnitCode);
+    if (!rental?.facilityId) {
+      setSubmitError("Please select an active rental before submitting a request.");
+      return;
     }
-    setSubmitSuccess(true);
-    setDescription("");
-    setTimeout(() => setSubmitSuccess(false), 4000);
+    if (!description.trim()) {
+      setSubmitError("Please describe the issue.");
+      return;
+    }
+    submitLock.current = true;
+    setSubmitting(true);
+    try {
+      const ticket = await supportService.createTicket({
+        facilityId: rental.facilityId,
+        agreementId: rental.agreementId,
+        storageUnitId: rental.storageUnitId,
+        category,
+        priority: priority === "urgent" ? "Urgent" : "Normal",
+        subject: category + " on unit #" + rental.unitCode,
+        description: description.trim() + (allowMasterKey ? "\n\nCustomer allows master key access while away." : ""),
+        attachments: [],
+      });
+      setTickets((current) => [toTicketView(ticket), ...current]);
+      setActiveTicketTab("all");
+      setSubmitSuccess(true);
+      setDescription("");
+      setAllowMasterKey(false);
+    } catch (error) {
+      setSubmitError(error.message || "Unable to submit the request. Please try again.");
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
+    }
   };
 
   return {
@@ -151,6 +185,10 @@ export function useSupport() {
     description,
     setDescription,
     submitSuccess,
+    submitError,
+    submitting,
+    ticketsLoading,
+    ticketsError,
     addTicket,
     tickets,
   };

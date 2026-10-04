@@ -29,20 +29,16 @@ function Support() {
     description,
     setDescription,
     submitSuccess,
+    submitError,
+    submitting,
+    ticketsLoading,
+    ticketsError,
     addTicket,
   } = useSupport();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!selectedUnitCode && activeRentals.length > 0) {
-      return;
-    }
-    addTicket({
-      unitCode: selectedUnitCode || (activeRentals[0]?.unitCode ?? "Unit A-101"),
-      requestType: category,
-      priorityLevel: priority,
-      issueDesc: description.trim(),
-    });
+    void addTicket();
   };
 
   return (
@@ -118,7 +114,7 @@ function Support() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">warehouse</span>
-                    <span className="text-[14px] font-bold text-[#0b1c30]">Unit {unit.id}</span>
+                    <span className="text-[14px] font-bold text-[#0b1c30]">Unit {unit.unitCode}</span>
                   </div>
                   <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[10px] font-bold text-[#0e7b4c]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
@@ -174,22 +170,26 @@ function Support() {
               </div>
             )}
 
+            {submitError && <p role="alert" className="mt-3 text-sm text-red-600">{submitError}</p>}
             <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+              <fieldset disabled={submitting} className="space-y-3">
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold text-[#0f172a]">Unit *</label>
                 <select
+                  required
+                  disabled={rentalsLoading || activeRentals.length === 0}
                   value={selectedUnitCode}
                   onChange={(e) => setSelectedUnitCode(e.target.value)}
                   className="w-full rounded-[10px] border border-[#dfe7f5] bg-[#f8faff] px-3 py-2.5 text-[12px] outline-none transition focus:border-[#3b82f6]"
                 >
-                  {filteredUnits.length > 0 ? (
-                    filteredUnits.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        Unit {u.id}
+                  {activeRentals.length > 0 ? (
+                    activeRentals.map((u) => (
+                      <option key={u.agreementId} value={String(u.agreementId)}>
+                        Unit {u.unitCode} / {u.facilityName}
                       </option>
                     ))
                   ) : (
-                    <option value="General Facility">Facility</option>
+                    <option value="">No active rentals available</option>
                   )}
                 </select>
               </div>
@@ -238,6 +238,7 @@ function Support() {
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold text-[#0f172a]">Details</label>
                 <textarea
+                  required
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -250,7 +251,7 @@ function Support() {
                 <label className="mb-1.5 block text-[11px] font-semibold text-[#0f172a]">Attachments</label>
                 <div className="flex flex-col items-center justify-center rounded-[10px] border border-dashed border-[#c7d1e6] bg-[#f8faff] p-4 text-center">
                   <span className="material-symbols-outlined text-[24px] text-[#1d5fe5]">cloud_upload</span>
-                  <div className="mt-1 text-[11px] font-semibold text-[#3a475a]">Add photo or video</div>
+                  <div className="mt-1 text-[11px] font-semibold text-[#3a475a]">Attachments are not available yet</div>
                 </div>
               </div>
 
@@ -266,11 +267,13 @@ function Support() {
 
               <button
                 type="submit"
+                disabled={submitting || rentalsLoading || ticketsLoading || activeRentals.length === 0}
                 className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] py-3 text-[13px] font-bold text-white shadow-[0_14px_24px_rgba(29,95,229,0.25)] transition hover:bg-[#174fc7]"
               >
                 <span className="material-symbols-outlined text-[16px]">send</span>
-                Submit
+                {submitting ? "Submitting..." : "Submit"}
               </button>
+              </fieldset>
             </form>
           </div>
 
@@ -297,7 +300,8 @@ function Support() {
             </div>
 
             <div className="mt-3 space-y-3">
-              {filteredTickets.length === 0 ? (
+              {ticketsError && <p role="alert" className="text-sm text-red-600">{ticketsError}</p>}
+              {ticketsLoading ? <p role="status" className="text-sm text-[#58657a]">Loading tickets...</p> : ticketsError && filteredTickets.length === 0 ? null : filteredTickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-8 text-center">
                   <span className="material-symbols-outlined text-[32px] text-[#8996a9]">support_agent</span>
                   <div className="mt-2 text-[13px] font-bold text-[#0b1c30]">No Tickets Found</div>
@@ -306,7 +310,7 @@ function Support() {
                 filteredTickets.map((ticket) => (
                   <div key={ticket.id} className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-[#1d5fe5]">{ticket.id}</span>
+                      <span className="text-[11px] font-bold text-[#1d5fe5]">{ticket.ticketNo}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           ticket.status === "pending"
