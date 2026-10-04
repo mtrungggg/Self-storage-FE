@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
+import MoveOutRequest from "../components/MoveOutRequest";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -155,6 +156,7 @@ function Support() {
                     Renew
                   </button>
                 </div>
+                <MoveOutRequest agreementId={unit.id} />
               </div>
             ))}
           </div>

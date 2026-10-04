@@ -1,6 +1,12 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async requestMoveOut(agreementId, { requestedMoveOutDate, reason }) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/move-out`, { requestedMoveOutDate, reason });
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request move-out.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the move-out request.");
+    return res.data;
+  },
   /**
    * Lấy danh sách hợp đồng thuê kho (đang hoạt động & lịch sử) của khách hàng
    */
