@@ -1,6 +1,14 @@
 import apiClient from "./apiClient";
 
 export default {
+  async proposeCharge(id, { description, amount }) {
+    const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/propose-charge`, { description, amount });
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to propose this charge.");
+    }
+    if (!response.data || response.data.id == null) throw new Error("The server did not return the proposed charge.");
+    return response.data;
+  },
   async sendMessage(id, { body, isInternal }) {
     const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/messages`, { body, isInternal });
     if (response?.success !== true) {

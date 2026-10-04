@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
 import staffSupportService from "../api/staffSupportService";
 import StaffTicketReply from "../components/StaffTicketReply";
+import StaffTicketCharge from "../components/StaffTicketCharge";
 
 function formatDate(value) {
   const date = value ? new Date(value) : null;
@@ -100,6 +101,7 @@ export default function StaffSupportTickets() {
                   {assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
                 </button>
                 <StaffTicketReply ticketId={ticket.id} />
+                <StaffTicketCharge ticketId={ticket.id} />
               </article>)}
             </div>
           </>}
