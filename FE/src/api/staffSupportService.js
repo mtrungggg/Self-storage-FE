@@ -1,6 +1,13 @@
 import apiClient from "./apiClient";
 
 export default {
+  async assignTicket(id) {
+    const response = await apiClient.put(`/staff/support-tickets/${encodeURIComponent(id)}/assign`);
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to assign this ticket.");
+    }
+    return response.data;
+  },
   async getTickets({ facilityId, status } = {}) {
     const params = {};
     if (facilityId != null && facilityId !== "") params.facilityId = facilityId;

@@ -17,6 +17,32 @@ export default function StaffSupportTickets() {
   const [error, setError] = useState("");
   const [statuses, setStatuses] = useState([]);
   const requestId = useRef(0);
+  const assignLock = useRef(false);
+  const [assigningId, setAssigningId] = useState(null);
+  const [assignError, setAssignError] = useState("");
+  const [assignSuccess, setAssignSuccess] = useState("");
+
+  async function assignTicket(ticket) {
+    if (assignLock.current) return;
+    assignLock.current = true;
+    setAssigningId(ticket.id);
+    setAssignError("");
+    setAssignSuccess("");
+    try {
+      await staffSupportService.assignTicket(ticket.id);
+      setAssignSuccess(`Ticket ${ticket.ticketNo || ticket.id} assigned successfully.`);
+      // Refresh the currently applied filters, even if they changed during assignment.
+      requestId.current++;
+      setLoading(true);
+      setError("");
+      setQuery((current) => ({ ...current }));
+    } catch (err) {
+      setAssignError(err.message || "Unable to assign this ticket. Please try again.");
+    } finally {
+      assignLock.current = false;
+      setAssigningId(null);
+    }
+  }
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -57,6 +83,8 @@ export default function StaffSupportTickets() {
           <button type="button" onClick={() => { setFacilityId(""); setStatus(""); load({}); }} className="rounded-lg border px-4 py-2 text-sm">Clear filters</button>
         </form>
         <section aria-label="Support ticket list" aria-busy={loading} className="mt-5">
+          {assignSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{assignSuccess}</p>}
+          {assignError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{assignError}</p>}
           {loading ? <p role="status">Loading tickets...</p> : error ? <div role="alert" className="rounded-xl bg-white p-4 text-red-600"><p>{error}</p><button type="button" onClick={() => load(query)} className="mt-2 underline">Try again</button></div> : tickets.length === 0 ? <p className="rounded-xl border bg-white p-8 text-center text-[#58657a]">No tickets match these filters.</p> : <>
             <p className="mb-3 text-sm text-[#58657a]">{tickets.length} tickets</p>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -67,6 +95,9 @@ export default function StaffSupportTickets() {
                   {[["Customer", ticket.customerName || ticket.customerId], ["Facility", ticket.facilityCode || ticket.facilityId], ["Agreement", ticket.agreementNo || ticket.agreementId], ["Unit", ticket.unitCode || ticket.storageUnitId], ["Category", ticket.category], ["Priority", ticket.priority], ["Created", formatDate(ticket.createdAt)], ["Updated", formatDate(ticket.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
                 </dl>
                 <p className="mt-4 whitespace-pre-wrap break-words border-t pt-3 text-sm text-[#58657a]">{ticket.description || "No description provided."}</p>
+                <button type="button" onClick={() => assignTicket(ticket)} disabled={assigningId != null} aria-label={`Assign ticket ${ticket.ticketNo || ticket.id}`} className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
+                  {assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
+                </button>
               </article>)}
             </div>
           </>}
