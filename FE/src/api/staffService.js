@@ -66,6 +66,47 @@ export const staffService = {
     const res = await apiClient.put(`/staff/tasks/${taskId}/status`, payload);
     return res?.data ?? null;
   },
+
+  /**
+   * Lấy sơ đồ và trạng thái các khoang tại cơ sở
+   * GET /api/staff/facilities/{facilityId}/units
+   * @param {number|string} facilityId
+   */
+  async getFacilityUnits(facilityId) {
+    if (!facilityId) return [];
+    const res = await apiClient.get(`/staff/facilities/${facilityId}/units`);
+    return res?.data ?? [];
+  },
+
+  /**
+   * Tra cứu phiếu đặt chỗ chờ check-in nhận kho
+   * GET /api/staff/reservations/lookup
+   * @param {{ query?: string, facilityId?: number }} [params]
+   */
+  async lookupReservations(params = {}) {
+    const res = await apiClient.get("/staff/reservations/lookup", { params });
+    return res?.data ?? [];
+  },
+
+  /**
+   * Lấy danh sách yêu cầu trả kho & kiểm kho
+   * GET /api/staff/move-outs
+   * @param {{ facilityId?: number, date?: string }} [params]
+   */
+  async getMoveOuts(params = {}) {
+    const res = await apiClient.get("/staff/move-outs", { params });
+    return res?.data ?? [];
+  },
+
+  /**
+   * Lấy danh sách ticket hỗ trợ tại cơ sở
+   * GET /api/staff/support-tickets
+   * @param {{ facilityId?: number, status?: string }} [params]
+   */
+  async getSupportTickets(params = {}) {
+    const res = await apiClient.get("/staff/support-tickets", { params });
+    return res?.data ?? [];
+  },
 };
 
 export default staffService;

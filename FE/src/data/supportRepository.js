@@ -1,6 +1,6 @@
 import { normalizeTicketStage } from "../domain/usecases/filterSupportRecords";
 
-// Data layer: content source & metadata mappings for the Support page.
+// Data layer: metadata & status mappings for the Support page (no hardcoded mock records).
 export function getUnitTabs(units = []) {
   const activeCount = units.filter((u) => u.status === "active").length;
   const renewCount = units.filter((u) => u.status === "renew").length;
@@ -8,54 +8,6 @@ export function getUnitTabs(units = []) {
     { id: "all", label: `Tất cả kho (${units.length})` },
     { id: "active", label: `Đang hoạt động (${activeCount})` },
     { id: "renew", label: `Cần gia hạn (${renewCount})` },
-  ];
-}
-
-export function getSupportUnits() {
-  return [
-    {
-      id: "A-102",
-      location: "Tầng 1 • Khoang A • An Phú Central",
-      status: "active",
-      statusLabel: "Đang hoạt động",
-      size: "5' x 10' (~4.6m²)",
-      sizeNote: "Chiều cao trần 2.7 mét (Khoang thoáng)",
-      climate: "23°C / 48% RH",
-      contractLabel: "Thời hạn hợp đồng",
-      contractDate: "Hạn đến 28/02/2026",
-      contractLeft: "Còn 312 ngày",
-      payment: "Tự động qua Visa ****8892",
-      primaryAction: "Xem mã PIN / Khóa điện tử",
-      footerLinks: ["Báo cáo sự cố kho", "Xem lịch sử thuê"],
-    },
-    {
-      id: "B-204",
-      location: "Tầng 2 • Khoang B • An Phú Central",
-      status: "renew",
-      statusLabel: "Còn 3 ngày",
-      warning: "Vui lòng gia hạn trước 31/10/2025 để tránh bị khóa mã PIN và tính phí giữ kho tạm.",
-      size: "10' x 15' (~13.9m²)",
-      sizeNote: "Đặc thù sử dụng: Chứa máy & Đồ đạc cồng kềnh",
-      climate: "Lối xe nâng hàng rộng",
-      autoPay: true,
-      primaryAction: "Gia hạn hợp đồng ngay",
-      footerLinks: ["Báo cáo sự cố kho", "Mã PIN kho"],
-    },
-    {
-      id: "D-118",
-      location: "Garage mặt bằng xe ở An Phú",
-      status: "active",
-      statusLabel: "Đang hoạt động",
-      size: "10' x 20' (~18.6m²)",
-      sizeNote: "Mục đích sử dụng: Kho ô tô & Nội thất biệt thự",
-      climate: "Cửa cuốn điện điều khiển từ xa",
-      contractLabel: "Thời hạn hợp đồng",
-      contractDate: "Hạn đến 15/12/2025",
-      contractLeft: "Còn 45 ngày",
-      payment: "Thanh toán theo quý",
-      primaryAction: "Xem mã PIN / Khóa điện tử",
-      footerLinks: ["Báo cáo sự cố kho", "Xem lịch sử thuê"],
-    },
   ];
 }
 
@@ -167,8 +119,4 @@ export function getTicketTabs(tickets = []) {
     { id: "Resolved", label: `Resolved (${countByStage("Resolved")})` },
     { id: "Closed", label: `Closed (${countByStage("Closed")})` },
   ];
-}
-
-export function getSupportTickets() {
-  return [];
 }

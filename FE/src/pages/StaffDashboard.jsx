@@ -10,6 +10,10 @@ const STATUS_STYLES = {
 function StaffDashboard() {
   const {
     profile,
+    facilities,
+    selectedFacilityId,
+    setSelectedFacilityId,
+    facilityLoading,
     navTabs,
     activeNavTab,
     setActiveNavTab,
@@ -18,14 +22,12 @@ function StaffDashboard() {
     zones,
     activeZone,
     setActiveZone,
-    floors,
-    activeFloor,
-    setActiveFloor,
     filteredUnits,
     legendWithCounts,
+    reservations,
+    selectedReservationId,
+    setSelectedReservationId,
     handover,
-    checkedItems,
-    toggleChecklistItem,
     scheduleTabs,
     activeScheduleTab,
     setActiveScheduleTab,
@@ -84,16 +86,25 @@ function StaffDashboard() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {facilities.length > 0 && (
+              <select
+                value={selectedFacilityId || ""}
+                onChange={(e) =>
+                  setSelectedFacilityId(e.target.value ? Number(e.target.value) : null)
+                }
+                className="rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1 text-[11px] font-semibold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+              >
+                {facilities.map((fac) => (
+                  <option key={fac.id} value={fac.id}>
+                    {fac.name || fac.code || `Cơ sở #${fac.id}`}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <span className="hidden text-[11px] font-semibold tabular-nums text-[#8996a9] md:block">
               {currentTime}
             </span>
-            <button
-              type="button"
-              className="hidden items-center gap-1.5 rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[11px] font-bold text-white md:flex"
-            >
-              <span className="material-symbols-outlined text-[14px]">sync_alt</span>
-              Bàn giao ca
-            </button>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
                 <span className="material-symbols-outlined text-[16px]">person</span>
@@ -101,7 +112,8 @@ function StaffDashboard() {
               <div className="hidden leading-tight lg:block">
                 <div className="text-[11px] font-bold">{profile.name}</div>
                 <div className="text-[9px] text-[#8996a9]">
-                  {profile.code} • {profile.role}
+                  {profile.code ? `${profile.code} • ` : ""}
+                  {profile.role} • {profile.facility}
                 </div>
               </div>
             </div>
@@ -131,20 +143,8 @@ function StaffDashboard() {
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
           <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-[14px] font-bold">Sơ đồ mặt bằng</div>
-              <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
-                {floors.map((floor) => (
-                  <button
-                    key={floor.id}
-                    type="button"
-                    onClick={() => setActiveFloor(floor.id)}
-                    className={`rounded-[6px] px-2.5 py-1 text-[10px] font-semibold transition ${
-                      activeFloor === floor.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"
-                    }`}
-                  >
-                    {floor.label}
-                  </button>
-                ))}
+              <div className="text-[14px] font-bold">
+                Sơ đồ mặt bằng ({profile.facility})
               </div>
             </div>
 
@@ -174,16 +174,22 @@ function StaffDashboard() {
               ))}
             </div>
 
-            {filteredUnits.length === 0 ? (
+            {facilityLoading ? (
+              <div className="mt-3 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-6 text-center text-[11px] text-[#58657a]">
+                Đang tải sơ đồ khoang từ hệ thống...
+              </div>
+            ) : filteredUnits.length === 0 ? (
               <div className="mt-3 rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-                Không có khoang nào ở khu vực này.
+                Chưa có dữ liệu khoang nào ở khu vực này.
               </div>
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 {filteredUnits.map((unit) => (
                   <div
                     key={unit.id}
-                    className={`rounded-[10px] border p-2.5 ${STATUS_STYLES[unit.status]}`}
+                    className={`rounded-[10px] border p-2.5 ${
+                      STATUS_STYLES[unit.status] || STATUS_STYLES.available
+                    }`}
                   >
                     <div className="text-[11px] font-bold">{unit.id}</div>
                     <div className="text-[9px] text-[#8996a9]">{unit.size}</div>
@@ -199,93 +205,83 @@ function StaffDashboard() {
           <div className="rounded-[16px] border border-[#f5a524]/40 bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
             <div className="flex items-center justify-between">
               <span className="rounded-full bg-[#fff2d8] px-2 py-0.5 text-[9px] font-bold text-[#a15c00]">
-                Chờ bàn giao
+                Phiếu đặt giữ chỗ / Bàn giao
               </span>
-              <span className="text-[10px] font-semibold text-[#8996a9]">{handover.code}</span>
-            </div>
-            <div className="mt-2 text-[15px] font-bold">Kho #{handover.unit}</div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
-                <span className="material-symbols-outlined text-[16px]">person</span>
-              </div>
-              <div className="flex items-center gap-1 text-[12px] font-bold">
-                {handover.customer}
-                <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">
-                  verified
+              {handover && (
+                <span className="text-[10px] font-semibold text-[#8996a9]">
+                  {handover.code}
                 </span>
-              </div>
+              )}
             </div>
 
-            <div className="mt-3 space-y-1.5 text-[11px] text-[#3a475a]">
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Kích thước</span>
-                <span className="font-semibold">{handover.size}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Cọc &amp; Thanh toán</span>
-                <span className="font-semibold">
-                  {handover.deposit} · {handover.payment}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Mã PIN kích hoạt</span>
-                <span className="font-semibold">{handover.pin}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Pin khóa cửa</span>
-                <span className="font-semibold">{handover.battery}</span>
-              </div>
-            </div>
-
-            <div className="mt-3 space-y-1.5 border-t border-[#eef1f8] pt-3">
-              {handover.checklist.map((item) => (
-                <label key={item.id} className="flex items-center gap-2 text-[11px] text-[#3a475a]">
-                  <input
-                    type="checkbox"
-                    checked={checkedItems.has(item.id)}
-                    onChange={() => toggleChecklistItem(item.id)}
-                    className="h-3.5 w-3.5 accent-[#1d5fe5]"
-                  />
-                  {item.label}
-                </label>
-              ))}
-            </div>
-
-            <div className="mt-3 space-y-2">
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white"
-              >
-                <span className="material-symbols-outlined text-[14px]">nfc</span>
-                Cấp thẻ NFC &amp; Gửi OTP
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#0e7b4c] py-2 text-[11px] font-bold text-white"
-              >
-                <span className="material-symbols-outlined text-[14px]">task_alt</span>
-                Xác nhận bàn giao &amp; Ký nhận
-              </button>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]"
+            {reservations.length > 1 && (
+              <div className="mt-2">
+                <select
+                  value={selectedReservationId || ""}
+                  onChange={(e) => setSelectedReservationId(Number(e.target.value))}
+                  className="w-full rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[11px] font-semibold text-[#0b1c30] outline-none"
                 >
-                  Báo sự cố
-                </button>
-                <button
-                  type="button"
-                  className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]"
-                >
-                  Lưu tạm
-                </button>
+                  {reservations.map((r) => (
+                    <option key={r.reservationId} value={r.reservationId}>
+                      {r.reservationCode} — {r.customerName} (
+                      {r.assignedUnitCode || r.unitTypeName})
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
+            )}
 
-            <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] text-[#8996a9]">
-              {handover.handoffNote}
-            </div>
+            {!handover ? (
+              <div className="mt-4 rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
+                Hiện không có phiếu đặt giữ chỗ nào chờ bàn giao tại cơ sở này.
+              </div>
+            ) : (
+              <>
+                <div className="mt-2 text-[15px] font-bold">Kho #{handover.unit}</div>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
+                    <span className="material-symbols-outlined text-[16px]">person</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1 text-[12px] font-bold">
+                      {handover.customer}
+                      <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">
+                        verified
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-[#8996a9]">{handover.phone}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-1.5 text-[11px] text-[#3a475a]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8996a9]">Loại khoang</span>
+                    <span className="font-semibold">{handover.size}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8996a9]">Tiền cọc</span>
+                    <span className="font-semibold">{handover.deposit}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8996a9]">Tổng báo giá</span>
+                    <span className="font-semibold">{handover.quotedTotal}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8996a9]">Thời hạn thuê</span>
+                    <span className="font-semibold">
+                      {handover.startDate} → {handover.endDate}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#8996a9]">Trạng thái phiếu</span>
+                    <span className="font-bold uppercase text-[#1d5fe5]">
+                      {handover.status}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -326,7 +322,7 @@ function StaffDashboard() {
               </div>
               <button
                 type="button"
-                onClick={() => fetchStaffTasks()}
+                onClick={() => fetchStaffTasks(selectedFacilityId)}
                 disabled={tasksLoading}
                 className="flex items-center gap-1 rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-[10px] font-semibold text-[#3a475a] hover:bg-[#eef4ff]"
               >

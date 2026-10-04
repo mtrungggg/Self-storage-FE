@@ -175,38 +175,6 @@ export function getAttendanceLegend() {
   ];
 }
 
-export function getFieldTasks() {
-  return [
-    {
-      id: 1,
-      title: "Kiểm tra cảm biến ẩm vi khí hậu Khu B",
-      note: "Kho rượu vang B10-B40",
-      assignee: "KTV Long (#ENG-12)",
-      detail: "Hoàn tất lúc 11:30",
-      status: "done",
-      statusLabel: "ĐÃ ĐẠT",
-    },
-    {
-      id: 2,
-      title: "Hỗ trợ xe nâng & tiếp nhận Pallet tại Dock #02",
-      note: "Ưu tiên cao",
-      assignee: "KTV Sơn (#ENG-18)",
-      detail: "Đang bốc dỡ 14 kiện hàng",
-      status: "doing",
-      statusLabel: "ĐANG LÀM",
-    },
-    {
-      id: 3,
-      title: "Bàn giao & ký biên bản niêm phong kho #B-204",
-      note: "Khách: VinLogistics JSC",
-      assignee: "Lễ tân Hà (#FO-05)",
-      detail: "Dự kiến khách đến: 16:30",
-      status: "waiting",
-      statusLabel: "CHỜ KHÁCH",
-    },
-  ];
-}
-
 export function getHandoverTag() {
   return "Ca Chiều → Đêm";
 }

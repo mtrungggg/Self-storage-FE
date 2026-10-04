@@ -9,7 +9,6 @@ import {
   getDepartments,
   getShiftLegend,
   getAttendanceLegend,
-  getFieldTasks,
   getHandoverTag,
   getHandoverChecklist,
   getHandoverNote,
@@ -32,7 +31,6 @@ export function useStaffScheduling() {
   const departments = getDepartments();
   const shiftLegend = getShiftLegend();
   const attendanceLegend = getAttendanceLegend();
-  const fallbackFieldTasks = getFieldTasks();
   const handoverTag = getHandoverTag();
   const handoverChecklist = getHandoverChecklist();
   const handoverNote = getHandoverNote();
@@ -53,7 +51,7 @@ export function useStaffScheduling() {
       const data = await staffService.getStaffTasks();
       setApiTasks(Array.isArray(data) ? data : []);
     } catch {
-      // Keep fallback tasks if user is not staff/manager or backend is unavailable
+      setApiTasks([]);
     } finally {
       setTasksLoading(false);
     }
@@ -64,7 +62,6 @@ export function useStaffScheduling() {
   }, [fetchTasks]);
 
   const fieldTasks = useMemo(() => {
-    if (apiTasks.length === 0) return fallbackFieldTasks;
     return apiTasks.map((t) => {
       const statusMeta = getTaskStatusMeta(t.status);
       const typeMeta = getTaskTypeMeta(t.taskType);
@@ -92,7 +89,7 @@ export function useStaffScheduling() {
           : "Trong ca trực",
       };
     });
-  }, [apiTasks, fallbackFieldTasks]);
+  }, [apiTasks]);
 
   const handleUpdateFieldTaskStatus = useCallback(
     async (taskId, newStatus, progressPercent) => {

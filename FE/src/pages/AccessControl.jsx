@@ -5,10 +5,8 @@ import PageBackground from "../components/PageBackground";
 
 function AccessControl() {
   const {
-    wallets,
+    relationshipOptions,
     accessLogs,
-    activeUnit,
-    setActiveUnit,
     showPin,
     setShowPin,
     unlocking,
@@ -18,14 +16,17 @@ function AccessControl() {
 
     // Rentals & Credentials
     rentals,
+    rentalsLoading,
     agreementId,
     setAgreementId,
     selectedRental,
     credentials,
     credentialsLoading,
     credentialsError,
+    fetchCredentials,
     pinChanging,
     pinChangeError,
+    pinChangeSuccess,
     handleChangePin,
 
     // Authorized Access Members (Flow 3)
@@ -52,6 +53,7 @@ function AccessControl() {
     revokingMemberId,
     handleRevokeMember,
     formatDateDisplay,
+    formatDateTimeDisplay,
   } = useAccessControl();
 
   const onChangePin = () => {
@@ -67,6 +69,9 @@ function AccessControl() {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
+
+  const isCredentialSuspended =
+    (credentials?.status || "").toLowerCase() === "suspended" || selectedRental?.hasOverdueDebt;
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -85,7 +90,7 @@ function AccessControl() {
             <button
               type="button"
               onClick={onChangePin}
-              disabled={pinChanging || !credentials}
+              disabled={pinChanging || !credentials || isCredentialSuspended}
               className="flex items-center gap-1.5 rounded-[10px] border border-[#dfe7f5] bg-white px-3.5 py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[16px]">sync_alt</span>
@@ -94,7 +99,8 @@ function AccessControl() {
             <button
               type="button"
               onClick={openAddMemberSection}
-              className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7]"
+              disabled={!agreementId}
+              className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,95,229,0.25)] hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[16px]">person_add</span>
               Ủy quyền ra vào
@@ -108,9 +114,23 @@ function AccessControl() {
           </div>
         )}
 
+        {pinChangeSuccess && (
+          <div className="mt-4 rounded-[12px] border border-[#abefc6] bg-[#ecfdf3] px-4 py-3 text-[13px] font-semibold text-[#067647]">
+            {pinChangeSuccess}
+          </div>
+        )}
+
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[#dfe7f5] bg-white p-3">
           <div className="flex flex-wrap items-center gap-2">
-            {rentals.length > 0 ? (
+            {rentalsLoading ? (
+              <span className="px-3 py-1.5 text-[12px] text-[#58657a]">
+                Đang tải danh sách hợp đồng thuê kho...
+              </span>
+            ) : rentals.length === 0 ? (
+              <span className="px-3 py-1.5 text-[12px] text-[#58657a]">
+                Chưa có hợp đồng thuê kho đang hoạt động.
+              </span>
+            ) : (
               rentals.map((rental) => {
                 const isSelected = Number(rental.agreementId) === Number(agreementId);
                 return (
@@ -130,62 +150,33 @@ function AccessControl() {
                         isSelected ? "text-[#c7d1e6]" : "text-[#8996a9]"
                       }`}
                     >
-                      {rental.dimensions || rental.unitTypeName || "Tiêu chuẩn"}
+                      {rental.dimensions || rental.unitTypeName || "-"}
                       {rental.floorLabel ? ` • ${rental.floorLabel}` : ""}
                       {rental.facilityName ? ` • ${rental.facilityName}` : ""}
                     </div>
                   </button>
                 );
               })
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setActiveUnit("main")}
-                  className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
-                    activeUnit === "main"
-                      ? "bg-[#0b1c30] text-white shadow-sm"
-                      : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-                  }`}
-                >
-                  <div>Kho chính #B-204</div>
-                  <div
-                    className={`text-[10px] font-normal ${
-                      activeUnit === "main" ? "text-[#c7d1e6]" : "text-[#8996a9]"
-                    }`}
-                  >
-                    5&apos; × 10&apos; • Tầng 1
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveUnit("garage")}
-                  className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
-                    activeUnit === "garage"
-                      ? "bg-[#0b1c30] text-white shadow-sm"
-                      : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-                  }`}
-                >
-                  <div>Kho phụ #D-118</div>
-                  <div
-                    className={`text-[10px] font-normal ${
-                      activeUnit === "garage" ? "text-[#c7d1e6]" : "text-[#8996a9]"
-                    }`}
-                  >
-                    10&apos; × 20&apos; • Ngoài trời
-                  </div>
-                </button>
-              </>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-[12px] font-semibold text-[#3a475a]">
-            <span>Khóa thông minh</span>
-            <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2.5 py-0.5 text-[11px] font-bold text-[#0e7b4c]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-              Đã khóa
-            </span>
+            <span>Trạng thái truy cập</span>
+            {isCredentialSuspended ? (
+              <span className="flex items-center gap-1 rounded-full bg-[#fdecec] px-2.5 py-0.5 text-[11px] font-bold text-[#c0362c]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c0362c]" />
+                Tạm khóa ({credentials?.suspendedReason || "Công nợ quá hạn"})
+              </span>
+            ) : credentials ? (
+              <span className="flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2.5 py-0.5 text-[11px] font-bold text-[#0e7b4c]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
+                Đang hoạt động
+              </span>
+            ) : (
+              <span className="rounded-full bg-[#eef1f8] px-2.5 py-0.5 text-[11px] font-semibold text-[#58657a]">
+                Chưa kích hoạt
+              </span>
+            )}
           </div>
         </div>
 
@@ -194,17 +185,21 @@ function AccessControl() {
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-[15px] font-bold text-[#0b1c30]">
-                  Bàn phím &amp; Khóa từ xa
+                  Bàn phím số &amp; Mã QR Cổng ra vào
                 </div>
-                <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
-                  Kho #{selectedRental?.unitCode || credentials?.unitCode || "B-204"}
-                </span>
+                {(selectedRental?.unitCode || credentials?.unitCode) && (
+                  <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
+                    Kho #{selectedRental?.unitCode || credentials?.unitCode}
+                  </span>
+                )}
               </div>
-              <p className="mt-0.5 text-[11px] text-[#8996a9]">Mã hóa bảo mật 256-bit</p>
+              <p className="mt-0.5 text-[11px] text-[#8996a9]">
+                {selectedRental?.facilityName || credentials?.facilityName || "Dữ liệu xác thực trực tiếp từ hợp đồng thuê"}
+              </p>
 
               <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
                 <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                  Mã PIN chính
+                  Mã PIN bàn phím ô kho
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2 text-[20px] font-bold tracking-[0.25em] text-[#0b1c30]">
@@ -212,94 +207,106 @@ function AccessControl() {
                       ? "..."
                       : showPin
                       ? credentials?.keypadPin || "—"
-                      : (credentials?.keypadPin || "••••••").replace(/./g, "•")}
-                    <button
-                      type="button"
-                      onClick={() => setShowPin((v) => !v)}
-                      className="material-symbols-outlined text-[18px] text-[#8996a9] hover:text-[#0b1c30]"
-                    >
-                      {showPin ? "visibility_off" : "visibility"}
-                    </button>
+                      : credentials?.keypadPin
+                      ? credentials.keypadPin.replace(/./g, "•")
+                      : "——————"}
+                    {credentials?.keypadPin && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPin((v) => !v)}
+                        className="material-symbols-outlined text-[18px] text-[#8996a9] hover:text-[#0b1c30]"
+                      >
+                        {showPin ? "visibility_off" : "visibility"}
+                      </button>
+                    )}
                   </div>
                   <div className="ml-auto flex items-center gap-2">
                     <button
                       type="button"
+                      disabled={!credentials?.keypadPin}
                       onClick={() =>
                         credentials?.keypadPin &&
                         navigator.clipboard.writeText(credentials.keypadPin)
                       }
-                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]"
+                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[14px]">content_copy</span>
                       Sao chép
                     </button>
                     <button
                       type="button"
+                      disabled={!credentials || pinChanging || isCredentialSuspended}
                       onClick={onChangePin}
-                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd]"
+                      className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[14px]">autorenew</span>
-                      Tạo lại mã
+                      Đổi mã PIN
                     </button>
                   </div>
                 </div>
                 <div className="mt-2 text-[11px] text-[#8996a9]">
-                  Nhập trực tiếp trên bàn phím tại cửa kho.
+                  Nhập trực tiếp trên bàn phím tại cửa khoang lưu trữ.
                 </div>
               </div>
 
+              {/* Short-lived Gate QR Token from GET /api/customer/rentals/{agreementId}/access-credentials */}
               <div className="mt-4 rounded-[12px] bg-[#0b1c30] p-4 text-white">
-                <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#7fd8b1]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-                  Mở khóa Bluetooth
-                </div>
-                <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-[14px] font-bold">Mở khóa một chạm</div>
-                    <p className="mt-1 max-w-[380px] text-[11px] leading-relaxed text-[#c7d1e6]">
-                      Tự động nhận diện khi đến gần kho trong phạm vi 5 mét.
-                    </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#7fd8b1]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
+                    Gate QR Token &amp; Mở khóa thông minh
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleUnlock}
-                    className="flex items-center gap-2 rounded-[10px] bg-[#1d5fe5] px-4 py-2.5 text-[13px] font-bold text-white hover:bg-[#174fc7]"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      {unlocking ? "lock_open" : "lock"}
+                  {credentials?.qrExpiresAt && (
+                    <span className="text-[10px] text-[#c7d1e6]">
+                      Hiệu lực đến: {formatDateTimeDisplay(credentials.qrExpiresAt)} (
+                      {credentials.qrExpiresInSeconds}s)
                     </span>
-                    {unlocking ? "Đang mở..." : "Mở khóa kho"}
-                  </button>
+                  )}
                 </div>
-              </div>
 
-              <div className="mt-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-                  Ví điện tử &amp; Thẻ NFC
-                </div>
-                <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
-                  {wallets.map((wallet) => (
-                    <div
-                      key={wallet.title}
-                      className="flex items-center gap-2.5 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3"
-                    >
-                      <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">
-                        {wallet.icon}
-                      </span>
-                      <div>
-                        <div className="text-[12px] font-semibold text-[#0b1c30]">
-                          {wallet.title}
-                        </div>
-                        <div
-                          className={`text-[10px] ${
-                            wallet.active ? "text-[#0e7b4c]" : "text-[#8996a9]"
-                          }`}
-                        >
-                          {wallet.status}
-                        </div>
-                      </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-bold">
+                      {credentials?.gateQrToken
+                        ? "Mã thông báo QR cổng tự động (JWT Token)"
+                        : "Chưa có mã QR cổng khả dụng"}
                     </div>
-                  ))}
+                    {credentials?.gateQrToken ? (
+                      <div className="mt-1 truncate rounded bg-white/10 px-2.5 py-1.5 font-mono text-[11px] text-[#c7d1e6]">
+                        {credentials.gateQrToken}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-[11px] text-[#c7d1e6]">
+                        {credentialsError ||
+                          "Mã QR cổng sẽ được cấp khi hợp đồng đã check-in và trong giờ hoạt động của cơ sở."}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {agreementId && (
+                      <button
+                        type="button"
+                        onClick={() => fetchCredentials(agreementId)}
+                        disabled={credentialsLoading}
+                        className="flex items-center gap-1 rounded-[10px] border border-white/20 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white hover:bg-white/20 disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">refresh</span>
+                        Làm mới QR
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!credentials || isCredentialSuspended}
+                      onClick={handleUnlock}
+                      className="flex items-center gap-1.5 rounded-[10px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#174fc7] disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {unlocking ? "lock_open" : "lock"}
+                      </span>
+                      {unlocking ? "Đang mở..." : "Mở khóa kho"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,8 +339,9 @@ function AccessControl() {
                   )}
                   <button
                     type="button"
+                    disabled={!agreementId}
                     onClick={() => setShowAddMemberForm((v) => !v)}
-                    className="flex items-center gap-1 rounded-[10px] bg-[#1d5fe5] px-3.5 py-1.5 text-[12px] font-bold text-white hover:bg-[#174fc7]"
+                    className="flex items-center gap-1 rounded-[10px] bg-[#1d5fe5] px-3.5 py-1.5 text-[12px] font-bold text-white hover:bg-[#174fc7] disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[16px]">
                       {showAddMemberForm ? "close" : "person_add"}
@@ -378,7 +386,7 @@ function AccessControl() {
                         type="text"
                         value={memberFullName}
                         onChange={(e) => setMemberFullName(e.target.value)}
-                        placeholder="VD: Nguyễn Phương Thảo"
+                        placeholder="Nhập họ và tên..."
                         className="w-full rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[12px] outline-none focus:border-[#1d5fe5]"
                       />
                     </div>
@@ -392,11 +400,11 @@ function AccessControl() {
                         onChange={(e) => setMemberRelationship(e.target.value)}
                         className="w-full rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[12px] outline-none focus:border-[#1d5fe5]"
                       >
-                        <option value="Người thân">Người thân / Gia đình</option>
-                        <option value="Đối tác">Đối tác / Đồng nghiệp</option>
-                        <option value="Nhân viên giao nhận">Nhân viên vận chuyển / Giao nhận</option>
-                        <option value="Kỹ thuật / Bảo trì">Kỹ thuật / Bảo trì riêng</option>
-                        <option value="Khác">Khác</option>
+                        {relationshipOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -408,7 +416,7 @@ function AccessControl() {
                         type="text"
                         value={memberIdentity}
                         onChange={(e) => setMemberIdentity(e.target.value)}
-                        placeholder="VD: 079099001234"
+                        placeholder="Nhập số CCCD / CMND..."
                         className="w-full rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[12px] outline-none focus:border-[#1d5fe5]"
                       />
                     </div>
@@ -421,7 +429,7 @@ function AccessControl() {
                         type="tel"
                         value={memberPhone}
                         onChange={(e) => setMemberPhone(e.target.value)}
-                        placeholder="VD: 0909123456"
+                        placeholder="Nhập số điện thoại..."
                         className="w-full rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[12px] outline-none focus:border-[#1d5fe5]"
                       />
                     </div>
@@ -555,71 +563,88 @@ function AccessControl() {
           <aside className="space-y-6">
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
-                Cổng vào &amp; Thang máy
-                <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d5fe5]">
-                  Trạm #04
-                </span>
+                Thông tin điểm truy cập
+                {selectedRental?.agreementNo && (
+                  <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d5fe5]">
+                    {selectedRental.agreementNo}
+                  </span>
+                )}
               </div>
 
-              <div className="mt-3 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
-                    directions_car
-                  </span>
-                  <div className="text-[12px] font-semibold text-[#0b1c30]">Barrier Cổng Nam</div>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-md bg-[#1d5fe5] px-3 py-1 text-[11px] font-bold text-white hover:bg-[#174fc7]"
-                >
-                  Mở barrier
-                </button>
-              </div>
+              {selectedRental ? (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
+                        location_on
+                      </span>
+                      <div>
+                        <div className="text-[12px] font-semibold text-[#0b1c30]">
+                          {selectedRental.facilityName}
+                        </div>
+                        <div className="text-[10px] text-[#8996a9]">
+                          {selectedRental.facilityAddress || selectedRental.facilityCity}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="mt-2 flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
-                    elevator
-                  </span>
-                  <div className="text-[12px] font-semibold text-[#0b1c30]">Thang máy Tầng 2</div>
+                  <div className="flex items-center justify-between rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-[#3a475a]">
+                        door_sliding
+                      </span>
+                      <div>
+                        <div className="text-[12px] font-semibold text-[#0b1c30]">
+                          Kho #{selectedRental.unitCode}
+                        </div>
+                        <div className="text-[10px] text-[#8996a9]">
+                          {[selectedRental.floorLabel, selectedRental.zoneLabel]
+                            .filter(Boolean)
+                            .join(" • ") || selectedRental.unitTypeName}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[16px] text-[#0e7b4c]">
+                      check_circle
+                    </span>
+                  </div>
                 </div>
-                <span className="material-symbols-outlined text-[16px] text-[#0e7b4c]">
-                  check_circle
-                </span>
-              </div>
+              ) : (
+                <div className="mt-3 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-4 text-center text-[11px] text-[#8996a9]">
+                  Chưa có thông tin điểm truy cập.
+                </div>
+              )}
             </div>
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
-                Nhật ký mở khóa
-                <span className="text-[10px] font-semibold text-[#8996a9]">Trực tiếp</span>
+                Hoạt động truy cập &amp; Ủy quyền
+                <span className="text-[10px] font-semibold text-[#8996a9]">
+                  {accessLogs.length} sự kiện
+                </span>
               </div>
 
               <div className="mt-3 space-y-3">
-                {accessLogs.map((log) => (
-                  <div key={log.title + log.time} className="flex gap-2.5">
-                    <span
-                      className="mt-1 h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: log.dot }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-[12px] font-semibold text-[#0b1c30]">
-                          {log.title}
-                        </span>
-                        <span className="shrink-0 text-[10px] text-[#8996a9]">{log.time}</span>
+                {accessLogs.length === 0 ? (
+                  <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-4 text-center text-[11px] text-[#8996a9]">
+                    Chưa có hoạt động nào được ghi nhận.
+                  </div>
+                ) : (
+                  accessLogs.map((log) => (
+                    <div key={log.id} className="flex gap-2.5">
+                      <span
+                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: log.dot }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-semibold text-[#0b1c30]">{log.title}</div>
+                        <div className="text-[10px] text-[#8996a9]">{log.time}</div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
-
-              <button
-                type="button"
-                className="mt-3 w-full rounded-[10px] border border-[#dfe7f5] py-2 text-[12px] font-semibold text-[#3a475a] hover:bg-[#f8faff]"
-              >
-                Xem tất cả lịch sử
-              </button>
             </div>
 
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
@@ -647,7 +672,7 @@ function AccessControl() {
                   <div>
                     <div className="text-[12px] font-semibold text-[#0b1c30]">Sai mã PIN 5 lần</div>
                     <div className="text-[10px] text-[#8996a9]">
-                      Khóa 30 phút và ghi hình camera
+                      Khóa 15 phút theo chính sách bảo mật
                     </div>
                   </div>
                   <input
@@ -661,10 +686,10 @@ function AccessControl() {
                 <label className="flex cursor-pointer items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
                   <div>
                     <div className="text-[12px] font-semibold text-[#0b1c30]">
-                      Mở ngoài giờ (22h – 06h)
+                      Mở ngoài giờ hoạt động cơ sở
                     </div>
                     <div className="text-[10px] text-[#8996a9]">
-                      Cảnh báo trung tâm an ninh 24/7
+                      Cảnh báo trung tâm an ninh
                     </div>
                   </div>
                   <input

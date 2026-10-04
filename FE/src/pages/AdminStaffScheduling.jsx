@@ -29,6 +29,7 @@ function AdminStaffScheduling() {
     shiftLegend,
     attendanceLegend,
     fieldTasks,
+    tasksLoading,
     updatingTaskId,
     handleUpdateFieldTaskStatus,
     taskProgress,
@@ -199,56 +200,66 @@ function AdminStaffScheduling() {
           </div>
 
           <div className="mt-3 space-y-2.5">
-            {fieldTasks.map((task) => (
-              <div key={task.id} className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-1.5">
-                    <span className={`material-symbols-outlined mt-0.5 text-[15px] ${task.status === "done" ? "text-[#0e7b4c]" : "text-[#8996a9]"}`}>
-                      {TASK_STATUS_ICON[task.status]}
-                    </span>
-                    <div className="text-[11px] font-semibold">{task.title}</div>
-                  </div>
-                  <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-bold ${TASK_STATUS_BADGE[task.status]}`}>
-                    {task.statusLabel}
-                  </span>
-                </div>
-                <div className="mt-1 pl-[22px] text-[9px] text-[#8996a9]">{task.note}</div>
-                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 pl-[22px] text-[10px] text-[#3a475a]">
-                  <div>
-                    <span className="font-semibold text-[#1d5fe5]">{task.assignee}</span>
-                    <span> • {task.detail}</span>
-                  </div>
-                  {task.isRealTask && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "in_progress"}
-                        onClick={() => handleUpdateFieldTaskStatus(task.id, "in_progress", 50)}
-                        className="rounded border border-[#1d5fe5] bg-white px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5] hover:bg-[#eef4ff] disabled:opacity-50"
-                      >
-                        In Progress
-                      </button>
-                      <button
-                        type="button"
-                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "done"}
-                        onClick={() => handleUpdateFieldTaskStatus(task.id, "completed", 100)}
-                        className="rounded border border-[#0e7b4c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c] hover:bg-[#e7f8ee] disabled:opacity-50"
-                      >
-                        Completed
-                      </button>
-                      <button
-                        type="button"
-                        disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "blocked"}
-                        onClick={() => handleUpdateFieldTaskStatus(task.id, "blocked", task.progressPercent || 0)}
-                        className="rounded border border-[#c0362c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#c0362c] hover:bg-[#fdecec] disabled:opacity-50"
-                      >
-                        Blocked
-                      </button>
-                    </div>
-                  )}
-                </div>
+            {tasksLoading ? (
+              <div className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-4 text-center text-[11px] text-[#58657a]">
+                Đang tải danh sách nhiệm vụ trong ca trực...
               </div>
-            ))}
+            ) : fieldTasks.length === 0 ? (
+              <div className="rounded-[10px] border border-dashed border-[#dfe7f5] p-4 text-center text-[11px] text-[#8996a9]">
+                Hiện không có nhiệm vụ nào được phân công trong ca trực.
+              </div>
+            ) : (
+              fieldTasks.map((task) => (
+                <div key={task.id} className="rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-1.5">
+                      <span className={`material-symbols-outlined mt-0.5 text-[15px] ${task.status === "done" ? "text-[#0e7b4c]" : "text-[#8996a9]"}`}>
+                        {TASK_STATUS_ICON[task.status]}
+                      </span>
+                      <div className="text-[11px] font-semibold">{task.title}</div>
+                    </div>
+                    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-bold ${TASK_STATUS_BADGE[task.status]}`}>
+                      {task.statusLabel}
+                    </span>
+                  </div>
+                  <div className="mt-1 pl-[22px] text-[9px] text-[#8996a9]">{task.note}</div>
+                  <div className="mt-1 flex flex-wrap items-center justify-between gap-2 pl-[22px] text-[10px] text-[#3a475a]">
+                    <div>
+                      <span className="font-semibold text-[#1d5fe5]">{task.assignee}</span>
+                      <span> • {task.detail}</span>
+                    </div>
+                    {task.isRealTask && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "in_progress"}
+                          onClick={() => handleUpdateFieldTaskStatus(task.id, "in_progress", 50)}
+                          className="rounded border border-[#1d5fe5] bg-white px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5] hover:bg-[#eef4ff] disabled:opacity-50"
+                        >
+                          In Progress
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "done"}
+                          onClick={() => handleUpdateFieldTaskStatus(task.id, "completed", 100)}
+                          className="rounded border border-[#0e7b4c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c] hover:bg-[#e7f8ee] disabled:opacity-50"
+                        >
+                          Completed
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Number(updatingTaskId) === Number(task.id) || task.rawStatus === "blocked"}
+                          onClick={() => handleUpdateFieldTaskStatus(task.id, "blocked", task.progressPercent || 0)}
+                          className="rounded border border-[#c0362c] bg-white px-2 py-0.5 text-[9px] font-bold text-[#c0362c] hover:bg-[#fdecec] disabled:opacity-50"
+                        >
+                          Blocked
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[10px] text-[#8996a9]">

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getUnitTabs,
-  getSupportUnits,
   getTicketTabs,
   getTicketCategories,
   getTicketStatusSteps,
@@ -37,7 +36,7 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// Application layer: encapsulates Support page state, filtering and API wiring.
+// Application layer: encapsulates Support page state, filtering and API wiring without hardcoded fallback records.
 export function useSupport() {
   const categories = useMemo(() => getTicketCategories(), []);
   const statusSteps = useMemo(() => getTicketStatusSteps(), []);
@@ -46,6 +45,7 @@ export function useSupport() {
   const [rentals, setRentals] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
+  const [unitsError, setUnitsError] = useState("");
 
   // Support tickets list state (GET /api/customer/support-tickets)
   const [tickets, setTickets] = useState([]);
@@ -86,17 +86,31 @@ export function useSupport() {
   const [ratingError, setRatingError] = useState("");
   const [ratingSuccess, setRatingSuccess] = useState("");
 
-  // Load rentals & facilities
+  // Load rentals & facilities from Backend
   useEffect(() => {
     let active = true;
     setUnitsLoading(true);
+    setUnitsError("");
 
     Promise.allSettled([rentalService.getMyRentals(), facilityService.getFacilities()])
       .then(([rentalsRes, facilitiesRes]) => {
         if (!active) return;
-        const rentalList = rentalsRes.status === "fulfilled" && Array.isArray(rentalsRes.value) ? rentalsRes.value : [];
+        const rentalList =
+          rentalsRes.status === "fulfilled" && Array.isArray(rentalsRes.value)
+            ? rentalsRes.value
+            : [];
         const facilityList =
-          facilitiesRes.status === "fulfilled" && Array.isArray(facilitiesRes.value) ? facilitiesRes.value : [];
+          facilitiesRes.status === "fulfilled" && Array.isArray(facilitiesRes.value)
+            ? facilitiesRes.value
+            : [];
+
+        if (rentalsRes.status === "rejected" && facilitiesRes.status === "rejected") {
+          setUnitsError(
+            rentalsRes.reason?.message ||
+              facilitiesRes.reason?.message ||
+              "Không thể tải dữ liệu kho và cơ sở từ hệ thống."
+          );
+        }
 
         setRentals(rentalList);
         setFacilities(facilityList);
@@ -106,8 +120,6 @@ export function useSupport() {
         } else if (facilityList.length > 0) {
           const firstFacId = facilityList[0].id ?? facilityList[0].facilityId;
           setSelectedTarget(`facility:${firstFacId}`);
-        } else {
-          setSelectedTarget("facility:1");
         }
       })
       .finally(() => {
@@ -119,7 +131,7 @@ export function useSupport() {
     };
   }, []);
 
-  // Load support tickets list
+  // Load support tickets list from Backend
   const fetchTickets = useCallback(async () => {
     setTicketsLoading(true);
     setTicketsError("");
@@ -137,7 +149,7 @@ export function useSupport() {
     fetchTickets();
   }, [fetchTickets]);
 
-  // Target dropdown options (rented units + facilities)
+  // Target dropdown options built strictly from real rentals + real facilities
   const targetOptions = useMemo(() => {
     const opts = [];
     rentals.forEach((r) => {
@@ -158,7 +170,7 @@ export function useSupport() {
       if (!fid) return;
       opts.push({
         value: `facility:${fid}`,
-        label: `Hỗ trợ chung tại cơ sở: ${f.name || f.code}${f.city ? ` (${f.city})` : ""}`,
+        label: `Hỗ trợ tại cơ sở: ${f.name || f.code}${f.city ? ` (${f.city})` : ""}`,
         facilityId: fid,
         agreementId: null,
         storageUnitId: null,
@@ -166,33 +178,21 @@ export function useSupport() {
         facilityName: f.name || f.code,
       });
     });
-    if (opts.length === 0) {
-      opts.push({
-        value: "facility:1",
-        label: "Cơ sở An Phú Central (Mặc định)",
-        facilityId: 1,
-        agreementId: null,
-        storageUnitId: null,
-        unitCode: null,
-        facilityName: "An Phú Central",
-      });
-    }
     return opts;
   }, [rentals, facilities]);
 
-  // Map rentals to unit cards (fallback to static units only when user has no rentals loaded)
+  // Map real rentals to unit cards (no hardcoded fallback units)
   const units = useMemo(() => {
-    if (rentals.length === 0) {
-      return getSupportUnits();
-    }
     return rentals.map((r) => {
       const isRenew =
         (r.status || "").toLowerCase() === "expiring_soon" ||
         (r.daysUntilExpiry !== undefined && r.daysUntilExpiry <= 7);
       return {
-        id: r.unitCode || `HĐ-${r.agreementId}`,
+        id: r.unitCode || `${r.agreementNo || r.agreementId}`,
         agreementId: r.agreementId,
+        agreementNo: r.agreementNo,
         facilityId: r.facilityId,
+        facilityName: r.facilityName,
         storageUnitId: r.storageUnitId,
         location:
           [r.floorLabel, r.zoneLabel, r.facilityName].filter(Boolean).join(" • ") ||
@@ -203,21 +203,19 @@ export function useSupport() {
         warning: r.hasOverdueDebt
           ? "Hợp đồng đang có khoản thanh toán quá hạn. Vui lòng kiểm tra hóa đơn."
           : isRenew
-          ? `Vui lòng gia hạn trước ngày ${r.endDate} để tránh gián đoạn quyền truy cập mã PIN.`
+          ? `Hợp đồng sắp hết hạn vào ngày ${r.endDate}. Vui lòng gia hạn để tránh khóa mã PIN.`
           : null,
-        size: r.dimensions || r.unitTypeName || `${r.areaM2 || "-"} m²`,
+        size: r.dimensions || r.unitTypeName || (r.areaM2 ? `${r.areaM2} m²` : "-"),
         sizeNote: r.unitTypeName
           ? `${r.unitTypeName}${r.areaM2 ? ` (~${r.areaM2}m²)` : ""}`
-          : "Kho lưu trữ tiêu chuẩn",
-        climate: "Kiểm soát 24/7",
+          : "",
+        zoneInfo: [r.zoneLabel, r.floorLabel].filter(Boolean).join(" • ") || r.facilityCity || "-",
         contractLabel: "Thời hạn hợp đồng",
         contractDate: r.endDate ? `Hạn đến ${r.endDate}` : "-",
         contractLeft: r.daysUntilExpiry !== undefined ? `Còn ${r.daysUntilExpiry} ngày` : "",
         payment: r.monthlyRate
           ? `${new Intl.NumberFormat("vi-VN").format(r.monthlyRate)} đ/tháng`
           : "",
-        primaryAction: "Xem mã PIN / Khóa điện tử",
-        footerLinks: ["Báo cáo sự cố kho", "Xem hóa đơn"],
       };
     });
   }, [rentals]);
@@ -254,7 +252,7 @@ export function useSupport() {
     [enrichedTickets, activeTicketTab]
   );
 
-  // Summary metrics for top banner
+  // Summary metrics for top banner derived strictly from real API data
   const ticketSummaryStats = useMemo(() => {
     const activeCount = enrichedTickets.filter(
       (t) => t.stage === "Reported" || t.stage === "Investigating" || t.stage === "Assessed"
@@ -263,13 +261,31 @@ export function useSupport() {
     const inProgressCount = enrichedTickets.filter(
       (t) => t.stage === "Investigating" || t.stage === "Assessed"
     ).length;
+    const resolvedCount = enrichedTickets.filter((t) => t.stage === "Resolved").length;
+    const closedCount = enrichedTickets.filter((t) => t.stage === "Closed").length;
+    const activeUnitsCount = units.filter((u) => u.status === "active").length;
+    const renewUnits = units.filter((u) => u.status === "renew");
+    const primaryFacilityName =
+      rentals[0]?.facilityName ||
+      facilities[0]?.name ||
+      facilities[0]?.code ||
+      enrichedTickets[0]?.facilityName ||
+      "";
+
     return {
       total: enrichedTickets.length,
       activeCount,
       reportedCount,
       inProgressCount,
+      resolvedCount,
+      closedCount,
+      totalUnits: units.length,
+      activeUnitsCount,
+      renewUnitsCount: renewUnits.length,
+      firstRenewUnit: renewUnits[0] || null,
+      primaryFacilityName,
     };
-  }, [enrichedTickets]);
+  }, [enrichedTickets, units, rentals, facilities]);
 
   // Pre-select a rented unit in the support form
   const selectUnitForSupport = useCallback((unit) => {
@@ -494,6 +510,7 @@ export function useSupport() {
     activeTicketTab,
     setActiveTicketTab,
     unitsLoading,
+    unitsError,
     filteredUnits,
     ticketsLoading,
     ticketsError,

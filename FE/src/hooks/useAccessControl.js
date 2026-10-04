@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  getWallets,
-  getGuestPins,
-  getAccessControlLogs,
-} from "../data/accessControlRepository";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getRelationshipOptions } from "../data/accessControlRepository";
 import rentalService from "../api/rentalService";
 
 function formatDateDisplay(isoString) {
@@ -17,25 +13,40 @@ function formatDateDisplay(isoString) {
   });
 }
 
-// Application layer: encapsulates AccessControl (PIN, smart lock & authorized access members) page state and data wiring.
-export function useAccessControl() {
-  const wallets = getWallets();
-  const guestPins = getGuestPins();
-  const accessLogs = getAccessControlLogs();
+function formatDateTimeDisplay(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return String(isoString);
+  return d.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
-  const [activeUnit, setActiveUnit] = useState("main");
+// Application layer: encapsulates AccessControl (PIN, Gate QR & Authorized Access Members) without hardcoded mock data.
+export function useAccessControl() {
+  const relationshipOptions = useMemo(() => getRelationshipOptions(), []);
+
   const [showPin, setShowPin] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [alerts, setAlerts] = useState({ doorOpen: true, wrongPin: true, afterHours: true });
 
   // Rentals & selected agreementId
   const [rentals, setRentals] = useState([]);
+  const [rentalsLoading, setRentalsLoading] = useState(true);
   const [agreementId, setAgreementId] = useState(null);
   const [credentials, setCredentials] = useState(null);
-  const [credentialsLoading, setCredentialsLoading] = useState(true);
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
   const [credentialsError, setCredentialsError] = useState("");
   const [pinChanging, setPinChanging] = useState(false);
   const [pinChangeError, setPinChangeError] = useState("");
+  const [pinChangeSuccess, setPinChangeSuccess] = useState("");
+
+  // Handover record (GET /api/customer/rentals/{agreementId}/handover)
+  const [handoverRecord, setHandoverRecord] = useState(null);
 
   // Authorized Access Members state (GET / POST / DELETE /api/customer/rentals/{agreementId}/authorized-members)
   const [authorizedMembers, setAuthorizedMembers] = useState([]);
@@ -59,7 +70,7 @@ export function useAccessControl() {
   // 1. Load customer's active rentals on mount
   useEffect(() => {
     let active = true;
-    setCredentialsLoading(true);
+    setRentalsLoading(true);
     setCredentialsError("");
 
     rentalService
@@ -72,7 +83,6 @@ export function useAccessControl() {
           validList.find((r) => (r.status || "").toLowerCase() !== "ended") || validList[0];
         if (!primary) {
           setCredentialsError("Bạn chưa có hợp đồng thuê kho nào đang hoạt động.");
-          setCredentialsLoading(false);
           return;
         }
         setAgreementId(primary.agreementId);
@@ -80,8 +90,10 @@ export function useAccessControl() {
       .catch((err) => {
         if (active) {
           setCredentialsError(err?.message || "Không thể tải danh sách hợp đồng thuê kho.");
-          setCredentialsLoading(false);
         }
+      })
+      .finally(() => {
+        if (active) setRentalsLoading(false);
       });
 
     return () => {
@@ -90,48 +102,95 @@ export function useAccessControl() {
   }, []);
 
   // 2. Fetch access credentials & authorized members whenever agreementId changes
-  const fetchAuthorizedMembers = useCallback(async (targetAgreementId) => {
-    const id = targetAgreementId || agreementId;
-    if (!id) return;
-    setMembersLoading(true);
-    setMembersError("");
-    try {
-      const list = await rentalService.getAuthorizedMembers(id);
-      setAuthorizedMembers(Array.isArray(list) ? list : []);
-    } catch (err) {
-      setMembersError(err?.message || "Không thể tải danh sách người được ủy quyền.");
-    } finally {
-      setMembersLoading(false);
-    }
-  }, [agreementId]);
+  const fetchAuthorizedMembers = useCallback(
+    async (targetAgreementId) => {
+      const id = targetAgreementId || agreementId;
+      if (!id) return;
+      setMembersLoading(true);
+      setMembersError("");
+      try {
+        const list = await rentalService.getAuthorizedMembers(id);
+        setAuthorizedMembers(Array.isArray(list) ? list : []);
+      } catch (err) {
+        setMembersError(err?.message || "Không thể tải danh sách người được ủy quyền.");
+      } finally {
+        setMembersLoading(false);
+      }
+    },
+    [agreementId]
+  );
+
+  const fetchCredentials = useCallback(
+    async (targetAgreementId) => {
+      const id = targetAgreementId || agreementId;
+      if (!id) return;
+      setCredentialsLoading(true);
+      setCredentialsError("");
+      try {
+        const data = await rentalService.getAccessCredentials(id);
+        setCredentials(data);
+      } catch (err) {
+        setCredentials(null);
+        setCredentialsError(err?.message || "Không thể tải mã truy cập.");
+      } finally {
+        setCredentialsLoading(false);
+      }
+    },
+    [agreementId]
+  );
 
   useEffect(() => {
     if (!agreementId) return;
-    let active = true;
-
-    setCredentialsLoading(true);
-    setCredentialsError("");
-    rentalService
-      .getAccessCredentials(agreementId)
-      .then((data) => {
-        if (active) setCredentials(data);
-      })
-      .catch((err) => {
-        if (active) setCredentialsError(err?.message || "Không thể tải mã truy cập.");
-      })
-      .finally(() => {
-        if (active) setCredentialsLoading(false);
-      });
-
+    fetchCredentials(agreementId);
     fetchAuthorizedMembers(agreementId);
+    rentalService
+      .getHandoverRecord(agreementId)
+      .then((rec) => setHandoverRecord(rec))
+      .catch(() => setHandoverRecord(null));
+  }, [agreementId, fetchCredentials, fetchAuthorizedMembers]);
 
-    return () => {
-      active = false;
-    };
-  }, [agreementId, fetchAuthorizedMembers]);
+  const selectedRental = useMemo(
+    () => rentals.find((r) => Number(r.agreementId) === Number(agreementId)) || rentals[0] || null,
+    [rentals, agreementId]
+  );
 
-  const selectedRental =
-    rentals.find((r) => Number(r.agreementId) === Number(agreementId)) || rentals[0] || null;
+  // Build real access & authorization activity logs from Backend data
+  const accessLogs = useMemo(() => {
+    const logs = [];
+    if (credentials?.qrExpiresAt) {
+      logs.push({
+        id: `qr-${credentials.agreementId}`,
+        title: `Cấp mã QR cổng (${credentials.facilityName || selectedRental?.facilityName || ""})`,
+        time: `Hết hạn: ${formatDateTimeDisplay(credentials.qrExpiresAt)}`,
+        dot: "#2dd4a0",
+      });
+    }
+    authorizedMembers.forEach((m) => {
+      logs.push({
+        id: `member-${m.id}`,
+        title: `Ủy quyền: ${m.fullName} (${m.relationshipToCustomer || "Khách"})`,
+        time: formatDateTimeDisplay(m.createdAt || m.validFrom),
+        dot: "#1d5fe5",
+      });
+    });
+    if (handoverRecord?.handoverTime || selectedRental?.checkedInAt) {
+      logs.push({
+        id: `checkin-${selectedRental?.agreementId}`,
+        title: `Check-in nhận kho #${selectedRental?.unitCode || credentials?.unitCode || ""}`,
+        time: formatDateTimeDisplay(handoverRecord?.handoverTime || selectedRental?.checkedInAt),
+        dot: "#0e7b4c",
+      });
+    }
+    if (selectedRental?.startDate) {
+      logs.push({
+        id: `start-${selectedRental.agreementId}`,
+        title: `Kích hoạt hợp đồng #${selectedRental.agreementNo || selectedRental.agreementId}`,
+        time: `${selectedRental.startDate}`,
+        dot: "#8996a9",
+      });
+    }
+    return logs;
+  }, [credentials, authorizedMembers, handoverRecord, selectedRental]);
 
   const handleUnlock = () => {
     setUnlocking(true);
@@ -142,9 +201,11 @@ export function useAccessControl() {
     if (!agreementId) return;
     setPinChanging(true);
     setPinChangeError("");
+    setPinChangeSuccess("");
     try {
       const res = await rentalService.changePin(agreementId, { currentPin, newPin });
       setCredentials((prev) => (prev ? { ...prev, keypadPin: newPin } : prev));
+      setPinChangeSuccess(res?.message || "Đã cập nhật mã PIN thành công.");
       return res;
     } catch (err) {
       setPinChangeError(err?.message || "Đổi mã PIN thất bại. Vui lòng thử lại.");
@@ -239,11 +300,8 @@ export function useAccessControl() {
   const toggleAlert = (key) => setAlerts((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return {
-    wallets,
-    guestPins,
+    relationshipOptions,
     accessLogs,
-    activeUnit,
-    setActiveUnit,
     showPin,
     setShowPin,
     unlocking,
@@ -253,15 +311,19 @@ export function useAccessControl() {
 
     // Rentals & Credentials
     rentals,
+    rentalsLoading,
     agreementId,
     setAgreementId,
     selectedRental,
     credentials,
     credentialsLoading,
     credentialsError,
+    fetchCredentials,
     pinChanging,
     pinChangeError,
+    pinChangeSuccess,
     handleChangePin,
+    handoverRecord,
 
     // Authorized Access Members
     authorizedMembers,
@@ -287,5 +349,6 @@ export function useAccessControl() {
     revokingMemberId,
     handleRevokeMember,
     formatDateDisplay,
+    formatDateTimeDisplay,
   };
 }
