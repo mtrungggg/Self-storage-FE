@@ -191,5 +191,6 @@ export function useSupport() {
     ticketsError,
     addTicket,
     tickets,
+    updateTicket: (ticket) => setTickets((current) => current.map((item) => item.id === ticket.id ? toTicketView(ticket) : item)),
   };
 }

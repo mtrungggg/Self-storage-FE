@@ -25,7 +25,7 @@ function Attachments({ items }) {
   );
 }
 
-export default function SupportTicketDetail({ ticketId, onClose }) {
+export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated }) {
   const dialogRef = useRef(null);
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,10 +36,51 @@ export default function SupportTicketDetail({ ticketId, onClose }) {
   const [sendError, setSendError] = useState("");
   const [sendSuccess, setSendSuccess] = useState(false);
   const sendLock = useRef(false);
+  const rateLock = useRef(false);
+  const [score, setScore] = useState("");
+  const [comment, setComment] = useState("");
+  const [ratingBusy, setRatingBusy] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [ratingSaved, setRatingSaved] = useState(false);
+  const [refreshError, setRefreshError] = useState("");
+
+  async function refreshTicket() {
+    setRefreshError("");
+    try {
+      const updated = await supportService.getTicketDetail(ticketId);
+      setTicket(updated);
+      onTicketUpdated?.(updated);
+    } catch {
+      setRefreshError("Your rating was saved, but ticket details could not be refreshed.");
+    }
+  }
+
+  async function handleRate(event) {
+    event.preventDefault();
+    if (rateLock.current || ratingSaved || ticket?.rating || sendLock.current) return;
+    setRatingError("");
+    const value = Number(score);
+    if (!Number.isInteger(value) || value < 1 || value > 5) {
+      setRatingError("Please select a rating from 1 to 5.");
+      return;
+    }
+    rateLock.current = true;
+    setRatingBusy(true);
+    try {
+      await supportService.confirmAndRate(ticketId, { score: value, comment: comment.trim() });
+      setRatingSaved(true);
+      await refreshTicket();
+    } catch (err) {
+      setRatingError(err.status === 404 ? "This ticket could not be found." : err.message || (err.status === 409 ? "This ticket cannot be confirmed or has already been rated." : "Unable to submit your rating. Please try again."));
+    } finally {
+      rateLock.current = false;
+      setRatingBusy(false);
+    }
+  }
 
   async function handleSend(event) {
     event.preventDefault();
-    if (sendLock.current) return;
+    if (sendLock.current || rateLock.current) return;
     setSendError("");
     setSendSuccess(false);
     const body = reply.trim();
@@ -127,7 +168,7 @@ export default function SupportTicketDetail({ ticketId, onClose }) {
                 id="ticket-reply"
                 rows={3}
                 required
-                disabled={sending}
+                disabled={sending || ratingBusy}
                 value={reply}
                 onChange={(event) => { setReply(event.target.value); setSendSuccess(false); setSendError(""); }}
                 placeholder="Write your message..."
@@ -135,13 +176,36 @@ export default function SupportTicketDetail({ ticketId, onClose }) {
               />
               {sendError && <p role="alert" className="text-red-600">{sendError}</p>}
               {sendSuccess && <p role="status" className="text-[#0e7b4c]">Message sent.</p>}
-              <button type="submit" disabled={sending || !reply.trim()} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="submit" disabled={sending || ratingBusy || !reply.trim()} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
                 {sending ? "Sending..." : "Send message"}
               </button>
             </form>
           </section>
           {(ticket.resolution || ticket.resolvedAt) && <section><h3 className="font-semibold">Resolution</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.resolution || "—"}</p><p className="mt-1 text-xs text-[#58657a]">Resolved: {formatDate(ticket.resolvedAt)}</p></section>}
           {ticket.rating && <section><h3 className="font-semibold">Rating: {ticket.rating.score}</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.rating.comment}</p><p className="mt-1 text-xs text-[#58657a]">{formatDate(ticket.rating.createdAt)}</p></section>}
+          {ratingSaved && <p role="status" className="text-[#0e7b4c]">Completion confirmed. Thank you for your rating.</p>}
+          {refreshError && <div><p role="alert" className="text-red-600">{refreshError}</p><button type="button" onClick={refreshTicket} className="mt-2 text-[#1d5fe5] underline">Refresh details</button></div>}
+          {!ticket.rating && !ratingSaved && (
+            <form onSubmit={handleRate} aria-busy={ratingBusy} className="space-y-3 border-t border-[#dfe7f5] pt-4">
+              <h3 className="font-semibold">Confirm completion and rate</h3>
+              <p className="text-[#58657a]">Confirm that your issue has been resolved and rate the support you received.</p>
+              <fieldset disabled={ratingBusy || sending} className="space-y-3">
+                <div>
+                  <label htmlFor="ticket-score" className="mb-1 block font-semibold">Rating *</label>
+                  <select id="ticket-score" required value={score} onChange={(event) => setScore(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2">
+                    <option value="">Select a rating</option>
+                    {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} / 5</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="ticket-rating-comment" className="mb-1 block font-semibold">Comment (optional)</label>
+                  <textarea id="ticket-rating-comment" rows={3} value={comment} onChange={(event) => setComment(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3" />
+                </div>
+                {ratingError && <p role="alert" className="text-red-600">{ratingError}</p>}
+                <button type="submit" disabled={!score} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white disabled:opacity-50">{ratingBusy ? "Submitting..." : "Confirm and rate"}</button>
+              </fieldset>
+            </form>
+          )}
         </div>
       )}
     </dialog>

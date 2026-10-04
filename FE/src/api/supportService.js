@@ -8,6 +8,9 @@ function unwrap(response) {
 }
 
 export default {
+  async confirmAndRate(id, { score, comment }) {
+    return unwrap(await apiClient.post(`/customer/support-tickets/${encodeURIComponent(id)}/confirm-and-rate`, { score, comment }));
+  },
   async sendMessage(id, { body, attachments = [] }) {
     const message = unwrap(await apiClient.post(`/customer/support-tickets/${encodeURIComponent(id)}/messages`, {
       body,

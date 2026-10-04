@@ -37,6 +37,7 @@ function Support() {
     ticketsLoading,
     ticketsError,
     addTicket,
+    updateTicket,
   } = useSupport();
 
   const handleSubmit = (e) => {
@@ -352,7 +353,7 @@ function Support() {
 
       </main>
 
-      {detailTicketId != null && <SupportTicketDetail key={detailTicketId} ticketId={detailTicketId} onClose={() => setDetailTicketId(null)} />}
+      {detailTicketId != null && <SupportTicketDetail key={detailTicketId} ticketId={detailTicketId} onClose={() => setDetailTicketId(null)} onTicketUpdated={updateTicket} />}
       <Footer />
     </div>
   );
