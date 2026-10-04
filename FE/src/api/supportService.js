@@ -8,6 +8,11 @@ function unwrap(response) {
 }
 
 export default {
+  async getTicketDetail(id) {
+    const ticket = unwrap(await apiClient.get(`/customer/support-tickets/${encodeURIComponent(id)}`));
+    if (!ticket || ticket.id == null) throw new Error("The server did not return ticket details.");
+    return ticket;
+  },
   async createTicket(payload) {
     const ticket = unwrap(await apiClient.post("/customer/support-tickets", payload));
     if (!ticket || ticket.id == null) throw new Error("The server did not return the created ticket.");

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -6,6 +8,7 @@ import PageBackground from "../components/PageBackground";
 
 function Support() {
   const navigate = useNavigate();
+  const [detailTicketId, setDetailTicketId] = useState(null);
   const {
     unitTabs,
     ticketTabs,
@@ -337,6 +340,7 @@ function Support() {
 
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
                       <span>{ticket.footer}</span>
+                      <button type="button" onClick={() => setDetailTicketId(ticket.id)} className="text-xs font-semibold text-[#1d5fe5] hover:underline">View details</button>
                       {ticket.eta && <span className="font-semibold text-[#0e7b4c]">{ticket.eta}</span>}
                     </div>
                   </div>
@@ -348,6 +352,7 @@ function Support() {
 
       </main>
 
+      {detailTicketId != null && <SupportTicketDetail key={detailTicketId} ticketId={detailTicketId} onClose={() => setDetailTicketId(null)} />}
       <Footer />
     </div>
   );
