@@ -8,6 +8,14 @@ function unwrap(response) {
 }
 
 export default {
+  async sendMessage(id, { body, attachments = [] }) {
+    const message = unwrap(await apiClient.post(`/customer/support-tickets/${encodeURIComponent(id)}/messages`, {
+      body,
+      attachments,
+    }));
+    if (!message || message.id == null) throw new Error("The server did not return the sent message.");
+    return message;
+  },
   async getTicketDetail(id) {
     const ticket = unwrap(await apiClient.get(`/customer/support-tickets/${encodeURIComponent(id)}`));
     if (!ticket || ticket.id == null) throw new Error("The server did not return ticket details.");

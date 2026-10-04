@@ -31,6 +31,39 @@ export default function SupportTicketDetail({ ticketId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const sendLock = useRef(false);
+
+  async function handleSend(event) {
+    event.preventDefault();
+    if (sendLock.current) return;
+    setSendError("");
+    setSendSuccess(false);
+    const body = reply.trim();
+    if (!body) {
+      setSendError("Please enter a message.");
+      return;
+    }
+    sendLock.current = true;
+    setSending(true);
+    try {
+      const message = await supportService.sendMessage(ticketId, { body, attachments: [] });
+      setTicket((current) => ({
+        ...current,
+        messages: [...(current.messages || []).filter((item) => item.id !== message.id), message],
+      }));
+      setReply("");
+      setSendSuccess(true);
+    } catch (err) {
+      setSendError(err.status === 404 ? "This ticket could not be found." : err.message || "Unable to send your message. Please try again.");
+    } finally {
+      sendLock.current = false;
+      setSending(false);
+    }
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -88,6 +121,24 @@ export default function SupportTicketDetail({ ticketId, onClose }) {
                 </li>)}
               </ol>
             )}
+            <form onSubmit={handleSend} className="mt-4 space-y-2" aria-busy={sending}>
+              <label htmlFor="ticket-reply" className="block font-semibold">Reply</label>
+              <textarea
+                id="ticket-reply"
+                rows={3}
+                required
+                disabled={sending}
+                value={reply}
+                onChange={(event) => { setReply(event.target.value); setSendSuccess(false); setSendError(""); }}
+                placeholder="Write your message..."
+                className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3 outline-none focus:border-[#1d5fe5] disabled:opacity-60"
+              />
+              {sendError && <p role="alert" className="text-red-600">{sendError}</p>}
+              {sendSuccess && <p role="status" className="text-[#0e7b4c]">Message sent.</p>}
+              <button type="submit" disabled={sending || !reply.trim()} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
+                {sending ? "Sending..." : "Send message"}
+              </button>
+            </form>
           </section>
           {(ticket.resolution || ticket.resolvedAt) && <section><h3 className="font-semibold">Resolution</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.resolution || "—"}</p><p className="mt-1 text-xs text-[#58657a]">Resolved: {formatDate(ticket.resolvedAt)}</p></section>}
           {ticket.rating && <section><h3 className="font-semibold">Rating: {ticket.rating.score}</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.rating.comment}</p><p className="mt-1 text-xs text-[#58657a]">{formatDate(ticket.rating.createdAt)}</p></section>}
