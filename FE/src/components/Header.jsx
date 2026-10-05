@@ -75,18 +75,13 @@ function Header({ active, showUserBadge = true }) {
               </Link>
             );
           })}
-          {active === "support" && (
-            <button className="rounded-md bg-[#0b1c30] px-3 py-2 text-[13px] font-bold text-white">Support</button>
-          )}
         </nav>
 
         <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
-          {active !== "support" && (
-            <Link to="/support" className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
+            <Link to="/support" aria-current={active === "support" ? "page" : undefined} className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>
               Support
             </Link>
-          )}
 
           {user ? (
             <div className="relative">
