@@ -37,7 +37,7 @@ function StaffDashboard() {
   return (
     <div className="relative min-h-screen text-[#0b1c30]">
       <PageBackground />
-      <div className="mx-auto flex max-w-[1320px] justify-end px-4 py-2 lg:px-6"><Link to="/staff-support-tickets" className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white">Support Tickets</Link></div>
+      <div className="mx-auto flex max-w-[1320px] justify-end px-4 py-2 lg:px-6"><Link to="/staff-move-outs" className="mr-3 rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-[#1d5fe5]">Move-out requests</Link><Link to="/staff-support-tickets" className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white">Support Tickets</Link></div>
       <header className="border-b border-[#e6ebf5] bg-white">
         <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex items-center gap-2">
