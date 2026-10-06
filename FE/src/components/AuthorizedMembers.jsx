@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import rentalService from "../api/rentalService";
+import AddAuthorizedMember from "./AddAuthorizedMember";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -41,5 +42,6 @@ export default function AuthorizedMembers({ agreementId, unitCode }) {
         </dl>
       </li>)}
     </ul>}
+    {!loading && !error && <AddAuthorizedMember agreementId={agreementId} onAdded={(member) => { setMembers((current) => [...current.filter((item) => item.id !== member.id), member]); }} />}
   </section>;
 }

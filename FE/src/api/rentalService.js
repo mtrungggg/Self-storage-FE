@@ -1,6 +1,12 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async addAuthorizedMember(agreementId, payload) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`, payload);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to add authorized member.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the authorized member.");
+    return res.data;
+  },
   async getAuthorizedMembers(agreementId) {
     const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`);
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load authorized members.");
