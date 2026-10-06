@@ -5,6 +5,7 @@ import { useAccessControl } from "../hooks/useAccessControl";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import AuthorizedMembers from "../components/AuthorizedMembers";
 
 function AccessControl() {
   const navigate = useNavigate();
@@ -203,6 +204,7 @@ function AccessControl() {
                   {credentials?.suspendedReason && <p role="alert" className="mt-2 text-sm text-red-600">{credentials.suspendedReason}</p>}
                 </aside>
               </div>
+              {selectedRentalId && <AuthorizedMembers key={selectedRentalId} agreementId={selectedRentalId} unitCode={currentUnitCode} />}
             </>
           )
         )}

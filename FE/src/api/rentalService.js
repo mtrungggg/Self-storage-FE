@@ -1,6 +1,13 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async getAuthorizedMembers(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load authorized members.");
+    if (res.data == null) return [];
+    if (!Array.isArray(res.data)) throw new Error("The server returned an invalid member list.");
+    return res.data;
+  },
   async renewAgreement(agreementId, renewalMonths) {
     if (!Number.isInteger(renewalMonths) || renewalMonths < 1 || renewalMonths > 12) throw new Error("Select 1–12 renewal months.");
     const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/renew`, { renewalMonths });
