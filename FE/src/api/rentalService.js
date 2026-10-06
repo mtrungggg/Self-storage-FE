@@ -1,6 +1,11 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async revokeAuthorizedMember(agreementId, memberId) {
+    const res = await apiClient.delete(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members/${encodeURIComponent(memberId)}`);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to revoke authorization.");
+    return res.data;
+  },
   async addAuthorizedMember(agreementId, payload) {
     const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`, payload);
     if (res?.success !== true) throw new Error(res?.message || "Unable to add authorized member.");
