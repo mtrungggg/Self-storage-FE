@@ -4,6 +4,7 @@ import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
 import MoveOutRequest from "../components/MoveOutRequest";
 import RefundPreview from "../components/RefundPreview";
+import RentalRenewal from "../components/RentalRenewal";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -12,6 +13,7 @@ import PageBackground from "../components/PageBackground";
 function Support() {
   const navigate = useNavigate();
   const [detailTicketId, setDetailTicketId] = useState(null);
+  const [renewalUnit, setRenewalUnit] = useState(null);
   const {
     unitTabs,
     ticketTabs,
@@ -151,7 +153,7 @@ function Support() {
                     Report
                   </button>
                   <button
-                    onClick={() => navigate("/billing")}
+                    onClick={() => setRenewalUnit(unit)}
                     className="hover:underline"
                   >
                     Renew
@@ -358,6 +360,7 @@ function Support() {
 
       {detailTicketId != null && <SupportTicketDetail key={detailTicketId} ticketId={detailTicketId} onClose={() => setDetailTicketId(null)} onTicketUpdated={updateTicket} />}
       <Footer />
+      {renewalUnit && <RentalRenewal key={renewalUnit.id} unit={renewalUnit} onClose={() => setRenewalUnit(null)} />}
     </div>
   );
 }

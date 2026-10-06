@@ -1,6 +1,13 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async renewAgreement(agreementId, renewalMonths) {
+    if (!Number.isInteger(renewalMonths) || renewalMonths < 1 || renewalMonths > 12) throw new Error("Select 1–12 renewal months.");
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/renew`, { renewalMonths });
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request renewal.");
+    if (!res.data || res.data.renewalId == null) throw new Error("The server did not return renewal details.");
+    return res.data;
+  },
   async getRefundPreview(agreementId) {
     const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/refund-preview`);
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load the refund estimate.");
