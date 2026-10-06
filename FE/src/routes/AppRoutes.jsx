@@ -5,6 +5,7 @@ import Home from "../pages/Home";
 import StorageDetail from "../pages/StorageDetail";
 import Billing from "../pages/Billing";
 import PaymentCheckout from "../pages/PaymentCheckout";
+import ReservationDetail from "../pages/ReservationDetail";
 import AccessControl from "../pages/AccessControl";
 import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
@@ -44,6 +45,7 @@ function AppRoutes() {
           {/* Protected customer routes: require login */}
           <Route element={<RequireAuth />}>
             <Route path="/checkout" element={<PaymentCheckout />} />
+            <Route path="/reservations/:id" element={<ReservationDetail />} />
             <Route path="/payment" element={<PaymentCheckout />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/access-control" element={<AccessControl />} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAccessControl } from "../hooks/useAccessControl";
@@ -29,23 +29,36 @@ function AccessControl() {
   // Custom PIN change modal
   const [pinModal, setPinModal] = useState(null); // { newPin, error, loading }
 
-  const openPinModal = () => setPinModal({ newPin: "", error: "", loading: false });
-  const closePinModal = () => setPinModal(null);
+  const pinLock = useRef(false);
+  const [pinResult, setPinResult] = useState(null);
+  const openPinModal = () => { setPinResult(null); setPinModal({ currentPin: "", newPin: "", error: "", loading: false }); };
+  const closePinModal = () => { if (!pinLock.current) setPinModal(null); };
 
   const submitPinChange = async () => {
-    if (!pinModal) return;
+    if (!pinModal || pinLock.current) return;
     const trimmed = pinModal.newPin.trim();
     if (!/^\d{6}$/.test(trimmed)) {
       setPinModal((m) => ({ ...m, error: "PIN code must be exactly 6 digits." }));
       return;
     }
+    if (!/^\d{6}$/.test(pinModal.currentPin)) {
+      setPinModal((m) => ({ ...m, error: "Enter your current 6-digit PIN." }));
+      return;
+    }
+    const weakPins = ["012345", "123456", "234567", "345678", "456789", "567890", "987654", "876543", "765432", "654321", "543210", "098765"];
+    if (/^(\d)\1{5}$/.test(trimmed) || weakPins.includes(trimmed) || trimmed === pinModal.currentPin) {
+      setPinModal((m) => ({ ...m, error: "Choose a different PIN without repeated or sequential digits." }));
+      return;
+    }
+    pinLock.current = true;
     setPinModal((m) => ({ ...m, loading: true, error: "" }));
     try {
-      await handleChangePin(trimmed);
-      closePinModal();
+      const result = await handleChangePin(trimmed, pinModal.currentPin);
+      setPinResult({ ...result, unitCode: currentUnitCode });
+      setPinModal(null);
     } catch (err) {
       setPinModal((m) => ({ ...m, loading: false, error: err?.message || "Failed to update PIN code." }));
-    }
+    } finally { pinLock.current = false; }
   };
 
   return (
@@ -195,6 +208,7 @@ function AccessControl() {
         )}
       </main>
 
+      {pinResult && <div role="status" className="mx-auto mb-4 w-full max-w-[1280px] px-4 text-sm text-[#0e7b4c]">Unit {pinResult.unitCode}: {pinResult.message || "PIN change accepted."} {pinResult.syncStatus && <span>Sync: {pinResult.syncStatus}. </span>}{pinResult.estimatedSyncSeconds > 0 && <span>Estimated sync: {pinResult.estimatedSyncSeconds} seconds.</span>}</div>}
       <Footer />
 
       {/* PIN Change Modal */}
@@ -219,8 +233,10 @@ function AccessControl() {
               </div>
 
               <div className="mt-5">
-                <input
-                  type="text"
+                <label className="block text-sm">Current PIN<input type="password" inputMode="numeric" maxLength={6} disabled={pinModal.loading} value={pinModal.currentPin} onChange={(e) => setPinModal((m) => ({ ...m, currentPin: e.target.value.replace(/\D/g, "").slice(0, 6) }))} className="mb-3 mt-1 w-full rounded-lg border p-3" /></label>
+                <label htmlFor="new-keypad-pin" className="block text-sm">New PIN</label>
+                <input id="new-keypad-pin" disabled={pinModal.loading}
+                  type="password"
                   inputMode="numeric"
                   maxLength={6}
                   value={pinModal.newPin}
@@ -246,7 +262,7 @@ function AccessControl() {
                 </button>
                 <button
                   onClick={submitPinChange}
-                  disabled={pinModal.loading || pinModal.newPin.length !== 6}
+                  disabled={pinModal.loading || pinModal.newPin.length !== 6 || pinModal.currentPin.length !== 6}
                   className="flex-1 rounded-[10px] bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow transition hover:bg-[#154ec1] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {pinModal.loading ? "Saving..." : "Confirm PIN"}

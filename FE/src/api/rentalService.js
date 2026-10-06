@@ -38,6 +38,7 @@ export const rentalService = {
    */
   async changePin(agreementId, data) {
     const res = await apiClient.put(`/customer/rentals/${agreementId}/change-pin`, data);
+    if (res?.success !== true || res?.data?.success !== true) throw new Error(res?.data?.message || res?.message || "Unable to change PIN.");
     return res?.data ?? null;
   },
 

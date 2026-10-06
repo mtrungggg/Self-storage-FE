@@ -110,6 +110,7 @@ function Billing() {
                         )}
                       </td>
                       <td className="py-3 pr-3 text-right">
+                        {inv.reservationId && <button onClick={() => navigate(`/reservations/${inv.reservationId}`)} className="mr-2 text-[11px] font-semibold text-[#1d5fe5] hover:underline">View reservation</button>}
                         {inv.status === "upcoming" && (
                           <button
                             onClick={() =>

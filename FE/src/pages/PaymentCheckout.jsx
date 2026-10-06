@@ -109,6 +109,7 @@ function PaymentCheckout() {
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && <button onClick={() => navigate(`/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`)} className="rounded-xl bg-[#1d5fe5] px-5 py-3 text-sm font-bold text-white">View reservation details</button>}
               <button
                 onClick={() => navigate("/access-control")}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#12b76a] px-6 py-3 text-[14px] font-bold text-white shadow-md transition hover:bg-[#0e9f5d]"
