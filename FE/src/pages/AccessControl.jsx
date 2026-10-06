@@ -21,6 +21,7 @@ function AccessControl() {
     credentials,
     credentialsLoading,
     credentialsError,
+    handleCheckIn,
     pinChanging,
     handleChangePin,
   } = useAccessControl();
@@ -181,6 +182,12 @@ function AccessControl() {
                       )}
                     </div>
                   </div>
+                  <button type="button" onClick={handleCheckIn} disabled={!selectedRentalId || credentialsLoading} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d5fe5] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">login</span>
+                    {credentialsLoading ? "Loading PIN..." : "Check in"}
+                  </button>
+                  <p className="mt-2 text-xs text-[#58657a]">View the access PIN for Unit {currentUnitCode}. This does not unlock the unit or record an entry.</p>
+                  {credentials?.suspendedReason && <p role="alert" className="mt-2 text-sm text-red-600">{credentials.suspendedReason}</p>}
                 </aside>
               </div>
             </>

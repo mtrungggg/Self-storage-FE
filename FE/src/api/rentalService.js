@@ -27,6 +27,7 @@ export const rentalService = {
    */
   async getAccessCredentials(agreementId) {
     const res = await apiClient.get(`/customer/rentals/${agreementId}/access-credentials`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Unable to load access credentials.");
     return res?.data ?? null;
   },
 

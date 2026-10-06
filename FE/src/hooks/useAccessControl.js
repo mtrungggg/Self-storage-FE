@@ -18,6 +18,7 @@ export function useAccessControl() {
   const [credentials, setCredentials] = useState(null);
   const [credentialsLoading, setCredentialsLoading] = useState(true);
   const [credentialsError, setCredentialsError] = useState("");
+  const [credentialRequest, setCredentialRequest] = useState(0);
   const [pinChanging, setPinChanging] = useState(false);
   const [pinChangeError, setPinChangeError] = useState("");
 
@@ -72,10 +73,15 @@ export function useAccessControl() {
 
     setCredentialsLoading(true);
     setCredentialsError("");
+    setCredentials(null);
+    setShowPin(false);
     rentalService
       .getAccessCredentials(selectedRentalId)
       .then((data) => {
-        if (active && data) setCredentials(data);
+        if (active && data) {
+          setCredentials(data);
+          if (credentialRequest > 0 && data.keypadPin && !data.suspendedReason && data.status !== "suspended") setShowPin(true);
+        }
       })
       .catch((err) => {
         if (active) setCredentialsError(err?.message || "Không thể tải mã truy cập cho kho này.");
@@ -87,7 +93,7 @@ export function useAccessControl() {
     return () => {
       active = false;
     };
-  }, [selectedRentalId]);
+  }, [selectedRentalId, credentialRequest]);
 
   const handleChangePin = async (newPin, currentPin) => {
     if (!selectedRentalId) return;
@@ -114,7 +120,19 @@ export function useAccessControl() {
     activeRentals,
     selectedRental,
     selectedRentalId,
-    setSelectedRentalId,
+    setSelectedRentalId: (id) => {
+      setShowPin(false);
+      setCredentials(null);
+      setCredentialRequest(0);
+      setSelectedRentalId(id);
+    },
+    handleCheckIn: () => {
+      if (!selectedRentalId || credentialsLoading) return;
+      setCredentials(null);
+      setShowPin(false);
+      setCredentialsLoading(true);
+      setCredentialRequest((value) => value + 1);
+    },
     currentUnitCode,
     showPin,
     setShowPin,
