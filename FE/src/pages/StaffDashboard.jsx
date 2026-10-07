@@ -3,6 +3,7 @@ import PageBackground from "../components/PageBackground";
 import StaffReservationLookup from "../components/StaffReservationLookup";
 import StaffTaskStatus from "../components/StaffTaskStatus";
 import StaffFacilityUnits from "../components/StaffFacilityUnits";
+import StaffOverdueAgreements from "../components/StaffOverdueAgreements";
 import { useStaffDashboard } from "../hooks/useStaffDashboard";
 
 function StaffDashboard() {
@@ -21,6 +22,7 @@ function StaffDashboard() {
     <main className="mx-auto max-w-[1320px] px-4 pb-8 lg:px-6">
       <StaffReservationLookup />
       <StaffFacilityUnits />
+      <StaffOverdueAgreements />
       <section className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-lg font-bold">Shift Tasks</h1><div className="flex flex-wrap gap-1 rounded-lg bg-[#eef4ff] p-1">{taskTabs.map((tab) => <button key={tab.id} type="button" onClick={() => setActiveTaskType(tab.id)} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${activeTaskType === tab.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"}`}>{tab.label} ({tab.count})</button>)}</div></div>
         <form onSubmit={(event) => { event.preventDefault(); setActiveTaskType("all"); loadTasks(); }} className="mt-4 flex flex-wrap items-end gap-2 text-sm"><label className="font-semibold text-[#58657a]">Facility ID (optional)<input type="number" min="1" step="1" value={taskFacilityId} onChange={(event) => setTaskFacilityId(event.target.value)} className="mt-1 block rounded-lg border p-2 text-[#0b1c30]" /></label><button disabled={tasksLoading} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white disabled:opacity-50">Load tasks</button></form>
