@@ -10,6 +10,12 @@ const staffAgreementService = {
     if (!Array.isArray(response.data)) throw new Error("The server returned an invalid overdue agreement list.");
     return response.data;
   },
+
+  async lockAccess(agreementId, reason) {
+    const response = await apiClient.post(`/staff/agreements/${encodeURIComponent(agreementId)}/lock-access`, { reason });
+    if (response?.success !== true) throw new Error(response?.message || "Unable to lock agreement access.");
+    return response.data;
+  },
 };
 
 export default staffAgreementService;

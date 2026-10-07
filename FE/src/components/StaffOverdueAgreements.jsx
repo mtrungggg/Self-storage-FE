@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import staffAgreementService from "../api/staffAgreementService";
+import StaffLockAccess from "./StaffLockAccess";
 
 function formatMoney(value) {
   if (value == null) return "—";
@@ -64,6 +65,8 @@ export default function StaffOverdueAgreements() {
             <div><dt className="text-[#8996a9]">Agreement status</dt><dd className="font-semibold">{agreement.agreementStatus || "—"}</dd></div>
             <div><dt className="text-[#8996a9]">Credential status</dt><dd className="font-semibold">{agreement.credentialStatus || "—"}</dd></div>
           </dl>
+          {days > 1 && !["locked", "suspended", "revoked"].includes(String(agreement.credentialStatus).toLowerCase()) && <StaffLockAccess agreementId={agreement.agreementId} onLocked={() => load(facilityId)} />}
+          {days != null && days <= 1 && <p className="mt-3 border-t border-red-200 pt-3 text-xs text-[#58657a]">Access can be manually locked after more than one overdue day.</p>}
         </article>;
       })}
     </div>}
