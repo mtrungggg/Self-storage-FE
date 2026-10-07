@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
 import MoveOutRequest from "../components/MoveOutRequest";
+import UnitTransferRequest from "../components/UnitTransferRequest";
 import RefundPreview from "../components/RefundPreview";
 import RentalRenewal from "../components/RentalRenewal";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import MediaUpload from "../components/MediaUpload";
 
 function Support() {
   const navigate = useNavigate();
@@ -36,6 +38,9 @@ function Support() {
     setCategory,
     description,
     setDescription,
+    attachments,
+    addAttachment,
+    removeAttachment,
     submitSuccess,
     submitError,
     submitting,
@@ -160,6 +165,7 @@ function Support() {
                   </button>
                 </div>
                 <MoveOutRequest agreementId={unit.id} />
+                <UnitTransferRequest agreementId={unit.id} />
                 <RefundPreview agreementId={unit.id} />
               </div>
             ))}
@@ -258,9 +264,9 @@ function Support() {
 
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold text-[#0f172a]">Attachments</label>
-                <div className="flex flex-col items-center justify-center rounded-[10px] border border-dashed border-[#c7d1e6] bg-[#f8faff] p-4 text-center">
-                  <span className="material-symbols-outlined text-[24px] text-[#1d5fe5]">cloud_upload</span>
-                  <div className="mt-1 text-[11px] font-semibold text-[#3a475a]">Attachments are not available yet</div>
+                <div>
+                  <MediaUpload label="Click to upload attachments" accept="image/*" multiple dropzone disabled={submitting} onUploaded={addAttachment} />
+                  {attachments.length > 0 && <ul className="mt-3 w-full space-y-2 text-left text-xs">{attachments.map((file) => <li key={file.url} className="flex items-center justify-between gap-2 rounded-lg bg-white p-2"><a href={file.url} target="_blank" rel="noreferrer" className="min-w-0 truncate text-[#1d5fe5] underline">{file.originalName || file.fileName}</a><button type="button" onClick={() => removeAttachment(file.url)} className="text-red-600">Remove</button></li>)}</ul>}
                 </div>
               </div>
 

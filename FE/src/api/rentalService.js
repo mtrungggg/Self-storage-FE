@@ -1,6 +1,12 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async requestUnitTransfer(agreementId, payload) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-request`, payload);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request a unit transfer.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the transfer request.");
+    return res.data;
+  },
   async revokeAuthorizedMember(agreementId, memberId) {
     const res = await apiClient.delete(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members/${encodeURIComponent(memberId)}`);
     if (res?.success !== true) throw new Error(res?.message || "Unable to revoke authorization.");

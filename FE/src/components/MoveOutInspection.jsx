@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import staffMoveOutService from "../api/staffMoveOutService";
+import MediaUpload from "./MediaUpload";
 
 const blankItem = () => ({ itemName: "", condition: "good", notes: "", photoUrl: "", chargeAmount: "0" });
 export default function MoveOutInspection({ moveOut, onCompleted }) {
@@ -18,8 +19,8 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
     event.preventDefault();
     if (lock.current || result) return;
     setError("");
-    if (items.some((item) => !item.itemName.trim() || !item.chargeAmount.trim() || !Number.isFinite(Number(item.chargeAmount)) || Number(item.chargeAmount) < 0 || (item.photoUrl.trim() && !/^https?:\/\//i.test(item.photoUrl.trim())))) {
-      setError("Enter an item name, a non-negative charge and a valid HTTP(S) photo URL.");
+    if (items.some((item) => !item.itemName.trim() || !item.chargeAmount.trim() || !Number.isFinite(Number(item.chargeAmount)) || Number(item.chargeAmount) < 0)) {
+      setError("Enter an item name and a non-negative charge.");
       return;
     }
     lock.current = true;
@@ -50,7 +51,7 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
           <label className="block">Item name<input required maxLength={255} className={inputClass} value={item.itemName} onChange={(e) => update(index, "itemName", e.target.value)} /></label>
           <label className="block">Condition<select className={inputClass} value={item.condition} onChange={(e) => update(index, "condition", e.target.value)}>{["good", "acceptable", "damaged", "missing", "not_applicable"].map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="block">Notes<textarea maxLength={255} className={inputClass} value={item.notes} onChange={(e) => update(index, "notes", e.target.value)} /></label>
-          <label className="block">Photo URL (optional)<input type="url" maxLength={255} placeholder="https://..." className={inputClass} value={item.photoUrl} onChange={(e) => update(index, "photoUrl", e.target.value)} /></label>
+          <div><MediaUpload label={item.photoUrl ? "Replace photo" : "Upload photo"} onUploaded={(file) => update(index, "photoUrl", file.url)} />{item.photoUrl && <div className="mt-1 flex items-center gap-2"><a href={item.photoUrl} target="_blank" rel="noreferrer" className="text-[#1d5fe5] underline">View photo</a><button type="button" onClick={() => update(index, "photoUrl", "")} className="text-red-600">Remove</button></div>}</div>
           <label className="block">Charge amount<input type="number" required min="0" max="999999999999.99" step="0.01" className={inputClass} value={item.chargeAmount} onChange={(e) => update(index, "chargeAmount", e.target.value)} /></label>
           <button type="button" onClick={() => setItems((current) => current.filter((_, i) => i !== index))} className="text-red-600">Remove item</button>
         </fieldset>)}

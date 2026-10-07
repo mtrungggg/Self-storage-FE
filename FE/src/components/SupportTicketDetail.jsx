@@ -14,10 +14,11 @@ function Attachments({ items }) {
       {items.map((file) => {
         // Only open web URLs supplied by the API, never executable URL schemes.
         const safeUrl = /^https?:\/\//i.test(file.objectUrl || "") ? file.objectUrl : null;
+        const isImage = String(file.mimeType || file.contentType || "").toLowerCase().startsWith("image/")
+          || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.fileName || "");
         return (
           <li key={file.id} className="break-words">
-            {safeUrl ? <a className="text-[#1d5fe5] underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{file.fileName || "Attachment"}</a> : <span>{file.fileName || "Attachment"}</span>}
-            {file.fileSizeBytes != null && <span className="ml-2 text-xs text-[#58657a]">({Math.ceil(file.fileSizeBytes / 1024)} KB)</span>}
+            {safeUrl && isImage ? <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="block w-fit"><img src={safeUrl} alt={file.fileName || "Ticket attachment"} loading="lazy" className="max-h-64 max-w-full rounded-xl border border-[#dfe7f5] object-contain shadow-sm" /><span className="mt-1 block text-xs text-[#58657a]">{file.fileName || "Image attachment"}{file.fileSizeBytes != null ? ` (${Math.ceil(file.fileSizeBytes / 1024)} KB)` : ""}</span></a> : <>{safeUrl ? <a className="text-[#1d5fe5] underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{file.fileName || "Attachment"}</a> : <span>{file.fileName || "Attachment"}</span>}{file.fileSizeBytes != null && <span className="ml-2 text-xs text-[#58657a]">({Math.ceil(file.fileSizeBytes / 1024)} KB)</span>}</>}
           </li>
         );
       })}

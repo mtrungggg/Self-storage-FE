@@ -90,6 +90,7 @@ export function useSupport() {
   const [selectedUnitCode, setSelectedUnitCode] = useState("");
   const [category, setCategory] = useState("access");
   const [description, setDescription] = useState("");
+  const [attachments, setAttachments] = useState([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Set default selected unit when units load
@@ -153,12 +154,18 @@ export function useSupport() {
         priority: priority === "urgent" ? "urgent" : "normal",
         subject: selectedCategory.label + " on unit #" + rental.unitCode,
         description: description.trim() + (allowMasterKey ? "\n\nCustomer allows master key access while away." : ""),
-        attachments: [],
+        attachments: attachments.map((file) => ({
+          fileName: file.fileName || file.originalName,
+          mimeType: file.mimeType || file.contentType,
+          fileSizeBytes: file.fileSizeBytes,
+          objectUrl: file.objectUrl || file.url,
+        })),
       });
       setTickets((current) => [toTicketView(ticket), ...current]);
       setActiveTicketTab("all");
       setSubmitSuccess(true);
       setDescription("");
+      setAttachments([]);
       setAllowMasterKey(false);
     } catch (error) {
       setSubmitError(error.message || "Unable to submit the request. Please try again.");
@@ -190,6 +197,9 @@ export function useSupport() {
     setCategory,
     description,
     setDescription,
+    attachments,
+    addAttachment: (file) => setAttachments((current) => [...current, file]),
+    removeAttachment: (url) => setAttachments((current) => current.filter((file) => file.url !== url)),
     submitSuccess,
     submitError,
     submitting,
