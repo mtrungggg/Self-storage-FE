@@ -202,7 +202,8 @@ function PaymentCheckout() {
               </div>
               {reservation?.reservationCode && (
                 <div className="mt-1 text-[13px] text-[#58657a]">
-                  Reservation Code: <span className="font-bold text-[#0b1c30]">{reservation.reservationCode}</span>
+                  {reservation.reservationCode.startsWith("RNW-") ? "Mã gia hạn: " : "Reservation Code: "}
+                  <span className="font-bold text-[#0b1c30]">{reservation.reservationCode}</span>
                 </div>
               )}
 
@@ -218,7 +219,7 @@ function PaymentCheckout() {
                   </div>
 
                   <div className="mt-3 text-[14px] font-bold text-[#0b1c30]">
-                    {checkout.vietQr.accountName || "Self Storage System"}
+                    G1SelfStorageSystem
                   </div>
                   <div className="text-[24px] font-black text-[#1d5fe5]">
                     {formatVnd(displayAmount)}
@@ -227,13 +228,15 @@ function PaymentCheckout() {
                   {/* Transfer Details */}
                   <div className="mt-4 w-full rounded-[14px] bg-[#f8faff] border border-[#e8effd] p-3.5 text-left text-[12px] space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-[#64748b]">Bank:</span>
-                      <span className="font-bold text-[#0b1c30]">{checkout.vietQr.bankCode || "MBBank"}</span>
+                      <span className="text-[#64748b]">Beneficiary:</span>
+                      <span className="font-bold text-[#0b1c30]">G1SelfStorageSystem</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#64748b]">Account Number:</span>
-                      <span className="font-bold text-[#0b1c30]">{checkout.vietQr.accountNo}</span>
-                    </div>
+                    {checkout.vietQr.bankCode && (
+                      <div className="flex justify-between">
+                        <span className="text-[#64748b]">Bank:</span>
+                        <span className="font-bold text-[#0b1c30]">{checkout.vietQr.bankCode}</span>
+                      </div>
+                    )}
                     {checkout.vietQr.transferContent && (
                       <div className="flex justify-between border-t border-[#e2e8f0] pt-2">
                         <span className="text-[#64748b]">Reference / Memo:</span>

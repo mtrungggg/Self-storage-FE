@@ -77,9 +77,36 @@ export const rentalService = {
    * Lấy biên bản bàn giao ô kho (nhận/trả kho)
    * @param {number|string} agreementId
    */
-  async getHandoverRecord(agreementId) {
-    const res = await apiClient.get(`/customer/rentals/${agreementId}/handover`);
-    return res?.data ?? null;
+  /**
+   * Mở khóa kho bằng mã PIN (Remote Unlock)
+   * @param {number|string} agreementId
+   * @param {string} pin
+   */
+  async unlockUnit(agreementId, pin) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/unlock`, { pin });
+    if (res?.success !== true || !res.data) throw new Error(res?.message || res?.data?.message || "Không thể mở khóa kho.");
+    return res.data;
+  },
+
+  /**
+   * Lấy danh sách đồ đạc đã khai báo trong kho
+   * @param {number|string} agreementId
+   */
+  async getStoredItems(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/items`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể tải danh sách tài sản lưu kho.");
+    return res.data;
+  },
+
+  /**
+   * Khai báo danh sách đồ đạc lưu kho
+   * @param {number|string} agreementId
+   * @param {{ items: Array<{ itemName: string, category: string, quantity?: number, estimatedValue?: number, riskClassification?: string, description?: string, photoUrl?: string }> }} data
+   */
+  async declareStoredItems(agreementId, data) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/items`, data);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể khai báo tài sản lưu kho.");
+    return res.data;
   },
 };
 

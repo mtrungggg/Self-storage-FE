@@ -70,6 +70,7 @@ export function useSupport() {
     return activeRentals.map((r) => ({
       id: String(r.agreementId),
       unitCode: r.unitCode,
+      facilityName: r.facilityName || "",
       status: "active",
       statusLabel: "Active",
       contractDate: `#${r.agreementNo || "AGR-2026"}`,
