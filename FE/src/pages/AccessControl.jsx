@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAccessControl } from "../hooks/useAccessControl";
@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import AuthorizedMembers from "../components/AuthorizedMembers";
+import { Component as LuminaInteractiveList } from "../components/ui/lumina-interactive-list";
 
 function AccessControl() {
   const navigate = useNavigate();
@@ -26,6 +27,12 @@ function AccessControl() {
     pinChanging,
     handleChangePin,
   } = useAccessControl();
+
+  const isSuspended =
+    credentials?.status?.toLowerCase() === "suspended" ||
+    Boolean(credentials?.suspendedReason) ||
+    selectedRental?.status?.toLowerCase() === "suspended" ||
+    Boolean(selectedRental?.isOverdue);
 
   // Custom PIN change modal
   const [pinModal, setPinModal] = useState(null); // { newPin, error, loading }
@@ -59,8 +66,35 @@ function AccessControl() {
       setPinModal(null);
     } catch (err) {
       setPinModal((m) => ({ ...m, loading: false, error: err?.message || "Failed to update PIN code." }));
-    } finally { pinLock.current = false; }
+    } finally {
+      pinLock.current = false;
+    }
   };
+
+  const luminaSlides = useMemo(() => {
+    const stockPhotos = [
+      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1590496793929-36417d3117de?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1549194388-f61be84a6e9e?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+    ];
+
+    if (!activeRentals || activeRentals.length === 0) return [];
+
+    return activeRentals.map((r, idx) => ({
+      id: r.agreementId,
+      title: `${idx === 0 ? "Primary Unit" : `Unit ${idx + 1}`} ${r.unitCode}`,
+      description: `${r.facilityName || "Storage Facility"} · Digital Keypad PIN · Agreement #${r.agreementNo || "AGR"}`,
+      media: stockPhotos[idx % stockPhotos.length],
+    }));
+  }, [activeRentals]);
+
+  const selectedSlideIndex = useMemo(() => {
+    const idx = activeRentals.findIndex((r) => r.agreementId === selectedRentalId);
+    return idx >= 0 ? idx : 0;
+  }, [activeRentals, selectedRentalId]);
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -74,6 +108,50 @@ function AccessControl() {
             Digital Keypad PIN
           </h1>
         </div>
+
+        {/* Lockout Warning Banner when agreement/credentials are suspended */}
+        {isSuspended && (
+          <div className="mt-4 rounded-[14px] border border-[#fecdca] bg-[#fff5f5] p-5 shadow-[0_4px_16px_rgba(229,72,77,0.08)]">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fee4e2] text-[#e5484d]">
+                <span className="material-symbols-outlined text-[24px]">lock</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-[15px] font-bold text-[#b3261e]">
+                    Kho của bạn đang bị tạm khóa quyền ra vào do quá hạn thanh toán
+                  </h2>
+                  <span className="rounded-full border border-[#fecdca] bg-[#fdecec] px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#b3261e]">
+                    Tạm Khóa / Suspended
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-[#7a271a]">
+                  Hệ thống và ban quản lý kho đã tạm đình chỉ mã PIN mở khóa của ô kho <strong>{currentUnitCode || "của bạn"}</strong> do hợp đồng quá hạn thanh toán.
+                  {credentials?.suspendedReason ? ` (Chi tiết: ${credentials.suspendedReason}) ` : " "}
+                  Vui lòng thanh toán cước phí thuê và tiền phạt để tự động mở khóa ngay lập tức.
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/billing")}
+                    className="inline-flex items-center gap-2 rounded-[9px] bg-[#d92d20] px-4 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#b42318]"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">payments</span>
+                    <span>Thanh toán cước phí ngay</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/support")}
+                    className="inline-flex items-center gap-2 rounded-[9px] border border-[#fecdca] bg-white px-4 py-2.5 text-[13px] font-bold text-[#7a271a] hover:bg-[#fff1f1]"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">support_agent</span>
+                    <span>Gửi yêu cầu hỗ trợ</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {credentialsError && (
           <div className="mt-4 rounded-[12px] border border-[#fecdca] bg-[#fff1f1] px-4 py-3 text-[13px] font-semibold text-[#b3261e]">
@@ -107,23 +185,18 @@ function AccessControl() {
         ) : (
           !rentalsLoading && (
             <>
-              {/* Rental selector tabs */}
-              <div className="mt-5 flex flex-wrap items-center gap-2 rounded-[14px] border border-[#dfe7f5] bg-white p-3">
-                {activeRentals.map((r, idx) => (
-                  <button
-                    key={r.agreementId}
-                    onClick={() => setSelectedRentalId(r.agreementId)}
-                    className={`rounded-[10px] px-3.5 py-2 text-left text-[12px] font-semibold transition ${
-                      selectedRentalId === r.agreementId
-                        ? "bg-[#0b1c30] text-white shadow-sm"
-                        : "border border-[#dfe7f5] text-[#3a475a] hover:bg-[#f8faff]"
-                    }`}
-                  >
-                    <div>{idx === 0 ? "Primary Unit" : `Unit ${idx + 1}`} {r.unitCode}</div>
-                  
-                  </button>
-                ))}
-              </div>
+              {/* Lumina Interactive 3D Showcase for selecting units */}
+              {luminaSlides.length > 0 && (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 shadow-md">
+                  <LuminaInteractiveList
+                    slides={luminaSlides}
+                    initialIndex={selectedSlideIndex}
+                    onSlideChange={(_idx, slide) => {
+                      if (slide?.id) setSelectedRentalId(slide.id);
+                    }}
+                  />
+                </div>
+              )}
 
               <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
                 {/* LEFT: PIN card */}
@@ -135,34 +208,54 @@ function AccessControl() {
                     </span>
                   </div>
 
-                  <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Main PIN Code</div>
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <div className="flex items-center gap-2 text-[20px] font-bold tracking-[0.25em] text-[#0b1c30]">
-                        {credentialsLoading
-                          ? "..."
-                          : showPin
-                          ? credentials?.keypadPin || "—"
-                          : (credentials?.keypadPin || "••••••").replace(/./g, "•")}
-                        <button
-                          onClick={() => setShowPin((v) => !v)}
-                          className="material-symbols-outlined text-[18px] text-[#8996a9] hover:text-[#0b1c30]"
-                        >
-                          {showPin ? "visibility_off" : "visibility"}
-                        </button>
+                  {isSuspended ? (
+                    <div className="mt-4 rounded-[12px] border border-[#fecdca] bg-[#fff5f5] p-5 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[15px] font-bold text-[#b3261e]">
+                        <span className="material-symbols-outlined text-[22px]">lock</span>
+                        <span>MÃ PIN ĐÃ BỊ KHÓA DO QUÁ HẠN</span>
                       </div>
-                      <div className="ml-auto">
-                        <button
-                          onClick={openPinModal}
-                          disabled={!credentials}
-                          className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] hover:bg-[#f5f7fd] disabled:opacity-50"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">autorenew</span>
-                          Change PIN
-                        </button>
+                      <p className="mt-2 text-[12px] leading-relaxed text-[#7a271a]">
+                        Quyền mở cửa của ô kho này đang bị đình chỉ. Vui lòng hoàn tất thanh toán cước phí để hệ thống tự động mở khóa mã PIN.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigate("/billing")}
+                        className="mt-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-[#d92d20] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#b42318]"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">credit_card</span>
+                        <span>Đi đến trang Thanh toán</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Main PIN Code</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 text-[20px] font-bold tracking-[0.25em] text-[#0b1c30]">
+                          {credentialsLoading
+                            ? "..."
+                            : showPin
+                            ? credentials?.keypadPin || "—"
+                            : (credentials?.keypadPin || "••••••").replace(/./g, "•")}
+                          <button
+                            onClick={() => setShowPin((v) => !v)}
+                            className="material-symbols-outlined text-[18px] text-[#8996a9] hover:text-[#0b1c30]"
+                          >
+                            {showPin ? "visibility_off" : "visibility"}
+                          </button>
+                        </div>
+                        <div className="ml-auto">
+                          <button
+                            onClick={openPinModal}
+                            disabled={!credentials}
+                            className="flex items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#1d5fe5] hover:bg-[#f5f7fd] disabled:opacity-50"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">autorenew</span>
+                            Change PIN
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* RIGHT: Access log */}
@@ -196,11 +289,30 @@ function AccessControl() {
                       )}
                     </div>
                   </div>
-                  <button type="button" onClick={handleCheckIn} disabled={!selectedRentalId || credentialsLoading} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d5fe5] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">login</span>
-                    {credentialsLoading ? "Loading PIN..." : "Check in"}
+                  <button
+                    type="button"
+                    onClick={handleCheckIn}
+                    disabled={!selectedRentalId || credentialsLoading || isSuspended}
+                    className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition ${
+                      isSuspended
+                        ? "bg-[#b3261e] opacity-80 cursor-not-allowed"
+                        : "bg-[#1d5fe5] hover:bg-[#1550c7] disabled:cursor-not-allowed disabled:opacity-50"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                      {isSuspended ? "lock" : "login"}
+                    </span>
+                    {isSuspended
+                      ? "Kho đang bị khóa ra vào"
+                      : credentialsLoading
+                      ? "Loading PIN..."
+                      : "Check in"}
                   </button>
-                  <p className="mt-2 text-xs text-[#58657a]">View the access PIN for Unit {currentUnitCode}. This does not unlock the unit or record an entry.</p>
+                  <p className="mt-2 text-xs text-[#58657a]">
+                    {isSuspended
+                      ? "Ô kho đã bị khóa truy cập do vi phạm quá hạn thanh toán."
+                      : `View the access PIN for Unit ${currentUnitCode}. This does not unlock the unit or record an entry.`}
+                  </p>
                   {credentials?.suspendedReason && <p role="alert" className="mt-2 text-sm text-red-600">{credentials.suspendedReason}</p>}
                 </aside>
               </div>

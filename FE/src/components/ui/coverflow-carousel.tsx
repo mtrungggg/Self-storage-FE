@@ -13,6 +13,7 @@ export interface CoverflowSlide {
   alt: string;
   title?: string;
   subtitle?: string;
+  badge?: string;
   meta?: { label: string; value: string }[];
   unitData?: any;
 }
@@ -325,6 +326,14 @@ export function CoverflowCarousel({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   
+                  {slide.badge && (
+                    <div className="absolute top-3.5 left-3.5 z-10">
+                      <span className="rounded-lg bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white shadow backdrop-blur-md border border-white/20">
+                        {slide.badge}
+                      </span>
+                    </div>
+                  )}
+
                   {slide.title && (
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <h3 className="text-[18px] font-black leading-tight drop-shadow-md">

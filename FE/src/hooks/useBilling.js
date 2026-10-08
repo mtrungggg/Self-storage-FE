@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/paymentService";
-import reservationService from "../api/reservationService";
 
 // Maps BE payment status strings → FE tab keys
 // BE PaymentConstants: pending | succeeded | failed | cancelled | partially_refunded | refunded
@@ -62,20 +61,6 @@ export function useBilling() {
         if (!active) return;
         const list = Array.isArray(data) ? data : [];
         setPayments(list);
-
-        // Auto-release expired reservations (>15 mins) that are still marked pending
-        list.forEach((p) => {
-          const s = (p.status || "").toLowerCase();
-          if (s === "pending" && p.createdAt && p.reservationId) {
-            const ageMs = Date.now() - new Date(p.createdAt).getTime();
-            if (ageMs > 15 * 60 * 1000) {
-              // Silently call cancel reservation on BE to release unit to inventory
-              reservationService
-                .cancelReservation(p.reservationId, "Expired 15-minute payment hold window")
-                .catch(() => {});
-            }
-          }
-        });
       })
       .catch((err) => {
         if (active) setError(err?.message || "Không thể tải lịch sử thanh toán.");

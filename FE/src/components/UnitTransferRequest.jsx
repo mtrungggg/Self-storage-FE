@@ -57,18 +57,18 @@ export default function UnitTransferRequest({ agreementId }) {
     }
   }
 
-  if (result) return <div role="status" className="mt-3 rounded-lg bg-green-50 p-3 text-xs text-green-800"><strong>Transfer request submitted.</strong><p className="mt-1">Request #{result.id} · {result.status}</p>{result.requestedUnitTypeName && <p>{result.fromUnitCode} → {result.requestedUnitTypeName}</p>}</div>;
+  if (result) return <div role="status" className="mt-2 rounded-lg bg-green-50 p-2.5 text-xs text-green-800"><strong>Submitted.</strong><p className="mt-0.5">#{result.id} · {result.status}</p></div>;
 
-  return <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="mt-3 border-t border-[#dfe7f5] pt-3 text-xs">
-    <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Request a different unit</summary>
-    <form onSubmit={submit} className="mt-3 space-y-2">
-      <label className="block font-semibold text-[#58657a]">Requested unit type
-        <select required disabled={typesLoading} value={requestedUnitTypeId} onChange={(event) => setRequestedUnitTypeId(event.target.value)} className="mt-1 block w-full rounded-lg border bg-white p-2 text-[#0b1c30]"><option value="">{typesLoading ? "Loading unit types..." : "Select unit type"}</option>{unitTypes.map((type) => <option key={type.id} value={type.id}>{type.name || type.displayName || `Unit type #${type.id}`}</option>)}</select>
+  return <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
+    <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Transfer</summary>
+    <form onSubmit={submit} className="mt-2 space-y-2">
+      <label className="block font-semibold text-slate-600">Type
+        <select required disabled={typesLoading} value={requestedUnitTypeId} onChange={(event) => setRequestedUnitTypeId(event.target.value)} className="mt-1 block w-full rounded-lg border bg-white p-1.5 text-xs text-[#0b1c30]"><option value="">{typesLoading ? "..." : "Select type"}</option>{unitTypes.map((type) => <option key={type.id} value={type.id}>{type.name || type.displayName || `Type #${type.id}`}</option>)}</select>
       </label>
-      <label className="block font-semibold text-[#58657a]">Effective date<input type="date" required min={localDate()} value={requestedEffectiveDate} onChange={(event) => setRequestedEffectiveDate(event.target.value)} className="mt-1 block w-full rounded-lg border p-2 text-[#0b1c30]" /></label>
-      <label className="block font-semibold text-[#58657a]">Reason<textarea required rows="3" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 block w-full rounded-lg border p-2 text-[#0b1c30]" placeholder="Explain why you need a different unit" /></label>
+      <label className="block font-semibold text-slate-600">Date<input type="date" required min={localDate()} value={requestedEffectiveDate} onChange={(event) => setRequestedEffectiveDate(event.target.value)} className="mt-1 block w-full rounded-lg border p-1.5 text-xs text-[#0b1c30]" /></label>
+      <label className="block font-semibold text-slate-600">Reason<textarea required rows="2" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 block w-full rounded-lg border p-1.5 text-xs text-[#0b1c30]" placeholder="Reason..." /></label>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-2 text-red-700">{error}</p>}
-      <button disabled={loading || typesLoading} className="rounded-lg bg-[#1d5fe5] px-3 py-2 font-bold text-white disabled:opacity-50">{loading ? "Submitting..." : "Submit transfer request"}</button>
+      <button disabled={loading || typesLoading} className="rounded-lg bg-[#1d5fe5] px-3 py-1.5 font-bold text-white disabled:opacity-50">{loading ? "..." : "Submit"}</button>
     </form>
   </details>;
 }

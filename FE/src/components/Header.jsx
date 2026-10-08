@@ -14,7 +14,7 @@ const ACTIVE_CLASS = {
 };
 
 // Shared top navigation bar used by every authenticated portal page.
-function Header({ active, showUserBadge = true }) {
+function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,6 +32,11 @@ function Header({ active, showUserBadge = true }) {
     return "Member Customer";
   };
 
+  const isStaffRole = user?.roles?.some((r) =>
+    ["staff", "facility_staff", "manager", "admin", "system_admin"].includes(r)
+  );
+  const shouldHideCustomerNav = hideCustomerNav || (isStaffRole && (active === "ops" || active === "staff"));
+
   return (
     <header className="relative z-50 border-b border-[#e6ebf5] bg-white">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-6">
@@ -45,43 +50,53 @@ function Header({ active, showUserBadge = true }) {
               <span className="font-bold text-[#0b1c30]">SelfStorage</span>
             </span>
           </Link>
+          {shouldHideCustomerNav && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1d5fe5]"></span>
+              Ops Hub
+            </span>
+          )}
         </div>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {NAV_ITEMS.map((item) => {
-            const isProtected = item.key !== "rent";
-            const handleItemClick = (e) => {
-              if (isProtected && !user) {
-                e.preventDefault();
-                navigate("/login", { state: { from: { pathname: item.to } } });
-              }
-            };
+        {!shouldHideCustomerNav && (
+          <nav className="hidden items-center gap-1 lg:flex">
+            {NAV_ITEMS.map((item) => {
+              const isProtected = item.key !== "rent";
+              const handleItemClick = (e) => {
+                if (isProtected && !user) {
+                  e.preventDefault();
+                  navigate("/login", { state: { from: { pathname: item.to } } });
+                }
+              };
 
-            return item.key === active ? (
-              <button
-                key={item.key}
-                className={`rounded-md px-3 py-2 text-[13px] font-bold ${ACTIVE_CLASS[item.style]}`}
-              >
-                {item.label}
-              </button>
-            ) : (
-              <Link
-                key={item.key}
-                to={item.to}
-                onClick={handleItemClick}
-                className="rounded-md px-3 py-2 text-[13px] font-semibold text-[#58657a] hover:text-[#0b1c30] transition"
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+              return item.key === active ? (
+                <button
+                  key={item.key}
+                  className={`rounded-md px-3 py-2 text-[13px] font-bold ${ACTIVE_CLASS[item.style]}`}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.key}
+                  to={item.to}
+                  onClick={handleItemClick}
+                  className="rounded-md px-3 py-2 text-[13px] font-semibold text-[#58657a] hover:text-[#0b1c30] transition"
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
+          {!shouldHideCustomerNav && (
             <Link to="/support" aria-current={active === "support" ? "page" : undefined} className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>
               Support
             </Link>
+          )}
 
           {user ? (
             <div className="relative">

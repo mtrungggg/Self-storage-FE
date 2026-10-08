@@ -32,20 +32,18 @@ export default function MoveOutRequest({ agreementId }) {
   }
 
   return (
-    <details className="mt-3 border-t border-[#dfe7f5] pt-3 text-xs">
-      <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Request move-out</summary>
-      {request ? <div className="mt-3 rounded-lg bg-green-50 p-3">
-        <p role="status" className="font-semibold text-green-800">Move-out request submitted.</p>
-        <p className="mt-1">Requested date: {request.requestedMoveOutDate}</p>
+    <details className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
+      <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Move-out</summary>
+      {request ? <div className="mt-2 rounded-lg bg-green-50 p-2.5">
+        <p role="status" className="font-semibold text-green-800">Submitted.</p>
+        <p className="mt-0.5">Date: {request.requestedMoveOutDate}</p>
         <p>Status: {request.status}</p>
-        <p className="mt-1 whitespace-pre-wrap break-words">{request.reason}</p>
-      </div> : <form onSubmit={submit} aria-busy={sending} className="mt-3">
-        <p className="mb-3 text-[#58657a]">Choose when you plan to return the unit so staff can arrange an inspection.</p>
-        <fieldset disabled={sending} className="space-y-3">
-          <div><label htmlFor={`${id}-date`} className="mb-1 block font-semibold">Move-out date *</label><input id={`${id}-date`} type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2" /></div>
-          <div><label htmlFor={`${id}-reason`} className="mb-1 block font-semibold">Reason</label><textarea id={`${id}-reason`} rows={3} value={reason} onChange={(event) => setReason(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2" /></div>
+      </div> : <form onSubmit={submit} aria-busy={sending} className="mt-2 space-y-2">
+        <fieldset disabled={sending} className="space-y-2">
+          <div><label htmlFor={`${id}-date`} className="mb-1 block font-semibold text-slate-600">Date *</label><input id={`${id}-date`} type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-1.5 text-xs" /></div>
+          <div><label htmlFor={`${id}-reason`} className="mb-1 block font-semibold text-slate-600">Reason</label><textarea id={`${id}-reason`} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason..." className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-1.5 text-xs" /></div>
           {error && <p role="alert" className="text-red-600">{error}</p>}
-          <button type="submit" disabled={!date} className="w-full rounded-lg bg-[#1d5fe5] p-2 font-semibold text-white disabled:opacity-50">{sending ? "Submitting..." : "Submit move-out request"}</button>
+          <button type="submit" disabled={!date} className="w-full rounded-lg bg-[#1d5fe5] p-2 font-semibold text-white disabled:opacity-50">{sending ? "..." : "Submit"}</button>
         </fieldset>
       </form>}
     </details>

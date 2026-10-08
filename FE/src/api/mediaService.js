@@ -24,6 +24,12 @@ const mediaService = {
     }
     return response.data;
   },
+  uploadImage(file) {
+    return this.upload(file);
+  },
+  uploadImages(files) {
+    return this.uploadMultiple(files);
+  },
 };
 
 export default mediaService;

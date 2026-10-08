@@ -3,11 +3,11 @@ import rentalService from "../api/rentalService";
 
 const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 const fields = [
-  ["Deposit balance", "depositBalance"],
-  ["Estimated cleaning fee", "estimatedCleaningFee"],
-  ["Estimated repair fee", "estimatedRepairFee"],
-  ["Estimated overdue charges", "estimatedOverdueCharges"],
-  ["Estimated net refund", "estimatedNetRefund"],
+  ["Deposit", "depositBalance"],
+  ["Cleaning", "estimatedCleaningFee"],
+  ["Repair", "estimatedRepairFee"],
+  ["Overdue", "estimatedOverdueCharges"],
+  ["Net refund", "estimatedNetRefund"],
 ];
 
 export default function RefundPreview({ agreementId }) {
@@ -28,7 +28,7 @@ export default function RefundPreview({ agreementId }) {
     try {
       setPreview(await rentalService.getRefundPreview(agreementId));
     } catch (err) {
-      setError(err.status === 404 ? "This rental agreement could not be found." : err.message || "Unable to load the refund estimate. Please try again.");
+      setError(err.status === 404 ? "Not found." : err.message || "Failed to load.");
     } finally {
       lock.current = false;
       setLoading(false);
@@ -36,22 +36,20 @@ export default function RefundPreview({ agreementId }) {
   }
 
   return (
-    <section className="mt-3 border-t border-[#dfe7f5] pt-3 text-xs">
+    <section className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
       <button type="button" onClick={load} disabled={loading} aria-expanded={opened} aria-controls={panelId} className="font-semibold text-[#1d5fe5] disabled:opacity-50">
-        {loading ? "Loading refund estimate..." : opened ? "Refresh refund estimate" : "View refund estimate"}
+        {loading ? "..." : opened ? "Refresh estimate" : "Refund estimate"}
       </button>
       <div id={panelId} hidden={!opened} aria-busy={loading}>
-        {loading && <p role="status" className="mt-2">Loading...</p>}
-        {error && <p role="alert" className="mt-2 text-red-600">{error}</p>}
-        {preview && <div className="mt-3 rounded-lg bg-[#f8faff] p-3">
-          <p className="break-words font-semibold">Agreement {preview.agreementNo}</p>
-          <dl className="mt-3 space-y-2">
-            {fields.map(([label, key]) => <div key={key} className={`flex flex-wrap justify-between gap-2 ${key === "estimatedNetRefund" ? "border-t border-[#dfe7f5] pt-2 font-bold" : ""}`}>
+        {loading && <p role="status" className="mt-1 text-slate-400">Loading...</p>}
+        {error && <p role="alert" className="mt-1 text-red-600">{error}</p>}
+        {preview && <div className="mt-2 rounded-lg bg-[#f8faff] p-2.5">
+          <dl className="space-y-1 text-xs">
+            {fields.map(([label, key]) => <div key={key} className={`flex justify-between gap-2 ${key === "estimatedNetRefund" ? "border-t border-[#dfe7f5] pt-1 font-bold text-slate-900" : "text-slate-600"}`}>
               <dt>{label}</dt><dd>{typeof preview[key] === "number" && Number.isFinite(preview[key]) ? money.format(preview[key]) : "—"}</dd>
             </div>)}
           </dl>
-          <p className="mt-3 text-[#58657a]">This is an estimate. The final refund may change after inspection.</p>
-          {preview.note && <p className="mt-2 whitespace-pre-wrap break-words text-[#58657a]">{preview.note}</p>}
+          <p className="mt-1.5 text-[10px] text-slate-400">*Estimated only.</p>
         </div>}
       </div>
     </section>

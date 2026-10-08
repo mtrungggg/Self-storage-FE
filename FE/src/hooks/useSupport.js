@@ -72,15 +72,15 @@ export function useSupport() {
       unitCode: r.unitCode,
       status: "active",
       statusLabel: "Active",
-      contractDate: `Agreement #${r.agreementNo || "AGR-2026"}`,
-      contractLeft: r.endDate ? `Valid until ${new Date(r.endDate).toLocaleDateString("en-US")}` : "Active Term",
+      contractDate: `#${r.agreementNo || "AGR-2026"}`,
+      contractLeft: r.endDate ? `Until ${new Date(r.endDate).toLocaleDateString("en-US")}` : "Active",
     }));
   }, [activeRentals]);
 
   const unitTabs = useMemo(() => [
-    { id: "all", label: `All Units (${units.length})` },
+    { id: "all", label: `All (${units.length})` },
     { id: "active", label: `Active (${units.length})` },
-    { id: "renew", label: "Needs Renewal (0)" },
+    { id: "renew", label: "Renewal (0)" },
   ], [units]);
 
   const [activeUnitTab, setActiveUnitTab] = useState("all");
