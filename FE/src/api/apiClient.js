@@ -10,11 +10,14 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Request Interceptor: Tự động trích xuất Access Token và gắn vào Authorization header
+// Request Interceptor: Tự động trích xuất Access Token (ưu tiên sessionStorage theo từng tab để hỗ trợ mở song song Customer & Staff)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
     if (token) {
+      if (!sessionStorage.getItem("accessToken")) {
+        sessionStorage.setItem("accessToken", token);
+      }
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -50,6 +53,8 @@ apiClient.interceptors.response.use(
 
       if (status === 401) {
         // Hết phiên hoặc token không hợp lệ
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("currentUser");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("currentUser");
         if (
