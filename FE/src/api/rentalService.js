@@ -108,6 +108,34 @@ export const rentalService = {
     if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể khai báo tài sản lưu kho.");
     return res.data;
   },
+
+  /**
+   * Cập nhật món đồ lưu kho (tên, số lượng, danh mục...)
+   * @param {number|string} agreementId
+   * @param {number|string} itemId
+   * @param {{ itemName: string, category?: string, quantity: number, estimatedValue?: number, riskClassification?: string, description?: string, photoUrl?: string }} data
+   */
+  async updateStoredItem(agreementId, itemId, data) {
+    const res = await apiClient.put(
+      `/customer/rentals/${encodeURIComponent(agreementId)}/items/${encodeURIComponent(itemId)}`,
+      data
+    );
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể cập nhật đồ lưu kho.");
+    return res.data;
+  },
+
+  /**
+   * Xóa món đồ khỏi kho
+   * @param {number|string} agreementId
+   * @param {number|string} itemId
+   */
+  async deleteStoredItem(agreementId, itemId) {
+    const res = await apiClient.delete(
+      `/customer/rentals/${encodeURIComponent(agreementId)}/items/${encodeURIComponent(itemId)}`
+    );
+    if (res?.success !== true) throw new Error(res?.message || "Không thể xóa đồ lưu kho.");
+    return res.data;
+  },
 };
 
 export default rentalService;
