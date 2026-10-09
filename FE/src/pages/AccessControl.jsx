@@ -10,14 +10,14 @@ import AuthorizedMembers from "../components/AuthorizedMembers";
 import { Component as LuminaInteractiveList } from "../components/ui/lumina-interactive-list";
 
 const ITEM_CATEGORIES = [
-  { value: "household", label: "Đồ gia dụng" },
-  { value: "documents", label: "Hồ sơ / Tài liệu" },
-  { value: "electronics", label: "Thiết bị điện tử" },
-  { value: "furniture", label: "Nội thất" },
-  { value: "clothing", label: "Quần áo / Vali" },
-  { value: "personal", label: "Đồ cá nhân" },
-  { value: "commercial", label: "Hàng hóa kinh doanh" },
-  { value: "other", label: "Khác" },
+  { value: "household", label: "Household Items" },
+  { value: "documents", label: "Documents / Files" },
+  { value: "electronics", label: "Electronics" },
+  { value: "furniture", label: "Furniture" },
+  { value: "clothing", label: "Clothing / Luggage" },
+  { value: "personal", label: "Personal Items" },
+  { value: "commercial", label: "Commercial Goods" },
+  { value: "other", label: "Other" },
 ];
 
 const CATEGORY_LABELS = Object.fromEntries(ITEM_CATEGORIES.map((c) => [c.value, c.label]));
@@ -79,7 +79,7 @@ function AccessControl() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrCopied, setQrCopied] = useState(false);
 
-  // Unlock Unit (Mở kho -> Nhập mã PIN -> Nhập đồ + Số lượng) modal state
+  // Unlock Unit (Unlock unit -> Enter PIN -> Declare items & quantities) modal state
   const [unlockModal, setUnlockModal] = useState(null);
   // unlockModal shape: { step: 'pin' | 'items', pin: '', showTypedPin: false, error: '', saving: false, successMsg: '', newItems: [{ itemName, quantity, category }] }
   const [updatingItemId, setUpdatingItemId] = useState(null);
@@ -129,7 +129,7 @@ function AccessControl() {
     } catch (err) {
       setUnlockModal((m) => ({
         ...m,
-        error: err?.message || "Mã PIN không chính xác.",
+        error: err?.message || "Incorrect PIN code.",
       }));
     }
   };
@@ -166,12 +166,12 @@ function AccessControl() {
 
     const validRows = unlockModal.newItems.filter((r) => r.itemName.trim().length > 0);
     if (validRows.length === 0) {
-      setUnlockModal((m) => ({ ...m, error: "Vui lòng nhập tên ít nhất 1 món đồ cần lưu kho." }));
+      setUnlockModal((m) => ({ ...m, error: "Please enter the name of at least 1 item to store." }));
       return;
     }
     for (const row of validRows) {
       if (!Number.isInteger(Number(row.quantity)) || Number(row.quantity) < 1) {
-        setUnlockModal((m) => ({ ...m, error: `Số lượng của "${row.itemName}" phải từ 1 trở lên.` }));
+        setUnlockModal((m) => ({ ...m, error: `Quantity for "${row.itemName}" must be 1 or greater.` }));
         return;
       }
     }
@@ -183,13 +183,13 @@ function AccessControl() {
         ...m,
         saving: false,
         newItems: [createEmptyItemRow()],
-        successMsg: `Đã thêm ${validRows.length} loại đồ vào kho ${currentUnitCode} thành công!`,
+        successMsg: `Successfully added ${validRows.length} item(s) to Unit ${currentUnitCode}!`,
       }));
     } catch (err) {
       setUnlockModal((m) => ({
         ...m,
         saving: false,
-        error: err?.message || "Không thể lưu đồ đạc vào kho. Vui lòng thử lại.",
+        error: err?.message || "Unable to save items to storage. Please try again.",
       }));
     }
   };
@@ -201,7 +201,7 @@ function AccessControl() {
     try {
       await handleUpdateStoredItem(item.id, { ...item, quantity: nextQty });
     } catch (err) {
-      alert(err?.message || "Không thể cập nhật số lượng.");
+      alert(err?.message || "Unable to update quantity.");
     } finally {
       setUpdatingItemId(null);
     }
@@ -213,7 +213,7 @@ function AccessControl() {
     try {
       await handleDeleteStoredItem(itemId);
     } catch (err) {
-      alert(err?.message || "Không thể xóa món đồ này.");
+      alert(err?.message || "Unable to remove this item.");
     } finally {
       setUpdatingItemId(null);
     }
@@ -284,6 +284,36 @@ function AccessControl() {
       <Header active="access" />
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
+        {/* Page Header & Unit Dropdown Selector */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-[#0b1c30]">
+              Access Control &amp; Keypad PIN
+            </h1>
+            <p className="mt-1 text-[13px] text-[#58657a]">
+              Manage keypad access PIN, facility check-in pass, and unit inventory
+            </p>
+          </div>
+          {activeRentals.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="unit-selector-dropdown" className="text-xs font-semibold text-[#58657a]">
+                Select Unit:
+              </label>
+              <select
+                id="unit-selector-dropdown"
+                value={selectedRentalId || ""}
+                onChange={(e) => setSelectedRentalId(Number(e.target.value))}
+                className="rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-xs font-bold text-[#0b1c30] shadow-xs outline-none transition focus:border-[#1d5fe5] focus:ring-2 focus:ring-[#1d5fe5]/15"
+              >
+                {activeRentals.map((r) => (
+                  <option key={r.agreementId} value={r.agreementId}>
+                    Unit {r.unitCode} ({r.facilityName || "Storage Facility"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
         {/* Lockout Warning Banner when agreement/credentials are suspended */}
         {isSuspended && (
@@ -295,16 +325,16 @@ function AccessControl() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-[15px] font-bold text-[#b3261e]">
-                    Kho của bạn đang bị tạm khóa quyền ra vào do quá hạn thanh toán
+                    Your unit access is temporarily suspended due to overdue payment
                   </h2>
                   <span className="rounded-full border border-[#fecdca] bg-[#fdecec] px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#b3261e]">
-                    Tạm Khóa / Suspended
+                    Suspended
                   </span>
                 </div>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-[#7a271a]">
-                  Hệ thống và ban quản lý kho đã tạm đình chỉ mã PIN mở khóa của ô kho <strong>{currentUnitCode || "của bạn"}</strong> do hợp đồng quá hạn thanh toán.
-                  {credentials?.suspendedReason ? ` (Chi tiết: ${credentials.suspendedReason}) ` : " "}
-                  Vui lòng thanh toán cước phí thuê và tiền phạt để tự động mở khóa ngay lập tức.
+                  System and facility management have temporarily suspended keypad PIN access for unit <strong>{currentUnitCode || "your unit"}</strong> due to overdue rental payment.
+                  {credentials?.suspendedReason ? ` (Details: ${credentials.suspendedReason}) ` : " "}
+                  Please settle outstanding rental fees and penalties to automatically restore access immediately.
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <button
@@ -313,7 +343,7 @@ function AccessControl() {
                     className="inline-flex items-center gap-2 rounded-[9px] bg-[#d92d20] px-4 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#b42318]"
                   >
                     <span className="material-symbols-outlined text-[18px]">payments</span>
-                    <span>Thanh toán cước phí ngay</span>
+                    <span>Pay Overdue Fees</span>
                   </button>
                   <button
                     type="button"
@@ -321,7 +351,7 @@ function AccessControl() {
                     className="inline-flex items-center gap-2 rounded-[9px] border border-[#fecdca] bg-white px-4 py-2.5 text-[13px] font-bold text-[#7a271a] hover:bg-[#fff1f1]"
                   >
                     <span className="material-symbols-outlined text-[18px]">support_agent</span>
-                    <span>Gửi yêu cầu hỗ trợ</span>
+                    <span>Contact Support</span>
                   </button>
                 </div>
               </div>
@@ -394,13 +424,13 @@ function AccessControl() {
                             {currentFacilityCheckIn && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-[#abefc6] bg-[#ecfdf3] px-2.5 py-0.5 text-[10px] font-bold text-[#027a48]">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#12b76a]" />
-                                Đã Check-in cơ sở
+                                Facility Checked-In
                               </span>
                             )}
                             {isUnitUnlocked && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-[#b9ccf0] bg-[#eef4ff] px-2.5 py-0.5 text-[10px] font-bold text-[#1d5fe5]">
                                 <span className="material-symbols-outlined text-[12px]">lock_open</span>
-                                Kho đang mở
+                                Unit Unlocked
                               </span>
                             )}
                           </div>
@@ -413,10 +443,10 @@ function AccessControl() {
                           <div className="mt-4 rounded-[12px] border border-[#fecdca] bg-[#fff5f5] p-5 text-center">
                             <div className="flex items-center justify-center gap-2 text-[15px] font-bold text-[#b3261e]">
                               <span className="material-symbols-outlined text-[22px]">lock</span>
-                              <span>MÃ PIN ĐÃ BỊ KHÓA DO QUÁ HẠN</span>
+                              <span>PIN CODE SUSPENDED DUE TO OVERDUE PAYMENT</span>
                             </div>
                             <p className="mt-2 text-[12px] leading-relaxed text-[#7a271a]">
-                              Quyền mở cửa của ô kho này đang bị đình chỉ. Vui lòng hoàn tất thanh toán cước phí để hệ thống tự động mở khóa mã PIN.
+                              Unit access is currently suspended. Please complete your outstanding payment to automatically restore your PIN.
                             </p>
                             <button
                               type="button"
@@ -424,7 +454,7 @@ function AccessControl() {
                               className="mt-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-[#d92d20] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#b42318]"
                             >
                               <span className="material-symbols-outlined text-[16px]">credit_card</span>
-                              <span>Đi đến trang Thanh toán</span>
+                              <span>Go to Billing</span>
                             </button>
                           </div>
                         ) : (
@@ -481,11 +511,8 @@ function AccessControl() {
                             <span className="material-symbols-outlined text-[20px] text-[#1d5fe5]">inventory_2</span>
                             <div>
                               <h3 className="text-[15px] font-bold text-[#0b1c30]">
-                                Đồ đạc lưu trong kho ({totalStoredItemsCount} món)
+                                Stored Items ({totalStoredItemsCount} items)
                               </h3>
-                              <p className="text-[11px] text-[#8996a9]">
-                                Mở kho bằng mã PIN để nhập thêm đồ hoặc cập nhật số lượng trong Ô kho {currentUnitCode}
-                              </p>
                             </div>
                           </div>
                           {!isSuspended && (
@@ -497,7 +524,7 @@ function AccessControl() {
                               <span className="material-symbols-outlined text-[16px]">
                                 {isUnitUnlocked ? "add_box" : "lock_open"}
                               </span>
-                              <span>{isUnitUnlocked ? "Nhập thêm đồ" : "Mở kho & Nhập đồ"}</span>
+                              <span>{isUnitUnlocked ? "Add Items" : "Unlock & Log Items"}</span>
                             </button>
                           )}
                         </div>
@@ -505,16 +532,13 @@ function AccessControl() {
                         {itemsLoading ? (
                           <div className="mt-4 flex items-center gap-2 rounded-[12px] bg-[#f8faff] p-4 text-[12px] text-[#58657a]">
                             <span className="material-symbols-outlined animate-spin text-[16px] text-[#1d5fe5]">progress_activity</span>
-                            Đang tải danh sách đồ đạc trong kho...
+                            Loading stored items...
                           </div>
                         ) : storedItems.length === 0 ? (
                           <div className="mt-4 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#dfe7f5] bg-[#f8faff] p-6 text-center">
                             <span className="material-symbols-outlined text-[32px] text-[#8996a9]">package_2</span>
                             <p className="mt-1.5 text-[13px] font-semibold text-[#3a475a]">
-                              Chưa có đồ đạc nào được kê khai trong kho {currentUnitCode}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-[#8996a9]">
-                              Ấn nút <strong>&quot;Mở kho&quot;</strong> và nhập mã PIN để bắt đầu thêm đồ đạc &amp; số lượng.
+                              No stored items recorded in Unit {currentUnitCode} yet
                             </p>
                           </div>
                         ) : (
@@ -527,7 +551,7 @@ function AccessControl() {
                                       {item.itemName}
                                     </span>
                                     <span className="rounded-md bg-white px-2 py-0.5 text-[10px] font-semibold text-[#58657a] border border-[#dfe7f5]">
-                                      {CATEGORY_LABELS[item.category] || item.category || "Khác"}
+                                      {CATEGORY_LABELS[item.category] || item.category || "Other"}
                                     </span>
                                   </div>
                                 </div>
@@ -543,7 +567,7 @@ function AccessControl() {
                                         -
                                       </button>
                                       <span className="min-w-[48px] text-center text-[13px] font-extrabold text-[#1d5fe5]">
-                                        SL: {item.quantity}
+                                        Qty: {item.quantity}
                                       </span>
                                       <button
                                         type="button"
@@ -557,7 +581,7 @@ function AccessControl() {
                                         type="button"
                                         disabled={updatingItemId === item.id}
                                         onClick={() => handleRemoveExistingItem(item.id)}
-                                        title="Lấy đồ ra / Xóa"
+                                        title="Remove item"
                                         className="ml-1 flex h-7 w-7 items-center justify-center rounded-md text-[#b3261e] hover:bg-[#fee4e2] disabled:opacity-40"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -565,7 +589,7 @@ function AccessControl() {
                                     </>
                                   ) : (
                                     <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-[12px] font-extrabold text-[#1d5fe5]">
-                                      Số lượng: {item.quantity}
+                                      Quantity: {item.quantity}
                                     </span>
                                   )}
                                 </div>
@@ -576,7 +600,7 @@ function AccessControl() {
                       </div>
                     </div>
 
-                    {/* RIGHT: Access log + Check in QR button + Mở kho button */}
+                    {/* RIGHT: Access log + Check in QR button + Unlock Unit button */}
                     <aside>
                       <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)] transition-all duration-300">
                         <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
@@ -608,7 +632,7 @@ function AccessControl() {
                         </div>
                       </div>
 
-                      {/* Button 1: Check in -> Hiện QR để Staff quét vào cơ sở */}
+                      {/* Button 1: Check in Pass -> Show QR */}
                       <button
                         type="button"
                         onClick={handleOpenCheckInQr}
@@ -623,13 +647,13 @@ function AccessControl() {
                           {isSuspended ? "lock" : "qr_code_2"}
                         </span>
                         {isSuspended
-                          ? "Kho đang bị khóa ra vào"
+                          ? "Access Suspended"
                           : credentialsLoading
-                          ? "Đang tải..."
-                          : "Check in (Hiện mã QR)"}
+                          ? "Loading..."
+                          : "Check-in Pass (QR Code)"}
                       </button>
 
-                      {/* Button 2: Mở kho -> Nhập mã PIN -> Nhập đồ + Số lượng */}
+                      {/* Button 2: Unlock Unit */}
                       <button
                         type="button"
                         onClick={() => handleOpenUnlockModal(false)}
@@ -643,13 +667,13 @@ function AccessControl() {
                         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
                           lock_open
                         </span>
-                        <span>Mở kho</span>
+                        <span>Unlock Unit</span>
                       </button>
 
                       <p className="mt-2.5 text-xs leading-relaxed text-[#58657a]">
                         {isSuspended
-                          ? "Ô kho đã bị khóa truy cập do vi phạm quá hạn thanh toán."
-                          : `Ấn "Check in" để lấy mã QR cho Staff quét vào cơ sở, sau đó ấn "Mở kho" và nhập mã PIN để thêm đồ đạc vào Unit ${currentUnitCode}.`}
+                          ? "Unit access is suspended due to overdue rental payment."
+                          : `Click "Check-in Pass" for facility gate access, or click "Unlock Unit" and enter your PIN to manage items in Unit ${currentUnitCode}.`}
                       </p>
                       {credentials?.suspendedReason && <p role="alert" className="mt-2 text-sm text-red-600">{credentials.suspendedReason}</p>}
                     </aside>
@@ -665,7 +689,7 @@ function AccessControl() {
       {pinResult && <div role="status" className="mx-auto mb-4 w-full max-w-[1280px] px-4 text-sm text-[#0e7b4c]">Unit {pinResult.unitCode}: {pinResult.message || "PIN change accepted."} {pinResult.syncStatus && <span>Sync: {pinResult.syncStatus}. </span>}{pinResult.estimatedSyncSeconds > 0 && <span>Estimated sync: {pinResult.estimatedSyncSeconds} seconds.</span>}</div>}
       <Footer />
 
-      {/* Check-in QR Code Modal (User ấn Check in -> Hiện QR -> Staff quét checkin vào cơ sở) */}
+      {/* Check-in QR Code Modal */}
       {qrModalOpen &&
         createPortal(
           <div
@@ -680,10 +704,10 @@ function AccessControl() {
                     Facility Gate Pass
                   </div>
                   <h3 className="mt-1.5 text-[18px] font-extrabold text-[#0b1c30]">
-                    Mã QR Check-in Vào Cơ Sở
+                    Facility Check-In QR Pass
                   </h3>
                   <p className="text-[12px] text-[#58657a]">
-                    {selectedRental?.facilityName || "G1 Self-Storage"} • Ô kho <strong>{currentUnitCode}</strong>
+                    {selectedRental?.facilityName || "G1 Self-Storage"} • Unit <strong>{currentUnitCode}</strong>
                   </p>
                 </div>
                 <button
@@ -701,19 +725,19 @@ function AccessControl() {
                   {qrImageUrl ? (
                     <img
                       src={qrImageUrl}
-                      alt={`QR Check-in cho kho ${currentUnitCode}`}
+                      alt={`Check-in QR for Unit ${currentUnitCode}`}
                       className="h-56 w-56 object-contain"
                     />
                   ) : (
                     <div className="flex h-56 w-56 items-center justify-center text-xs text-[#8996a9]">
-                      Đang tạo mã QR...
+                      Generating QR code...
                     </div>
                   )}
                 </div>
 
                 <div className="mt-3 w-full rounded-xl border border-[#dfe7f5] bg-white px-3 py-2 text-center">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#8996a9]">
-                    Mã định danh Check-in (Staff có thể quét hoặc nhập mã)
+                    Check-in Pass Code
                   </div>
                   <div className="mt-1 flex items-center justify-center gap-2">
                     <code className="truncate font-mono text-[12px] font-bold text-[#0b1c30]">
@@ -727,30 +751,21 @@ function AccessControl() {
                       <span className="material-symbols-outlined text-[14px]">
                         {qrCopied ? "check" : "content_copy"}
                       </span>
-                      {qrCopied ? "Đã chép" : "Sao chép"}
+                      {qrCopied ? "Copied" : "Copy"}
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Live Check-in Confirmation Status */}
-              {currentFacilityCheckIn ? (
+              {currentFacilityCheckIn && (
                 <div className="mt-4 flex items-center gap-3 rounded-xl border border-[#abefc6] bg-[#ecfdf3] p-3.5 text-[#027a48]">
                   <span className="material-symbols-outlined text-[24px] text-[#12b76a]">verified</span>
                   <div className="text-xs">
-                    <div className="font-bold">Staff đã xác nhận Check-in vào cơ sở!</div>
+                    <div className="font-bold">Staff confirmed facility check-in!</div>
                     <div className="text-[11px] text-[#067647]">
-                      Thời gian: {currentFacilityCheckIn.timeLabel || "Vừa xong"} • Bạn có thể mở kho ngay bây giờ.
+                      Time: {currentFacilityCheckIn.timeLabel || "Just now"} • You may unlock your unit now.
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 flex items-center gap-3 rounded-xl border border-[#dfe7f5] bg-[#f8faff] p-3.5 text-[#3a475a]">
-                  <span className="material-symbols-outlined animate-pulse text-[22px] text-[#1d5fe5]">
-                    sensors
-                  </span>
-                  <div className="text-xs leading-relaxed">
-                    Vui lòng đưa mã QR này cho <strong>Staff tại quầy Check-in</strong> quét qua Camera (hoặc nhập mã) để xác nhận vào cơ sở.
                   </div>
                 </div>
               )}
@@ -761,7 +776,7 @@ function AccessControl() {
                   onClick={() => setQrModalOpen(false)}
                   className="flex-1 rounded-xl border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff]"
                 >
-                  Đóng
+                  Close
                 </button>
                 <button
                   type="button"
@@ -772,7 +787,7 @@ function AccessControl() {
                   className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0e7b4c] py-2.5 text-[13px] font-bold text-white shadow hover:bg-[#0b633d]"
                 >
                   <span className="material-symbols-outlined text-[17px]">lock_open</span>
-                  <span>Mở kho ngay</span>
+                  <span>Unlock Unit Now</span>
                 </button>
               </div>
             </div>
@@ -780,7 +795,7 @@ function AccessControl() {
           document.body
         )}
 
-      {/* Unlock Storage Unit & Stored Items Modal (Mở kho -> Nhập mã PIN -> Nhập đồ + Số lượng) */}
+      {/* Unlock Storage Unit & Stored Items Modal */}
       {unlockModal &&
         createPortal(
           <div
@@ -794,17 +809,17 @@ function AccessControl() {
                     <span className="material-symbols-outlined text-[14px]">
                       {unlockModal.step === "pin" ? "dialpad" : "lock_open"}
                     </span>
-                    {unlockModal.step === "pin" ? "Bước 1/2: Xác thực mã PIN" : "Bước 2/2: Đã mở kho • Nhập đồ"}
+                    {unlockModal.step === "pin" ? "Step 1/2: Verify Keypad PIN" : "Step 2/2: Unit Unlocked • Log Items"}
                   </div>
                   <h3 className="mt-1.5 text-[18px] font-extrabold text-[#0b1c30]">
                     {unlockModal.step === "pin"
-                      ? `Mở Khóa Ô Kho ${currentUnitCode}`
-                      : `Nhập Đồ Vào Kho ${currentUnitCode}`}
+                      ? `Unlock Unit ${currentUnitCode}`
+                      : `Log Items into Unit ${currentUnitCode}`}
                   </h3>
                   <p className="text-[12px] text-[#58657a]">
                     {unlockModal.step === "pin"
-                      ? "Nhập mã PIN 6 chữ số của bạn để mở cửa ô kho lưu trữ"
-                      : "Kê khai tên đồ đạc và số lượng bạn đưa vào ô kho"}
+                      ? "Enter your 6-digit keypad PIN to open your storage unit"
+                      : "Declare item names and quantities stored in your unit"}
                   </p>
                 </div>
                 <button
@@ -821,7 +836,7 @@ function AccessControl() {
                   <div className="rounded-[14px] border border-[#eef1f8] bg-[#f8faff] p-4">
                     <div className="flex items-center justify-between">
                       <label htmlFor="unlock-pin-input" className="text-xs font-bold uppercase tracking-wider text-[#58657a]">
-                        Mã PIN bàn phím (6 số)
+                        Keypad PIN (6 digits)
                       </label>
                       <button
                         type="button"
@@ -831,7 +846,7 @@ function AccessControl() {
                         <span className="material-symbols-outlined text-[15px]">
                           {unlockModal.showTypedPin ? "visibility_off" : "visibility"}
                         </span>
-                        {unlockModal.showTypedPin ? "Ẩn số" : "Hiện số"}
+                        {unlockModal.showTypedPin ? "Hide PIN" : "Show PIN"}
                       </button>
                     </div>
                     <input
@@ -866,7 +881,7 @@ function AccessControl() {
                       onClick={() => setUnlockModal(null)}
                       className="flex-1 rounded-xl border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff]"
                     >
-                      Hủy
+                      Cancel
                     </button>
                     <button
                       type="submit"
@@ -874,7 +889,7 @@ function AccessControl() {
                       className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0e7b4c] py-2.5 text-[13px] font-bold text-white shadow hover:bg-[#0b633d] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[17px]">lock_open</span>
-                      <span>Mở khóa kho</span>
+                      <span>Unlock Unit</span>
                     </button>
                   </div>
                 </form>
@@ -882,14 +897,14 @@ function AccessControl() {
                 <form onSubmit={submitStoredItems} className="mt-4 space-y-4">
                   <div className="flex items-center gap-2 rounded-xl border border-[#abefc6] bg-[#ecfdf3] px-3.5 py-2.5 text-xs font-semibold text-[#027a48]">
                     <span className="material-symbols-outlined text-[18px] text-[#12b76a]">check_circle</span>
-                    <span>Đã mở khóa Ô kho {currentUnitCode}! Hãy nhập tên đồ đạc và số lượng bên dưới.</span>
+                    <span>Unit {currentUnitCode} is unlocked! Enter item details and quantities below.</span>
                   </div>
 
                   {/* New items input rows */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">
-                        Thêm đồ mới vào kho
+                        Add New Items to Unit
                       </span>
                       <button
                         type="button"
@@ -897,7 +912,7 @@ function AccessControl() {
                         className="inline-flex items-center gap-1 rounded-lg bg-[#eef4ff] px-2.5 py-1 text-xs font-bold text-[#1d5fe5] hover:bg-[#dce8ff]"
                       >
                         <span className="material-symbols-outlined text-[15px]">add</span>
-                        Thêm dòng
+                        Add Row
                       </button>
                     </div>
 
@@ -909,7 +924,7 @@ function AccessControl() {
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="flex-1 min-w-[180px]">
                             <label className="block text-[11px] font-semibold text-[#58657a]">
-                              Tên đồ đạc *
+                              Item Name *
                             </label>
                             <input
                               type="text"
@@ -917,14 +932,14 @@ function AccessControl() {
                               autoFocus={idx === 0}
                               value={row.itemName}
                               onChange={(e) => updateNewItemRow(idx, "itemName", e.target.value)}
-                              placeholder="VD: Thùng tài liệu, Vali quần áo..."
-                              className="mt-1 w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-2 text-xs font-semibold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                              placeholder="e.g. Document boxes, Wardrobe..."
+                              className="mt-1 w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-2 text-xs font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5]"
                             />
                           </div>
 
                           <div className="w-28">
                             <label className="block text-[11px] font-semibold text-[#58657a]">
-                              Số lượng *
+                              Quantity *
                             </label>
                             <div className="mt-1 flex items-center rounded-lg border border-[#dfe7f5] bg-white">
                               <button
@@ -960,11 +975,11 @@ function AccessControl() {
 
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 flex-1">
-                            <span className="text-[11px] font-semibold text-[#58657a]">Phân loại:</span>
+                            <span className="text-[11px] font-semibold text-[#58657a]">Category:</span>
                             <select
                               value={row.category}
                               onChange={(e) => updateNewItemRow(idx, "category", e.target.value)}
-                              className="rounded-lg border border-[#dfe7f5] bg-white px-2.5 py-1 text-xs font-semibold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                              className="rounded-lg border border-[#dfe7f5] bg-white px-2.5 py-1 text-xs font-semibold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5] focus:ring-2 focus:ring-[#1d5fe5]/15"
                             >
                               {ITEM_CATEGORIES.map((c) => (
                                 <option key={c.value} value={c.value}>
@@ -980,7 +995,7 @@ function AccessControl() {
                               className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#b3261e] hover:underline"
                             >
                               <span className="material-symbols-outlined text-[14px]">delete</span>
-                              Xóa dòng
+                              Remove row
                             </button>
                           )}
                         </div>
@@ -1006,7 +1021,7 @@ function AccessControl() {
                       onClick={() => setUnlockModal(null)}
                       className="flex-1 rounded-xl border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff]"
                     >
-                      Đóng kho
+                      Close Unit
                     </button>
                     <button
                       type="submit"
@@ -1014,7 +1029,7 @@ function AccessControl() {
                       className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1d5fe5] py-2.5 text-[13px] font-bold text-white shadow hover:bg-[#1550c7] disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[17px]">save</span>
-                      <span>{unlockModal.saving ? "Đang lưu..." : "Lưu vào kho"}</span>
+                      <span>{unlockModal.saving ? "Saving..." : "Save to Storage"}</span>
                     </button>
                   </div>
 
@@ -1022,7 +1037,7 @@ function AccessControl() {
                   {storedItems.length > 0 && (
                     <div className="border-t border-[#eef1f8] pt-4">
                       <div className="text-xs font-bold uppercase tracking-wider text-[#58657a]">
-                        Đồ đang có trong kho ({totalStoredItemsCount} món)
+                        Currently Stored ({totalStoredItemsCount} items)
                       </div>
                       <div className="mt-2 max-h-44 overflow-y-auto divide-y divide-[#eef1f8] rounded-xl border border-[#eef1f8] bg-[#f8faff] px-3">
                         {storedItems.map((item) => (
