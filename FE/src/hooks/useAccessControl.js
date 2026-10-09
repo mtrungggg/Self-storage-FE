@@ -35,7 +35,7 @@ export function useAccessControl() {
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [selectedRentalId, setSelectedRentalId] = useState(null);
 
-  // Real access credentials (mã PIN / QR) cho hợp đồng thuê kho đang chọn
+  // Real access credentials (PIN / QR code) for selected rental agreement
   const [credentials, setCredentials] = useState(null);
   const [credentialsLoading, setCredentialsLoading] = useState(true);
   const [credentialsError, setCredentialsError] = useState("");
@@ -43,7 +43,7 @@ export function useAccessControl() {
   const [pinChanging, setPinChanging] = useState(false);
   const [pinChangeError, setPinChangeError] = useState("");
 
-  // Stored items (đồ đạc + số lượng trong kho)
+  // Stored items (items + quantities logged in unit)
   const [storedItemsData, setStoredItemsData] = useState({
     items: [],
     totalItemsCount: 0,
@@ -60,7 +60,7 @@ export function useAccessControl() {
   const appendLiveLog = useCallback((unitCode, title, dot = "#2dd4a0") => {
     if (!unitCode) return;
     const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} hôm nay`;
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} today`;
     setLiveLogsMap((prev) => {
       const list = prev[unitCode] || [];
       return {
@@ -85,7 +85,7 @@ export function useAccessControl() {
         if (event?.data?.unitCode) {
           appendLiveLog(
             event.data.unitCode,
-            `Staff xác nhận Check-in cơ sở (${event.data.unitCode})`,
+            `Staff confirmed facility check-in (${event.data.unitCode})`,
             "#1d5fe5"
           );
         }
@@ -179,8 +179,8 @@ export function useAccessControl() {
       ? [
           {
             icon: "qr_code_scanner",
-            title: `Check-in cơ sở • Kho ${currentUnitCode}`,
-            time: currentFacilityCheckIn.timeLabel || "Hôm nay",
+            title: `Facility Check-in • Unit ${currentUnitCode}`,
+            time: currentFacilityCheckIn.timeLabel || "Today",
             dot: "#1d5fe5",
           },
         ]
@@ -216,7 +216,7 @@ export function useAccessControl() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = err?.message || "Không thể tải mã truy cập cho kho này.";
+        const msg = err?.message || "Unable to load access credentials for this unit.";
         const lower = msg.toLowerCase();
         if (
           lower.includes("business hours") ||
@@ -235,7 +235,7 @@ export function useAccessControl() {
             gateQrToken: `GATE-${selectedRental?.unitCode || selectedRentalId}-${Date.now()}`,
             qrExpiresInSeconds: 120,
             qrExpiresAt: new Date(Date.now() + 120000).toISOString(),
-            suspendedReason: selectedRental?.hasOverdueDebt ? "Hợp đồng đang quá hạn thanh toán." : null,
+            suspendedReason: selectedRental?.hasOverdueDebt ? "Rental agreement is overdue for payment." : null,
           });
         } else {
           setCredentialsError(msg);
@@ -263,7 +263,7 @@ export function useAccessControl() {
         totalEstimatedValue: data?.totalEstimatedValue ?? 0,
       });
     } catch (err) {
-      setItemsError(err?.message || "Không thể tải danh sách đồ lưu kho.");
+      setItemsError(err?.message || "Unable to load stored items.");
     } finally {
       setItemsLoading(false);
     }
@@ -287,7 +287,7 @@ export function useAccessControl() {
       setCredentials((prev) => (prev ? { ...prev, keypadPin: newPin } : prev));
       return res;
     } catch (err) {
-      const msg = err?.message || "Đổi mã PIN thất bại. Vui lòng thử lại.";
+      const msg = err?.message || "Failed to update PIN code. Please try again.";
       const lower = msg.toLowerCase();
       if (
         lower.includes("business hours") ||
@@ -296,7 +296,7 @@ export function useAccessControl() {
         lower.includes("notcheckedin")
       ) {
         if (credentials?.keypadPin && String(currentPin).trim() !== String(credentials.keypadPin).trim()) {
-          const pinErr = "Mã PIN hiện tại không chính xác.";
+          const pinErr = "Current PIN is incorrect.";
           setPinChangeError(pinErr);
           throw new Error(pinErr);
         }
@@ -315,16 +315,16 @@ export function useAccessControl() {
     const cleanPin = String(enteredPin || "").trim();
     const expectedPin = String(credentials?.keypadPin || "").trim();
     if (!/^\d{6}$/.test(cleanPin)) {
-      throw new Error("Vui lòng nhập đủ 6 chữ số mã PIN.");
+      throw new Error("Please enter a valid 6-digit PIN.");
     }
     if (!expectedPin) {
-      throw new Error("Không tìm thấy mã PIN hợp lệ cho ô kho này.");
+      throw new Error("No valid PIN found for this unit.");
     }
     if (cleanPin !== expectedPin) {
-      throw new Error("Mã PIN không chính xác. Vui lòng kiểm tra lại mã PIN của ô kho.");
+      throw new Error("Incorrect PIN. Please verify your unit PIN code.");
     }
     setUnlockedMap((prev) => ({ ...prev, [selectedRentalId]: true }));
-    appendLiveLog(currentUnitCode, `Mở khóa kho ${currentUnitCode} bằng mã PIN`, "#2dd4a0");
+    appendLiveLog(currentUnitCode, `Unlocked Unit ${currentUnitCode} via PIN`, "#2dd4a0");
     return true;
   };
 
@@ -347,7 +347,7 @@ export function useAccessControl() {
       totalEstimatedValue: result?.totalEstimatedValue ?? 0,
     });
     const totalAdded = payload.items.reduce((sum, it) => sum + it.quantity, 0);
-    appendLiveLog(currentUnitCode, `Nhập ${totalAdded} món đồ vào kho ${currentUnitCode}`, "#2dd4a0");
+    appendLiveLog(currentUnitCode, `Added ${totalAdded} item(s) to Unit ${currentUnitCode}`, "#2dd4a0");
     return result;
   };
 

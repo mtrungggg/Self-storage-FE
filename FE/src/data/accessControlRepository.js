@@ -1,9 +1,9 @@
 // Data layer: content source for the AccessControl (PIN & smart lock) page.
 export function getWallets() {
   return [
-    { icon: "account_balance_wallet", title: "Apple Wallet", status: "Đã thêm thẻ", active: true },
-    { icon: "wallet", title: "Google Wallet", status: "Chưa liên kết", active: false },
-    { icon: "credit_card", title: "Thẻ từ NFC", status: "Sẵn sàng", active: true },
+    { icon: "account_balance_wallet", title: "Apple Wallet", status: "Pass added", active: true },
+    { icon: "wallet", title: "Google Wallet", status: "Not linked", active: false },
+    { icon: "credit_card", title: "NFC Keycard", status: "Ready", active: true },
   ];
 }
 
@@ -12,30 +12,30 @@ export function getGuestPins(unitCode) {
   return [
     {
       id: "express",
-      name: "Giao vận Express",
-      tag: "Dùng 1 lần",
+      name: "Express Delivery",
+      tag: "Single use",
       status: "active",
-      schedule: `14:00 – 17:00, hôm nay • Kho ${unitCode}`,
+      schedule: `14:00 – 17:00, today • Unit ${unitCode}`,
       code: "481903#",
-      action: "Hủy mã",
+      action: "Revoke",
     },
     {
       id: "family",
-      name: "Người thân (Phương Thảo)",
-      tag: "Định kỳ",
+      name: "Authorized Member",
+      tag: "Recurring",
       status: "active",
-      schedule: "T7 & CN hàng tuần (08:00 – 20:00)",
+      schedule: "Sat & Sun (08:00 – 20:00)",
       code: "773201#",
-      action: "Chỉnh sửa",
+      action: "Edit",
     },
     {
       id: "tech",
-      name: "Thợ bảo trì kho",
-      tag: "Hết hạn",
+      name: "Maintenance Technician",
+      tag: "Expired",
       status: "expired",
-      schedule: "Đã sử dụng lúc 11:20",
+      schedule: "Used at 11:20",
       code: "119042#",
-      action: "Cấp lại",
+      action: "Reissue",
     },
   ];
 }
@@ -45,23 +45,23 @@ export function getAccessControlLogs(unitCode) {
   return [
     {
       icon: "lock_open",
-      title: `Mở kho ${unitCode}`,
-      time: "14:45 hôm nay",
-      note: "Bàn phím mã PIN tại cửa",
+      title: `Unit ${unitCode} Unlocked`,
+      time: "14:45 today",
+      note: "Door keypad PIN",
       dot: "#2dd4a0",
     },
     {
       icon: "dialpad",
-      title: `Mở kho ${unitCode}`,
-      time: "18/10, 10:12",
-      note: "Mã khách • Giao vận Express",
+      title: `Unit ${unitCode} Unlocked`,
+      time: "18 Oct, 10:12",
+      note: "Guest PIN • Express Delivery",
       dot: "#8996a9",
     },
     {
       icon: "key",
-      title: `Mở kho ${unitCode}`,
-      time: "10/10, 09:30",
-      note: "Bàn phím mã PIN tại cửa",
+      title: `Unit ${unitCode} Unlocked`,
+      time: "10 Oct, 09:30",
+      note: "Door keypad PIN",
       dot: "#8996a9",
     },
   ];
