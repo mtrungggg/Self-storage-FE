@@ -11,7 +11,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import MediaUpload from "../components/MediaUpload";
-import { CardHandGallery } from "@/components/ui/card-hand-gallery";
+import { CoverflowCarousel } from "@/components/ui/coverflow-carousel";
 
 const UNIT_CARD_IMAGES = [
   "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
@@ -62,12 +62,18 @@ function Support() {
 
   const [selectedGalleryUnitId, setSelectedGalleryUnitId] = useState(null);
 
-  const unitCards = useMemo(() => {
+  const unitSlides = useMemo(() => {
     return filteredUnits.map((u, idx) => ({
       id: String(u.id),
       title: `Unit ${u.unitCode}`,
       src: UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
-      description: u.contractLeft,
+      alt: `Kho ${u.unitCode} tại ${u.facilityName || "G1 SelfStorage"}`,
+      badge: u.unitTypeCode || "KHO",
+      meta: [
+        { label: "Cơ sở", value: u.facilityName || "G1 SelfStorage" },
+        { label: "Hợp đồng", value: u.contractLeft },
+      ],
+      unitData: u,
     }));
   }, [filteredUnits]);
 
@@ -76,9 +82,9 @@ function Support() {
     return filteredUnits.find((u) => String(u.id) === String(selectedGalleryUnitId)) || filteredUnits[0];
   }, [filteredUnits, selectedGalleryUnitId]);
 
-  const handleSelectGalleryUnit = (card) => {
-    setSelectedGalleryUnitId(card.id);
-    setSelectedUnitCode(card.id);
+  const handleSelectGalleryUnit = (slide) => {
+    setSelectedGalleryUnitId(slide.id);
+    setSelectedUnitCode(slide.id);
   };
 
   const handleSubmit = (e) => {
@@ -138,14 +144,20 @@ function Support() {
               </button>
             </div>
           ) : (
-            <div className="mt-4 overflow-hidden rounded-[20px] border border-[#dfe7f5] bg-gradient-to-b from-[#f8faff] via-white to-white p-4 sm:p-5 shadow-xs">
-              <div className="py-1">
-                <CardHandGallery
-                  cards={unitCards}
-                  activeId={activeGalleryUnit ? String(activeGalleryUnit.id) : unitCards[0]?.id}
-                  onSelect={handleSelectGalleryUnit}
-                  cardWidth={210}
-                  className="max-w-4xl mx-auto"
+            <div className="mt-4 overflow-hidden rounded-[28px] border border-[#dfe7f5] bg-white px-2 py-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:px-5 sm:py-7">
+              <div className="mx-auto max-w-5xl">
+                <CoverflowCarousel
+                  slides={unitSlides}
+                  cardWidth="clamp(210px, 25vw, 320px)"
+                  rotate={34}
+                  depth={0.48}
+                  gap={0.16}
+                  fade={0.12}
+                  showNavigation={unitSlides.length > 1}
+                  showCaption
+                  showPagination={unitSlides.length > 3}
+                  label="Danh sách kho đang thuê"
+                  onActiveSlideChange={handleSelectGalleryUnit}
                 />
               </div>
 

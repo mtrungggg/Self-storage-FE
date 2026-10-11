@@ -114,7 +114,7 @@ export default function StaffSupportTickets() {
           {resolveSuccess && <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{resolveSuccess}</p>}
           {loading ? <p role="status">Loading tickets...</p> : error ? <div role="alert" className="rounded-xl bg-white p-4 text-red-600"><p>{error}</p><button type="button" onClick={() => load(query)} className="mt-2 underline">Try again</button></div> : tickets.length === 0 ? <p className="rounded-xl border bg-white p-8 text-center text-[#58657a]">No tickets match these filters.</p> : <>
             <p className="mb-3 text-sm text-[#58657a]">{tickets.length} tickets</p>
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid items-start gap-4 lg:grid-cols-2">
               {tickets.map((ticket) => <article key={ticket.id} className="min-w-0 rounded-xl border border-[#dfe7f5] bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-bold text-[#1d5fe5]">{ticket.ticketNo || ticket.id}</span><span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold">{ticket.status || "—"}</span></div>
                 <h2 className="mt-3 break-words font-bold">{ticket.subject || "Untitled ticket"}</h2>
@@ -125,9 +125,20 @@ export default function StaffSupportTickets() {
                 <button type="button" onClick={() => assignTicket(ticket)} disabled={assigningId != null || receivedTicketIds.has(String(ticket.id))} aria-label={`${receivedTicketIds.has(String(ticket.id)) ? "Received" : "Assign ticket"} ${ticket.ticketNo || ticket.id}`} className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
                   {receivedTicketIds.has(String(ticket.id)) ? "Received" : assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
                 </button>
-                <StaffTicketReply ticketId={ticket.id} />
-                <StaffTicketCharge ticketId={ticket.id} />
-                <StaffTicketResolve ticketId={ticket.id} onResolved={() => handleResolved(ticket)} />
+                <details className="group mt-4 overflow-hidden rounded-xl border border-[#dfe7f5] bg-[#f8faff]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-[#0b1c30] transition hover:bg-[#eef4ff] [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">settings</span>
+                      Manage ticket
+                    </span>
+                    <span className="material-symbols-outlined text-[20px] text-[#58657a] transition-transform duration-200 group-open:rotate-180">expand_more</span>
+                  </summary>
+                  <div className="border-t border-[#dfe7f5] bg-white px-4 pb-4">
+                    <StaffTicketReply ticketId={ticket.id} />
+                    <StaffTicketCharge ticketId={ticket.id} />
+                    <StaffTicketResolve ticketId={ticket.id} onResolved={() => handleResolved(ticket)} />
+                  </div>
+                </details>
               </article>)}
             </div>
           </>}
