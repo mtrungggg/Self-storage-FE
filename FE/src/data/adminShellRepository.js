@@ -17,8 +17,10 @@ export function getSidebarNav() {
       id: "operations",
       label: "Operations & Management",
       items: [
-        { id: "overview", label: "Overview & Reports", icon: "dashboard", to: "/admin-overview" },
-        { id: "facilities", label: "Facilities & Units", icon: "warehouse", to: "/admin-facilities" },
+        { id: "overview", label: "Dashboard", icon: "dashboard", to: "/admin-overview" },
+        { id: "facilities", label: "Quản lý kho", icon: "warehouse", to: "/admin-facilities" },
+        { id: "tickets", label: "Quản lý ticket", icon: "support_agent", to: "/admin-tickets" },
+        { id: "notifications", label: "Gửi thông báo", icon: "notifications_active", to: "/admin-notifications" },
         { id: "contracts", label: "Contracts & Customers", icon: "description", to: "/admin-contracts" },
         { id: "staffing", label: "Staff Scheduling & Shifts", icon: "groups", to: "/admin-staffing" },
       ],
@@ -29,7 +31,7 @@ export function getSidebarNav() {
       items: [
         { id: "pricing", label: "Pricing & Policies", icon: "tune", to: "/admin-pricing" },
         { id: "security", label: "Access & Security", icon: "admin_panel_settings", to: "/admin-system" },
-        { id: "users", label: "User Management", icon: "manage_accounts", to: "/admin-users" },
+        { id: "users", label: "Manager & Staff", icon: "manage_accounts", to: "/admin-users" },
         { id: "audit_log", label: "Activity & Audit Log", icon: "history", to: "/admin-audit-log" },
       ],
     },
