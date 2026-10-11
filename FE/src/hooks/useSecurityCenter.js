@@ -1,7 +1,5 @@
 import { useState } from "react";
 import {
-  getSecurityBanner,
-  getOverviewHeader,
   getHeaderActions,
   getKpis,
   getPermissionMatrixRoles,
@@ -13,8 +11,6 @@ import {
 
 // Application layer: encapsulates Security Center (RBAC & IoT policy) page state and data wiring.
 export function useSecurityCenter() {
-  const securityBanner = getSecurityBanner();
-  const header = getOverviewHeader();
   const headerActions = getHeaderActions();
   const kpis = getKpis();
   const permissionRoles = getPermissionMatrixRoles();
@@ -30,8 +26,6 @@ export function useSecurityCenter() {
   const updateIntrusionPolicy = (key, value) => setIntrusionPolicy((prev) => ({ ...prev, [key]: value }));
 
   return {
-    securityBanner,
-    header,
     headerActions,
     kpis,
     permissionRoles,

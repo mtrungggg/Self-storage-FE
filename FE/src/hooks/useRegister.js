@@ -109,7 +109,7 @@ export function useRegister() {
 
       setTimeout(() => {
         if (roles.includes("admin") || roles.includes("system_admin")) {
-          navigate("/admin-overview");
+          navigate("/manager-overview");
         } else if (
           roles.includes("staff") ||
           roles.includes("facility_staff") ||

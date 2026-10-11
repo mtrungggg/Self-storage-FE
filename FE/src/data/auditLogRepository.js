@@ -2,17 +2,14 @@
 export function getBreadcrumb() {
   return {
     parent: "System Administration",
-    current: "System Activity & Audit Logs",
-    siemStatus: "SIEM STREAM: TLS 1.3 ACTIVE",
-    ledgerHash: "LedgerHash: #0x8f4c...c29b",
+    current: "Audit Logs",
+    siemStatus: "SIEM Live",
   };
 }
 
 export function getOverviewHeader() {
   return {
-    title: "System Activity & Audit Trail Logs",
-    subtitle:
-      "Capturing 100% of data mutations, IoT lock access events, rate adjustments, and intrusion alerts with immutable SHA-256 hashing per SOC 2 Type II standards.",
+    title: "Activity & Audit Log",
   };
 }
 
@@ -150,7 +147,7 @@ export function getAuditEvents() {
 }
 
 export function getAuditFootnote() {
-  return "Showing 1-20 of 18,940 cryptographically logged events";
+  return "Showing 1-20 of 18,940 events";
 }
 
 export function getComplianceCards() {

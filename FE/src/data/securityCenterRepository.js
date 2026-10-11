@@ -1,15 +1,4 @@
 // Data layer: content source for the Admin Security Center (RBAC & IoT policy) page.
-export function getSecurityBanner() {
-  return { label: "VaultShield Security & Access Control Center", version: "Release #SEC-9082" };
-}
-
-export function getOverviewHeader() {
-  return {
-    title: "Access Permissions & Operational Security",
-    subtitle: "Manage access privileges, control IoT smart locks, and monitor real-time security events.",
-  };
-}
-
 export function getHeaderActions() {
   return [
     { id: "custom_role", icon: "add_moderator", label: "Create Custom Role" },
@@ -19,10 +8,10 @@ export function getHeaderActions() {
 
 export function getKpis() {
   return [
-    { id: "encryption", icon: "lock", label: "Kiosk Lock Encryption", value: "AES-256 GCM", sub: "Active continuous protection • 100% Online" },
-    { id: "iot", icon: "sensors", label: "IoT Cluster Security Rate", value: "99.98%", sub: "4,812 / 4,813 nodes active" },
+    { id: "encryption", icon: "lock", label: "Kiosk Lock Encryption", value: "AES-256 GCM", sub: "100% online" },
+    { id: "iot", icon: "sensors", label: "IoT Cluster Security Rate", value: "99.98%", sub: "4,812 / 4,813 nodes" },
     { id: "accounts", icon: "badge", label: "Authorized Staff Accounts", value: "24", sub: "6 permission tiers" },
-    { id: "zeroday", icon: "verified_user", label: "Zero-Day Vulnerabilities", value: "0", sub: "Full vulnerability scan 04:00 today • Secure" },
+    { id: "zeroday", icon: "verified_user", label: "Zero-Day Vulnerabilities", value: "0", sub: "Last scan 04:00 today" },
   ];
 }
 

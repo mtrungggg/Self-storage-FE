@@ -52,6 +52,7 @@ export default function AuthScene() {
   const googleHiddenBtnRef = useRef(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState("");
+  const [googleConfigured] = useState(Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID));
 
   const handleGoogleCredential = async (idToken) => {
     setGoogleLoading(true);
@@ -61,12 +62,18 @@ export default function AuthScene() {
       const user = res?.data?.user;
       const roles = user?.roles || [];
       setTimeout(() => {
-        if (roles.includes("admin") || roles.includes("system_admin")) {
-          navigate("/admin-overview");
+        if (
+          roles.includes("admin") ||
+          roles.includes("system_admin") ||
+          roles.includes("system_administrator") ||
+          roles.includes("facility_manager") ||
+          roles.includes("business_operations_manager") ||
+          roles.includes("manager")
+        ) {
+          navigate("/manager-overview");
         } else if (
           roles.includes("staff") ||
-          roles.includes("facility_staff") ||
-          roles.includes("manager")
+          roles.includes("facility_staff")
         ) {
           navigate("/staff-dashboard");
         } else {
@@ -81,9 +88,11 @@ export default function AuthScene() {
   };
 
   useEffect(() => {
-    const clientId =
-      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      "928800899912-81ire3k9j09sibcegq1hriqgg231ahqr.apps.googleusercontent.com";
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.warn("VITE_GOOGLE_CLIENT_ID chưa được cấu hình trong .env — tính năng đăng nhập Google sẽ bị vô hiệu hóa.");
+      return;
+    }
 
     const initGsi = () => {
       if (window.google?.accounts?.id) {
@@ -125,6 +134,11 @@ export default function AuthScene() {
   const handleGoogleBtnClick = () => {
     if (googleLoading) return;
     setGoogleError("");
+
+    if (!googleConfigured) {
+      setGoogleError("Đăng nhập Google chưa được cấu hình (thiếu VITE_GOOGLE_CLIENT_ID trong .env).");
+      return;
+    }
 
     if (!window.google?.accounts?.id) {
       setGoogleError("Google Sign-In is initializing. Please try again in a few moments or disable ad-blocker.");
@@ -429,6 +443,45 @@ export default function AuthScene() {
                         "Sign In"
                       )}
                     </button>
+
+                    {/* Quick Manager / Staff Demo Fill */}
+                    <div className="rounded-[10px] border border-blue-200/70 bg-blue-50/60 p-2.5 text-[11px] text-[#3a475a]">
+                      <div className="mb-1.5 flex items-center justify-between font-bold text-[#0a3d91]">
+                        <span>Tài khoản mẫu trong Database (Mật khẩu: 123456)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginEmail("manager.hcm@example.test");
+                            setLoginPassword("123456");
+                          }}
+                          className="rounded-[6px] bg-[#1d5fe5] px-2.5 py-1 text-[10px] font-bold text-white transition hover:bg-[#1649b8]"
+                        >
+                          Điền Nick Manager (manager.hcm@example.test)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginEmail("staff.hcm@example.test");
+                            setLoginPassword("123456");
+                          }}
+                          className="rounded-[6px] border border-[#dfe7f5] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#3a475a] hover:bg-[#f0f4ff]"
+                        >
+                          Điền Nick Staff
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginEmail("customer.one@example.test");
+                            setLoginPassword("123456");
+                          }}
+                          className="rounded-[6px] border border-[#dfe7f5] bg-white px-2.5 py-1 text-[10px] font-semibold text-[#3a475a] hover:bg-[#f0f4ff]"
+                        >
+                          Điền Nick Customer
+                        </button>
+                      </div>
+                    </div>
                   </form>
 
                   {/* Divider */}

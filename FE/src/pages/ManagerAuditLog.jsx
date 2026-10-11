@@ -16,7 +16,7 @@ function Dropdown({ value, onChange, options }) {
   );
 }
 
-function AdminAuditLog() {
+function ManagerAuditLog() {
   const {
     breadcrumb,
     header,
@@ -45,14 +45,10 @@ function AdminAuditLog() {
         <span className="ml-auto flex items-center gap-1 text-[9px] font-bold text-[#0e7b4c]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> {breadcrumb.siemStatus}
         </span>
-        <span className="text-[9px] text-[#8996a9]">{breadcrumb.ledgerHash}</span>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold">{header.title}</h1>
-          <p className="mt-1 max-w-[600px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
-        </div>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold">{header.title}</h1>
         <div className="flex flex-wrap gap-2">
           {headerActions.map((action) => (
             <button
@@ -101,7 +97,6 @@ function AdminAuditLog() {
               <span className={`material-symbols-outlined text-[14px] ${kpi.alert ? "text-[#e5484d]" : "text-[#1d5fe5]"}`}>{kpi.icon}</span>
             </div>
             <div className={`mt-1 text-[17px] font-bold ${kpi.alert ? "text-[#c0362c]" : ""}`}>{kpi.value}</div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
           </div>
         ))}
       </div>
@@ -153,17 +148,14 @@ function AdminAuditLog() {
                 <tr key={event.id} className={`border-b border-[#f2f5fb] ${event.status === "blocked" ? "bg-[#fdf4f4]" : ""}`}>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-semibold">{event.time}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.date}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className={`font-semibold ${event.actorType === "unknown" ? "text-[#c0362c]" : ""}`}>{event.actor}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.actorRole}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top text-[#58657a]">{event.categoryLabel}</td>
                   <td className="py-2.5 pr-2 align-top text-[#3a475a]">{event.action}</td>
                   <td className="py-2.5 pr-2 align-top text-[#58657a]">
                     <div>{event.ip}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.device}</div>
                   </td>
                 </tr>
               ))}
@@ -200,7 +192,6 @@ function AdminAuditLog() {
               </span>
               <div>
                 <div className="text-[11px] font-bold">{card.title}</div>
-                <div className="text-[9px] text-[#8996a9]">{card.detail}</div>
               </div>
             </div>
             <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c]">{card.statusLabel}</span>
@@ -211,4 +202,4 @@ function AdminAuditLog() {
   );
 }
 
-export default AdminAuditLog;
+export default ManagerAuditLog;

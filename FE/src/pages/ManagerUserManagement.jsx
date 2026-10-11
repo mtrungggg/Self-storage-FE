@@ -34,7 +34,7 @@ const STATUS_BADGE = {
   locked: "bg-[#fdecec] text-[#c0362c]",
 };
 
-function AdminUserManagement() {
+function ManagerUserManagement() {
   const {
     breadcrumb,
     header,
@@ -61,11 +61,8 @@ function AdminUserManagement() {
         <span className="text-[#0b1c30]">{breadcrumb.current}</span>
       </div>
 
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold">{header.title}</h1>
-          <p className="mt-1 max-w-[600px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
-        </div>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold">{header.title}</h1>
         <div className="flex flex-wrap gap-2">
           {headerActions.map((action) => (
             <button
@@ -113,7 +110,6 @@ function AdminUserManagement() {
               <span className={`text-[19px] font-bold ${kpi.alert ? "text-[#c0362c]" : ""}`}>{kpi.value}</span>
               {kpi.trend && <span className="text-[10px] font-semibold text-[#0e7b4c]">{kpi.trend}</span>}
             </div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
           </div>
         ))}
       </div>
@@ -176,7 +172,6 @@ function AdminUserManagement() {
                   </td>
                   <td className="py-2.5 pr-2 text-[#58657a]">
                     <div className="font-semibold text-[#3a475a]">{user.facilityLabel}</div>
-                    <div className="text-[9px] text-[#8996a9]">{user.facilityNote}</div>
                   </td>
                   <td className="py-2.5 pr-2 text-[#58657a]">{user.twoFactorLabel}</td>
                   <td className="py-2.5 pr-2">
@@ -184,7 +179,6 @@ function AdminUserManagement() {
                   </td>
                   <td className="py-2.5 pr-2 text-[#58657a]">
                     <div>{user.lastLogin}</div>
-                    <div className="text-[9px] text-[#8996a9]">{user.device}</div>
                   </td>
                   <td className="py-2.5 pr-2">
                     <div className="flex items-center gap-1.5 text-[#8996a9]">
@@ -275,4 +269,4 @@ function AdminUserManagement() {
   );
 }
 
-export default AdminUserManagement;
+export default ManagerUserManagement;

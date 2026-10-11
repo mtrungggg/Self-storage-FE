@@ -4,10 +4,9 @@ function formatCurrency(value) {
   return `${value.toLocaleString("vi-VN")} ₫`;
 }
 
-function AdminPricingPolicy() {
+function ManagerPricingPolicy() {
   const {
     versionBanner,
-    header,
     headerActions,
     priceTerms,
     priceMatrix,
@@ -31,21 +30,10 @@ function AdminPricingPolicy() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-[#58657a]">
-        <span className="rounded-full bg-[#0b1c30] px-2 py-0.5 text-[9px] font-bold text-white">{versionBanner.version}</span>
-        <span>{versionBanner.scope}</span>
-        <span className="ml-auto text-[#8996a9]">
-          {versionBanner.editor} ({versionBanner.timestamp}) • <span className="font-bold text-[#1d5fe5] cursor-pointer hover:underline">View History</span>
-        </span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-bold">{header.title}</h1>
-            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">SYSTEM-WIDE</span>
-          </div>
-          <p className="mt-1 max-w-[560px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h1 className="text-[20px] font-bold">Pricing &amp; Policies</h1>
+          <span className="rounded-full bg-[#0b1c30] px-2 py-0.5 text-[9px] font-bold text-white">{versionBanner.version}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {headerActions.map((action) => (
@@ -69,7 +57,7 @@ function AdminPricingPolicy() {
               <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">1</span>
               Rental Rate Matrix by Term &amp; Unit Category
             </div>
-            <p className="mt-1 text-[10px] text-[#8996a9]">Edit 1-month base price — extended terms calculate discounts dynamically. Unit: VND/month (VAT incl.).</p>
+            <p className="mt-1 text-[10px] text-[#8996a9]">Base price in VND/month, VAT included</p>
           </div>
           <button className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[10px] font-semibold text-[#3a475a]">
             <span className="material-symbols-outlined text-[14px]">sync</span>
@@ -99,7 +87,6 @@ function AdminPricingPolicy() {
                       {unit.label}
                       {unit.badge && <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[8px] font-bold text-[#1d5fe5]">{unit.badge}</span>}
                     </div>
-                    <div className="text-[9px] text-[#8996a9]">{unit.spec}</div>
                   </td>
                   <td className="py-2.5 pr-2 text-[#58657a]">{unit.volume}</td>
                   {unit.prices.map((price) => (
@@ -193,14 +180,12 @@ function AdminPricingPolicy() {
             <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">3</span>
             Reservation Cancellation &amp; Deposit Refund Policy
           </div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">Calculates refund percentage according to cancellation notice timeframe prior to move-in.</p>
 
           <div className="mt-3 space-y-2">
             {cancellationPolicy.map((rule) => (
               <div key={rule.id} className="flex items-center justify-between rounded-[10px] border border-[#eef1f8] p-2.5">
                 <div>
                   <div className="text-[11px] font-bold">{rule.label}</div>
-                  <div className="text-[9px] text-[#8996a9]">{rule.note}</div>
                 </div>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -312,4 +297,4 @@ function AdminPricingPolicy() {
   );
 }
 
-export default AdminPricingPolicy;
+export default ManagerPricingPolicy;

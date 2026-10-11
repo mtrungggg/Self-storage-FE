@@ -1,9 +1,7 @@
 import { useSecurityCenter } from "../hooks/useSecurityCenter";
 
-function AdminSecurityCenter() {
+function ManagerSecurityCenter() {
   const {
-    securityBanner,
-    header,
     headerActions,
     kpis,
     permissionRoles,
@@ -17,17 +15,8 @@ function AdminSecurityCenter() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#1d5fe5]" />
-        {securityBanner.label}
-        <span className="font-semibold normal-case text-[#8996a9]">• {securityBanner.version}</span>
-      </div>
-
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold">{header.title}</h1>
-          <p className="mt-1 max-w-[540px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold">Access &amp; Security</h1>
         <div className="flex flex-wrap gap-2">
           {headerActions.map((action) => (
             <button
@@ -51,7 +40,6 @@ function AdminSecurityCenter() {
               <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">{kpi.icon}</span>
             </div>
             <div className="mt-1 text-[17px] font-bold">{kpi.value}</div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
           </div>
         ))}
       </div>
@@ -82,7 +70,6 @@ function AdminSecurityCenter() {
                 <tr key={module.id} className="border-b border-[#f2f5fb]">
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-semibold">{module.label}</div>
-                    <div className="text-[9px] text-[#8996a9]">{module.note}</div>
                   </td>
                   {permissionRoles.map((role) => (
                     <td key={role.id} className="py-2.5 px-2 text-center align-top">
@@ -107,12 +94,10 @@ function AdminSecurityCenter() {
           <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">2</span>
           IoT Smart Lock &amp; Access Gate Security
         </div>
-        <p className="mt-1 text-[10px] text-[#8996a9]">Configure temporary guest PIN credentials, automated revocations, and perimeter intrusion deterrence.</p>
 
         <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
             <div className="text-[11px] font-bold">Temporary Guest PIN / OTP Dispatch</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automatically dispatched via SMS/App upon active contract commencement</p>
 
             <div className="mt-2 text-[9px] font-bold uppercase text-[#8996a9]">OTP Time-To-Live (TTL)</div>
             <div className="mt-1 inline-flex rounded-[8px] bg-[#f0f3fa] p-0.5">
@@ -151,7 +136,6 @@ function AdminSecurityCenter() {
 
           <div className="rounded-[10px] border border-[#eef1f8] p-3">
             <div className="text-[11px] font-bold">Intrusion Detection &amp; Siren Deterrence</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automated response when abnormal door tampering or force is detected</p>
 
             <div className="mt-2 flex items-center gap-1.5">
               <span className="text-[9px] text-[#8996a9]">Lockout keypad after failed PIN attempts:</span>
@@ -188,4 +172,4 @@ function AdminSecurityCenter() {
   );
 }
 
-export default AdminSecurityCenter;
+export default ManagerSecurityCenter;

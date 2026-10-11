@@ -1,8 +1,4 @@
 // Data layer: content source for the Admin Contracts & Customers CRM page.
-export function getStatusBanner() {
-  return { label: "Tenant Records & Asset Agreements", detail: "Branch Hub #04 Downtown Metro" };
-}
-
 export function getOverviewHeader() {
   return { title: "Contracts & Customer CRM" };
 }
@@ -10,17 +6,17 @@ export function getOverviewHeader() {
 export function getHeaderActions() {
   return [
     { id: "debt_report", icon: "receipt_long", label: "Export Debt Report" },
-    { id: "remind", icon: "campaign", label: "Send Batch Reminders (28)" },
+    { id: "remind", icon: "campaign", label: "Send Reminders (28)" },
     { id: "new_contract", icon: "add", label: "New Contract" },
   ];
 }
 
 export function getKpis() {
   return [
-    { id: "active", icon: "verified_user", label: "Active Contracts", value: "415", trend: "+98.2%", sub: "Storage occupancy rate • 2024 cumulative" },
-    { id: "expiring", icon: "event_upcoming", label: "Expiring (≤30 days)", value: "28", sub: "12 contracts within 7 days • Renewal required", alert: true },
-    { id: "overdue", icon: "lock_clock", label: "Overdue Accounts", value: "08", sub: "Outstanding balance: 48,600,000 ₫ • 3 Latch locked", alert: true },
-    { id: "new_sales", icon: "trending_up", label: "New Signings This Month", value: "+145.2M ₫", trend: "+22.4%", sub: "MoM increase • 19 new contracts" },
+    { id: "active", icon: "verified_user", label: "Active Contracts", value: "415", trend: "+98.2%", sub: "Occupancy rate" },
+    { id: "expiring", icon: "event_upcoming", label: "Expiring (≤30 days)", value: "28", sub: "12 within 7 days", alert: true },
+    { id: "overdue", icon: "lock_clock", label: "Overdue Accounts", value: "08", sub: "48,600,000 ₫ outstanding", alert: true },
+    { id: "new_sales", icon: "trending_up", label: "New Signings This Month", value: "+145.2M ₫", trend: "+22.4%", sub: "19 new contracts" },
   ];
 }
 
@@ -168,7 +164,7 @@ export function getEmergencyActions() {
 }
 
 export function getIotStatusNote() {
-  return "Online (100% IoT Locks Connected) • Port 8084";
+  return "100% IoT Locks Connected";
 }
 
 export function getActivityLog() {
@@ -196,7 +192,7 @@ export function getComplianceInfo() {
   return {
     badge: "Real Estate Law 2024",
     title: "eKYC & Digital Contract Archive",
-    note: "100% of new contracts adhere to digital compliance standards, integrating VNPT-CA signatures and SHA-256 encryption.",
+    note: "100% of new contracts follow digital compliance with VNPT-CA signatures and SHA-256 encryption.",
     tags: ["Digital CA", "IoT Verified"],
   };
 }

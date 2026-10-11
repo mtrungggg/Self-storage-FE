@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
   getPolicyVersionBanner,
-  getOverviewHeader,
   getHeaderActions,
   getPriceTerms,
   getPriceUnits,
@@ -19,7 +18,6 @@ import { calculatePriceMatrix } from "../domain/usecases/calculatePriceMatrix";
 // Application layer: encapsulates Pricing & Policy Configuration page state and data wiring.
 export function usePricingPolicy() {
   const versionBanner = getPolicyVersionBanner();
-  const header = getOverviewHeader();
   const headerActions = getHeaderActions();
   const priceTerms = getPriceTerms();
   const priceUnits = getPriceUnits();
@@ -58,7 +56,6 @@ export function usePricingPolicy() {
 
   return {
     versionBanner,
-    header,
     headerActions,
     priceTerms,
     priceMatrix,

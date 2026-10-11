@@ -25,9 +25,8 @@ const VALIDITY_ROW_STYLE = {
 const ACTIVITY_ICON = { success: "check_circle", failed: "cancel" };
 const ACTIVITY_ICON_COLOR = { success: "text-[#0e7b4c]", failed: "text-[#c0362c]" };
 
-function AdminContractsCustomers() {
+function ManagerContractsCustomers() {
   const {
-    statusBanner,
     header,
     headerActions,
     kpis,
@@ -48,13 +47,7 @@ function AdminContractsCustomers() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#1d5fe5]" />
-        {statusBanner.label}
-        <span className="font-semibold normal-case text-[#8996a9]">• {statusBanner.detail}</span>
-      </div>
-
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-[20px] font-bold">{header.title}</h1>
         <div className="flex flex-wrap gap-2">
           {headerActions.map((action) => (
@@ -89,7 +82,6 @@ function AdminContractsCustomers() {
               <span className={`text-[19px] font-bold ${kpi.alert ? "text-[#c0362c]" : ""}`}>{kpi.value}</span>
               {kpi.trend && <span className="text-[10px] font-semibold text-[#0e7b4c]">{kpi.trend}</span>}
             </div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
           </div>
         ))}
       </div>
@@ -113,7 +105,7 @@ function AdminContractsCustomers() {
       <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-bold">Managed Storage Lease Contracts</span>
+            <span className="text-[13px] font-bold">Storage Lease Contracts</span>
             <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">{filteredContracts.length} records</span>
           </div>
           <div className="flex items-center gap-3 text-[10px] font-semibold text-[#58657a]">
@@ -143,7 +135,6 @@ function AdminContractsCustomers() {
                 <tr key={contract.id} className={`border-b border-l-2 border-[#f2f5fb] ${VALIDITY_ROW_STYLE[contract.validity]}`}>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-bold text-[#1d5fe5]">{contract.id}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.signMethod}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="flex items-center gap-1.5 font-semibold">
@@ -157,17 +148,13 @@ function AdminContractsCustomers() {
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-semibold">{contract.unit}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.unitNote}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="text-[#3a475a]">{contract.term}</div>
                     <div className="font-bold text-[#1d5fe5]">{contract.daysLeft}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.alertNote}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <div className="font-bold">{contract.value}</div>
-                    <div className="text-[9px] text-[#8996a9]">Total: {contract.totalValue}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.cycleNote}</div>
                   </td>
                   <td className="py-2.5 pr-2 align-top">
                     <span className="flex items-center gap-1 text-[9px] font-bold text-[#0e7b4c]">
@@ -206,9 +193,8 @@ function AdminContractsCustomers() {
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="material-symbols-outlined text-[16px] text-[#f5a524]">bolt</span>
-            Automated &amp; Emergency Tasks
+            Emergency Tasks
           </div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">Debt enforcement and lock override via VaultSpace IoT Latch protocol.</p>
 
           <div className="mt-3 space-y-2">
             {emergencyActions.map((action) => (
@@ -226,14 +212,14 @@ function AdminContractsCustomers() {
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px] text-[#8996a9]">
-            <span>Connection Protocol: {iotStatusNote}</span>
+            <span>{iotStatusNote}</span>
           </div>
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex items-center gap-1.5 text-[13px] font-bold">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#2dd4a0]" />
-            Recent Lease Activity Log
+            Recent Activity
           </div>
 
           <div className="mt-3 space-y-2.5">
@@ -242,20 +228,17 @@ function AdminContractsCustomers() {
                 <span className={`material-symbols-outlined mt-0.5 text-[14px] ${ACTIVITY_ICON_COLOR[log.type]}`}>{ACTIVITY_ICON[log.type]}</span>
                 <div>
                   <div className="font-semibold">{log.title}</div>
-                  <div className="text-[9px] text-[#8996a9]">{log.detail}</div>
-                  <div className="text-[9px] text-[#8996a9]">{log.time} • {log.actor}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">View all 148 activities today</div>
+          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">View all activity</div>
         </div>
 
         <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">{complianceInfo.badge}</span>
           <div className="mt-1.5 text-[13px] font-bold">{complianceInfo.title}</div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">{complianceInfo.note}</p>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {complianceInfo.tags.map((tag) => (
@@ -272,4 +255,4 @@ function AdminContractsCustomers() {
   );
 }
 
-export default AdminContractsCustomers;
+export default ManagerContractsCustomers;

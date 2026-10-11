@@ -5,8 +5,7 @@ export function getBreadcrumb() {
 
 export function getOverviewHeader() {
   return {
-    title: "User Management & Role Permissions",
-    subtitle: "Identity control, facility/branch RBAC permissions, 2FA/FIDO credentialing, and lifecycle management for 3,842 accounts.",
+    title: "User Management",
   };
 }
 
@@ -219,7 +218,7 @@ export function getSelectedUserDetail() {
 
 export function getComplianceFootnote() {
   return {
-    left: "RBAC Authentication complies with ISO/IEC 27001:2022 • IAM Enforced by VaultSpace Root Engine",
-    right: "Audit Token: 0x7E9A...9942B • Last Synchronized: 14:46:12",
+    left: "ISO/IEC 27001:2022 compliant",
+    right: "Audit Token: 0x7E9A...9942B",
   };
 }

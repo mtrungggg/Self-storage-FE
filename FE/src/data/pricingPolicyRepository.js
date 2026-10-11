@@ -1,18 +1,6 @@
 // Data layer: content source for the Admin Pricing & Policy Configuration page.
 export function getPolicyVersionBanner() {
-  return {
-    version: "Operating Policy Release 2024.Q3",
-    scope: "Applied across 14 Hub facilities & B2B Managed Hubs",
-    editor: "Tran Minh Hoang",
-    timestamp: "14:32 - 18/10/2024",
-  };
-}
-
-export function getOverviewHeader() {
-  return {
-    title: "Pricing & Operating Policies Configuration",
-    subtitle: "Adjust rental rate ceilings, service fees, automated Latch PIN lockout thresholds, and B2B discount tiers.",
-  };
+  return { version: "2024.Q3" };
 }
 
 export function getHeaderActions() {
@@ -128,6 +116,6 @@ export function getYieldRecommendation() {
   return {
     occupancy: "94.2%",
     suggestion: "+8.5%",
-    note: "When zone occupancy exceeds 90%, dynamic pricing algorithm recommends a 5-8% rate increase to maximize peak GMV.",
+    note: "At 90%+ occupancy, consider a 5-8% rate increase.",
   };
 }

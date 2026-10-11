@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  getStatusBanner,
   getOverviewHeader,
   getHeaderActions,
   getKpis,
@@ -19,7 +18,6 @@ const DEFAULT_FILTERS = { audience: "all", cycle: "all", validity: "all" };
 
 // Application layer: encapsulates Contracts & Customers CRM page state and data wiring.
 export function useContracts() {
-  const statusBanner = getStatusBanner();
   const header = getOverviewHeader();
   const headerActions = getHeaderActions();
   const kpis = getKpis();
@@ -43,7 +41,6 @@ export function useContracts() {
   );
 
   return {
-    statusBanner,
     header,
     headerActions,
     kpis,

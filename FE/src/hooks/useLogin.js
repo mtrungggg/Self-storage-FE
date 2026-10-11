@@ -52,13 +52,15 @@ export function useLogin() {
         if (
           roles.includes("admin") ||
           roles.includes("system_admin") ||
-          roles.includes("system_administrator")
+          roles.includes("system_administrator") ||
+          roles.includes("facility_manager") ||
+          roles.includes("business_operations_manager") ||
+          roles.includes("manager")
         ) {
-          navigate("/admin-overview");
+          navigate("/manager-overview");
         } else if (
           roles.includes("staff") ||
-          roles.includes("facility_staff") ||
-          roles.includes("manager")
+          roles.includes("facility_staff")
         ) {
           navigate("/staff-dashboard");
         } else {
