@@ -23,6 +23,7 @@ export default function StaffSupportTickets() {
   const assignLock = useRef(false);
   const assignDialog = useRef(null);
   const [assigningId, setAssigningId] = useState(null);
+  const [receivedTicketIds, setReceivedTicketIds] = useState(() => new Set());
   const [assignError, setAssignError] = useState("");
   const [assignSuccess, setAssignSuccess] = useState("");
   const [resolveSuccess, setResolveSuccess] = useState("");
@@ -36,13 +37,19 @@ export default function StaffSupportTickets() {
   }
 
   async function assignTicket(ticket) {
-    if (assignLock.current) return;
+    const ticketId = String(ticket.id);
+    if (assignLock.current || receivedTicketIds.has(ticketId)) return;
     assignLock.current = true;
     setAssigningId(ticket.id);
     setAssignError("");
     setAssignSuccess("");
     try {
       await staffSupportService.assignTicket(ticket.id);
+      setReceivedTicketIds((current) => {
+        const next = new Set(current);
+        next.add(ticketId);
+        return next;
+      });
       setAssignSuccess(`Ticket ${ticket.ticketNo || ticket.id} assigned successfully.`);
       // Refresh the currently applied filters, even if they changed during assignment.
       requestId.current++;
@@ -115,8 +122,8 @@ export default function StaffSupportTickets() {
                   {[["Customer", ticket.customerName || ticket.customerId], ["Facility", ticket.facilityCode || ticket.facilityId], ["Agreement", ticket.agreementNo || ticket.agreementId], ["Unit", ticket.unitCode || ticket.storageUnitId], ["Category", ticket.category], ["Priority", ticket.priority], ["Created", formatDate(ticket.createdAt)], ["Updated", formatDate(ticket.updatedAt)]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
                 </dl>
                 <p className="mt-4 whitespace-pre-wrap break-words border-t pt-3 text-sm text-[#58657a]">{ticket.description || "No description provided."}</p>
-                <button type="button" onClick={() => assignTicket(ticket)} disabled={assigningId != null} aria-label={`Assign ticket ${ticket.ticketNo || ticket.id}`} className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
-                  {assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
+                <button type="button" onClick={() => assignTicket(ticket)} disabled={assigningId != null || receivedTicketIds.has(String(ticket.id))} aria-label={`${receivedTicketIds.has(String(ticket.id)) ? "Received" : "Assign ticket"} ${ticket.ticketNo || ticket.id}`} className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50">
+                  {receivedTicketIds.has(String(ticket.id)) ? "Received" : assigningId === ticket.id ? "Assigning..." : "Assign ticket"}
                 </button>
                 <StaffTicketReply ticketId={ticket.id} />
                 <StaffTicketCharge ticketId={ticket.id} />

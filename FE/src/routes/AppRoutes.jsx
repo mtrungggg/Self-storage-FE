@@ -11,14 +11,13 @@ import Support from "../pages/Support";
 import StaffDashboard from "../pages/StaffDashboard";
 import StaffSupportTickets from "../pages/StaffSupportTickets";
 import StaffMoveOuts from "../pages/StaffMoveOuts";
-import AdminOperationsOverview from "../pages/AdminOperationsOverview";
+import AdminDashboard from "../pages/AdminDashboard";
 import AdminStaffScheduling from "../pages/AdminStaffScheduling";
-import AdminFacilityManagement from "../pages/AdminFacilityManagement";
 import AdminPricingPolicy from "../pages/AdminPricingPolicy";
 import AdminContractsCustomers from "../pages/AdminContractsCustomers";
 import AdminSecurityCenter from "../pages/AdminSecurityCenter";
 import AdminAuditLog from "../pages/AdminAuditLog";
-import AdminUserManagement from "../pages/AdminUserManagement";
+import AdminCrudPage from "../pages/AdminCrudPage";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
@@ -64,14 +63,16 @@ function AppRoutes() {
         {/* Protected admin portal */}
         <Route element={<RequireAuth />}>
           <Route element={<AdminLayouts />}>
-            <Route path="/admin-overview" element={<AdminOperationsOverview />} />
-            <Route path="/admin-facilities" element={<AdminFacilityManagement />} />
+            <Route path="/admin-overview" element={<AdminDashboard />} />
+            <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
             <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
             <Route path="/admin-staffing" element={<AdminStaffScheduling />} />
             <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
             <Route path="/admin-system" element={<AdminSecurityCenter />} />
             <Route path="/admin-audit-log" element={<AdminAuditLog />} />
-            <Route path="/admin-users" element={<AdminUserManagement />} />
+            <Route path="/admin-users" element={<AdminCrudPage key="users" resource="users" />} />
+            <Route path="/admin-tickets" element={<AdminCrudPage key="tickets" resource="tickets" />} />
+            <Route path="/admin-notifications" element={<AdminCrudPage key="notifications" resource="notifications" />} />
           </Route>
         </Route>
 
