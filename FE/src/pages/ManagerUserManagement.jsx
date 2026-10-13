@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUserManagement } from "../hooks/useUserManagement";
 
 function Dropdown({ label, value, onChange, options }) {
@@ -48,13 +49,65 @@ function ManagerUserManagement() {
     updateFilter,
     totalUsers,
     filteredUsers,
-    footnote,
+    selectedUserId,
+    setSelectedUserId,
     selectedUserDetail,
     complianceFootnote,
+    loading,
+    toast,
+    setToast,
+    loadUsers,
+    toggleLockUser,
+    createNewUser,
   } = useUserManagement();
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    phoneNumber: "",
+    role: "facility_staff",
+    employeeCode: "",
+  });
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    if (!createForm.email || !createForm.password || !createForm.fullName) {
+      alert("Vui lòng điền đủ Họ tên, Email và Mật khẩu.");
+      return;
+    }
+    setSubmitting(true);
+    const success = await createNewUser(createForm);
+    setSubmitting(false);
+    if (success) {
+      setCreateModalOpen(false);
+      setCreateForm({
+        email: "",
+        password: "",
+        fullName: "",
+        phoneNumber: "",
+        role: "facility_staff",
+        employeeCode: "",
+      });
+    }
+  };
 
   return (
     <>
+      {toast && (
+        <div className="mb-3 flex items-center justify-between rounded-[10px] border border-[#2dd4a0] bg-[#effcf6] px-4 py-2.5 text-[12px] font-semibold text-[#0e7b4c]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            <span>{toast}</span>
+          </div>
+          <button onClick={() => setToast("")} className="text-[11px] font-bold underline">
+            Đóng
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-[#58657a]">
         <span>{breadcrumb.parent}</span>
         <span className="text-[#c7d1e6]">›</span>
@@ -62,19 +115,28 @@ function ManagerUserManagement() {
       </div>
 
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[20px] font-bold">{header.title}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[20px] font-bold">{header.title}</h1>
+          <span className="flex items-center gap-1 rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#2dd4a0]" />
+            Live DB
+          </span>
+        </div>
         <div className="flex flex-wrap gap-2">
-          {headerActions.map((action) => (
-            <button
-              key={action.id}
-              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
-                action.id === "new_user" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
+          <button
+            onClick={loadUsers}
+            className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[11px] font-bold text-[#3a475a] hover:bg-[#f5f7fd]"
+          >
+            <span className="material-symbols-outlined text-[15px]">refresh</span>
+            Tải lại
+          </button>
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3.5 py-2 text-[11px] font-bold text-white shadow-sm hover:bg-[#1649b8]"
+          >
+            <span className="material-symbols-outlined text-[15px]">person_add</span>
+            Thêm tài khoản
+          </button>
         </div>
       </div>
 
@@ -155,7 +217,13 @@ function ManagerUserManagement() {
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
-                <tr key={user.id} className={`border-b border-[#f2f5fb] align-top ${user.flagged ? "bg-[#fdf4f4]" : ""}`}>
+                <tr
+                  key={user.id}
+                  onClick={() => setSelectedUserId(user.id)}
+                  className={`cursor-pointer border-b border-[#f2f5fb] align-top transition hover:bg-[#f8faff] ${
+                    selectedUserId === user.id ? "bg-[#eef4ff]/50" : user.flagged ? "bg-[#fdf4f4]" : ""
+                  }`}
+                >
                   <td className="py-2.5 pr-2">
                     <input type="checkbox" className="h-3.5 w-3.5 accent-[#1d5fe5]" />
                   </td>
@@ -183,7 +251,15 @@ function ManagerUserManagement() {
                   <td className="py-2.5 pr-2">
                     <div className="flex items-center gap-1.5 text-[#8996a9]">
                       <span className="material-symbols-outlined text-[15px] cursor-pointer hover:text-[#1d5fe5]">edit</span>
-                      <span className="material-symbols-outlined text-[15px] cursor-pointer hover:text-red-600">lock</span>
+                      <button
+                        onClick={() => toggleLockUser(user)}
+                        title={user.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                        className="text-[#8996a9] hover:text-[#c0362c]"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">
+                          {user.status === "active" ? "lock" : "lock_open"}
+                        </span>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -265,6 +341,117 @@ function ManagerUserManagement() {
           <span>{complianceFootnote.right}</span>
         </div>
       </div>
+
+      {/* Modal: Add New Internal User (POST /api/admin/users) */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-[460px] rounded-[16px] bg-white p-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#eef1f8] pb-3">
+              <div>
+                <h3 className="text-[15px] font-bold">Thêm Người Dùng Mới</h3>
+                <p className="text-[10px] text-[#8996a9]">Tạo tài khoản và lưu trực tiếp vào cơ sở dữ liệu qua API Admin</p>
+              </div>
+              <button onClick={() => setCreateModalOpen(false)} className="text-[#8996a9] hover:text-[#0b1c30]">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-3 text-[11px]">
+              <div>
+                <label className="font-bold text-[#3a475a]">Họ và tên *</label>
+                <input
+                  type="text"
+                  required
+                  value={createForm.fullName}
+                  onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                  placeholder="VD: Nguyễn Văn Bảo"
+                  className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#3a475a]">Email đăng nhập *</label>
+                  <input
+                    type="email"
+                    required
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    placeholder="staff@vaultspace.vn"
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-[#3a475a]">Số điện thoại</label>
+                  <input
+                    type="text"
+                    value={createForm.phoneNumber}
+                    onChange={(e) => setCreateForm({ ...createForm, phoneNumber: e.target.value })}
+                    placeholder="0901234567"
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#3a475a]">Mật khẩu khởi tạo *</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    placeholder="Tối thiểu 6 ký tự"
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-[#3a475a]">Mã nhân viên (nếu có)</label>
+                  <input
+                    type="text"
+                    value={createForm.employeeCode}
+                    onChange={(e) => setCreateForm({ ...createForm, employeeCode: e.target.value })}
+                    placeholder="VD: STF-102"
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#3a475a]">Vai trò hệ thống *</label>
+                <select
+                  value={createForm.role}
+                  onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
+                  className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-2.5 py-2 outline-none"
+                >
+                  <option value="facility_staff">Facility Staff (Nhân viên vận hành kho)</option>
+                  <option value="facility_manager">Facility Manager (Quản lý cơ sở)</option>
+                  <option value="system_administrator">System Administrator (Quản trị viên)</option>
+                  <option value="customer">Customer (Khách hàng)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-[#eef1f8] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="rounded-[8px] border border-[#dfe7f5] px-4 py-2 font-bold text-[#58657a]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-[8px] bg-[#1d5fe5] px-4 py-2 font-bold text-white hover:bg-[#1649b8] disabled:opacity-60"
+                >
+                  {submitting ? "Đang lưu..." : "Tạo Tài Khoản"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

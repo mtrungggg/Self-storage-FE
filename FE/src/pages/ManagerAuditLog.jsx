@@ -34,25 +34,49 @@ function ManagerAuditLog() {
     totalEvents,
     auditFootnote,
     complianceCards,
+    loading,
+    toast,
+    setToast,
+    loadAuditLogs,
   } = useAuditLog();
 
   return (
     <>
+      {toast && (
+        <div className="mb-3 flex items-center justify-between rounded-[10px] border border-[#2dd4a0] bg-[#effcf6] px-4 py-2.5 text-[12px] font-semibold text-[#0e7b4c]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            <span>{toast}</span>
+          </div>
+          <button onClick={() => setToast("")} className="text-[11px] font-bold underline">
+            Đóng
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold text-[#58657a]">
         <span>{breadcrumb.parent}</span>
         <span className="text-[#c7d1e6]">›</span>
         <span className="text-[#0b1c30]">{breadcrumb.current}</span>
         <span className="ml-auto flex items-center gap-1 text-[9px] font-bold text-[#0e7b4c]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> {breadcrumb.siemStatus}
+          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> Live DB
         </span>
       </div>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] font-bold">{header.title}</h1>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={loadAuditLogs}
+            className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[11px] font-bold text-[#3a475a] hover:bg-[#f5f7fd]"
+          >
+            <span className="material-symbols-outlined text-[15px]">refresh</span>
+            Tải lại
+          </button>
           {headerActions.map((action) => (
             <button
               key={action.id}
+              onClick={loadAuditLogs}
               className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
                 action.id === "export"
                   ? "bg-[#1d5fe5] text-white"

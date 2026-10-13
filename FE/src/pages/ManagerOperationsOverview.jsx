@@ -84,14 +84,37 @@ function ManagerOperationsOverview() {
     isActive: true,
   });
 
+  const [facilityId, setFacilityId] = useState(1);
+  const [facilities, setFacilities] = useState([]);
+  const [dailySchedule, setDailySchedule] = useState(null);
+
   const loadData = async () => {
     setLoading(true);
     setErrorMsg("");
     try {
-      const res = await managerService.getRevenueOverview();
+      // 1. Fetch real facility dashboard KPIs (Swagger API #21: GET /manager/facilities/{facilityId}/dashboard)
+      let dashboardKpis = null;
+      try {
+        const dashRes = await managerService.getFacilityDashboard(facilityId);
+        if (dashRes?.data) {
+          dashboardKpis = dashRes.data;
+          setDailySchedule(dashRes.data.dailySchedule || null);
+        }
+      } catch (dashErr) {
+        console.warn("Could not load facility dashboard:", dashErr);
+      }
+
+      // 2. Fetch revenue overview & invoices list
+      const res = await managerService.getRevenueOverview(facilityId);
       const data = res?.data;
       if (data) {
-        setKpis(data.kpis);
+        const mergedKpis = {
+          ...data.kpis,
+          totalRevenuePaid: dashboardKpis?.thisMonthRevenue || data.kpis?.totalRevenuePaid,
+          openReceivablesAmount: dashboardKpis?.totalOutstandingDebt || data.kpis?.openReceivablesAmount,
+          occupancyRatePercent: dashboardKpis?.occupancyRate || data.kpis?.occupancyRatePercent,
+        };
+        setKpis(mergedKpis);
         setMonthlyTrend(data.monthlyTrend || []);
         setCategoryMix(data.categoryMix || []);
         setInvoices(data.invoices || []);
@@ -106,8 +129,23 @@ function ManagerOperationsOverview() {
   };
 
   useEffect(() => {
-    loadData();
+    async function initFacilities() {
+      try {
+        const facRes = await managerService.getFacilities();
+        if (Array.isArray(facRes?.data) && facRes.data.length > 0) {
+          setFacilities(facRes.data);
+          setFacilityId((prev) => (prev ? prev : facRes.data[0].id));
+        }
+      } catch (err) {
+        console.warn("Could not load facilities:", err);
+      }
+    }
+    initFacilities();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [facilityId]);
 
   const showToast = (msg) => {
     setBannerMsg(msg);
@@ -357,7 +395,28 @@ function ManagerOperationsOverview() {
             Live
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#3a475a]">
+            <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">domain</span>
+            <span>Cơ sở:</span>
+            <select
+              value={facilityId}
+              onChange={(e) => setFacilityId(Number(e.target.value))}
+              className="bg-transparent font-bold text-[#1d5fe5] outline-none"
+            >
+              {facilities.length === 0 ? (
+                <option value={facilityId}>Cơ sở {facilityId}</option>
+              ) : (
+                facilities.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({f.code})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <button
             onClick={loadData}
             className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[11px] font-bold text-[#3a475a] hover:bg-[#f5f7fd]"
@@ -374,6 +433,21 @@ function ManagerOperationsOverview() {
           </button>
         </div>
       </div>
+
+      {/* Daily Schedule Banner from Swagger API #21 */}
+      {dailySchedule && (
+        <div className="mt-3 flex flex-wrap items-center gap-4 rounded-[10px] border border-[#d6e4ff] bg-[#f0f5ff] px-4 py-2 text-[11px] font-semibold text-[#1d5fe5]">
+          <span className="flex items-center gap-1 font-bold text-[#0b1c30]">
+            <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">event_note</span>
+            Lịch hoạt động hôm nay:
+          </span>
+          <span>Check-in mới: <b className="text-[#0e7b4c]">{dailySchedule.todayCheckInsCount ?? 0}</b></span>
+          <span>•</span>
+          <span>Check-out trả kho: <b className="text-[#a15c00]">{dailySchedule.todayCheckOutsCount ?? 0}</b></span>
+          <span>•</span>
+          <span>Cần kiểm tra ô kho: <b className="text-[#1d5fe5]">{dailySchedule.todayInspectionsCount ?? 0}</b></span>
+        </div>
+      )}
 
       {bannerMsg && (
         <div className="mt-3 flex items-center justify-between rounded-[10px] border border-[#2dd4a0] bg-[#effcf6] px-4 py-2.5 text-[12px] font-semibold text-[#0e7b4c]">

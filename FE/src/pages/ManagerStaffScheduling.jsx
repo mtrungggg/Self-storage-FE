@@ -63,6 +63,23 @@ function ManagerStaffScheduling() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
 
+  const [facilityId, setFacilityId] = useState(1);
+  const [shiftsList, setShiftsList] = useState([]);
+
+  // Modal for creating a new shift definition (Swagger API #9)
+  const [shiftDefModalOpen, setShiftDefModalOpen] = useState(false);
+  const [shiftDefForm, setShiftDefForm] = useState(() => {
+    const now = new Date();
+    const start = new Date(now.getTime() + 60 * 60 * 1000);
+    const end = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    return {
+      shiftName: "Ca Trực Tăng Cường",
+      startsAt: start.toISOString(),
+      endsAt: end.toISOString(),
+      status: "open",
+    };
+  });
+
   // Modal for assigning/editing a shift cell
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
   const [shiftForm, setShiftForm] = useState({
@@ -110,9 +127,17 @@ function ManagerStaffScheduling() {
     try {
       setLoading(true);
       setError("");
-      const res = await managerService.getStaffingOverview();
+      const res = await managerService.getStaffingOverview(facilityId);
       const payload = res?.data || res;
       setData(payload);
+
+      // Swagger API #8: GET /manager/facilities/{facilityId}/shifts
+      try {
+        const shiftRes = await managerService.getShifts(facilityId);
+        if (shiftRes?.data) setShiftsList(shiftRes.data);
+      } catch (sErr) {
+        console.warn("Could not load shifts:", sErr);
+      }
     } catch (err) {
       setError(err.message || "Không thể tải dữ liệu phân công lịch nhân viên từ SQL Server.");
     } finally {
@@ -121,8 +146,22 @@ function ManagerStaffScheduling() {
   };
 
   useEffect(() => {
-    fetchStaffing();
+    async function initFacilities() {
+      try {
+        const facRes = await managerService.getFacilities();
+        if (Array.isArray(facRes?.data) && facRes.data.length > 0) {
+          setFacilityId((prev) => (prev ? prev : facRes.data[0].id));
+        }
+      } catch (err) {
+        console.warn("Could not load facilities:", err);
+      }
+    }
+    initFacilities();
   }, []);
+
+  useEffect(() => {
+    fetchStaffing();
+  }, [facilityId]);
 
   const kpis = data?.kpis || {};
   const weekDays = data?.weekDays || [];
@@ -169,6 +208,23 @@ function ManagerStaffScheduling() {
     }
   };
 
+  const handleCreateShiftDef = async (e) => {
+    e.preventDefault();
+    try {
+      await managerService.createShift(facilityId, {
+        shiftName: shiftDefForm.shiftName,
+        startsAt: shiftDefForm.startsAt,
+        endsAt: shiftDefForm.endsAt,
+        status: shiftDefForm.status || "open",
+      });
+      setShiftDefModalOpen(false);
+      showToast(`Đã tạo khung ca trực "${shiftDefForm.shiftName}" trên Database!`);
+      await fetchStaffing();
+    } catch (err) {
+      alert(err.message || "Không thể tạo khung ca trực");
+    }
+  };
+
   const handleSaveShiftCell = async (e) => {
     e.preventDefault();
     if (!shiftForm.facilityId) {
@@ -176,6 +232,29 @@ function ManagerStaffScheduling() {
       return;
     }
     try {
+      // Swagger API #11: POST /manager/facilities/{facilityId}/shift-assignments
+      try {
+        const matchedShift =
+          shiftsList.find((s) => {
+            const sName = (s.shiftName || "").toLowerCase();
+            const curType = (shiftForm.shiftType || "").toLowerCase();
+            if (curType === "morning" && (sName.includes("sáng") || sName.includes("morning"))) return true;
+            if (curType === "afternoon" && (sName.includes("chiều") || sName.includes("afternoon"))) return true;
+            if (curType === "night" && (sName.includes("tối") || sName.includes("đêm") || sName.includes("night"))) return true;
+            return false;
+          }) || shiftsList[0];
+        const assignedShiftId = matchedShift?.id || matchedShift?.shiftId || 1;
+
+        await managerService.assignShift(Number(shiftForm.facilityId), {
+          shiftId: Number(assignedShiftId),
+          employeeId: Number(shiftForm.employeeId),
+          dutyRole: shiftForm.dutyRole || "staff",
+          status: shiftForm.attendanceStatus || "scheduled",
+        });
+      } catch (e11) {
+        console.warn("API 11 assignShift:", e11);
+      }
+
       await managerService.assignStaffCellShift({
         facilityId: Number(shiftForm.facilityId),
         employeeId: Number(shiftForm.employeeId),
@@ -282,7 +361,8 @@ function ManagerStaffScheduling() {
         await managerService.updateStaffTask(editingTask.id, payload);
         showToast("Đã cập nhật nhiệm vụ nhân viên trong Database!");
       } else {
-        await managerService.createStaffTask(payload);
+        // Swagger API #12: POST /manager/facilities/{facilityId}/tasks
+        await managerService.createStaffTask(Number(taskForm.facilityId), payload);
         showToast("Đã giao nhiệm vụ mới cho nhân viên trong Database!");
       }
       setTaskModalOpen(false);
@@ -343,10 +423,37 @@ function ManagerStaffScheduling() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#58657a]">
+            <span>Cơ sở:</span>
+            <select
+              value={facilityId}
+              onChange={(e) => setFacilityId(Number(e.target.value))}
+              className="rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#0b1c30] outline-none"
+            >
+              {facilities.length > 0 ? (
+                facilities.map((fac) => (
+                  <option key={fac.id} value={fac.id}>
+                    {fac.name} ({fac.code})
+                  </option>
+                ))
+              ) : (
+                <option value={facilityId}>Cơ sở #{facilityId}</option>
+              )}
+            </select>
+          </div>
+
           <div className="flex items-center gap-1 rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[10px] font-semibold text-[#3a475a]">
             <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">calendar_today</span>
             {data?.weekRangeLabel || "Tuần hiện tại"}
           </div>
+
+          <button
+            onClick={() => setShiftDefModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[11px] font-bold text-[#3a475a] hover:bg-[#f8faff]"
+          >
+            <span className="material-symbols-outlined text-[15px]">more_time</span>
+            Tạo khung ca (API #9)
+          </button>
 
           <button
             onClick={() => {
@@ -967,6 +1074,107 @@ function ManagerStaffScheduling() {
                   className="rounded-[8px] bg-[#1d5fe5] px-4 py-2 font-bold text-white hover:bg-[#164dc0]"
                 >
                   {editingTask ? "Lưu Cập Nhật" : "Giao Nhiệm Vụ"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Create Shift Definition (Swagger API #9) */}
+      {shiftDefModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-[460px] rounded-[16px] bg-white p-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#eef1f8] pb-3">
+              <div>
+                <h3 className="text-[15px] font-bold">Tạo Khung Giờ Ca Trực Mới</h3>
+                <p className="text-[10px] text-[#8996a9]">
+                  Swagger API #9: POST /manager/facilities/{facilityId}/shifts
+                </p>
+              </div>
+              <button
+                onClick={() => setShiftDefModalOpen(false)}
+                className="text-[#8996a9] hover:text-[#0b1c30]"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateShiftDef} className="mt-4 space-y-3 text-[11px]">
+              <div>
+                <label className="font-bold text-[#3a475a]">Tên khung ca trực *</label>
+                <input
+                  type="text"
+                  required
+                  value={shiftDefForm.shiftName}
+                  onChange={(e) =>
+                    setShiftDefForm({ ...shiftDefForm, shiftName: e.target.value })
+                  }
+                  placeholder="VD: Ca Trực Đêm 23:00 - 07:00"
+                  className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-3 py-2 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#3a475a]">Bắt đầu (Starts At) *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={shiftDefForm.startsAt.slice(0, 16)}
+                    onChange={(e) =>
+                      setShiftDefForm({
+                        ...shiftDefForm,
+                        startsAt: new Date(e.target.value).toISOString(),
+                      })
+                    }
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-2.5 py-2 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-[#3a475a]">Kết thúc (Ends At) *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={shiftDefForm.endsAt.slice(0, 16)}
+                    onChange={(e) =>
+                      setShiftDefForm({
+                        ...shiftDefForm,
+                        endsAt: new Date(e.target.value).toISOString(),
+                      })
+                    }
+                    className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-2.5 py-2 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#3a475a]">Trạng thái khung ca</label>
+                <select
+                  value={shiftDefForm.status}
+                  onChange={(e) =>
+                    setShiftDefForm({ ...shiftDefForm, status: e.target.value })
+                  }
+                  className="mt-1 w-full rounded-[8px] border border-[#dfe7f5] px-2.5 py-2 outline-none"
+                >
+                  <option value="open">Đang mở đăng ký (Open)</option>
+                  <option value="closed">Đã chốt danh sách (Closed)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-[#eef1f8] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShiftDefModalOpen(false)}
+                  className="rounded-[8px] border border-[#dfe7f5] px-4 py-2 font-bold text-[#58657a]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-[8px] bg-[#1d5fe5] px-4 py-2 font-bold text-white hover:bg-[#164dc0]"
+                >
+                  Tạo Khung Ca
                 </button>
               </div>
             </form>
