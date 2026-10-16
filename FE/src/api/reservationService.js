@@ -27,6 +27,7 @@ export const reservationService = {
    */
   async getReservationDetail(id) {
     const res = await apiClient.get(`/customer/reservations/${id}`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Unable to load reservation details.");
     return res?.data ?? null;
   },
 

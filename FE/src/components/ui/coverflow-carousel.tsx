@@ -13,6 +13,7 @@ export interface CoverflowSlide {
   alt: string;
   title?: string;
   subtitle?: string;
+  badge?: string;
   meta?: { label: string; value: string }[];
   unitData?: any;
 }
@@ -42,6 +43,8 @@ export interface CoverflowCarouselProps {
   className?: string;
   cardClassName?: string;
   onSelectSlide?: (slide: CoverflowSlide, index: number) => void;
+  /** Fires whenever navigation changes the centered slide. */
+  onActiveSlideChange?: (slide: CoverflowSlide, index: number) => void;
 }
 
 export function CoverflowCarousel({
@@ -61,6 +64,7 @@ export function CoverflowCarousel({
   className,
   cardClassName,
   onSelectSlide,
+  onActiveSlideChange,
 }: CoverflowCarouselProps) {
   const count = slides.length;
 
@@ -82,6 +86,11 @@ export function CoverflowCarousel({
   } | null>(null);
 
   const [selected, setSelected] = React.useState(0);
+  const activeChangeRef = React.useRef(onActiveSlideChange);
+
+  React.useEffect(() => {
+    activeChangeRef.current = onActiveSlideChange;
+  }, [onActiveSlideChange]);
 
   /** Nearest whole card, folded back into 0..count-1. */
   const indexAt = React.useCallback(
@@ -137,6 +146,7 @@ export function CoverflowCarousel({
       targetRef.current = target;
       const idx = indexAt(target);
       setSelected(idx);
+      if (slides[idx]) activeChangeRef.current?.(slides[idx], idx);
 
       const step = () => {
         const remaining = target - posRef.current;
@@ -154,7 +164,7 @@ export function CoverflowCarousel({
       };
       rafRef.current = requestAnimationFrame(step);
     },
-    [indexAt, paint],
+    [indexAt, paint, slides],
   );
 
   const clamp = React.useCallback(
@@ -325,6 +335,14 @@ export function CoverflowCarousel({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   
+                  {slide.badge && (
+                    <div className="absolute top-3.5 left-3.5 z-10">
+                      <span className="rounded-lg bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white shadow backdrop-blur-md border border-white/20">
+                        {slide.badge}
+                      </span>
+                    </div>
+                  )}
+
                   {slide.title && (
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <h3 className="text-[18px] font-black leading-tight drop-shadow-md">

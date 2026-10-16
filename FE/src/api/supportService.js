@@ -1,0 +1,40 @@
+import apiClient from "./apiClient";
+
+function unwrap(response) {
+  if (response?.success !== true) {
+    throw new Error(response?.message || response?.errors?.join(", ") || "Unable to process support tickets.");
+  }
+  return response.data;
+}
+
+export default {
+  async confirmAndRate(id, { score, comment }) {
+    return unwrap(await apiClient.post(`/customer/support-tickets/${encodeURIComponent(id)}/confirm-and-rate`, { score, comment }));
+  },
+  async sendMessage(id, { body, attachments = [] }) {
+    const message = unwrap(await apiClient.post(`/customer/support-tickets/${encodeURIComponent(id)}/messages`, {
+      body,
+      attachments,
+    }));
+    if (!message || message.id == null) throw new Error("The server did not return the sent message.");
+    return message;
+  },
+  async getTicketDetail(id) {
+    const ticket = unwrap(await apiClient.get(`/customer/support-tickets/${encodeURIComponent(id)}`));
+    if (!ticket || ticket.id == null) throw new Error("The server did not return ticket details.");
+    return ticket;
+  },
+  async createTicket(payload) {
+    const ticket = unwrap(await apiClient.post("/customer/support-tickets", payload));
+    if (!ticket || ticket.id == null) throw new Error("The server did not return the created ticket.");
+    return ticket;
+  },
+  async getTickets(status) {
+    const tickets = unwrap(await apiClient.get("/customer/support-tickets", {
+      params: status && status !== "all" ? { status } : {},
+    }));
+    if (tickets == null) return [];
+    if (!Array.isArray(tickets)) throw new Error("The server returned an invalid ticket list.");
+    return tickets;
+  },
+};

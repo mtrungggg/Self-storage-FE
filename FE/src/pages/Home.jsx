@@ -68,38 +68,18 @@ function Home() {
 
   // Convert filteredUnits into CoverflowSlides
   const slides = useMemo(() => {
-    return filteredUnits.map((u, index) => {
-      // Simplify unitTypeName: "Extra Large 16 m2" -> "Extra Large", "Large 10 m2" -> "Large"
-      let cleanTypeName = u.typeName || "Standard";
-      if (cleanTypeName.toLowerCase().includes("extra large")) {
-        cleanTypeName = "Extra Large";
-      } else if (cleanTypeName.toLowerCase().includes("máy lạnh") || cleanTypeName.toLowerCase().includes("climate")) {
-        cleanTypeName = "Medium Climate";
-      } else if (cleanTypeName.toLowerCase().startsWith("large")) {
-        cleanTypeName = "Large";
-      } else if (cleanTypeName.toLowerCase().startsWith("medium")) {
-        cleanTypeName = "Medium";
-      } else if (cleanTypeName.toLowerCase().startsWith("small")) {
-        cleanTypeName = "Small";
-      } else if (cleanTypeName.toLowerCase().startsWith("mini")) {
-        cleanTypeName = "Mini";
-      }
-      cleanTypeName = cleanTypeName.replace(/\s*16\s*m[2²]/gi, "").trim();
-
-      // Simplify volume: "48 m³ (3m)" -> "48 m³" (remove parentheses at the end)
-      let cleanVolume = u.volume || "";
-      cleanVolume = cleanVolume.replace(/\s*\([^)]*\)/g, "").trim();
-
+    return filteredUnits.map((u) => {
       return {
         src: u.image || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=640&h=640&fit=crop&q=70&auto=format",
         alt: `Unit ${u.unitCode} - ${u.facilityName}`,
         title: `Unit ${u.unitCode}`,
         subtitle: `${u.facilityName} • ${u.floor || "Floor 1"}`,
+        badge: u.typeCode || "",
         meta: [
           { label: "Monthly Rate", value: `${formatVnd(u.rentPrice)}/mo` },
-          { label: "Dimensions", value: cleanVolume || "—" },
-          { label: "Unit Type", value: cleanTypeName },
-          { label: "Status", value: "Ready for move-in" },
+          { label: "Specs", value: `${u.dimension || ""} (${u.areaM2} m²)` },
+          { label: "Unit Type", value: u.typeName },
+          { label: "Climate", value: u.climateNote || (u.climateControlled ? "Climate Controlled" : "Ambient Dry") },
         ],
         unitData: u,
       };
@@ -213,8 +193,8 @@ function Home() {
                 </button>
 
                 {openDropdown === "type" && (
-                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[240px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
-                    <div className="max-h-[260px] overflow-y-auto space-y-0.5">
+                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[280px] sm:min-w-[360px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
+                    <div className="max-h-[300px] overflow-y-auto space-y-0.5">
                       {storageTypes.map((t) => {
                         const isSelected = selectedType === t.id;
                         return (
@@ -225,15 +205,33 @@ function Home() {
                               setSelectedType(t.id);
                               setOpenDropdown(null);
                             }}
-                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2.5 text-left text-[12px] font-semibold transition ${
+                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold transition ${
                               isSelected
                                 ? "bg-[#1d5fe5] text-white font-bold"
                                 : "text-[#0b1c30] hover:bg-[#f0f4fc] hover:text-[#1d5fe5]"
                             }`}
                           >
-                            <span className="truncate">{t.label}</span>
+                            <div className="flex items-center gap-2 truncate">
+                              <span
+                                className={`material-symbols-outlined text-[17px] ${
+                                  isSelected ? "text-white" : "text-[#1d5fe5]"
+                                }`}
+                              >
+                                {t.icon || "warehouse"}
+                              </span>
+                              {t.code && t.code !== "ALL" && (
+                                <span
+                                  className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                                    isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
+                                  }`}
+                                >
+                                  {t.code}
+                                </span>
+                              )}
+                              <span className="truncate">{t.label}</span>
+                            </div>
                             {isSelected && (
-                              <span className="material-symbols-outlined text-[16px] text-white">check</span>
+                              <span className="material-symbols-outlined text-[16px] text-white shrink-0 ml-1">check</span>
                             )}
                           </button>
                         );
@@ -273,8 +271,8 @@ function Home() {
                 </button>
 
                 {openDropdown === "size" && (
-                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[240px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
-                    <div className="max-h-[260px] overflow-y-auto space-y-0.5">
+                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[260px] sm:min-w-[320px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
+                    <div className="max-h-[300px] overflow-y-auto space-y-0.5">
                       {sizeFilters.map((s) => {
                         const isSelected = selectedSize === s.id;
                         return (
@@ -285,15 +283,26 @@ function Home() {
                               setSelectedSize(s.id);
                               setOpenDropdown(null);
                             }}
-                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2.5 text-left text-[12px] font-semibold transition ${
+                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold transition ${
                               isSelected
                                 ? "bg-[#1d5fe5] text-white font-bold"
                                 : "text-[#0b1c30] hover:bg-[#f0f4fc] hover:text-[#1d5fe5]"
                             }`}
                           >
-                            <span className="truncate">{s.label}</span>
+                            <div className="flex flex-col truncate">
+                              <span className="truncate">{s.label}</span>
+                              {s.subtext && (
+                                <span
+                                  className={`text-[10px] truncate ${
+                                    isSelected ? "text-white/80" : "text-[#718299]"
+                                  }`}
+                                >
+                                  {s.subtext}
+                                </span>
+                              )}
+                            </div>
                             {isSelected && (
-                              <span className="material-symbols-outlined text-[16px] text-white">check</span>
+                              <span className="material-symbols-outlined text-[16px] text-white shrink-0 ml-1">check</span>
                             )}
                           </button>
                         );

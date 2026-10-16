@@ -49,7 +49,11 @@ export function useLogin() {
       const returnUrl = location.state?.from?.pathname;
 
       setTimeout(() => {
-        if (roles.includes("admin") || roles.includes("system_admin")) {
+        if (
+          roles.includes("admin") ||
+          roles.includes("system_admin") ||
+          roles.includes("system_administrator")
+        ) {
           navigate("/admin-overview");
         } else if (
           roles.includes("staff") ||

@@ -9,17 +9,39 @@ import {
 import facilityService from "../api/facilityService";
 import storageUnitService from "../api/storageUnitService";
 
-const CLIMATE_IMAGE =
-  "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80";
+const UNIT_TYPE_IMAGES = {
+  "S-DRY": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+  "M-DRY": "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
+  "M-SEAFOOD": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=800&q=80",
+  "L-WARM": "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
+  "XL-CLIMATE": "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
+  "MINI-DRY": "https://images.unsplash.com/photo-1554774853-719586f82d77?auto=format&fit=crop&w=800&q=80",
+  "S-SEAFOOD": "https://images.unsplash.com/photo-1516542076529-1ea3854896f2?auto=format&fit=crop&w=800&q=80",
+  "M-WARM": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+};
+
 const STANDARD_IMAGE =
   "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
 
+function getUnitTypeImage(unitType) {
+  if (!unitType) return "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
+  const code = String(unitType.code || "").toUpperCase();
+  if (UNIT_TYPE_IMAGES[code]) return UNIT_TYPE_IMAGES[code];
+  const name = String(unitType.name || "").toLowerCase();
+  if (name.includes("freeze") || name.includes("seafood")) return UNIT_TYPE_IMAGES["M-SEAFOOD"];
+  if (name.includes("warm") || name.includes("heat")) return UNIT_TYPE_IMAGES["L-WARM"];
+  if (name.includes("climate")) return UNIT_TYPE_IMAGES["XL-CLIMATE"];
+  if (name.includes("locker") || name.includes("mini")) return UNIT_TYPE_IMAGES["MINI-DRY"];
+  return UNIT_TYPE_IMAGES["S-DRY"];
+}
+
 function sizeCategoryOf(areaM2) {
   if (areaM2 == null) return "all";
-  if (areaM2 < 5) return "small";
-  if (areaM2 < 10) return "medium";
-  if (areaM2 < 20) return "large";
-  return "vehicle";
+  if (areaM2 <= 1.5) return "mini";
+  if (areaM2 <= 4) return "small";
+  if (areaM2 <= 8) return "medium";
+  if (areaM2 <= 12) return "large";
+  return "xlarge";
 }
 
 // Application layer: encapsulates Home (storage search & reservation) page state and data wiring.
@@ -36,7 +58,7 @@ export function useHome() {
   // UI state (Step ii)
   const [activeTab, setActiveTab] = useState("units"); // 'units' (ô kho trống) or 'facilities' (điểm kho)
   const [sortBy, setSortBy] = useState("recommended");
-  const [activeSizeTab, setActiveSizeTab] = useState("studio");
+  const [activeSizeTab, setActiveSizeTab] = useState("small");
 
   // Backend-sourced data
   const [facilities, setFacilities] = useState([]);
@@ -90,21 +112,30 @@ export function useHome() {
   );
 
   const storageTypes = useMemo(() => {
-    const list = [{ id: "all", label: "All Unit Types", icon: "warehouse" }];
-    const seen = new Set();
-    unitTypes.forEach((t) => {
-      let label = t.name || "";
-      if (label.toLowerCase().startsWith("extra large")) label = "Extra Large";
-      else if (label.toLowerCase().includes("máy lạnh") || label.toLowerCase().includes("climate")) label = "Medium Climate";
-      else if (label.toLowerCase().startsWith("large")) label = "Large";
-      else if (label.toLowerCase().startsWith("medium")) label = "Medium";
-      else if (label.toLowerCase().startsWith("mini")) label = "Mini";
-      else if (label.toLowerCase().startsWith("small")) label = "Small";
+    const list = [{ id: "all", label: "All Unit Types", code: "ALL", icon: "warehouse" }];
+    const sorted = [...unitTypes].sort((a, b) => a.id - b.id);
+    sorted.forEach((t) => {
+      let icon = "warehouse";
+      const code = String(t.code || "").toUpperCase();
+      const name = String(t.name || "").toLowerCase();
+      if (name.includes("freeze") || name.includes("seafood") || code.includes("SEAFOOD")) {
+        icon = "ac_unit";
+      } else if (name.includes("warm") || code.includes("WARM")) {
+        icon = "device_thermostat";
+      } else if (name.includes("climate") || code.includes("CLIMATE")) {
+        icon = "hvac";
+      } else if (name.includes("locker") || code.includes("MINI")) {
+        icon = "lock";
+      }
 
       list.push({
         id: String(t.id),
-        label,
-        icon: t.climateControlled ? "device_thermostat" : "warehouse",
+        code: t.code || `TYPE-${t.id}`,
+        label: t.name || `Type #${t.id}`,
+        icon,
+        climateControlled: t.climateControlled,
+        areaM2: t.areaM2,
+        description: t.description,
       });
     });
     return list;
@@ -115,6 +146,22 @@ export function useHome() {
     return rawUnits.map((u) => {
       const facility = facilityById.get(u.facilityId);
       const unitType = unitTypeById.get(u.unitTypeId);
+
+      let climateNote = "Ambient Dry Storage";
+      const typeCode = String(unitType?.code || "").toUpperCase();
+      const typeNameLower = String(unitType?.name || "").toLowerCase();
+      if (typeCode === "XL-CLIMATE" || typeNameLower.includes("dual")) {
+        climateNote = "Dual Climate Controlled";
+      } else if (typeCode === "M-SEAFOOD" || typeNameLower.includes("freeze")) {
+        climateNote = "Sub-Zero Deep Freeze";
+      } else if (typeCode === "S-SEAFOOD" || typeNameLower.includes("chilled")) {
+        climateNote = "Chilled Cold Storage";
+      } else if (typeCode.includes("WARM") || typeNameLower.includes("warm")) {
+        climateNote = "Heated (22°C–26°C)";
+      } else if (typeCode === "MINI-DRY") {
+        climateNote = "Smart Dry Locker";
+      }
+
       return {
         id: u.id,
         unitCode: u.unitCode,
@@ -125,28 +172,21 @@ export function useHome() {
           .filter(Boolean)
           .join(" • "),
         unitTypeId: u.unitTypeId,
-        typeName: (() => {
-          let name = unitType?.name || "";
-          if (name.toLowerCase().includes("extra large")) return "Extra Large";
-          if (name.toLowerCase().includes("máy lạnh") || name.toLowerCase().includes("climate")) return "Medium Climate";
-          if (name.toLowerCase().startsWith("large")) return "Large";
-          if (name.toLowerCase().startsWith("medium")) return "Medium";
-          if (name.toLowerCase().startsWith("small")) return "Small";
-          if (name.toLowerCase().startsWith("mini")) return "Mini";
-          return name.replace(/\s*16\s*m[2²]/gi, "").trim();
-        })(),
+        typeCode: unitType?.code || "",
+        typeName: unitType?.name || `Type #${u.unitTypeId}`,
         climateControlled: Boolean(unitType?.climateControlled),
+        climateNote,
         type: unitType?.climateControlled ? "climate" : "standard",
         sizeCategory: sizeCategoryOf(unitType?.areaM2),
-        dimension: unitType ? `${unitType.widthM}m x ${unitType.lengthM}m` : "",
-        sizeLabel: unitType ? `${unitType.widthM}m x ${unitType.lengthM}m` : "",
+        dimension: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
+        sizeLabel: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
         areaM2: unitType?.areaM2 ?? null,
         height: unitType ? `${unitType.heightM}m` : "",
         volume: unitType ? `${unitType.volumeM3} m³` : "",
         fitNote: unitType?.description || "",
         rentPrice: u.monthlyRate,
         depositPrice: null,
-        image: unitType?.climateControlled ? CLIMATE_IMAGE : STANDARD_IMAGE,
+        image: getUnitTypeImage(unitType),
       };
     });
   }, [rawUnits, facilityById, unitTypeById]);
@@ -206,7 +246,9 @@ export function useHome() {
           const matchFac = unit.facilityName.toLowerCase().includes(query);
           const matchAddr = unit.address.toLowerCase().includes(query);
           const matchType = unit.typeName.toLowerCase().includes(query);
-          if (!matchCode && !matchFac && !matchAddr && !matchType) {
+          const matchTypeCode = (unit.typeCode || "").toLowerCase().includes(query);
+          const matchClimate = (unit.climateNote || "").toLowerCase().includes(query);
+          if (!matchCode && !matchFac && !matchAddr && !matchType && !matchTypeCode && !matchClimate) {
             return false;
           }
         }
