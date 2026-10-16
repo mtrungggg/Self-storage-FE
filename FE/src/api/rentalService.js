@@ -1,6 +1,49 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async requestUnitTransfer(agreementId, payload) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-request`, payload);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request a unit transfer.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the transfer request.");
+    return res.data;
+  },
+  async revokeAuthorizedMember(agreementId, memberId) {
+    const res = await apiClient.delete(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members/${encodeURIComponent(memberId)}`);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to revoke authorization.");
+    return res.data;
+  },
+  async addAuthorizedMember(agreementId, payload) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`, payload);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to add authorized member.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the authorized member.");
+    return res.data;
+  },
+  async getAuthorizedMembers(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/authorized-members`);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load authorized members.");
+    if (res.data == null) return [];
+    if (!Array.isArray(res.data)) throw new Error("The server returned an invalid member list.");
+    return res.data;
+  },
+  async renewAgreement(agreementId, renewalMonths) {
+    if (!Number.isInteger(renewalMonths) || renewalMonths < 1 || renewalMonths > 12) throw new Error("Select 1–12 renewal months.");
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/renew`, { renewalMonths });
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request renewal.");
+    if (!res.data || res.data.renewalId == null) throw new Error("The server did not return renewal details.");
+    return res.data;
+  },
+  async getRefundPreview(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/refund-preview`);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load the refund estimate.");
+    if (!res.data || res.data.agreementId == null) throw new Error("The server did not return a refund estimate.");
+    return res.data;
+  },
+  async requestMoveOut(agreementId, { requestedMoveOutDate, reason }) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/move-out`, { requestedMoveOutDate, reason });
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request move-out.");
+    if (!res.data || res.data.id == null) throw new Error("The server did not return the move-out request.");
+    return res.data;
+  },
   /**
    * Lấy danh sách hợp đồng thuê kho (đang hoạt động & lịch sử) của khách hàng
    */
@@ -15,6 +58,7 @@ export const rentalService = {
    */
   async getAccessCredentials(agreementId) {
     const res = await apiClient.get(`/customer/rentals/${agreementId}/access-credentials`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Unable to load access credentials.");
     return res?.data ?? null;
   },
 
@@ -25,6 +69,7 @@ export const rentalService = {
    */
   async changePin(agreementId, data) {
     const res = await apiClient.put(`/customer/rentals/${agreementId}/change-pin`, data);
+    if (res?.success !== true || res?.data?.success !== true) throw new Error(res?.data?.message || res?.message || "Unable to change PIN.");
     return res?.data ?? null;
   },
 
@@ -32,9 +77,64 @@ export const rentalService = {
    * Lấy biên bản bàn giao ô kho (nhận/trả kho)
    * @param {number|string} agreementId
    */
-  async getHandoverRecord(agreementId) {
-    const res = await apiClient.get(`/customer/rentals/${agreementId}/handover`);
-    return res?.data ?? null;
+  /**
+   * Mở khóa kho bằng mã PIN (Remote Unlock)
+   * @param {number|string} agreementId
+   * @param {string} pin
+   */
+  async unlockUnit(agreementId, pin) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/unlock`, { pin });
+    if (res?.success !== true || !res.data) throw new Error(res?.message || res?.data?.message || "Không thể mở khóa kho.");
+    return res.data;
+  },
+
+  /**
+   * Lấy danh sách đồ đạc đã khai báo trong kho
+   * @param {number|string} agreementId
+   */
+  async getStoredItems(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/items`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể tải danh sách tài sản lưu kho.");
+    return res.data;
+  },
+
+  /**
+   * Khai báo danh sách đồ đạc lưu kho
+   * @param {number|string} agreementId
+   * @param {{ items: Array<{ itemName: string, category: string, quantity?: number, estimatedValue?: number, riskClassification?: string, description?: string, photoUrl?: string }> }} data
+   */
+  async declareStoredItems(agreementId, data) {
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/items`, data);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể khai báo tài sản lưu kho.");
+    return res.data;
+  },
+
+  /**
+   * Cập nhật món đồ lưu kho (tên, số lượng, danh mục...)
+   * @param {number|string} agreementId
+   * @param {number|string} itemId
+   * @param {{ itemName: string, category?: string, quantity: number, estimatedValue?: number, riskClassification?: string, description?: string, photoUrl?: string }} data
+   */
+  async updateStoredItem(agreementId, itemId, data) {
+    const res = await apiClient.put(
+      `/customer/rentals/${encodeURIComponent(agreementId)}/items/${encodeURIComponent(itemId)}`,
+      data
+    );
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể cập nhật đồ lưu kho.");
+    return res.data;
+  },
+
+  /**
+   * Xóa món đồ khỏi kho
+   * @param {number|string} agreementId
+   * @param {number|string} itemId
+   */
+  async deleteStoredItem(agreementId, itemId) {
+    const res = await apiClient.delete(
+      `/customer/rentals/${encodeURIComponent(agreementId)}/items/${encodeURIComponent(itemId)}`
+    );
+    if (res?.success !== true) throw new Error(res?.message || "Không thể xóa đồ lưu kho.");
+    return res.data;
   },
 };
 

@@ -1,280 +1,536 @@
-import { useStaffDashboard } from "../hooks/useStaffDashboard";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import StaffReservationLookup from "../components/StaffReservationLookup";
+import StaffMoveOutTab from "../components/StaffMoveOutTab";
+import StaffFacilityUnits from "../components/StaffFacilityUnits";
+import StaffOverdueAgreements from "../components/StaffOverdueAgreements";
+import StaffTaskStatus from "../components/StaffTaskStatus";
+import { useAuth } from "../hooks/useAuth";
+import staffFacilityService from "../api/staffFacilityService";
+import staffReservationService from "../api/staffReservationService";
+import staffAgreementService from "../api/staffAgreementService";
+import staffSupportService from "../api/staffSupportService";
+import staffTaskService from "../api/staffTaskService";
+import facilityService from "../api/facilityService";
 
-const STATUS_STYLES = {
-  available: "border-[#2dd4a0] bg-[#effcf6]",
-  occupied: "border-[#dfe7f5] bg-white",
-  handover: "border-[#f5a524] bg-[#fff8ec] ring-2 ring-[#f5a524]/30",
-  alert: "border-[#e5484d] bg-[#fdecec]",
-};
+export default function StaffDashboard() {
+  const { user } = useAuth();
 
-function StaffDashboard() {
-  const {
-    profile,
-    navTabs,
-    activeNavTab,
-    setActiveNavTab,
-    currentTime,
-    kpis,
-    zones,
-    activeZone,
-    setActiveZone,
-    floors,
-    activeFloor,
-    setActiveFloor,
-    filteredUnits,
-    legendWithCounts,
-    handover,
-    checkedItems,
-    toggleChecklistItem,
-    scheduleTabs,
-    activeScheduleTab,
-    setActiveScheduleTab,
-    filteredSchedule,
-  } = useStaffDashboard();
+  // Selected operational facility (1 = HCM-TD, 2 = HCM-D7)
+  const [selectedFacilityId, setSelectedFacilityId] = useState("1");
+  const [activeTab, setActiveTab] = useState("checkin"); // 'checkin' | 'moveout' | 'units' | 'overdue' | 'issues'
+
+  // Dynamic Metrics State
+  const [facilities, setFacilities] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [overdueAgreements, setOverdueAgreements] = useState([]);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  // Active task type filter inside Issues tab
+  const [activeTaskType, setActiveTaskType] = useState("all");
+
+  const requestId = useRef(0);
+
+  // Fetch all real-time operational data from backend
+  const loadDashboardData = async (facilityId = selectedFacilityId) => {
+    const currentRequest = ++requestId.current;
+    setLoadingMetrics(true);
+
+    try {
+      const [unitsRes, rsvRes, tasksRes, overdueRes, ticketsRes, facilitiesRes] = await Promise.allSettled([
+        staffFacilityService.getUnits(Number(facilityId)),
+        staffReservationService.lookup("", facilityId),
+        staffTaskService.getTasks(facilityId),
+        staffAgreementService.getOverdueAgreements(facilityId),
+        staffSupportService.getTickets({ facilityId: Number(facilityId) }),
+        facilityService.getFacilities(),
+      ]);
+
+      if (currentRequest !== requestId.current) return;
+
+      if (unitsRes.status === "fulfilled") setUnits(unitsRes.value || []);
+      if (rsvRes.status === "fulfilled") setReservations(rsvRes.value || []);
+      if (tasksRes.status === "fulfilled") setTasks(tasksRes.value || []);
+      if (overdueRes.status === "fulfilled") setOverdueAgreements(overdueRes.value || []);
+      if (ticketsRes.status === "fulfilled") setSupportTickets(ticketsRes.value || []);
+      if (facilitiesRes.status === "fulfilled") setFacilities(facilitiesRes.value || []);
+    } catch (err) {
+      console.error("Failed to load dashboard metrics:", err);
+    } finally {
+      if (currentRequest === requestId.current) {
+        setLoadingMetrics(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData(selectedFacilityId);
+    return () => {
+      requestId.current++;
+    };
+  }, [selectedFacilityId]);
+
+  // Derived real KPI statistics
+  const totalUnits = units.length;
+  const vacantUnits = units.filter(
+    (u) => u.status === "available" || u.status === "vacant"
+  ).length;
+  const occupiedUnits = units.filter(
+    (u) => u.status === "occupied" || u.status === "rented"
+  ).length;
+  const pendingUnits = units.filter(
+    (u) => u.status === "reserved" || u.status === "pending"
+  ).length;
+  const maintenanceUnits = units.filter(
+    (u) => u.status === "maintenance" || u.status === "under_maintenance"
+  ).length;
+  const occupancyRate =
+    totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
+
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(
+    (t) => t.status === "completed" || t.status === "done"
+  ).length;
+  const pendingTasks = Math.max(0, totalTasks - completedTasks);
+
+  const confirmedReservations = reservations.filter(
+    (r) => r.status === "confirmed" || r.status === "pending"
+  ).length;
+
+  const lockedAccessCount = overdueAgreements.filter((a) => a.accessLocked).length;
+
+  const openTickets = supportTickets.filter(
+    (t) => t.status === "open" || t.status === "in_progress"
+  );
+  const openIssuesCount = pendingTasks + openTickets.length;
+
+  const staffFacility = useMemo(() => {
+    const fId = tasks[0]?.facilityId || user?.facilityId || selectedFacilityId || 1;
+    return (
+      facilities.find((f) => String(f.id) === String(fId)) || {
+        id: fId,
+        facilityCode: String(fId) === "2" ? "HCM-D7" : "HCM-TD",
+        facilityName: String(fId) === "2" ? "District 7 Facility" : "Thu Duc Facility",
+        address: String(fId) === "2" ? "District 7, Ho Chi Minh City" : "Thu Duc City, Ho Chi Minh City",
+      }
+    );
+  }, [facilities, tasks, user, selectedFacilityId]);
+
+  // Task categories filter
+  const taskTabs = useMemo(() => [
+    { id: "all", label: "All Tasks", count: tasks.length },
+    ...[...new Set(tasks.map((task) => task.taskType).filter(Boolean))].map((type) => ({
+      id: type,
+      label: type.replaceAll("_", " "),
+      count: tasks.filter((task) => task.taskType === type).length,
+    })),
+  ], [tasks]);
+
+  const filteredTasks = useMemo(
+    () => tasks.filter((task) => activeTaskType === "all" || task.taskType === activeTaskType),
+    [tasks, activeTaskType]
+  );
+
+  const handleUpdateTask = (updated) => {
+    setTasks((current) =>
+      current.map((task) => (task.id === updated.id ? updated : task))
+    );
+  };
+
+  const handleClaimTicket = async (ticketId) => {
+    try {
+      await staffSupportService.assignTicket(ticketId);
+      loadDashboardData(selectedFacilityId);
+    } catch (err) {
+      alert(err.message || "Unable to claim ticket.");
+    }
+  };
 
   return (
-    <div className="relative min-h-screen text-[#0b1c30]">
+    <div className="relative min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex flex-col antialiased">
       <PageBackground />
-      <header className="border-b border-[#e6ebf5] bg-white">
-        <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-3 px-4 lg:px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#1d5fe5] text-white shadow-sm">
-              <span className="material-symbols-outlined text-[18px]">warehouse</span>
-            </div>
-            <span className="hidden text-[16px] tracking-tight sm:block">
-              <span className="font-black text-[#0a3d91]">G1</span>
-              <span className="font-bold text-[#0b1c30]">SelfStorage</span>
-            </span>
-          </div>
 
-          <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex">
-            {navTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveNavTab(tab.id)}
-                className={`flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-semibold transition ${
-                  activeNavTab === tab.id ? "bg-[#eef4ff] text-[#1d5fe5]" : "text-[#58657a] hover:bg-[#f5f7fd]"
-                }`}
-              >
-                {tab.label}
-                {tab.count ? (
-                  <span className="rounded-full bg-[#0b1c30] px-1.5 py-0.5 text-[9px] text-white">{tab.count}</span>
-                ) : null}
-              </button>
-            ))}
-          </nav>
+      {/* Shared Portal Header without Customer Links */}
+      <Header active="ops" hideCustomerNav={true} />
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-[11px] font-semibold tabular-nums text-[#8996a9] md:block">{currentTime}</span>
-            <button className="hidden items-center gap-1.5 rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[11px] font-bold text-white md:flex">
-              <span className="material-symbols-outlined text-[14px]">sync_alt</span>
-              Shift Handover
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101827] text-white">
-                <span className="material-symbols-outlined text-[16px]">person</span>
-              </div>
-              <div className="hidden leading-tight lg:block">
-                <div className="text-[11px] font-bold">{profile.name}</div>
-                <div className="text-[9px] text-[#8996a9]">{profile.code} • {profile.role}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Main Operations Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 flex-1 w-full">
 
-      <main className="mx-auto max-w-[1320px] px-4 py-5 lg:px-6">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.id} className="rounded-[12px] border border-[#dfe7f5] bg-white p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)]">
-              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-                {kpi.label}
-                <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">{kpi.icon}</span>
-              </div>
-              <div className="mt-1 text-[20px] font-bold">{kpi.value}</div>
-              <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
-            </div>
-          ))}
-        </div>
+        {/* 4 Informational KPI Stat Cards (Strictly Non-Clickable) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
-        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-[14px] font-bold">Floor Map</div>
-              <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
-                {floors.map((floor) => (
-                  <button
-                    key={floor.id}
-                    onClick={() => setActiveFloor(floor.id)}
-                    className={`rounded-[6px] px-2.5 py-1 text-[10px] font-semibold transition ${
-                      activeFloor === floor.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"
-                    }`}
-                  >
-                    {floor.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {zones.map((zone) => (
-                <button
-                  key={zone.id}
-                  onClick={() => setActiveZone(zone.id)}
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
-                    activeZone === zone.id ? "bg-[#0b1c30] text-white" : "bg-[#f5f7fd] text-[#58657a]"
-                  }`}
-                >
-                  {zone.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-3 border-b border-[#eef1f8] pb-3 text-[10px] font-semibold text-[#58657a]">
-              {legendWithCounts.map((item) => (
-                <span key={item.id} className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                  {item.label} ({item.count})
+          {/* KPI 1: Check-in Queue */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Check-in</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900">
+                  {loadingMetrics ? "..." : String(confirmedReservations).padStart(2, "0")}
                 </span>
-              ))}
+                <span className="text-xs font-semibold text-blue-600">Pending</span>
+              </div>
             </div>
-
-            {filteredUnits.length === 0 ? (
-              <div className="mt-3 rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-                No units in this zone.
-              </div>
-            ) : (
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {filteredUnits.map((unit) => (
-                  <div key={unit.id} className={`rounded-[10px] border p-2.5 ${STATUS_STYLES[unit.status]}`}>
-                    <div className="text-[11px] font-bold">{unit.id}</div>
-                    <div className="text-[9px] text-[#8996a9]">{unit.size}</div>
-                    <div className="mt-1 truncate text-[9px] font-semibold text-[#58657a]">{unit.note}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1d5fe5] flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </div>
           </div>
 
-          <div className="rounded-[16px] border border-[#f5a524]/40 bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full bg-[#fff2d8] px-2 py-0.5 text-[9px] font-bold text-[#a15c00]">Pending Handover</span>
-              <span className="text-[10px] font-semibold text-[#8996a9]">{handover.code}</span>
-            </div>
-            <div className="mt-2 text-[15px] font-bold">Unit {handover.unit}</div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[#1d5fe5]">
-                <span className="material-symbols-outlined text-[16px]">person</span>
-              </div>
-              <div className="flex items-center gap-1 text-[12px] font-bold">
-                {handover.customer}
-                <span className="material-symbols-outlined text-[13px] text-[#1d5fe5]">verified</span>
+          {/* KPI 2: Shift Tasks */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Tasks</p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900">
+                  {loadingMetrics ? "..." : String(completedTasks).padStart(2, "0")}
+                </span>
+                <span className="text-xs font-semibold text-slate-400">/ {totalTasks}</span>
               </div>
             </div>
-
-            <div className="mt-3 space-y-1.5 text-[11px] text-[#3a475a]">
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Dimensions</span>
-                <span className="font-semibold">{handover.size}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Deposit &amp; Payment</span>
-                <span className="font-semibold">{handover.deposit} · {handover.payment}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Activation PIN</span>
-                <span className="font-semibold">{handover.pin}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#8996a9]">Lock Battery</span>
-                <span className="font-semibold">{handover.battery}</span>
-              </div>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
             </div>
-
-            <div className="mt-3 space-y-1.5 border-t border-[#eef1f8] pt-3">
-              {handover.checklist.map((item) => (
-                <label key={item.id} className="flex items-center gap-2 text-[11px] text-[#3a475a]">
-                  <input
-                    type="checkbox"
-                    checked={checkedItems.has(item.id)}
-                    onChange={() => toggleChecklistItem(item.id)}
-                    className="h-3.5 w-3.5 accent-[#1d5fe5]"
-                  />
-                  {item.label}
-                </label>
-              ))}
-            </div>
-
-            <div className="mt-3 space-y-2">
-              <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white">
-                <span className="material-symbols-outlined text-[14px]">nfc</span>
-                Issue NFC Card &amp; Send OTP
-              </button>
-              <button className="flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-[#0e7b4c] py-2 text-[11px] font-bold text-white">
-                <span className="material-symbols-outlined text-[14px]">task_alt</span>
-                Confirm Handover &amp; Sign Off
-              </button>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Report Issue</button>
-                <button className="rounded-[8px] border border-[#dfe7f5] py-1.5 text-[10px] font-semibold text-[#3a475a]">Save Draft</button>
-              </div>
-            </div>
-
-            <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] text-[#8996a9]">{handover.handoffNote}</div>
           </div>
+
+          {/* KPI 3: Security & Overdue */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Overdue</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-red-600">
+                  {loadingMetrics ? "..." : String(overdueAgreements.length).padStart(2, "0")}
+                </span>
+                <span className="text-xs font-semibold text-slate-500">{lockedAccessCount} locked</span>
+              </div>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* KPI 4: Occupancy */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Occupancy</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900">
+                  {loadingMetrics ? "..." : `${occupancyRate}%`}
+                </span>
+                <span className="text-xs font-semibold text-emerald-600">
+                  {vacantUnits} free
+                </span>
+              </div>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </div>
+          </div>
+
         </div>
 
-        <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-[14px] font-bold">Move-in &amp; Move-out Schedule</div>
-            <div className="inline-flex rounded-[8px] bg-[#eef4ff] p-0.5">
-              {scheduleTabs.map((tab) => (
+        {/* Center Grid: 2 Columns (7 cols left, 5 cols right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* Left Column (7 cols): Main Navigation Tabs & Operational Modules */}
+          <div className="lg:col-span-7 space-y-5">
+
+            {/* Main Tabs Container */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveScheduleTab(tab.id)}
-                  className={`flex items-center gap-1 rounded-[6px] px-2.5 py-1.5 text-[10px] font-semibold transition ${
-                    activeScheduleTab === tab.id ? "bg-[#0b1c30] text-white" : "text-[#58657a]"
+                  type="button"
+                  onClick={() => setActiveTab("checkin")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "checkin"
+                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  {tab.label} ({tab.count})
+                  Check-in
                 </button>
-              ))}
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("moveout")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "moveout"
+                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Move-out
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("units")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "units"
+                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Units
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("overdue")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "overdue"
+                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Overdue
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("issues")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "issues"
+                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Issues ({openIssuesCount})
+                </button>
+              </div>
+
+              {/* Dynamic Module Based on Active Tab */}
+              <div className="pt-2 border-t border-slate-100">
+                {activeTab === "checkin" && (
+                  <StaffReservationLookup />
+                )}
+
+                {activeTab === "moveout" && (
+                  <StaffMoveOutTab facilityId={selectedFacilityId} />
+                )}
+
+                {activeTab === "units" && (
+                  <StaffFacilityUnits initialFacilityId={selectedFacilityId} />
+                )}
+
+                {activeTab === "overdue" && (
+                  <StaffOverdueAgreements initialFacilityId={selectedFacilityId} />
+                )}
+
+                {activeTab === "issues" && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-xs font-bold text-slate-700 uppercase">Tasks</h3>
+                      <div className="flex flex-wrap gap-1">
+                        {taskTabs.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setActiveTaskType(t.id)}
+                            className={`px-2.5 py-1 text-xs rounded-md font-semibold capitalize transition ${
+                              activeTaskType === t.id
+                                ? "bg-slate-900 text-white"
+                                : "text-slate-500 hover:bg-slate-100"
+                            }`}
+                          >
+                            {t.label} ({t.count})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {filteredTasks.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                        No tasks.
+                      </div>
+                    ) : (
+                      filteredTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2"
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <strong className="text-xs font-bold text-slate-900">
+                                {task.title || `Task #${task.id}`}
+                              </strong>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                {task.facilityCode || "HCM-TD"} • {task.status}
+                              </p>
+                            </div>
+                            <span className="text-xs font-bold text-[#1d5fe5]">
+                              {task.progressPercent ?? 0}%
+                            </span>
+                          </div>
+                          <div>
+                            <StaffTaskStatus task={task} onUpdated={handleUpdateTask} />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Active Support Tickets Live Feed */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tickets</h2>
+                <Link
+                  to="/staff-support-tickets"
+                  className="text-xs font-semibold text-[#1d5fe5] hover:text-[#1550c7]"
+                >
+                  All →
+                </Link>
+              </div>
+
+              {openTickets.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                  No open tickets.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {openTickets.slice(0, 3).map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 shrink-0">
+                            {ticket.ticketNo || `#${ticket.id}`}
+                          </span>
+                          <span className="text-xs font-medium text-slate-800 truncate">
+                            {ticket.subject || ticket.description || "Support"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleClaimTicket(ticket.id)}
+                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-2.5 py-1 rounded transition-colors"
+                          >
+                            Claim
+                          </button>
+                          <Link
+                            to="/staff-support-tickets"
+                            className="text-xs font-semibold border border-slate-200 text-slate-600 px-2 py-1 rounded hover:bg-slate-100"
+                          >
+                            View
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
-          <div className="mt-3 space-y-2">
-            {filteredSchedule.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#eef1f8] bg-[#f8faff] p-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eef4ff] text-[11px] font-bold text-[#1d5fe5]">
-                    {item.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[12px] font-bold">
-                      {item.name}
-                      <span className="text-[9px] font-semibold text-[#1d5fe5]">#{item.id}</span>
-                    </div>
-                    <div className="text-[10px] text-[#8996a9]">{item.unit} • {item.status}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-semibold text-[#58657a]">{item.time}</span>
-                  <button className="rounded-[8px] bg-[#0b1c30] px-3 py-1.5 text-[10px] font-bold text-white">{item.action}</button>
+          {/* Right Column (5 cols): Smart Floorplan & Staff Duty Facility Presence */}
+          <div className="lg:col-span-5 space-y-5">
+
+            {/* Smart Floorplan Card */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Floorplan</h2>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("units")}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition"
+                >
+                  Expand
+                </button>
+              </div>
+
+              <div className="relative rounded-lg overflow-hidden border border-slate-100 bg-slate-900">
+                <img
+                  src="https://images.unsplash.com/photo-1590496793929-36417d3117de?auto=format&fit=crop&w=800&q=80"
+                  alt="Floorplan"
+                  className="w-full h-36 object-cover"
+                />
+                <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                  {staffFacility?.facilityCode || "HCM-TD"}
                 </div>
               </div>
-            ))}
-            {filteredSchedule.length === 0 && (
-              <div className="rounded-[10px] border border-dashed border-[#dfe7f5] p-6 text-center text-[11px] text-[#8996a9]">
-                No schedule tasks in this category.
+
+              {/* Status Counters */}
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                <div className="bg-emerald-50 border border-emerald-100 py-1.5 rounded-lg">
+                  <span className="block text-xs font-bold text-slate-900">
+                    {loadingMetrics ? "..." : vacantUnits}
+                  </span>
+                  <span className="block text-[10px] text-emerald-700 font-medium">Free</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 py-1.5 rounded-lg">
+                  <span className="block text-xs font-bold text-slate-900">
+                    {loadingMetrics ? "..." : occupiedUnits}
+                  </span>
+                  <span className="block text-[10px] text-blue-700 font-medium">Rented</span>
+                </div>
+                <div className="bg-amber-50 border border-amber-100 py-1.5 rounded-lg">
+                  <span className="block text-xs font-bold text-slate-900">
+                    {loadingMetrics ? "..." : pendingUnits}
+                  </span>
+                  <span className="block text-[10px] text-amber-700 font-medium">Pending</span>
+                </div>
+                <div className="bg-red-50 border border-red-100 py-1.5 rounded-lg">
+                  <span className="block text-xs font-bold text-slate-900">
+                    {loadingMetrics ? "..." : maintenanceUnits}
+                  </span>
+                  <span className="block text-[10px] text-red-700 font-medium">Maint.</span>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Staff Assigned Facility Presence Card */}
+            <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-xs h-32 bg-slate-900">
+              <img
+                src={
+                  staffFacility?.imageUrl ||
+                  staffFacility?.photoUrl ||
+                  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80"
+                }
+                alt={staffFacility?.facilityName || "Facility"}
+                className="w-full h-full object-cover opacity-75"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex items-end justify-between p-3.5">
+                <div>
+                  <p className="text-xs font-bold text-white">
+                    {staffFacility?.facilityName || "Facility Hub"}
+                  </p>
+                  <p className="text-[11px] text-slate-300">
+                    {staffFacility?.facilityCode || "HCM-TD"} • {totalUnits} units
+                  </p>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-bold bg-slate-900/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                  Online
+                </span>
+              </div>
+            </div>
+
           </div>
+
         </div>
+
       </main>
+
+      {/* Shared Portal Footer */}
+      <Footer />
     </div>
   );
 }
-
-export default StaffDashboard;

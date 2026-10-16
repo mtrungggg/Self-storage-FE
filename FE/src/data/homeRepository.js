@@ -3,10 +3,11 @@
 export function getSizeFilters() {
   return [
     { id: "all", label: "All Sizes", subtext: "Any square meters" },
-    { id: "small", label: "Small", subtext: "Personal lockers, seasonal items" },
-    { id: "medium", label: "Medium", subtext: "1-2 bedroom apartments" },
-    { id: "large", label: "Large", subtext: "3-bedroom home, townhouse" },
-    { id: "vehicle", label: "Extra Large", subtext: "Vehicles, business inventory" },
+    { id: "mini", label: "Mini Locker (1 m²)", subtext: "Personal items, gadgets" },
+    { id: "small", label: "Small (3 m²)", subtext: "Dry goods & seafood cold storage" },
+    { id: "medium", label: "Medium (6 m²)", subtext: "Dry, warm & deep freeze units" },
+    { id: "large", label: "Large (10 m²)", subtext: "Heated warm storage (22°C–26°C)" },
+    { id: "xlarge", label: "Extra Large (16 m²)", subtext: "Commercial dual climate logistics" },
   ];
 }
 
@@ -21,9 +22,36 @@ export function getRentalTerms() {
 
 export function getSizeGuideTabs() {
   return [
-    { id: "studio", label: "5' x 10' (4.6 m²)", title: "Studio / 1-Bedroom Apartment", desc: "Fits queen bed, sofa, coffee table, wardrobe, and 15-20 moving boxes." },
-    { id: "1-2br", label: "10' x 10' (9.3 m²)", title: "2-Bedroom Apartment", desc: "Fits entire 2-bedroom furnishings, refrigerator, washer, dining set, and bikes." },
-    { id: "house", label: "10' x 20' (18.6 m²)", title: "Entire House / Townhouse", desc: "Equivalent to 1-car garage. Fits entire 3-4 bedroom home or business commercial goods." },
+    {
+      id: "mini",
+      label: "1.0m × 1.0m (1 m²)",
+      title: "Mini Smart Dry Locker",
+      desc: "Compact high-security dry locker. Ideal for luggage, confidential documents, electronic devices, and personal items.",
+    },
+    {
+      id: "small",
+      label: "1.5m × 2.0m (3 m²)",
+      title: "Small Storage (Dry Goods & Chilled Seafood)",
+      desc: "Ambient dry goods storage (S-DRY) or chilled cold storage (S-SEAFOOD). Fits 15-20 boxes, small furniture, or fresh fishery samples.",
+    },
+    {
+      id: "medium",
+      label: "2.0m × 3.0m (6 m²)",
+      title: "Medium Storage (Dry, Deep Freeze & Warm)",
+      desc: "Spacious dry storage (M-DRY), sub-zero seafood freezer (M-SEAFOOD), or heated warm room (M-WARM). Fits 1-2 room apartment furniture or frozen seafood stock.",
+    },
+    {
+      id: "large",
+      label: "2.5m × 4.0m (10 m²)",
+      title: "Large Heated Warm Storage (22°C–26°C)",
+      desc: "Heated constant-temperature storage (L-WARM). Protects wooden musical instruments, delicate audio gear, and art crafts against humidity.",
+    },
+    {
+      id: "xlarge",
+      label: "4.0m × 4.0m (16 m²)",
+      title: "Extra Large Climate-Controlled Storage",
+      desc: "Commercial enterprise dual climate-controlled storage (XL-CLIMATE) with 48 m³ volume. Fits commercial palletized inventory and logistic supplies.",
+    },
   ];
 }
 
@@ -40,9 +68,9 @@ export function getHomeHighlights() {
       text: "No hidden fees, security deposits refunded promptly upon move-out.",
     },
     {
-      icon: "local_shipping",
-      title: "Moving Support",
-      text: "Free 2-hour moving truck voucher for agreements from 3 months.",
+      icon: "ac_unit",
+      title: "Specialized Climate & Cold",
+      text: "Dedicated sub-zero seafood freezer, 22°C–26°C heated rooms, and dual climate control.",
     },
     {
       icon: "lock",

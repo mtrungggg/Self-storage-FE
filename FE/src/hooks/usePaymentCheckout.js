@@ -10,6 +10,7 @@ export function usePaymentCheckout() {
   const stateCheckout = location.state?.checkout || null;
   const stateReservation = location.state?.reservation || null;
   const stateReservationId = location.state?.reservationId || stateCheckout?.reservationId || null;
+  const stateRenewalId = location.state?.renewalId || null;
 
   const [checkout, setCheckout] = useState(
     stateCheckout?.vietQr?.qrImageUrl ? stateCheckout : null
@@ -53,6 +54,36 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
+        if (stateRenewalId) {
+          const amount = Number(location.state?.amount || 0);
+          const memo = `DH${stateRenewalId}`;
+          const qrUrl = `https://vietqr.app/img?bank=MBBank&acc=0817495759&template=compact&showinfo=true&holder=G1SelfStorageSystem&amount=${amount}&memo=${encodeURIComponent(memo)}`;
+          const renewalCheckout = {
+            paymentId: 0,
+            renewalId: stateRenewalId,
+            invoiceNo: `RNW-${stateRenewalId}`,
+            amount: amount,
+            currency: "VND",
+            expiresInSeconds: 900,
+            vietQr: {
+              bankCode: "MBBank",
+              accountName: "G1SelfStorageSystem",
+              transferContent: memo,
+              qrImageUrl: qrUrl,
+              amount: amount,
+            },
+          };
+          if (active) {
+            setCheckout(renewalCheckout);
+            setReservation({
+              reservationCode: `RNW-${location.state?.agreementNo || stateRenewalId}`,
+              quotedTotal: amount,
+            });
+            setTimeLeft(900);
+            totalSecondsRef.current = 900;
+          }
+          return;
+        }
         let targetReservation = reservation;
 
         // If we have an explicit reservationId passed from Billing or State

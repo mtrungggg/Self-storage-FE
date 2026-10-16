@@ -4,6 +4,6 @@ export function getInvoiceTabs() {
     { id: "all", label: "All" },
     { id: "paid", label: "Paid" },
     { id: "upcoming", label: "Pending" },
-    { id: "deposit", label: "Security Deposit" },
+    { id: "expired", label: "Expired & Cancelled" },
   ];
 }
