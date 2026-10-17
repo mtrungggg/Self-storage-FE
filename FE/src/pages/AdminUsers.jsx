@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import adminUserService from "../api/adminUserService";
+import AdminCreateUserForm from "../components/AdminCreateUserForm";
 
 const roles = [
   ["storage_customer", "Khách hàng"],
@@ -50,6 +51,10 @@ export default function AdminUsers() {
       </div>
       <button type="button" disabled={loading} onClick={() => setQuery({ ...query })} className={buttonClass}>Làm mới</button>
     </div>
+    <AdminCreateUserForm roles={roles} onCreated={() => {
+      setFilters(initialFilters);
+      setQuery({ ...initialFilters, PageNumber: 1 });
+    }} />
     <form onSubmit={applyFilters} className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <label><span className="mb-1 block text-sm font-semibold">Tìm kiếm</span>
