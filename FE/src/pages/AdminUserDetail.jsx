@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import adminUserService from "../api/adminUserService";
 import AdminUserStatusForm from "../components/AdminUserStatusForm";
 import AdminUserRolesForm from "../components/AdminUserRolesForm";
 import AdminStaffAssignmentForm from "../components/AdminStaffAssignmentForm";
+import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
 
 const sectionClass = "mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -48,6 +49,15 @@ export default function AdminUserDetail() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingRoles, setSavingRoles] = useState(false);
   const [savingAssignment, setSavingAssignment] = useState(false);
+  const [deletingAssignment, setDeletingAssignment] = useState(null);
+  const [deleteMessage, setDeleteMessage] = useState(null);
+  const deletePending = useRef(false);
+  const activeUser = useRef(id);
+  useEffect(() => {
+    activeUser.current = id;
+    return () => { activeUser.current = null; };
+  }, [id]);
+  const assignmentBusy = savingAssignment || deletingAssignment !== null;
   const [roleNotice, setRoleNotice] = useState(null);
   const validId = /^[1-9]\d*$/.test(id || "");
   const loading = validId && (result?.id !== id || result?.attempt !== attempt);
@@ -66,11 +76,36 @@ export default function AdminUserDetail() {
 
   const customer = user?.customerProfile;
   const employee = user?.employeeProfile;
+  async function removeAssignment(assignment) {
+    if (deletePending.current || savingStatus || savingRoles || savingAssignment) return;
+    if (!window.confirm(`Xóa phân công tại ${assignment.facilityName || assignment.facilityCode || assignment.facilityId} của ${employee.fullName || employee.employeeCode}?`)) return;
+    deletePending.current = true;
+    setDeletingAssignment(assignment.id);
+    setDeleteMessage(null);
+    try {
+      await adminStaffAssignmentService.remove(assignment.id);
+    } catch (err) {
+      if (activeUser.current === id) setDeleteMessage({ id, error: true, text: err.status === 404 ? "Phân công không còn tồn tại. Hãy làm mới danh sách." : err.message || "Không thể xóa phân công." });
+      return;
+    } finally {
+      deletePending.current = false;
+      if (activeUser.current === id) setDeletingAssignment(null);
+    }
+    window.dispatchEvent(new Event("admin-data-changed"));
+    if (activeUser.current !== id) return;
+    setResult((current) => current?.id === id && current.data?.employeeProfile ? {
+      ...current, data: { ...current.data, employeeProfile: {
+        ...current.data.employeeProfile,
+        facilityAssignments: (current.data.employeeProfile.facilityAssignments || []).filter((item) => item.id !== assignment.id),
+      } },
+    } : current);
+    setDeleteMessage({ id, error: false, text: "Đã xóa phân công cơ sở." });
+  }
   return <div className="mx-auto max-w-[1400px]">
     <Link to="/admin-users" className="text-sm font-semibold text-[#1d5fe5] hover:underline">← Danh sách người dùng</Link>
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-bold">Chi tiết người dùng</h1>
-      <button type="button" disabled={loading || !validId || savingStatus || savingRoles || savingAssignment} onClick={() => setAttempt((value) => value + 1)} className="rounded-xl bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{error ? "Thử lại" : "Làm mới"}</button>
+      <button type="button" disabled={loading || !validId || savingStatus || savingRoles || assignmentBusy} onClick={() => { setDeleteMessage(null); setAttempt((value) => value + 1); }} className="rounded-xl bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{error ? "Thử lại" : "Làm mới"}</button>
     </div>
     {roleNotice === id && <p role="status" className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-800">Đã cập nhật vai trò. Người dùng cần đăng nhập lại để nhận quyền mới.</p>}
     {loading && <p role="status" className="mt-5 text-sm text-[#58657a]">Đang tải thông tin người dùng...</p>}
@@ -81,13 +116,13 @@ export default function AdminUserDetail() {
         ["Trạng thái", statusLabel(user.status)], ["Đăng nhập gần nhất", date(user.lastLoginAt)],
         ["Ngày tạo", date(user.createdAt)], ["Cập nhật", date(user.updatedAt)],
       ]} />
-      <AdminUserStatusForm key={user.id} user={user} disabled={savingRoles || savingAssignment} onSavingChange={setSavingStatus} onUpdated={(updated) => {
+      <AdminUserStatusForm key={user.id} user={user} disabled={savingRoles || assignmentBusy} onSavingChange={setSavingStatus} onUpdated={(updated) => {
         // The status endpoint returns a list DTO; preserve the detailed profiles and role objects.
         setResult((current) => current?.id === id && String(updated.id) === String(user.id) ? {
           ...current, data: { ...current.data, status: updated.status, updatedAt: updated.updatedAt ?? current.data.updatedAt },
         } : current);
       }} />
-      <AdminUserRolesForm key={`roles-${user.id}`} user={user} disabled={savingStatus || savingAssignment} onSavingChange={setSavingRoles} onUpdated={() => {
+      <AdminUserRolesForm key={`roles-${user.id}`} user={user} disabled={savingStatus || assignmentBusy} onSavingChange={setSavingRoles} onUpdated={() => {
         setRoleNotice(id);
         setAttempt((value) => value + 1);
       }} />
@@ -107,7 +142,7 @@ export default function AdminUserDetail() {
           ["Ngày vào làm", date(employee.hireDate)], ["Trạng thái làm việc", statusLabel(employee.employmentStatus)],
           ["Ngày tạo hồ sơ", date(employee.createdAt)],
         ]} />
-        <AdminStaffAssignmentForm key={`assignment-${user.id}`} employee={employee} disabled={savingStatus || savingRoles} onSavingChange={setSavingAssignment} onCreated={(assignment) => {
+        <AdminStaffAssignmentForm key={`assignment-${user.id}`} employee={employee} disabled={savingStatus || savingRoles || deletingAssignment !== null} onSavingChange={setSavingAssignment} onCreated={(assignment) => {
           setResult((current) => current?.id === id && current.data?.employeeProfile ? {
             ...current, data: { ...current.data, employeeProfile: {
               ...current.data.employeeProfile,
@@ -115,12 +150,14 @@ export default function AdminUserDetail() {
             } },
           } : current);
         }} />
+        {deleteMessage?.id === id && <p role={deleteMessage.error ? "alert" : "status"} className={`mt-4 rounded-xl p-3 text-sm ${deleteMessage.error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-800"}`}>{deleteMessage.text}</p>}
         <TableSection title="Phân công cơ sở" rows={employee.facilityAssignments} rowKey="id" emptyText="Chưa có phân công cơ sở." columns={[
           ["ID", (r) => r.id], ["Nhân viên", (r) => r.employeeName || r.employeeCode || r.employeeId],
           ["Cơ sở", (r) => r.facilityName], ["Mã cơ sở", (r) => r.facilityCode || r.facilityId],
           ["Vai trò phân công", (r) => r.assignmentRole], ["Bắt đầu", (r) => date(r.startsAt)],
           ["Kết thúc", (r) => date(r.endsAt)], ["Người phân công", (r) => r.assignedByEmail || r.assignedBy],
           ["Ngày tạo", (r) => date(r.createdAt)], ["Trạng thái", (r) => r.isActive ? "Đang hiệu lực" : "Không hiệu lực"],
+          ["Thao tác", (r) => <button type="button" disabled={savingStatus || savingRoles || assignmentBusy} onClick={() => removeAssignment(r)} aria-label={`Xóa phân công ${r.facilityName || r.facilityCode || r.id}`} className="rounded-lg bg-red-50 px-3 py-2 font-semibold text-red-700 disabled:opacity-50">{deletingAssignment === r.id ? "Đang xóa..." : "Xóa"}</button>],
         ]} />
       </> : <section className={sectionClass}><h2 className="font-bold">Hồ sơ nhân viên</h2><p className="mt-3 text-sm text-[#58657a]">Chưa có hồ sơ nhân viên.</p></section>}
       <TableSection title="Lịch sử đăng nhập gần đây" rows={user.recentLoginHistories} rowKey="id" emptyText="Chưa có lịch sử đăng nhập." columns={[
