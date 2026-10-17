@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import adminUserService from "../api/adminUserService";
 import AdminUserStatusForm from "../components/AdminUserStatusForm";
 import AdminUserRolesForm from "../components/AdminUserRolesForm";
+import AdminStaffAssignmentForm from "../components/AdminStaffAssignmentForm";
 
 const sectionClass = "mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm";
 const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
@@ -46,6 +47,7 @@ export default function AdminUserDetail() {
   const [result, setResult] = useState(null);
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingRoles, setSavingRoles] = useState(false);
+  const [savingAssignment, setSavingAssignment] = useState(false);
   const [roleNotice, setRoleNotice] = useState(null);
   const validId = /^[1-9]\d*$/.test(id || "");
   const loading = validId && (result?.id !== id || result?.attempt !== attempt);
@@ -68,7 +70,7 @@ export default function AdminUserDetail() {
     <Link to="/admin-users" className="text-sm font-semibold text-[#1d5fe5] hover:underline">← Danh sách người dùng</Link>
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-bold">Chi tiết người dùng</h1>
-      <button type="button" disabled={loading || !validId || savingStatus || savingRoles} onClick={() => setAttempt((value) => value + 1)} className="rounded-xl bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{error ? "Thử lại" : "Làm mới"}</button>
+      <button type="button" disabled={loading || !validId || savingStatus || savingRoles || savingAssignment} onClick={() => setAttempt((value) => value + 1)} className="rounded-xl bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{error ? "Thử lại" : "Làm mới"}</button>
     </div>
     {roleNotice === id && <p role="status" className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-800">Đã cập nhật vai trò. Người dùng cần đăng nhập lại để nhận quyền mới.</p>}
     {loading && <p role="status" className="mt-5 text-sm text-[#58657a]">Đang tải thông tin người dùng...</p>}
@@ -79,13 +81,13 @@ export default function AdminUserDetail() {
         ["Trạng thái", statusLabel(user.status)], ["Đăng nhập gần nhất", date(user.lastLoginAt)],
         ["Ngày tạo", date(user.createdAt)], ["Cập nhật", date(user.updatedAt)],
       ]} />
-      <AdminUserStatusForm key={user.id} user={user} disabled={savingRoles} onSavingChange={setSavingStatus} onUpdated={(updated) => {
+      <AdminUserStatusForm key={user.id} user={user} disabled={savingRoles || savingAssignment} onSavingChange={setSavingStatus} onUpdated={(updated) => {
         // The status endpoint returns a list DTO; preserve the detailed profiles and role objects.
         setResult((current) => current?.id === id && String(updated.id) === String(user.id) ? {
           ...current, data: { ...current.data, status: updated.status, updatedAt: updated.updatedAt ?? current.data.updatedAt },
         } : current);
       }} />
-      <AdminUserRolesForm key={`roles-${user.id}`} user={user} disabled={savingStatus} onSavingChange={setSavingRoles} onUpdated={() => {
+      <AdminUserRolesForm key={`roles-${user.id}`} user={user} disabled={savingStatus || savingAssignment} onSavingChange={setSavingRoles} onUpdated={() => {
         setRoleNotice(id);
         setAttempt((value) => value + 1);
       }} />
@@ -105,6 +107,14 @@ export default function AdminUserDetail() {
           ["Ngày vào làm", date(employee.hireDate)], ["Trạng thái làm việc", statusLabel(employee.employmentStatus)],
           ["Ngày tạo hồ sơ", date(employee.createdAt)],
         ]} />
+        <AdminStaffAssignmentForm key={`assignment-${user.id}`} employee={employee} disabled={savingStatus || savingRoles} onSavingChange={setSavingAssignment} onCreated={(assignment) => {
+          setResult((current) => current?.id === id && current.data?.employeeProfile ? {
+            ...current, data: { ...current.data, employeeProfile: {
+              ...current.data.employeeProfile,
+              facilityAssignments: [...(current.data.employeeProfile.facilityAssignments || []).filter((item) => item.id !== assignment.id), assignment],
+            } },
+          } : current);
+        }} />
         <TableSection title="Phân công cơ sở" rows={employee.facilityAssignments} rowKey="id" emptyText="Chưa có phân công cơ sở." columns={[
           ["ID", (r) => r.id], ["Nhân viên", (r) => r.employeeName || r.employeeCode || r.employeeId],
           ["Cơ sở", (r) => r.facilityName], ["Mã cơ sở", (r) => r.facilityCode || r.facilityId],
