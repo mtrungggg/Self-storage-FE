@@ -19,6 +19,7 @@ import AdminPricingPolicy from "../pages/AdminPricingPolicy";
 import AdminContractsCustomers from "../pages/AdminContractsCustomers";
 import AdminSecurityCenter from "../pages/AdminSecurityCenter";
 import AdminAuditLog from "../pages/AdminAuditLog";
+import AdminLoginHistories from "../pages/AdminLoginHistories";
 import AdminCrudPage from "../pages/AdminCrudPage";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
@@ -72,6 +73,7 @@ function AppRoutes() {
             <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
             <Route path="/admin-system" element={<AdminSecurityCenter />} />
             <Route path="/admin-audit-log" element={<AdminAuditLog />} />
+            <Route path="/admin-login-histories" element={<AdminLoginHistories />} />
             <Route path="/admin-users" element={<AdminUsers />} />
             <Route path="/admin-users/:id" element={<AdminUserDetail />} />
             <Route path="/admin-tickets" element={<AdminCrudPage key="tickets" resource="tickets" />} />
