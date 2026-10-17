@@ -12,6 +12,7 @@ import StaffDashboard from "../pages/StaffDashboard";
 import StaffSupportTickets from "../pages/StaffSupportTickets";
 import StaffMoveOuts from "../pages/StaffMoveOuts";
 import AdminDashboard from "../pages/AdminDashboard";
+import AdminUsers from "../pages/AdminUsers";
 import AdminStaffScheduling from "../pages/AdminStaffScheduling";
 import AdminPricingPolicy from "../pages/AdminPricingPolicy";
 import AdminContractsCustomers from "../pages/AdminContractsCustomers";
@@ -70,7 +71,7 @@ function AppRoutes() {
             <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
             <Route path="/admin-system" element={<AdminSecurityCenter />} />
             <Route path="/admin-audit-log" element={<AdminAuditLog />} />
-            <Route path="/admin-users" element={<AdminCrudPage key="users" resource="users" />} />
+            <Route path="/admin-users" element={<AdminUsers />} />
             <Route path="/admin-tickets" element={<AdminCrudPage key="tickets" resource="tickets" />} />
             <Route path="/admin-notifications" element={<AdminCrudPage key="notifications" resource="notifications" />} />
           </Route>
