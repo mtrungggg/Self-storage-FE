@@ -1,8 +1,21 @@
+import { useState } from "react";
 import { usePricingPolicy } from "../hooks/usePricingPolicy";
 
 function formatCurrency(value) {
   return `${value.toLocaleString("vi-VN")} ₫`;
 }
+
+const emptyVoucherForm = {
+  code: "",
+  name: "",
+  description: "",
+  discountType: "percentage",
+  discountValue: "",
+  maxDiscountAmount: "",
+  usageLimit: "",
+  validFrom: "",
+  validTo: "",
+};
 
 function AdminPricingPolicy() {
   const {
@@ -22,12 +35,51 @@ function AdminPricingPolicy() {
     serviceFees,
     cancellationPolicy,
     cancellationNote,
-    voucherStats,
     vouchers,
     activeVoucherIds,
     toggleVoucher,
+    createVoucher,
     yieldRecommendation,
+    loading,
+    saving,
+    error,
+    notice,
+    dismissNotice,
+    dismissError,
+    saveRateChanges,
+    reload,
   } = usePricingPolicy();
+
+  const [showVoucherForm, setShowVoucherForm] = useState(false);
+  const [voucherForm, setVoucherForm] = useState(emptyVoucherForm);
+
+  const updateVoucherForm = (field, value) => setVoucherForm((prev) => ({ ...prev, [field]: value }));
+
+  async function submitVoucherForm(event) {
+    event.preventDefault();
+    const payload = {
+      code: voucherForm.code,
+      name: voucherForm.name,
+      description: voucherForm.description || undefined,
+      discountType: voucherForm.discountType,
+      discountValue: Number(voucherForm.discountValue) || 0,
+      maxDiscountAmount: voucherForm.maxDiscountAmount ? Number(voucherForm.maxDiscountAmount) : undefined,
+      usageLimit: voucherForm.usageLimit ? Number(voucherForm.usageLimit) : undefined,
+      validFrom: voucherForm.validFrom ? new Date(voucherForm.validFrom).toISOString() : undefined,
+      validTo: voucherForm.validTo ? new Date(voucherForm.validTo).toISOString() : undefined,
+      isActive: true,
+    };
+    const success = await createVoucher(payload);
+    if (success) {
+      setShowVoucherForm(false);
+      setVoucherForm(emptyVoucherForm);
+    }
+  }
+
+  function handleHeaderAction(actionId) {
+    if (actionId === "reset") reload();
+    else if (actionId === "save") saveRateChanges();
+  }
 
   return (
     <>
@@ -51,16 +103,32 @@ function AdminPricingPolicy() {
           {headerActions.map((action) => (
             <button
               key={action.id}
-              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
+              type="button"
+              disabled={saving && action.id === "save"}
+              onClick={() => handleHeaderAction(action.id)}
+              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold disabled:opacity-60 ${
                 action.id === "save" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"
               }`}
             >
               <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
-              {action.label}
+              {action.id === "save" && saving ? "Đang lưu..." : action.label}
             </button>
           ))}
         </div>
       </div>
+
+      {notice && (
+        <p role="status" className="mt-3 rounded-[8px] bg-[#e7f8ee] px-3 py-2 text-[10px] font-semibold text-[#0e7b4c]">
+          {notice}
+          <button type="button" onClick={dismissNotice} className="ml-2 font-bold underline">Đóng</button>
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 rounded-[8px] bg-[#fdecec] px-3 py-2 text-[10px] font-semibold text-[#c0362c]">
+          {error}
+          <button type="button" onClick={dismissError} className="ml-2 font-bold underline">Đóng</button>
+        </p>
+      )}
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -71,18 +139,13 @@ function AdminPricingPolicy() {
             </div>
             <p className="mt-1 text-[10px] text-[#8996a9]">Edit 1-month base price — extended terms calculate discounts dynamically. Unit: VND/month (VAT incl.).</p>
           </div>
-          <button className="flex items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[10px] font-semibold text-[#3a475a]">
-            <span className="material-symbols-outlined text-[14px]">sync</span>
-            Sync Exchange Rates
-          </button>
         </div>
 
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-[11px]">
+          <table className="w-full min-w-[640px] text-left text-[11px]">
             <thead>
               <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Category &amp; Dimensions</th>
-                <th className="py-2 pr-2">Volume</th>
+                <th className="py-2 pr-2">Unit Type &amp; Facility</th>
                 {priceTerms.map((term) => (
                   <th key={term.id} className={`py-2 px-2 text-right ${term.highlight ? "text-[#1d5fe5]" : ""}`}>
                     {term.label}
@@ -92,33 +155,38 @@ function AdminPricingPolicy() {
               </tr>
             </thead>
             <tbody>
-              {priceMatrix.map((unit) => (
-                <tr key={unit.id} className="border-b border-[#f2f5fb]">
-                  <td className="py-2.5 pr-2">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                      {unit.label}
-                      {unit.badge && <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[8px] font-bold text-[#1d5fe5]">{unit.badge}</span>}
-                    </div>
-                    <div className="text-[9px] text-[#8996a9]">{unit.spec}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 text-[#58657a]">{unit.volume}</td>
-                  {unit.prices.map((price) => (
-                    <td key={price.termId} className="py-2.5 px-2 text-right">
-                      {price.termId === "m1" ? (
-                        <input
-                          value={basePrices[unit.id]}
-                          onChange={(event) => updateBasePrice(unit.id, event.target.value)}
-                          className="w-24 rounded-[6px] border border-[#dfe7f5] px-1.5 py-1 text-right text-[11px] font-semibold"
-                        />
-                      ) : (
-                        <span className={price.termId === "m12" ? "font-bold text-[#1d5fe5]" : "font-semibold text-[#3a475a]"}>
-                          {formatCurrency(price.amount)}
-                        </span>
-                      )}
+              {loading ? (
+                <tr><td colSpan={priceTerms.length + 1} className="py-4 text-center text-[#8996a9]">Đang tải bảng giá...</td></tr>
+              ) : priceMatrix.length === 0 ? (
+                <tr><td colSpan={priceTerms.length + 1} className="py-4 text-center text-[#8996a9]">Chưa có bậc giá nào.</td></tr>
+              ) : (
+                priceMatrix.map((unit) => (
+                  <tr key={unit.id} className="border-b border-[#f2f5fb]">
+                    <td className="py-2.5 pr-2">
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        {unit.label}
+                        {unit.badge && <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[8px] font-bold text-[#1d5fe5]">{unit.badge}</span>}
+                      </div>
+                      <div className="text-[9px] text-[#8996a9]">{unit.spec}</div>
                     </td>
-                  ))}
-                </tr>
-              ))}
+                    {unit.prices.map((price) => (
+                      <td key={price.termId} className="py-2.5 px-2 text-right">
+                        {price.termId === "m1" ? (
+                          <input
+                            value={basePrices[unit.id]}
+                            onChange={(event) => updateBasePrice(unit.id, event.target.value)}
+                            className="w-24 rounded-[6px] border border-[#dfe7f5] px-1.5 py-1 text-right text-[11px] font-semibold"
+                          />
+                        ) : (
+                          <span className={price.termId === "m12" ? "font-bold text-[#1d5fe5]" : "font-semibold text-[#3a475a]"}>
+                            {formatCurrency(price.amount)}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -178,12 +246,18 @@ function AdminPricingPolicy() {
           <div className="mt-3">
             <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">Ancillary &amp; Operating Service Fees</div>
             <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {serviceFees.map((fee) => (
-                <div key={fee.id} className="rounded-[8px] border border-[#eef1f8] p-2">
-                  <div className="text-[9px] text-[#8996a9]">{fee.label}</div>
-                  <div className="mt-0.5 text-[11px] font-bold">{fee.value}</div>
-                </div>
-              ))}
+              {loading ? (
+                <p className="text-[9px] text-[#8996a9]">Đang tải phụ phí...</p>
+              ) : serviceFees.length === 0 ? (
+                <p className="text-[9px] text-[#8996a9]">Chưa có phụ phí nào.</p>
+              ) : (
+                serviceFees.map((fee) => (
+                  <div key={fee.id} className="rounded-[8px] border border-[#eef1f8] p-2">
+                    <div className="text-[9px] text-[#8996a9]">{fee.label}</div>
+                    <div className="mt-0.5 text-[11px] font-bold">{fee.value}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -231,59 +305,116 @@ function AdminPricingPolicy() {
               <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">4</span>
               Promotional Campaigns &amp; Active Vouchers
             </div>
-            <p className="mt-1 text-[10px] text-[#8996a9]">Track campaign conversion rates and manage promotional discount budgets.</p>
+            <p className="mt-1 text-[10px] text-[#8996a9]">Manage promotional discount campaigns and toggle their active status.</p>
           </div>
-          <button className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white">
+          <button
+            type="button"
+            onClick={() => setShowVoucherForm(true)}
+            className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white"
+          >
             <span className="material-symbols-outlined text-[14px]">add</span>
             Create New Voucher Campaign
           </button>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {voucherStats.map((stat) => (
-            <div key={stat.id} className="rounded-[10px] border border-[#eef1f8] p-2.5">
-              <div className="text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">{stat.label}</div>
-              <div className="mt-0.5 text-[14px] font-bold">{stat.value}</div>
-              <div className="text-[9px] text-[#0e7b4c]">{stat.sub}</div>
-            </div>
-          ))}
-        </div>
-
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {vouchers.map((voucher) => {
-            const isActive = activeVoucherIds.has(voucher.id);
-            return (
-              <div key={voucher.id} className="rounded-[10px] border border-[#eef1f8] p-3">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">{voucher.tag}</span>
-                  <button
-                    onClick={() => toggleVoucher(voucher.id)}
-                    className={`h-4 w-8 rounded-full transition ${isActive ? "bg-[#1d5fe5]" : "bg-[#dfe7f5]"}`}
-                  >
-                    <span className={`block h-3 w-3 rounded-full bg-white transition ${isActive ? "translate-x-4" : "translate-x-0.5"}`} />
-                  </button>
-                </div>
-                <div className="mt-1.5 text-[12px] font-bold text-[#1d5fe5]">{voucher.id}</div>
-                <div className="mt-0.5 text-[10px] text-[#3a475a]">{voucher.description}</div>
+          {loading ? (
+            <p className="text-[10px] text-[#8996a9]">Đang tải chương trình khuyến mãi...</p>
+          ) : vouchers.length === 0 ? (
+            <p className="text-[10px] text-[#8996a9]">Chưa có chương trình khuyến mãi nào.</p>
+          ) : (
+            vouchers.map((voucher) => {
+              const isActive = activeVoucherIds.has(voucher.id);
+              return (
+                <div key={voucher.id} className="rounded-[10px] border border-[#eef1f8] p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">{voucher.tag}</span>
+                    <button
+                      onClick={() => toggleVoucher(voucher.id)}
+                      className={`h-4 w-8 rounded-full transition ${isActive ? "bg-[#1d5fe5]" : "bg-[#dfe7f5]"}`}
+                    >
+                      <span className={`block h-3 w-3 rounded-full bg-white transition ${isActive ? "translate-x-4" : "translate-x-0.5"}`} />
+                    </button>
+                  </div>
+                  <div className="mt-1.5 text-[12px] font-bold text-[#1d5fe5]">{voucher.code}</div>
+                  <div className="mt-0.5 text-[10px] text-[#3a475a]">{voucher.description}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-[#58657a]">{voucher.detail}</div>
 
-                <div className="mt-2 h-1.5 rounded-full bg-[#f0f3fa]">
-                  <div className="h-1.5 rounded-full bg-[#1d5fe5]" style={{ width: `${(voucher.used / voucher.total) * 100}%` }} />
+                  <div className="mt-2 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px]">
+                    <span className="font-semibold text-[#58657a]">{voucher.condition}</span>
+                    <span className="text-[#8996a9]">Hết hạn: {voucher.expiry}</span>
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[9px] text-[#8996a9]">
-                  <span>Redemptions: {voucher.used}/{voucher.total}</span>
-                  <span>Expires: {voucher.expiry}</span>
-                </div>
-                <div className="text-[9px] text-[#8996a9]">Revenue: {voucher.revenue}</div>
-
-                <div className="mt-2 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px]">
-                  <span className="font-semibold text-[#58657a]">{voucher.condition}</span>
-                  <span className="material-symbols-outlined text-[14px] text-[#8996a9] cursor-pointer">edit</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
+
+      {showVoucherForm && (
+        <dialog
+          open
+          aria-labelledby="voucher-form-title"
+          className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-xl backdrop:bg-black/40"
+        >
+          <form onSubmit={submitVoucherForm}>
+            <div className="flex items-center justify-between">
+              <h2 id="voucher-form-title" className="text-[14px] font-bold">Create New Voucher Campaign</h2>
+              <button type="button" onClick={() => setShowVoucherForm(false)} className="text-[11px] font-semibold text-[#58657a] underline">
+                Đóng
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Mã voucher *
+                <input required value={voucherForm.code} onChange={(event) => updateVoucherForm("code", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Tên chương trình *
+                <input required value={voucherForm.name} onChange={(event) => updateVoucherForm("name", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a] sm:col-span-2">
+                Mô tả
+                <input value={voucherForm.description} onChange={(event) => updateVoucherForm("description", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Loại giảm giá *
+                <select value={voucherForm.discountType} onChange={(event) => updateVoucherForm("discountType", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
+                  <option value="percentage">Phần trăm (%)</option>
+                  <option value="fixed">Số tiền cố định (₫)</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Giá trị giảm *
+                <input required type="number" min="0" step="0.01" value={voucherForm.discountValue} onChange={(event) => updateVoucherForm("discountValue", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              {voucherForm.discountType === "percentage" && (
+                <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                  Giảm tối đa (₫)
+                  <input type="number" min="0" step="0.01" value={voucherForm.maxDiscountAmount} onChange={(event) => updateVoucherForm("maxDiscountAmount", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+                </label>
+              )}
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Giới hạn lượt dùng
+                <input type="number" min="1" value={voucherForm.usageLimit} onChange={(event) => updateVoucherForm("usageLimit", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Hiệu lực từ *
+                <input required type="datetime-local" value={voucherForm.validFrom} onChange={(event) => updateVoucherForm("validFrom", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Hiệu lực đến *
+                <input required type="datetime-local" value={voucherForm.validTo} onChange={(event) => updateVoucherForm("validTo", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+            </div>
+
+            <button type="submit" disabled={saving} className="mt-4 w-full rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white disabled:opacity-60">
+              {saving ? "Đang tạo..." : "Tạo chương trình khuyến mãi"}
+            </button>
+          </form>
+        </dialog>
+      )}
 
       <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
         <div className="text-[13px] font-bold">Dynamic Yield &amp; Occupancy Balancing</div>

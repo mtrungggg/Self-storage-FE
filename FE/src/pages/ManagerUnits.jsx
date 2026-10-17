@@ -1,0 +1,320 @@
+import { useEffect, useMemo, useState } from "react";
+import managerService from "../api/managerService";
+import facilityService from "../api/facilityService";
+import { useManagerFacility } from "../context/ManagerFacilityContext";
+
+const emptyUnitForm = { unitCode: "", unitTypeId: "", areaId: "", floorLabel: "", zoneLabel: "", physicalStatus: "available", isListed: true, notes: "" };
+
+const STATUS_OPTIONS = [
+  ["available", "Sẵn sàng"],
+  ["reserved", "Đã đặt trước"],
+  ["occupied", "Đang thuê"],
+  ["maintenance", "Bảo trì"],
+  ["blocked", "Khoá"],
+];
+
+function ManagerUnits() {
+  const { facilityId } = useManagerFacility();
+  const [tab, setTab] = useState("units");
+
+  // --- Units tab state ---
+  const [units, setUnits] = useState([]);
+  const [unitTypes, setUnitTypes] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [showUnitForm, setShowUnitForm] = useState(false);
+  const [unitForm, setUnitForm] = useState(emptyUnitForm);
+  const [editingUnitId, setEditingUnitId] = useState(null);
+  const [savingUnit, setSavingUnit] = useState(false);
+
+  // --- Map layout tab state ---
+  const [layout, setLayout] = useState(null);
+  const [loadingLayout, setLoadingLayout] = useState(true);
+  const [savingLayout, setSavingLayout] = useState(false);
+
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    facilityService.getUnitTypes().then(setUnitTypes).catch(() => setUnitTypes([]));
+  }, []);
+
+  async function loadUnits() {
+    if (!facilityId) return;
+    setLoadingUnits(true);
+    setError("");
+    try {
+      const page = await managerService.getUnits(facilityId, { status: statusFilter || undefined, search: search || undefined, pageSize: 100 });
+      setUnits(page?.items ?? []);
+    } catch (err) {
+      setError(err?.message || "Không thể tải danh sách ô kho.");
+    } finally {
+      setLoadingUnits(false);
+    }
+  }
+
+  async function loadLayout() {
+    if (!facilityId) return;
+    setLoadingLayout(true);
+    setError("");
+    try {
+      setLayout(await managerService.getMapLayout(facilityId));
+    } catch (err) {
+      setError(err?.message || "Không thể tải sơ đồ mặt bằng.");
+    } finally {
+      setLoadingLayout(false);
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadUnits(); }, [facilityId, statusFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadLayout(); }, [facilityId]);
+
+  function openCreateUnit() {
+    setEditingUnitId(null);
+    setUnitForm(emptyUnitForm);
+    setShowUnitForm(true);
+  }
+
+  function openEditUnit(unit) {
+    setEditingUnitId(unit.id);
+    setUnitForm({
+      unitCode: unit.unitCode || "",
+      unitTypeId: String(unit.unitTypeId || ""),
+      areaId: unit.areaId ? String(unit.areaId) : "",
+      floorLabel: unit.floorLabel || "",
+      zoneLabel: unit.zoneLabel || "",
+      physicalStatus: unit.physicalStatus || "available",
+      isListed: unit.isListed,
+      notes: unit.notes || "",
+    });
+    setShowUnitForm(true);
+  }
+
+  async function submitUnit(event) {
+    event.preventDefault();
+    setSavingUnit(true);
+    setError("");
+    try {
+      const payload = {
+        unitCode: unitForm.unitCode,
+        unitTypeId: Number(unitForm.unitTypeId),
+        areaId: unitForm.areaId ? Number(unitForm.areaId) : undefined,
+        floorLabel: unitForm.floorLabel || undefined,
+        zoneLabel: unitForm.zoneLabel || undefined,
+        physicalStatus: unitForm.physicalStatus,
+        isListed: unitForm.isListed,
+        notes: unitForm.notes || undefined,
+      };
+      if (editingUnitId) await managerService.updateUnit(editingUnitId, payload);
+      else await managerService.createUnit(facilityId, payload);
+      setNotice(editingUnitId ? "Đã cập nhật ô kho." : "Đã thêm ô kho mới.");
+      setShowUnitForm(false);
+      await loadUnits();
+    } catch (err) {
+      setError(err?.message || "Không thể lưu ô kho.");
+    } finally {
+      setSavingUnit(false);
+    }
+  }
+
+  function updatePosition(unitId, field, value) {
+    setLayout((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        unitPositions: prev.unitPositions.map((pos) =>
+          pos.unitId === unitId ? { ...pos, [field]: Number(value) || 0 } : pos
+        ),
+      };
+    });
+  }
+
+  async function saveLayout() {
+    if (!layout) return;
+    setSavingLayout(true);
+    setError("");
+    try {
+      await managerService.updateMapLayout(facilityId, layout.unitPositions);
+      setNotice("Đã lưu sơ đồ mặt bằng.");
+      await loadLayout();
+    } catch (err) {
+      setError(err?.message || "Không thể lưu sơ đồ mặt bằng.");
+    } finally {
+      setSavingLayout(false);
+    }
+  }
+
+  const areaNameById = useMemo(() => Object.fromEntries((layout?.areas ?? []).map((area) => [area.areaId, area.name])), [layout]);
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[20px] font-bold">Ô kho &amp; Sơ đồ mặt bằng</h1>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setTab("units")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "units" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Danh sách ô kho</button>
+          <button type="button" onClick={() => setTab("layout")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "layout" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Sơ đồ mặt bằng</button>
+        </div>
+      </div>
+
+      {notice && <p role="status" className="mt-3 rounded-[8px] bg-[#e7f8ee] px-3 py-2 text-[10px] font-semibold text-[#0e7b4c]">{notice}</p>}
+      {error && <p role="alert" className="mt-3 rounded-[8px] bg-[#fdecec] px-3 py-2 text-[10px] font-semibold text-[#c0362c]">{error}</p>}
+
+      {tab === "units" && (
+        <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              <input value={search} onChange={(e) => setSearch(e.target.value)} onBlur={loadUnits} placeholder="Tìm mã ô kho..." className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px]" />
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px]">
+                <option value="">Tất cả trạng thái</option>
+                {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </div>
+            <button type="button" onClick={openCreateUnit} className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white">
+              <span className="material-symbols-outlined text-[14px]">add</span>
+              Thêm ô kho
+            </button>
+          </div>
+
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[11px]">
+              <thead>
+                <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
+                  <th className="py-2 pr-2">Mã ô kho</th>
+                  <th className="py-2 pr-2">Loại</th>
+                  <th className="py-2 pr-2">Khu vực / Tầng</th>
+                  <th className="py-2 pr-2">Trạng thái</th>
+                  <th className="py-2 pr-2">Hiển thị</th>
+                  <th className="py-2 pr-2 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingUnits ? (
+                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Đang tải...</td></tr>
+                ) : units.length === 0 ? (
+                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Chưa có ô kho nào.</td></tr>
+                ) : (
+                  units.map((unit) => (
+                    <tr key={unit.id} className="border-b border-[#f2f5fb]">
+                      <td className="py-2.5 pr-2 font-semibold">{unit.unitCode}</td>
+                      <td className="py-2.5 pr-2 text-[#58657a]">{unit.unitTypeName}</td>
+                      <td className="py-2.5 pr-2 text-[#58657a]">{unit.zoneLabel || "—"} / {unit.floorLabel || "—"}</td>
+                      <td className="py-2.5 pr-2">{STATUS_OPTIONS.find(([value]) => value === unit.physicalStatus)?.[1] || unit.physicalStatus}</td>
+                      <td className="py-2.5 pr-2">{unit.isListed ? "Có" : "Không"}</td>
+                      <td className="py-2.5 pr-2 text-right">
+                        <button type="button" onClick={() => openEditUnit(unit)} className="rounded-[6px] bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#1d5fe5]">Sửa</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab === "layout" && (
+        <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[10px] text-[#8996a9]">Chỉnh toạ độ/kích thước từng ô kho trên sơ đồ, sau đó lưu lại.</p>
+            <button type="button" disabled={savingLayout || !layout} onClick={saveLayout} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60">
+              {savingLayout ? "Đang lưu..." : "Lưu sơ đồ"}
+            </button>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[11px]">
+              <thead>
+                <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
+                  <th className="py-2 pr-2">Mã ô kho</th>
+                  <th className="py-2 pr-2">Khu vực</th>
+                  <th className="py-2 pr-2 text-right">X</th>
+                  <th className="py-2 pr-2 text-right">Y</th>
+                  <th className="py-2 pr-2 text-right">Rộng</th>
+                  <th className="py-2 pr-2 text-right">Cao</th>
+                  <th className="py-2 pr-2 text-right">Góc xoay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingLayout ? (
+                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Đang tải...</td></tr>
+                ) : !layout?.unitPositions?.length ? (
+                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Chưa có vị trí nào được thiết lập.</td></tr>
+                ) : (
+                  layout.unitPositions.map((pos) => (
+                    <tr key={pos.unitId} className="border-b border-[#f2f5fb]">
+                      <td className="py-2 pr-2 font-semibold">{pos.unitCode}</td>
+                      <td className="py-2 pr-2 text-[#58657a]">{areaNameById[pos.areaId] || "—"}</td>
+                      {["x", "y", "width", "height", "rotationDegrees"].map((field) => (
+                        <td key={field} className="py-2 pr-2 text-right">
+                          <input
+                            type="number"
+                            value={pos[field]}
+                            onChange={(e) => updatePosition(pos.unitId, field, e.target.value)}
+                            className="w-20 rounded-[6px] border border-[#dfe7f5] px-1.5 py-1 text-right text-[11px]"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {showUnitForm && (
+        <dialog open className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-xl backdrop:bg-black/40">
+          <form onSubmit={submitUnit}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[14px] font-bold">{editingUnitId ? "Chỉnh sửa ô kho" : "Thêm ô kho mới"}</h2>
+              <button type="button" onClick={() => setShowUnitForm(false)} className="text-[11px] font-semibold text-[#58657a] underline">Đóng</button>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Mã ô kho *
+                <input required value={unitForm.unitCode} onChange={(e) => setUnitForm((p) => ({ ...p, unitCode: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Loại ô kho *
+                <select required value={unitForm.unitTypeId} onChange={(e) => setUnitForm((p) => ({ ...p, unitTypeId: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
+                  <option value="" disabled>Chọn loại ô kho</option>
+                  {unitTypes.map((type) => <option key={type.id} value={type.id}>{type.code} — {type.name}</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Tầng
+                <input value={unitForm.floorLabel} onChange={(e) => setUnitForm((p) => ({ ...p, floorLabel: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Khu vực
+                <input value={unitForm.zoneLabel} onChange={(e) => setUnitForm((p) => ({ ...p, zoneLabel: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
+                Trạng thái
+                <select value={unitForm.physicalStatus} onChange={(e) => setUnitForm((p) => ({ ...p, physicalStatus: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
+                  {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-[10px] font-semibold text-[#3a475a]">
+                <input type="checkbox" checked={unitForm.isListed} onChange={(e) => setUnitForm((p) => ({ ...p, isListed: e.target.checked }))} className="h-3.5 w-3.5 accent-[#1d5fe5]" />
+                Hiển thị cho khách hàng thuê
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a] sm:col-span-2">
+                Ghi chú
+                <input value={unitForm.notes} onChange={(e) => setUnitForm((p) => ({ ...p, notes: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
+              </label>
+            </div>
+            <button type="submit" disabled={savingUnit} className="mt-4 w-full rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white disabled:opacity-60">
+              {savingUnit ? "Đang lưu..." : "Lưu ô kho"}
+            </button>
+          </form>
+        </dialog>
+      )}
+    </>
+  );
+}
+
+export default ManagerUnits;
