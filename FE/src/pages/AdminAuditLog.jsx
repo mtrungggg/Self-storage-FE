@@ -1,214 +1,129 @@
-import { useAuditLog } from "../hooks/useAuditLog";
+﻿import { Fragment, useEffect, useState } from "react";
+import adminAuditLogService from "../api/adminAuditLogService";
 
-function Dropdown({ value, onChange, options }) {
-  return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#3a475a]"
-    >
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
+const defaults = { EntityType: "", EntityId: "", Action: "", ActorUserId: "", FromDate: "", ToDate: "", PageSize: 20 };
+const inputClass = "w-full rounded-xl border border-[#dfe7f5] bg-white px-3 py-2 text-sm";
+const buttonClass = "rounded-xl bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50";
+const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "medium" });
+function formatDate(value) {
+  const date = new Date(value);
+  return !value || Number.isNaN(date.getTime()) ? "—" : dateFormat.format(date);
+}
+function formatPayload(value) {
+  if (value == null || value === "") return "Không có dữ liệu.";
+  try { return JSON.stringify(typeof value === "string" ? JSON.parse(value) : value, null, 2); }
+  catch { return String(value); }
 }
 
-function AdminAuditLog() {
-  const {
-    breadcrumb,
-    header,
-    headerActions,
-    sectionTabs,
-    kpis,
-    filterOptions,
-    quickFilters,
-    search,
-    setSearch,
-    filters,
-    updateFilter,
-    applyQuickFilter,
-    filteredEvents,
-    totalEvents,
-    auditFootnote,
-    complianceCards,
-  } = useAuditLog();
+export default function AdminAuditLog() {
+  const [filters, setFilters] = useState(defaults);
+  const [query, setQuery] = useState({ ...defaults, PageNumber: 1 });
+  const [result, setResult] = useState(null);
+  const [validation, setValidation] = useState("");
+  const [expanded, setExpanded] = useState(null);
+  const loading = result?.query !== query;
+  const error = loading ? "" : result?.error;
+  const data = loading || error ? null : result?.data;
 
-  return (
-    <>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold text-[#58657a]">
-        <span>{breadcrumb.parent}</span>
-        <span className="text-[#c7d1e6]">›</span>
-        <span className="text-[#0b1c30]">{breadcrumb.current}</span>
-        <span className="ml-auto flex items-center gap-1 text-[9px] font-bold text-[#0e7b4c]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" /> {breadcrumb.siemStatus}
-        </span>
-        <span className="text-[9px] text-[#8996a9]">{breadcrumb.ledgerHash}</span>
+  useEffect(() => {
+    let active = true;
+    adminAuditLogService.getLogs(query).then(
+      (data) => { if (active) setResult({ query, data }); },
+      (err) => { if (active) setResult({ query, error: err.message || "Không thể tải nhật ký quản trị." }); },
+    );
+    return () => { active = false; };
+  }, [query]);
+
+  function apply(event) {
+    event.preventDefault();
+    setValidation("");
+    const next = { ...filters, PageNumber: 1 };
+    for (const key of ["EntityType", "EntityId", "Action"]) next[key] = next[key].trim();
+    for (const key of ["FromDate", "ToDate"]) {
+      if (!next[key]) continue;
+      const date = new Date(next[key]);
+      if (Number.isNaN(date.getTime())) { setValidation("Thời gian không hợp lệ."); return; }
+      next[key] = date.toISOString();
+    }
+    if (next.FromDate && next.ToDate && new Date(next.FromDate) > new Date(next.ToDate)) {
+      setValidation("Thời gian kết thúc phải bằng hoặc sau thời gian bắt đầu."); return;
+    }
+    if (next.ActorUserId && !/^[1-9]d*$/.test(next.ActorUserId)) {
+      setValidation("ID người thực hiện phải là số nguyên dương."); return;
+    }
+    setExpanded(null);
+    setQuery(next);
+  }
+
+  function changePage(page) { setExpanded(null); setQuery({ ...query, PageNumber: page }); }
+
+  return <div className="mx-auto max-w-[1400px]">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#1d5fe5]">Admin Console</p>
+        <h1 className="mt-1 text-2xl font-bold">Nhật ký quản trị</h1>
       </div>
-
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold">{header.title}</h1>
-          <p className="mt-1 max-w-[600px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {headerActions.map((action) => (
-            <button
-              key={action.id}
-              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
-                action.id === "export"
-                  ? "bg-[#1d5fe5] text-white"
-                  : action.id === "live"
-                  ? "border border-[#e5484d]/40 bg-[#fdf4f4] text-[#c0362c]"
-                  : "border border-[#dfe7f5] text-[#3a475a]"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
-        </div>
+      <button type="button" disabled={loading} onClick={() => { setExpanded(null); setQuery({ ...query }); }} className={buttonClass}>Làm mới</button>
+    </div>
+    <form onSubmit={apply} className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[["EntityType", "Loại đối tượng"], ["EntityId", "ID đối tượng"], ["Action", "Hành động"], ["ActorUserId", "ID người thực hiện"]].map(([key, label]) => <label key={key}>
+          <span className="mb-1 block text-sm font-semibold">{label}</span>
+          <input value={filters[key]} inputMode={key === "ActorUserId" ? "numeric" : undefined} onChange={(e) => setFilters({ ...filters, [key]: e.target.value })} className={inputClass} />
+        </label>)}
+        {[["FromDate", "Từ thời gian"], ["ToDate", "Đến thời gian"]].map(([key, label]) => <label key={key}>
+          <span className="mb-1 block text-sm font-semibold">{label}</span>
+          <input type="datetime-local" value={filters[key]} onChange={(e) => setFilters({ ...filters, [key]: e.target.value })} className={inputClass} />
+        </label>)}
+        <label><span className="mb-1 block text-sm font-semibold">Số dòng mỗi trang</span>
+          <select value={filters.PageSize} onChange={(e) => setFilters({ ...filters, PageSize: Number(e.target.value) })} className={inputClass}>
+            {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+          </select>
+        </label>
       </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {sectionTabs.map((tab) => (
-          <span
-            key={tab.id}
-            className={`flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-semibold ${
-              tab.active ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[14px]">{tab.active ? "history" : "group"}</span>
-            {tab.label}
-            {tab.count && <span className="rounded-full bg-white/20 px-1.5 text-[9px]">{tab.count}</span>}
-            {tab.badge && <span className="rounded-full bg-white/20 px-1.5 text-[9px]">{tab.badge}</span>}
-          </span>
-        ))}
+      <p className="mt-3 text-xs text-[#58657a]">Thời gian theo múi giờ thiết bị ({Intl.DateTimeFormat().resolvedOptions().timeZone}).</p>
+      {validation && <p role="alert" className="mt-3 text-sm text-red-700">{validation}</p>}
+      <div className="mt-4 flex gap-3">
+        <button type="submit" className={buttonClass}>Áp dụng</button>
+        <button type="button" onClick={() => { setFilters(defaults); setValidation(""); setExpanded(null); setQuery({ ...defaults, PageNumber: 1 }); }} className="rounded-xl border border-[#dfe7f5] px-4 py-2 text-sm font-semibold">Xóa bộ lọc</button>
       </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {kpis.map((kpi) => (
-          <div
-            key={kpi.id}
-            className={`rounded-[12px] border p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)] ${
-              kpi.alert ? "border-[#e5484d]/40 bg-[#fdf4f4]" : "border-[#dfe7f5] bg-white"
-            }`}
-          >
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-              {kpi.label}
-              <span className={`material-symbols-outlined text-[14px] ${kpi.alert ? "text-[#e5484d]" : "text-[#1d5fe5]"}`}>{kpi.icon}</span>
-            </div>
-            <div className={`mt-1 text-[17px] font-bold ${kpi.alert ? "text-[#c0362c]" : ""}`}>{kpi.value}</div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-        <div className="flex flex-wrap items-center gap-2">
-          <Dropdown value="today" onChange={() => {}} options={filterOptions.timeRanges} />
-          <Dropdown value={filters.category} onChange={(v) => updateFilter("category", v)} options={filterOptions.categories} />
-          <Dropdown value={filters.status} onChange={(v) => updateFilter("status", v)} options={filterOptions.statuses} />
-          <Dropdown value={filters.actorType} onChange={(v) => updateFilter("actorType", v)} options={filterOptions.actors} />
-        </div>
-
-        <div className="mt-2 flex min-w-[220px] flex-1 items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5">
-          <span className="material-symbols-outlined text-[15px] text-[#8996a9]">search</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by IP, unit code #B-204, contract #CTR..."
-            className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
-          />
-        </div>
-
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-[9px] font-bold uppercase text-[#8996a9]">Quick Filters:</span>
-          {quickFilters.map((chip) => (
-            <button
-              key={chip.id}
-              onClick={() => applyQuickFilter(chip.value)}
-              className="rounded-full bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#1d5fe5]"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[880px] text-left text-[11px]">
-            <thead>
-              <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Timestamp (UTC+7)</th>
-                <th className="py-2 pr-2">Actor / Initiator</th>
-                <th className="py-2 pr-2">Category</th>
-                <th className="py-2 pr-2">Action &amp; Payload Data</th>
-                <th className="py-2 pr-2">Source IP &amp; Device</th>
+    </form>
+    <section aria-busy={loading} className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+      <h2 className="font-bold">Danh sách sự kiện{data ? " (" + data.totalCount + ")" : ""}</h2>
+      {loading && <p role="status" className="py-8 text-center text-sm text-[#58657a]">Đang tải nhật ký...</p>}
+      {error && <div role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+        <p>{error}</p><button type="button" onClick={() => setQuery({ ...query })} className="mt-2 font-semibold underline">Thử lại</button>
+      </div>}
+      {data && <>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-left text-sm">
+            <thead><tr className="border-b text-xs uppercase text-[#58657a]">
+              {["ID", "Thời gian", "Người thực hiện", "Vai trò", "Schema", "Loại đối tượng", "ID đối tượng", "Hành động", "Địa chỉ IP", "Chi tiết"].map((label) => <th key={label} scope="col" className="p-3">{label}</th>)}
+            </tr></thead>
+            <tbody>{data.items.map((entry) => <Fragment key={entry.id}>
+              <tr className="border-b border-[#eef1f8] hover:bg-[#f8faff]">
+                <td className="p-3">{entry.id}</td><td className="whitespace-nowrap p-3">{formatDate(entry.occurredAt)}</td>
+                <td className="p-3">{entry.actorEmail || "—"}<div className="text-xs text-[#58657a]">ID: {entry.actorUserId ?? "—"}</div></td>
+                {[entry.actorRole, entry.entitySchema, entry.entityType, entry.entityId, entry.action, entry.ipAddress].map((value, index) => <td key={index} className="p-3">{value ?? "—"}</td>)}
+                <td className="p-3"><button type="button" aria-expanded={expanded === entry.id} aria-controls={"audit-detail-" + entry.id} onClick={() => setExpanded(expanded === entry.id ? null : entry.id)} className="font-semibold text-[#1d5fe5]">{expanded === entry.id ? "Thu gọn" : "Xem chi tiết"}</button></td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredEvents.map((event) => (
-                <tr key={event.id} className={`border-b border-[#f2f5fb] ${event.status === "blocked" ? "bg-[#fdf4f4]" : ""}`}>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="font-semibold">{event.time}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.date}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className={`font-semibold ${event.actorType === "unknown" ? "text-[#c0362c]" : ""}`}>{event.actor}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.actorRole}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top text-[#58657a]">{event.categoryLabel}</td>
-                  <td className="py-2.5 pr-2 align-top text-[#3a475a]">{event.action}</td>
-                  <td className="py-2.5 pr-2 align-top text-[#58657a]">
-                    <div>{event.ip}</div>
-                    <div className="text-[9px] text-[#8996a9]">{event.device}</div>
-                  </td>
-                </tr>
-              ))}
-              {filteredEvents.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-[11px] text-[#8996a9]">
-                    No audit events match the selected filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+              {expanded === entry.id && <tr id={"audit-detail-" + entry.id}><td colSpan={10} className="bg-[#f8faff] p-4">
+                <p className="break-all text-sm"><strong>Request ID:</strong> {entry.requestId || "—"}</p>
+                <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                  {[["Dữ liệu trước thay đổi", entry.oldValues], ["Dữ liệu sau thay đổi", entry.newValues]].map(([label, value]) => <div key={label}><h3 className="font-semibold">{label}</h3><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[#dfe7f5] bg-white p-3 text-xs">{formatPayload(value)}</pre></div>)}
+                </div>
+              </td></tr>}
+            </Fragment>)}</tbody>
           </table>
+          {!data.items.length && <p className="py-8 text-center text-sm text-[#58657a]">Không có nhật ký phù hợp.</p>}
         </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
-          <span>{auditFootnote} ({filteredEvents.length}/{totalEvents} shown)</span>
-          <div className="flex items-center gap-1 font-semibold">
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Previous</button>
-            <span className="rounded-[6px] bg-[#0b1c30] px-2 py-1 text-white">1</span>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">2</button>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">3</button>
-            <span className="px-1">...</span>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">947</button>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p>{data.totalCount === 0 ? "0 sự kiện" : "Trang " + data.pageNumber + " / " + data.totalPages + " · Tổng " + data.totalCount + " sự kiện"}</p>
+          <div className="flex gap-2">
+            <button type="button" disabled={!data.hasPreviousPage || query.PageNumber <= 1} onClick={() => changePage(query.PageNumber - 1)} className={buttonClass}>Trang trước</button>
+            <button type="button" disabled={!data.hasNextPage} onClick={() => changePage(query.PageNumber + 1)} className={buttonClass}>Trang sau</button>
           </div>
         </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-        {complianceCards.map((card) => (
-          <div key={card.id} className="flex items-center justify-between rounded-[12px] border border-[#dfe7f5] bg-white p-3.5">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#eef4ff] text-[#1d5fe5]">
-                <span className="material-symbols-outlined text-[17px]">{card.icon}</span>
-              </span>
-              <div>
-                <div className="text-[11px] font-bold">{card.title}</div>
-                <div className="text-[9px] text-[#8996a9]">{card.detail}</div>
-              </div>
-            </div>
-            <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[9px] font-bold text-[#0e7b4c]">{card.statusLabel}</span>
-          </div>
-        ))}
-      </div>
-    </>
-  );
+      </>}
+    </section>
+  </div>;
 }
-
-export default AdminAuditLog;

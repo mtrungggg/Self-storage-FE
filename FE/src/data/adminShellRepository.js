@@ -33,6 +33,7 @@ export function getSidebarNav() {
         { id: "security", label: "Access & Security", icon: "admin_panel_settings", to: "/admin-system" },
         { id: "users", label: "Manager & Staff", icon: "manage_accounts", to: "/admin-users" },
         { id: "audit_log", label: "Activity & Audit Log", icon: "history", to: "/admin-audit-log" },
+        { id: "login_histories", label: "Lịch sử đăng nhập", icon: "login", to: "/admin-login-histories" },
       ],
     },
   ];
