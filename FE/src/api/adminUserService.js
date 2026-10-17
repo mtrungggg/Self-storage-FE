@@ -1,6 +1,16 @@
 import apiClient from "./apiClient";
 
 export default {
+  async updateStatus(id, { status, reason }) {
+    const response = await apiClient.put(`/admin/users/${encodeURIComponent(id)}/status`, { status, reason });
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Không thể cập nhật trạng thái người dùng.");
+    }
+    if (response.data?.id == null || !response.data?.status) {
+      throw new Error("Phản hồi cập nhật không hợp lệ. Hãy làm mới để kiểm tra trạng thái hiện tại.");
+    }
+    return response.data;
+  },
   async getUser(id) {
     const response = await apiClient.get(`/admin/users/${encodeURIComponent(id)}`);
     if (response?.success !== true) {
