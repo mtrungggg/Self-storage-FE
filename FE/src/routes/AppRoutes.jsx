@@ -21,9 +21,18 @@ import AdminSecurityCenter from "../pages/AdminSecurityCenter";
 import AdminAuditLog from "../pages/AdminAuditLog";
 import AdminLoginHistories from "../pages/AdminLoginHistories";
 import AdminCrudPage from "../pages/AdminCrudPage";
+import ManagerDashboard from "../pages/ManagerDashboard";
+import ManagerUnits from "../pages/ManagerUnits";
+import ManagerTransferRequests from "../pages/ManagerTransferRequests";
+import ManagerShifts from "../pages/ManagerShifts";
+import ManagerChargeProposals from "../pages/ManagerChargeProposals";
+import ManagerRefundApprovals from "../pages/ManagerRefundApprovals";
+import ManagerAgreements from "../pages/ManagerAgreements";
+import ManagerDelinquentCases from "../pages/ManagerDelinquentCases";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
+import ManagerLayouts from "../layouts/ManagerLayouts";
 import RequireAuth from "../components/RequireAuth";
 
 // Central route table: public guest exploration (/home) plus protected routes.
@@ -60,6 +69,20 @@ function AppRoutes() {
             <Route path="/staff-dashboard" element={<StaffDashboard />} />
             <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
             <Route path="/staff-move-outs" element={<StaffMoveOuts />} />
+          </Route>
+        </Route>
+
+        {/* Protected manager portal: facility-scoped operations console */}
+        <Route element={<RequireAuth />}>
+          <Route element={<ManagerLayouts />}>
+            <Route path="/manager-dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager-units" element={<ManagerUnits />} />
+            <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
+            <Route path="/manager-shifts" element={<ManagerShifts />} />
+            <Route path="/manager-charge-proposals" element={<ManagerChargeProposals />} />
+            <Route path="/manager-refund-approvals" element={<ManagerRefundApprovals />} />
+            <Route path="/manager-agreements" element={<ManagerAgreements />} />
+            <Route path="/manager-delinquent-cases" element={<ManagerDelinquentCases />} />
           </Route>
         </Route>
 
