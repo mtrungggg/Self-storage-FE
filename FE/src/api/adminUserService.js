@@ -1,6 +1,13 @@
 import apiClient from "./apiClient";
 
 export default {
+  async updateRoles(id, roles) {
+    const response = await apiClient.put(`/admin/users/${encodeURIComponent(id)}/roles`, { roles });
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Không thể cập nhật vai trò người dùng.");
+    }
+    return response.data;
+  },
   async updateStatus(id, { status, reason }) {
     const response = await apiClient.put(`/admin/users/${encodeURIComponent(id)}/status`, { status, reason });
     if (response?.success !== true) {
