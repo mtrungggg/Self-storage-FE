@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import adminUserService from "../api/adminUserService";
 import AdminCreateUserForm from "../components/AdminCreateUserForm";
 
@@ -95,7 +96,7 @@ export default function AdminUsers() {
             </tr></thead>
             <tbody>{data.items.map((user) => <tr key={user.id} className="border-b border-[#eef1f8] hover:bg-[#f8faff]">
               <td className="p-3">{user.id}</td>
-              <td className="p-3 font-semibold">{user.fullName || "—"}</td>
+              <td className="p-3 font-semibold"><Link to={`/admin-users/${encodeURIComponent(user.id)}`} className="text-[#1d5fe5] hover:underline">{user.fullName || user.email || "Xem chi tiết"}</Link></td>
               <td className="p-3">{user.email}</td>
               <td className="p-3">{user.phoneNumber || "—"}</td>
               <td className="p-3">{user.employeeCode || "—"}</td>

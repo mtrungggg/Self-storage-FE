@@ -1,6 +1,16 @@
 import apiClient from "./apiClient";
 
 export default {
+  async getUser(id) {
+    const response = await apiClient.get(`/admin/users/${encodeURIComponent(id)}`);
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Không thể tải thông tin người dùng.");
+    }
+    if (response.data?.id == null) {
+      throw new Error("Thông tin người dùng trả về không hợp lệ.");
+    }
+    return response.data;
+  },
   async createUser(payload) {
     const response = await apiClient.post("/admin/users", payload);
     if (response?.success !== true) {
