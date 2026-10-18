@@ -5,6 +5,7 @@ import staffSupportService from "../api/staffSupportService";
 import StaffTicketReply from "../components/StaffTicketReply";
 import StaffTicketCharge from "../components/StaffTicketCharge";
 import StaffTicketResolve from "../components/StaffTicketResolve";
+import { TICKET_STATUS_LIST } from "../constants/ticketConstants";
 
 function formatDate(value) {
   const date = value ? new Date(value) : null;
@@ -18,7 +19,7 @@ export default function StaffSupportTickets() {
   const [query, setQuery] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statuses, setStatuses] = useState(["open", "in_progress", "resolved", "closed"]);
+  const [statuses, setStatuses] = useState(TICKET_STATUS_LIST);
   const requestId = useRef(0);
   const assignLock = useRef(false);
   const assignDialog = useRef(null);

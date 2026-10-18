@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import paymentService from "../api/paymentService";
 import reservationService from "../api/reservationService";
+import { CHECKOUT_STATUS, PAYMENT_STATUS } from "../constants/paymentConstants";
+import { RESERVATION_STATUS } from "../constants/rentalConstants";
 
 export function usePaymentCheckout() {
   const location = useLocation();
@@ -21,8 +23,8 @@ export function usePaymentCheckout() {
   );
   const [error, setError] = useState("");
 
-  // Status: "pending" | "success" | "expired" | "failed"
-  const [status, setStatus] = useState("pending");
+  // Status: pending | success | expired | failed
+  const [status, setStatus] = useState(CHECKOUT_STATUS.PENDING);
 
   // Custom modal for confirming cancellation
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -139,13 +141,13 @@ export function usePaymentCheckout() {
 
   // 15-Minute Countdown Timer
   useEffect(() => {
-    if (status !== "pending") return;
+    if (status !== CHECKOUT_STATUS.PENDING) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setStatus("expired");
+          setStatus(CHECKOUT_STATUS.EXPIRED);
           return 0;
         }
         return prev - 1;
@@ -157,7 +159,7 @@ export function usePaymentCheckout() {
 
   // Polling for SePay payment confirmation (every 2.5s)
   useEffect(() => {
-    if (status !== "pending") return;
+    if (status !== CHECKOUT_STATUS.PENDING) return;
 
     let isCancelled = false;
     let pollTimer = null;
@@ -169,16 +171,16 @@ export function usePaymentCheckout() {
           const detail = await reservationService.getReservationDetail(resId);
           if (!isCancelled && detail) {
             const detailStatus = (detail.status || "").toLowerCase();
-            if (detailStatus === "confirmed" || detailStatus === "paid") {
-              setStatus("success");
+            if (detailStatus === RESERVATION_STATUS.CONFIRMED || detailStatus === "paid") {
+              setStatus(CHECKOUT_STATUS.SUCCESS);
               return;
             }
-            if (detailStatus === "expired") {
-              setStatus("expired");
+            if (detailStatus === RESERVATION_STATUS.EXPIRED) {
+              setStatus(CHECKOUT_STATUS.EXPIRED);
               return;
             }
-            if (detailStatus === "cancelled") {
-              setStatus("failed");
+            if (detailStatus === RESERVATION_STATUS.CANCELLED) {
+              setStatus(CHECKOUT_STATUS.FAILED);
               return;
             }
           }
@@ -195,12 +197,12 @@ export function usePaymentCheckout() {
           );
           if (matched) {
             const pStatus = (matched.status || "").toLowerCase();
-            if (pStatus === "succeeded" || pStatus === "paid") {
-              setStatus("success");
+            if (pStatus === PAYMENT_STATUS.SUCCEEDED || pStatus === "paid") {
+              setStatus(CHECKOUT_STATUS.SUCCESS);
               return;
             }
-            if (pStatus === "failed" || pStatus === "cancelled") {
-              setStatus("failed");
+            if (pStatus === PAYMENT_STATUS.FAILED || pStatus === PAYMENT_STATUS.CANCELLED) {
+              setStatus(CHECKOUT_STATUS.FAILED);
               return;
             }
           }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
 import staffMoveOutService from "../api/staffMoveOutService";
 import MoveOutInspection from "../components/MoveOutInspection";
+import { MOVE_OUT_STATUS } from "../constants/rentalConstants";
 
 function today() {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -61,7 +62,7 @@ export default function StaffMoveOuts() {
                   {[["Customer", item.customerName || item.customerId], ["Agreement", item.agreementNo || item.agreementId], ["Facility ID", item.facilityId], ["Requested move-out", item.requestedMoveOutDate]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
                 </dl>
                 <p className="mt-3 whitespace-pre-wrap break-words border-t pt-3">{item.reason || "No reason provided."}</p>
-                <MoveOutInspection moveOut={item} onCompleted={(id) => setItems((current) => current.map((entry) => entry.id === id ? { ...entry, status: "completed" } : entry))} />
+                <MoveOutInspection moveOut={item} onCompleted={(id) => setItems((current) => current.map((entry) => entry.id === id ? { ...entry, status: MOVE_OUT_STATUS.COMPLETED } : entry))} />
               </article>)}
             </div>
           </>}

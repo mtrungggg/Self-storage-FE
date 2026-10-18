@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatVnd } from "../lib/utils";
-import { DELINQUENT_ACTION_TYPES as ACTION_TYPES } from "../constants/managerConstants";
+import { DELINQUENT_ACTION_TYPES as ACTION_TYPES, DELINQUENT_CASE_STATUSES } from "../constants/managerConstants";
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -11,9 +11,11 @@ function formatDateTime(value) {
 }
 
 const STATUS_BADGE = {
-  open: "bg-[#fff2d8] text-[#a15c00]",
-  resolved: "bg-[#e7f8ee] text-[#0e7b4c]",
-  escalated: "bg-[#fdecec] text-[#c0362c]",
+  grace: "bg-[#fff2d8] text-[#a15c00]",
+  delinquent: "bg-[#fdecec] text-[#c0362c]",
+  cured: "bg-[#e7f8ee] text-[#0e7b4c]",
+  waived: "bg-[#f0f3fa] text-[#58657a]",
+  termination_started: "bg-[#2b1010] text-[#f87171]",
 };
 
 function ManagerDelinquentCases() {
@@ -119,7 +121,7 @@ function ManagerDelinquentCases() {
                   </div>
                 )}
 
-                {item.status !== "resolved" && (
+                {item.status !== "cured" && item.status !== "waived" && (
                   <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-[#eef1f8] pt-3">
                     <label className="flex flex-col gap-1 text-[9px] font-semibold text-[#3a475a]">
                       Hành động *
@@ -136,9 +138,9 @@ function ManagerDelinquentCases() {
                       Cập nhật trạng thái hồ sơ
                       <select value={draft.updateCaseStatus || ""} onChange={(e) => updateDraft(item.id, "updateCaseStatus", e.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px]">
                         <option value="">Giữ nguyên</option>
-                        <option value="open">Đang xử lý</option>
-                        <option value="resolved">Đã giải quyết</option>
-                        <option value="escalated">Chuyển pháp lý</option>
+                        {DELINQUENT_CASE_STATUSES.map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
                       </select>
                     </label>
                     <button type="button" disabled={submittingId === item.id} onClick={() => submitAction(item.id)} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-60">
