@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import adminLoginHistoryService from "../api/adminLoginHistoryService";
+import { isValidPositiveInteger, isValidDateRange } from "../lib/validators";
 
 const defaults = { UserId: "", AttemptedEmail: "", Result: "", IsSuspiciousOnly: false, FromDate: "", ToDate: "", PageSize: 20 };
 const results = [["succeeded", "Thành công"], ["failed", "Thất bại"], ["locked", "Bị khóa"], ["blocked", "Bị chặn"]];
@@ -35,14 +36,14 @@ export default function AdminLoginHistories() {
     event.preventDefault();
     setValidation("");
     const next = { ...filters, AttemptedEmail: filters.AttemptedEmail.trim(), UserId: filters.UserId.trim(), PageNumber: 1 };
-    if (next.UserId && !/^[1-9]d*$/.test(next.UserId)) { setValidation("ID người dùng phải là số nguyên dương."); return; }
+    if (next.UserId && !isValidPositiveInteger(next.UserId)) { setValidation("ID người dùng phải là số nguyên dương."); return; }
     for (const key of ["FromDate", "ToDate"]) {
       if (!next[key]) continue;
       const date = new Date(next[key]);
       if (Number.isNaN(date.getTime())) { setValidation("Thời gian không hợp lệ."); return; }
       next[key] = date.toISOString();
     }
-    if (next.FromDate && next.ToDate && new Date(next.FromDate) > new Date(next.ToDate)) {
+    if (!isValidDateRange(next.FromDate, next.ToDate)) {
       setValidation("Thời gian kết thúc phải bằng hoặc sau thời gian bắt đầu."); return;
     }
     setQuery(next);

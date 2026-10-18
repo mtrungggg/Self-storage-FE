@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getDefaultRouteForUser } from "../constants/roles";
 
 // Application layer: encapsulates Login page state, side effects and API data wiring.
 export function useLogin() {
@@ -48,27 +49,11 @@ export function useLogin() {
       const roles = user?.roles || [];
       const returnUrl = location.state?.from?.pathname;
 
+      const defaultRoute = getDefaultRouteForUser(user);
+      const targetRoute = returnUrl && defaultRoute === "/home" ? returnUrl : defaultRoute;
+
       setTimeout(() => {
-        if (
-          roles.includes("admin") ||
-          roles.includes("system_admin") ||
-          roles.includes("system_administrator") ||
-          roles.includes("business_operations_manager")
-        ) {
-          navigate("/admin-overview");
-        } else if (
-          roles.includes("manager") ||
-          roles.includes("facility_manager")
-        ) {
-          navigate("/manager-dashboard");
-        } else if (
-          roles.includes("staff") ||
-          roles.includes("facility_staff")
-        ) {
-          navigate("/staff-dashboard");
-        } else {
-          navigate(returnUrl || "/home");
-        }
+        navigate(targetRoute);
       }, 700);
     } catch (err) {
       const msg = err?.message || "Login failed. Please check your credentials.";

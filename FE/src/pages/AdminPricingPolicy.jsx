@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePricingPolicy } from "../hooks/usePricingPolicy";
+import { DISCOUNT_TYPES } from "../constants/operationsConstants";
 
 function formatCurrency(value) {
   return `${value.toLocaleString("vi-VN")} ₫`;
@@ -381,8 +382,9 @@ function AdminPricingPolicy() {
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
                 Loại giảm giá *
                 <select value={voucherForm.discountType} onChange={(event) => updateVoucherForm("discountType", event.target.value)} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
-                  <option value="percentage">Phần trăm (%)</option>
-                  <option value="fixed">Số tiền cố định (₫)</option>
+                  {DISCOUNT_TYPES.slice(0, 2).map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">

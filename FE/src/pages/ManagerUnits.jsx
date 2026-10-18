@@ -2,16 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import managerService from "../api/managerService";
 import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
 
 const emptyUnitForm = { unitCode: "", unitTypeId: "", areaId: "", floorLabel: "", zoneLabel: "", physicalStatus: "available", isListed: true, notes: "" };
-
-const STATUS_OPTIONS = [
-  ["available", "Sẵn sàng"],
-  ["reserved", "Đã đặt trước"],
-  ["occupied", "Đang thuê"],
-  ["maintenance", "Bảo trì"],
-  ["blocked", "Khoá"],
-];
 
 function ManagerUnits() {
   const { facilityId } = useManagerFacility();

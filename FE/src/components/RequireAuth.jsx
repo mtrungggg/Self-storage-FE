@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth";
  * Route protection wrapper for actions & pages that require an authenticated user.
  * Unauthenticated guests are automatically redirected to /login with state preserved.
  */
-export function RequireAuth({ children }) {
+export function RequireAuth({ allowedRoles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -26,6 +26,14 @@ export function RequireAuth({ children }) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && allowedRoles.length > 0) {
+    const roles = (user?.roles || []).map((r) => r.toLowerCase());
+    const hasPermission = roles.some((r) => allowedRoles.includes(r.toLowerCase()));
+    if (!hasPermission) {
+      return <Navigate to="/home" replace />;
+    }
   }
 
   return children ? children : <Outlet />;

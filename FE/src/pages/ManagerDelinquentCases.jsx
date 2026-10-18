@@ -2,20 +2,13 @@ import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatVnd } from "../lib/utils";
+import { DELINQUENT_ACTION_TYPES as ACTION_TYPES } from "../constants/managerConstants";
 
 function formatDateTime(value) {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
 }
-
-const ACTION_TYPES = [
-  ["reminder_call", "Gọi nhắc nợ"],
-  ["warning_letter", "Gửi thư cảnh báo"],
-  ["payment_plan", "Lập kế hoạch trả nợ"],
-  ["lock_access", "Khoá quyền truy cập ô kho"],
-  ["escalate", "Chuyển xử lý pháp lý"],
-];
 
 const STATUS_BADGE = {
   open: "bg-[#fff2d8] text-[#a15c00]",

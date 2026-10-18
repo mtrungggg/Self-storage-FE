@@ -112,6 +112,12 @@ export const managerService = {
     const res = await apiClient.get(`/manager/facilities/${facilityId}/dashboard`);
     return res?.data ?? null;
   },
+
+  // --- Assigned Facilities Scope ---
+  async getMyFacilities() {
+    const res = await apiClient.get("/manager/my-facilities");
+    return res?.data ?? [];
+  },
 };
 
 export default managerService;
