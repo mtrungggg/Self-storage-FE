@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import { formatVnd } from "../lib/utils";
+import { CHECKOUT_STATUS } from "../constants/paymentConstants";
 
 function PaymentCheckout() {
   const {
@@ -73,7 +74,7 @@ function PaymentCheckout() {
               </button>
             </div>
           </div>
-        ) : status === "success" ? (
+        ) : status === CHECKOUT_STATUS.SUCCESS ? (
           /* STATUS: PAYMENT SUCCESS */
           <div className="mx-auto mt-8 max-w-[540px] rounded-[22px] border border-[#a6f4c5] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#ecfdf3] text-[#12b76a]">
@@ -125,7 +126,7 @@ function PaymentCheckout() {
               </button>
             </div>
           </div>
-        ) : status === "expired" ? (
+        ) : status === CHECKOUT_STATUS.EXPIRED ? (
           /* STATUS: RESERVATION HOLD EXPIRED */
           <div className="mx-auto mt-8 max-w-[520px] rounded-[22px] border border-[#fedf89] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#fffcf5] text-[#d97706]">
@@ -147,7 +148,7 @@ function PaymentCheckout() {
               </button>
             </div>
           </div>
-        ) : status === "failed" ? (
+        ) : status === CHECKOUT_STATUS.FAILED ? (
           /* STATUS: CANCELLED */
           <div className="mx-auto mt-8 max-w-[520px] rounded-[22px] border border-[#fecdca] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#fffbfa] text-[#d92d20]">

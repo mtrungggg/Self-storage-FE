@@ -37,11 +37,22 @@ export const UNIT_PHYSICAL_STATUS_OPTIONS = [
 ];
 
 export const DELINQUENT_ACTION_TYPES = [
-  ["reminder_call", "Gọi nhắc nợ"],
-  ["warning_letter", "Gửi thư cảnh báo"],
-  ["payment_plan", "Lập kế hoạch trả nợ"],
-  ["lock_access", "Khoá quyền truy cập ô kho"],
-  ["escalate", "Chuyển xử lý pháp lý"],
+  ["reminder_sent", "Gửi nhắc nợ (reminder_sent)"],
+  ["customer_contacted", "Liên hệ khách hàng (customer_contacted)"],
+  ["late_fee_added", "Áp phí phạt chậm nộp (late_fee_added)"],
+  ["credential_suspended", "Tạm khóa mã truy cập (credential_suspended)"],
+  ["payment_plan", "Lập kế hoạch trả góp (payment_plan)"],
+  ["waived", "Miễn giảm công nợ (waived)"],
+  ["termination_started", "Khởi động chấm dứt hợp đồng (termination_started)"],
+  ["note", "Ghi chú theo dõi (note)"],
+];
+
+export const DELINQUENT_CASE_STATUSES = [
+  ["grace", "Trong hạn ân hạn (grace)"],
+  ["delinquent", "Quá hạn nợ (delinquent)"],
+  ["cured", "Đã khắc phục / Tất toán (cured)"],
+  ["waived", "Đã miễn giảm (waived)"],
+  ["termination_started", "Chấm dứt hợp đồng (termination_started)"],
 ];
 
 export const DECISION_STATUS = {
@@ -49,3 +60,4 @@ export const DECISION_STATUS = {
   REJECTED: "rejected",
   PENDING: "pending",
 };
+

@@ -15,6 +15,8 @@ import staffAgreementService from "../api/staffAgreementService";
 import staffSupportService from "../api/staffSupportService";
 import staffTaskService from "../api/staffTaskService";
 import facilityService from "../api/facilityService";
+import { STORAGE_UNIT_STATUS, RESERVATION_STATUS } from "../constants/rentalConstants";
+import { TICKET_STATUS } from "../constants/ticketConstants";
 
 export default function StaffDashboard() {
   const { user } = useAuth();
@@ -79,16 +81,16 @@ export default function StaffDashboard() {
   // Derived real KPI statistics
   const totalUnits = units.length;
   const vacantUnits = units.filter(
-    (u) => u.status === "available" || u.status === "vacant"
+    (u) => u.status === STORAGE_UNIT_STATUS.AVAILABLE || u.status === "vacant"
   ).length;
   const occupiedUnits = units.filter(
-    (u) => u.status === "occupied" || u.status === "rented"
+    (u) => u.status === STORAGE_UNIT_STATUS.OCCUPIED || u.status === "rented"
   ).length;
   const pendingUnits = units.filter(
-    (u) => u.status === "reserved" || u.status === "pending"
+    (u) => u.status === STORAGE_UNIT_STATUS.RESERVED || u.status === "pending"
   ).length;
   const maintenanceUnits = units.filter(
-    (u) => u.status === "maintenance" || u.status === "under_maintenance"
+    (u) => u.status === STORAGE_UNIT_STATUS.MAINTENANCE || u.status === "under_maintenance"
   ).length;
   const occupancyRate =
     totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
@@ -100,13 +102,13 @@ export default function StaffDashboard() {
   const pendingTasks = Math.max(0, totalTasks - completedTasks);
 
   const confirmedReservations = reservations.filter(
-    (r) => r.status === "confirmed" || r.status === "pending"
+    (r) => r.status === RESERVATION_STATUS.CONFIRMED || r.status === RESERVATION_STATUS.PENDING
   ).length;
 
   const lockedAccessCount = overdueAgreements.filter((a) => a.accessLocked).length;
 
   const openTickets = supportTickets.filter(
-    (t) => t.status === "open" || t.status === "in_progress"
+    (t) => t.status === TICKET_STATUS.OPEN || t.status === TICKET_STATUS.IN_PROGRESS
   );
   const openIssuesCount = pendingTasks + openTickets.length;
 
@@ -115,9 +117,9 @@ export default function StaffDashboard() {
     return (
       facilities.find((f) => String(f.id) === String(fId)) || {
         id: fId,
-        facilityCode: String(fId) === "2" ? "HCM-D7" : "HCM-TD",
-        facilityName: String(fId) === "2" ? "District 7 Facility" : "Thu Duc Facility",
-        address: String(fId) === "2" ? "District 7, Ho Chi Minh City" : "Thu Duc City, Ho Chi Minh City",
+        facilityCode: `FAC-${fId}`,
+        facilityName: `Facility #${fId}`,
+        address: "Ho Chi Minh City",
       }
     );
   }, [facilities, tasks, user, selectedFacilityId]);

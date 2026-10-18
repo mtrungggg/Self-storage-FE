@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/paymentService";
+import { PAYMENT_STATUS } from "../constants/paymentConstants";
 
 // Maps BE payment status strings → FE tab keys
-// BE PaymentConstants: pending | succeeded | failed | cancelled | partially_refunded | refunded
 function mapStatus(status, createdAt) {
   const s = (status || "").toLowerCase();
-  if (s === "succeeded" || s === "paid" || s === "refunded" || s === "approved") return "paid";
-  if (s === "failed" || s === "cancelled" || s === "rejected") return "failed";
+  if (s === PAYMENT_STATUS.SUCCEEDED || s === "paid" || s === PAYMENT_STATUS.REFUNDED || s === "approved") return "paid";
+  if (s === PAYMENT_STATUS.FAILED || s === PAYMENT_STATUS.CANCELLED || s === "rejected") return "failed";
 
   // Check if pending payment has exceeded 15 minutes (900 seconds) hold time
-  if ((s === "pending" || s === "pending_payment") && createdAt) {
+  if ((s === PAYMENT_STATUS.PENDING || s === "pending_payment") && createdAt) {
     const ageMs = Date.now() - new Date(createdAt).getTime();
     if (ageMs > 15 * 60 * 1000) {
       return "expired";
@@ -27,13 +27,13 @@ function mapStatus(status, createdAt) {
 // Human-readable English label for each raw BE status
 function statusLabel(status, createdAt) {
   const s = (status || "").toLowerCase();
-  if (s === "succeeded" || s === "paid" || s === "approved") return "Paid";
-  if (s === "refunded") return "Refunded";
-  if (s === "partially_refunded") return "Partially Refunded";
-  if (s === "failed" || s === "rejected") return "Failed";
-  if (s === "cancelled") return "Cancelled";
+  if (s === PAYMENT_STATUS.SUCCEEDED || s === "paid" || s === "approved") return "Paid";
+  if (s === PAYMENT_STATUS.REFUNDED) return "Refunded";
+  if (s === PAYMENT_STATUS.PARTIALLY_REFUNDED) return "Partially Refunded";
+  if (s === PAYMENT_STATUS.FAILED || s === "rejected") return "Failed";
+  if (s === PAYMENT_STATUS.CANCELLED) return "Cancelled";
   if (s === "expired") return "Expired";
-  if (s === "pending" || s === "pending_payment") {
+  if (s === PAYMENT_STATUS.PENDING || s === "pending_payment") {
     if (createdAt && (Date.now() - new Date(createdAt).getTime() > 15 * 60 * 1000)) {
       return "Expired";
     }
