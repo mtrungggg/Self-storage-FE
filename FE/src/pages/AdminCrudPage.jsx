@@ -27,15 +27,15 @@ const configurations = {
     ],
     api: {
       list: async () => {
-        const list = await facilityService.getFacilities();
-        // GET /customer/facilities không trả trạng thái quản trị; mặc định "Đang hoạt động" cho tới khi được chỉnh sửa lại.
+        const page = await operationsService.getFacilities({ pageSize: 100 });
+        const list = page?.items ?? [];
         return list.map((facility) => ({
           id: facility.id,
           code: facility.code,
           name: facility.name,
-          address: facility.address,
+          address: facility.addressLine || facility.address,
           city: facility.city,
-          status: "active",
+          status: facility.status || "active",
         }));
       },
       create: (data) => operationsService.createFacility(toFacilityPayload(data)),

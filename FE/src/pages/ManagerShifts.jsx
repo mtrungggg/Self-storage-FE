@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { DUTY_ROLES } from "../constants/managerConstants";
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -9,7 +10,7 @@ function formatDateTime(value) {
 }
 
 const emptyShiftForm = { shiftName: "", startsAt: "", endsAt: "" };
-const emptyAssignmentForm = { shiftId: "", employeeId: "", dutyRole: "front_desk" };
+const emptyAssignmentForm = { shiftId: "", employeeId: "", dutyRole: DUTY_ROLES[0].value };
 
 function ManagerShifts() {
   const { facilityId } = useManagerFacility();
@@ -153,10 +154,9 @@ function ManagerShifts() {
             </select>
             <input required type="number" min="1" placeholder="Mã nhân viên" value={assignmentForm.employeeId} onChange={(e) => setAssignmentForm((p) => ({ ...p, employeeId: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
             <select value={assignmentForm.dutyRole} onChange={(e) => setAssignmentForm((p) => ({ ...p, dutyRole: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
-              <option value="front_desk">Lễ tân</option>
-              <option value="security">Bảo vệ</option>
-              <option value="maintenance">Bảo trì</option>
-              <option value="supervisor">Giám sát</option>
+              {DUTY_ROLES.map((role) => (
+                <option key={role.value} value={role.value}>{role.label}</option>
+              ))}
             </select>
             <button type="submit" disabled={savingAssignment} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60 sm:col-span-3">
               {savingAssignment ? "Đang phân công..." : "Phân công"}

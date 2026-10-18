@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatVnd } from "../lib/utils";
+import { STAFF_TASK_TYPES } from "../constants/managerConstants";
 
-const emptyTaskForm = { taskType: "general", title: "", dueAt: "", assignedEmployeeId: "" };
+const emptyTaskForm = { taskType: STAFF_TASK_TYPES[0].value, title: "", dueAt: "", assignedEmployeeId: "" };
 
 function ManagerDashboard() {
   const { facilityId, activeFacility } = useManagerFacility();
@@ -160,10 +161,9 @@ function ManagerDashboard() {
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
                 Loại công việc *
                 <select value={taskForm.taskType} onChange={(e) => setTaskForm((prev) => ({ ...prev, taskType: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
-                  <option value="general">Chung</option>
-                  <option value="maintenance">Bảo trì</option>
-                  <option value="inspection">Kiểm tra</option>
-                  <option value="support_ticket">Hỗ trợ khách hàng</option>
+                  {STAFF_TASK_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">

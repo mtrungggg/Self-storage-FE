@@ -34,6 +34,7 @@ import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
 import ManagerLayouts from "../layouts/ManagerLayouts";
 import RequireAuth from "../components/RequireAuth";
+import { STAFF_ROLES, MANAGER_ROLES, ADMIN_ROLES } from "../constants/roles";
 
 // Central route table: public guest exploration (/home) plus protected routes.
 function AppRoutes() {
@@ -64,7 +65,7 @@ function AppRoutes() {
         </Route>
 
         {/* Protected staff portal */}
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireAuth allowedRoles={STAFF_ROLES} />}>
           <Route element={<StaffLayouts />}>
             <Route path="/staff-dashboard" element={<StaffDashboard />} />
             <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
@@ -73,7 +74,7 @@ function AppRoutes() {
         </Route>
 
         {/* Protected manager portal: facility-scoped operations console */}
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireAuth allowedRoles={MANAGER_ROLES} />}>
           <Route element={<ManagerLayouts />}>
             <Route path="/manager-dashboard" element={<ManagerDashboard />} />
             <Route path="/manager-units" element={<ManagerUnits />} />
@@ -87,7 +88,7 @@ function AppRoutes() {
         </Route>
 
         {/* Protected admin portal */}
-        <Route element={<RequireAuth />}>
+        <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
           <Route element={<AdminLayouts />}>
             <Route path="/admin-overview" element={<AdminDashboard />} />
             <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />

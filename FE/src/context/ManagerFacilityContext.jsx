@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import facilityService from "../api/facilityService";
+import managerService from "../api/managerService";
 
 const STORAGE_KEY = "managerActiveFacilityId";
 const ManagerFacilityContext = createContext(null);
 
-// Manager chưa có API trả về danh sách kho được phân công, nên FE lấy danh sách kho đang hoạt động
-// (giống trang khách hàng) và lưu lựa chọn của Manager vào localStorage để dùng xuyên suốt các trang.
+// Manager lấy danh sách kho được phân công quản lý từ API /api/manager/my-facilities.
+// Đảm bảo không truy cập nhầm kho không có quyền và không bị lỗi NotAssignedToFacility.
 export function ManagerFacilityProvider({ children }) {
   const [facilities, setFacilities] = useState([]);
   const [facilityId, setFacilityIdState] = useState(() => {
@@ -26,9 +26,14 @@ export function ManagerFacilityProvider({ children }) {
       setLoading(true);
       setError("");
       try {
-        const list = await facilityService.getFacilities();
+        const list = await managerService.getMyFacilities();
         if (cancelled) return;
         setFacilities(list);
+        if (!list || list.length === 0) {
+          setError("Tài khoản của bạn chưa được phân công quản lý cơ sở kho nào. Vui lòng liên hệ Quản trị viên.");
+          setFacilityIdState(null);
+          return;
+        }
         setFacilityIdState((current) => {
           if (current && list.some((facility) => facility.id === current)) return current;
           const fallback = list[0]?.id ?? null;
@@ -36,7 +41,7 @@ export function ManagerFacilityProvider({ children }) {
           return fallback;
         });
       } catch (err) {
-        if (!cancelled) setError(err?.message || "Không thể tải danh sách kho.");
+        if (!cancelled) setError(err?.message || "Không thể tải danh sách kho được phân công.");
       } finally {
         if (!cancelled) setLoading(false);
       }

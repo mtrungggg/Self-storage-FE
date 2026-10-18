@@ -1,5 +1,6 @@
-﻿import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import adminAuditLogService from "../api/adminAuditLogService";
+import { isValidPositiveInteger, isValidDateRange } from "../lib/validators";
 
 const defaults = { EntityType: "", EntityId: "", Action: "", ActorUserId: "", FromDate: "", ToDate: "", PageSize: 20 };
 const inputClass = "w-full rounded-xl border border-[#dfe7f5] bg-white px-3 py-2 text-sm";
@@ -45,10 +46,10 @@ export default function AdminAuditLog() {
       if (Number.isNaN(date.getTime())) { setValidation("Thời gian không hợp lệ."); return; }
       next[key] = date.toISOString();
     }
-    if (next.FromDate && next.ToDate && new Date(next.FromDate) > new Date(next.ToDate)) {
+    if (!isValidDateRange(next.FromDate, next.ToDate)) {
       setValidation("Thời gian kết thúc phải bằng hoặc sau thời gian bắt đầu."); return;
     }
-    if (next.ActorUserId && !/^[1-9]d*$/.test(next.ActorUserId)) {
+    if (next.ActorUserId && !isValidPositiveInteger(next.ActorUserId)) {
       setValidation("ID người thực hiện phải là số nguyên dương."); return;
     }
     setExpanded(null);

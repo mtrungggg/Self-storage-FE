@@ -67,6 +67,15 @@ export const operationsService = {
   },
 
   /**
+   * Lấy danh sách tất cả các kho kèm trạng thái quản trị (active/inactive/maintenance)
+   * @param {{ search?: string, status?: string, city?: string, pageNumber?: number, pageSize?: number }} params
+   */
+  async getFacilities(params = {}) {
+    const res = await apiClient.get("/operations/facilities", { params });
+    return res?.data ?? null;
+  },
+
+  /**
    * Tạo mới một kho (facility)
    * @param {{ code: string, name: string, addressLine: string, ward?: string, district?: string, city: string, latitude?: number, longitude?: number, timezone: string, openingTime?: string, closingTime?: string, status: string }} payload
    */
