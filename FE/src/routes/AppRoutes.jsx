@@ -73,9 +73,10 @@ function AppRoutes() {
           </Route>
         </Route>
 
-        {/* Protected manager portal: facility-scoped operations console */}
-        <Route element={<RequireAuth allowedRoles={MANAGER_ROLES} />}>
-          <Route element={<ManagerLayouts />}>
+        {/* Protected management portal: shared layout chrome for Manager & Admin */}
+        <Route element={<AdminLayouts />}>
+          {/* Manager operations console: accessible to Facility Managers & System Administrators */}
+          <Route element={<RequireAuth allowedRoles={[...MANAGER_ROLES, ...ADMIN_ROLES]} />}>
             <Route path="/manager-dashboard" element={<ManagerDashboard />} />
             <Route path="/manager-units" element={<ManagerUnits />} />
             <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
@@ -85,11 +86,9 @@ function AppRoutes() {
             <Route path="/manager-agreements" element={<ManagerAgreements />} />
             <Route path="/manager-delinquent-cases" element={<ManagerDelinquentCases />} />
           </Route>
-        </Route>
 
-        {/* Protected admin portal */}
-        <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
-          <Route element={<AdminLayouts />}>
+          {/* Admin governance portal: strictly restricted to System Administrators */}
+          <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
             <Route path="/admin-overview" element={<AdminDashboard />} />
             <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
             <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
