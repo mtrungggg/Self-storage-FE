@@ -1,0 +1,173 @@
+/* Reference-inspired admin workspace: monochrome surfaces and lime accents. */
+.admin-reference {
+  background: #e8ecef;
+  color: #14121b;
+  padding: clamp(16px, 4vw, 60px);
+}
+.admin-reference > .admin-desktop-sidebar { display: none; }
+.admin-reference > .flex {
+  width: 100%;
+  max-width: 1500px;
+  margin-inline: auto;
+  background: #f2f4f6;
+  border-radius: 26px;
+  padding: 14px;
+}
+.admin-reference .admin-topbar {
+  position: relative;
+  top: auto;
+  min-height: 70px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  gap: 20px;
+  backdrop-filter: none;
+}
+.reference-brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 21px; font-weight: 650; letter-spacing: -.8px; color: #111; }
+.reference-nav { display: flex; align-items: stretch; justify-content: center; gap: clamp(10px, 1.5vw, 26px); align-self: stretch; }
+.reference-nav a { position: relative; display: flex; align-items: center; gap: 8px; font-size: 12px; white-space: nowrap; color: #29282b; }
+.reference-nav a:hover { color: #000; }
+.reference-nav a::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: transparent; border-radius: 4px; }
+.reference-nav a[aria-current="page"]::after { background: #151515; }
+.reference-nav a[aria-current="page"] { color: #000; font-weight: 600; }
+.admin-reference .admin-topbar > :last-child { margin-left: auto; }
+.admin-reference .admin-avatar { border: 0; border-radius: 50%; color: #28282b; background: #e6eadf; }
+.admin-reference .admin-profile-trigger { gap: 9px; }
+.admin-reference .admin-profile-trigger strong { font-weight: 500; max-width: 115px; font-size: 11px; }
+.admin-reference .admin-profile-trigger small { display: none; }
+.admin-reference .admin-content { margin-top: 12px; padding: 28px; background: white; border-radius: 30px; }
+.admin-reference :is(a,button,input,select):focus-visible { outline-color: #689d24; }
+.reference-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+.reference-toolbar h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.9px; }
+.reference-toolbar-actions { display: flex; align-items: center; gap: 9px; }
+.reference-search { display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 999px; background: #f6f6f6; }
+.reference-search input { min-width: 0; width: clamp(130px, 15vw, 260px); font-size: 12px; background: transparent; outline-offset: 4px; }
+.reference-outline-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #222; border-radius: 999px; padding: 10px 17px; font-size: 12px; white-space: nowrap; background: #fff; }
+.reference-outline-button:hover { background: #f4f4f4; }
+.reference-refresh { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 50%; background: #f6f6f6; }
+.reference-refresh:hover { background: #eaeaea; }
+.reference-overview-grid { display: grid; grid-template-columns: .9fr 1.06fr 1.1fr; gap: 16px; align-items: stretch; }
+.reference-summary-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; min-width: 0; }
+.reference-card { min-width: 0; background: #f7f7f7; border: 1px solid #ededed; border-radius: 28px; }
+.reference-summary { position: relative; padding: 23px 21px 18px; display: flex; flex-direction: column; min-height: 207px; }
+.reference-card-label { font-size: 13px; padding-right: 35px; color: #25232c; }
+.reference-summary-value { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 16px 50px 8px 0; }
+.reference-summary-value > strong { font-size: clamp(26px, 3vw, 43px); line-height: 1.15; font-weight: 650; letter-spacing: -1.7px; overflow-wrap: anywhere; }
+.reference-summary-icon { position: absolute; top: 34px; right: 20px; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: white; color: #181818; }
+.reference-muted { font-size: 11px; color: #767679; line-height: 1.6; }
+.reference-lime,.reference-negative { display: inline-flex; align-items: center; gap: 4px; align-self: center; padding: 4px 9px; border-radius: 999px; background: #b3fa65; color: #173000; font-size: 10px; white-space: nowrap; font-weight: 500; }
+.reference-negative { background: #ff6460; color: #fff; }
+.reference-card-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 13px; border-top: 1px solid #dedee0; font-size: 12px; }
+.reference-card-link span { text-decoration: underline; text-underline-offset: 2px; }
+.reference-summary > .reference-muted { margin-bottom: 20px; }
+.reference-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.reference-card-heading h2 { font-size: 14px; font-weight: 550; letter-spacing: -.35px; }
+.reference-revenue,.reference-occupancy { padding: 22px; }
+.reference-chart-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: white; flex-shrink: 0; }
+.reference-revenue-value { display: block; font-size: clamp(24px, 2.8vw, 39px); font-weight: 650; letter-spacing: -1.6px; line-height: 1.25; overflow-wrap: anywhere; margin-top: 7px; }
+.reference-growth { display: flex; align-items: center; gap: 8px; margin-top: 8px; min-height: 24px; }
+.reference-chart-legend { display: flex; justify-content: flex-end; gap: 12px; margin: 18px 0 17px; color: #777; font-size: 9px; }
+.reference-chart-legend > span { display: flex; align-items: center; gap: 5px; }
+.reference-chart-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.reference-solid-key { background: #171717; }
+.reference-stripe-key { background: repeating-linear-gradient(45deg, #d7d7d7 0 2px, #f5f5f5 2px 4px); }
+.reference-revenue-chart { display: flex; gap: 15px; height: 215px; padding-top: 17px; }
+.reference-chart-axis { display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; color: #828282; padding-bottom: 29px; min-width: 36px; }
+.reference-chart-columns { display: flex; justify-content: space-around; gap: 24px; flex: 1; background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), #eaeaea calc(25% - 1px) 25%); background-size: 100% calc(100% - 29px); background-repeat: no-repeat; }
+.reference-chart-column { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; max-width: 90px; }
+.reference-bar-space { height: 100%; width: 100%; display: flex; align-items: flex-end; }
+.reference-vertical-bar { position: relative; width: 100%; border-radius: 14px 14px 10px 10px; min-height: 2px; }
+.reference-vertical-bar.solid { background: #171717; }.reference-vertical-bar.striped { background: repeating-linear-gradient(45deg, #dcdcdc 0 2px, #ededed 2px 5px); }
+.reference-vertical-bar > span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #686868; white-space: nowrap; }
+.reference-month-label { margin-top: 7px; white-space: nowrap; font-size: 9px; color: #fff; background: #171717; border-radius: 999px; padding: 2px 9px; }
+.reference-revenue-foot { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 5px; border-top: 1px solid #e3e3e3; margin-top: 18px; padding-top: 12px; font-size: 10px; color: #747474; }.reference-revenue-foot strong { color: #242129; font-weight: 500; }
+.reference-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border: 1px solid #e7e7e7; border-radius: 999px; font-size: 9px; white-space: nowrap; color: #353339; }
+.reference-ring-wrap { position: relative; width: 222px; max-width: 100%; margin: 17px auto 4px; }
+.reference-ring { display: block; width: 100%; }
+.reference-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; }
+.reference-ring-center > strong { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
+.reference-ring-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+.reference-ring-legend > div { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 5px; font-size: 9px; color: #737373; }
+.reference-ring-legend > div > span:first-child { width: 8px; height: 8px; border-radius: 50%; }.reference-ring-legend strong { color: #17151b; font-size: 11px; font-weight: 600; }
+.reference-ring-total { text-align: center; margin-top: 18px; font-size: 11px; color: #626066; }.reference-ring-total strong { display: block; font-size: 29px; font-weight: 600; color: #14101d; margin-top: 3px; }
+.reference-details-grid { display: grid; grid-template-columns: minmax(0, 2.6fr) minmax(270px, 1fr); gap: 16px; margin-top: 16px; align-items: stretch; }
+.reference-table-card { overflow: hidden; display: flex; flex-direction: column; }
+.reference-table-card > .reference-card-heading { padding: 22px 21px 15px; }.reference-table-card .reference-muted { margin-top: 6px; }
+.reference-view-all { background: transparent; flex-shrink: 0; }
+.reference-table-scroll { overflow-x: auto; overflow-y: visible; max-height: none; scrollbar-width: thin; scrollbar-color: #ccc transparent; }
+.reference-details-grid .reference-table-scroll { overflow: auto; max-height: 320px; }
+.reference-table { width: 100%; text-align: left; border-collapse: collapse; font-size: 10px; white-space: nowrap; }.reference-table th { padding: 11px 14px; background: #fdfdfd; color: #828282; font-size: 9px; font-weight: 400; }.reference-table td { padding: 13px 14px; border-bottom: 1px solid #e5e5e5; }.reference-table :is(th,td):first-child { padding-left: 21px; }.reference-table td strong { font-weight: 500; }.reference-table tbody tr:hover { background: #eee; }
+.reference-facility-name { display: flex; align-items: center; gap: 9px; }.reference-facility-name small { display: block; font-size: 9px; color: #878787; margin-top: 2px; }.reference-facility-thumb { display: grid; place-items: center; width: 30px; height: 32px; border-radius: 6px; color: #486855; background: #dce9db; }.reference-table tr:nth-child(2n) .reference-facility-thumb { background: #e5e0d7; color: #716044; }.reference-table tr:nth-child(3n) .reference-facility-thumb { background: #d5e8e9; color: #427c80; }
+.reference-status { display: inline-block; font-size: 8px; padding: 5px 8px; background: #e6e6e6; border-radius: 999px; color: #565656; }.reference-status.active { background: #e2fff2; color: #23866a; }.reference-status.maintenance { background: #ffe5df; color: #b34530; }.reference-status.inactive { background: #e0e6ff; color: #4263ab; }
+.reference-table-footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: auto; padding: 13px 21px; font-size: 9px; color: #7f7f7f; }
+.reference-ranking { padding: 21px; }.reference-ranking h2 { font-size: 13px; }
+.reference-top-facility { display: flex; align-items: center; gap: 12px; margin-top: 17px; padding: 10px; border-radius: 15px; background: white; }.reference-top-icon { width: 45px; height: 52px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: #f3f3f3; }.reference-top-facility strong { display: block; font-size: 10px; font-weight: 600; }.reference-top-facility small { display: block; font-size: 8px; color: #777; margin: 4px 0; }.reference-top-facility div > span { font-size: 10px; }
+.reference-ranking-chart { display: flex; gap: 15px; height: 145px; margin-top: 22px; }.reference-ranking-column { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }.reference-ranking-track { width: 100%; flex: 1; display: flex; align-items: flex-end; background: linear-gradient(90deg, #eaeaea 1px, transparent 1px, transparent calc(100% - 1px), #eaeaea calc(100% - 1px)); }.reference-ranking-track > div { border-top: 3px solid #161616; border-radius: 2px; width: 100%; min-height: 3px; text-align: center; }.reference-ranking-track span { display: block; padding-top: 6px; font-size: 10px; color: #797979; }.reference-ranking-column > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.reference-invoice-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-top: 15px; margin-top: 18px; border-top: 1px solid #e1e1e1; font-size: 8px; color: #777; }.reference-invoice-summary strong { display: block; margin-top: 4px; font-size: 12px; font-weight: 500; color: #242424; }
+.reference-error { padding: 24px; display: flex; gap: 12px; border: 1px solid #f4d8d2; border-radius: 20px; background: #fff4ef; color: #843a26; font-size: 13px; }.reference-error p { margin-top: 5px; }.reference-error button { margin-top: 12px; text-decoration: underline; }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .admin-reference { padding: 22px; }.admin-reference .admin-topbar { gap: 14px; padding-inline: 18px; }.reference-brand { font-size: 18px; }.reference-brand-detail { display: none; }.reference-nav { gap: 18px; }.reference-nav a { font-size: 11px; gap: 6px; }.admin-reference .admin-profile-trigger strong { max-width: 85px; }.admin-reference .admin-content { padding: 22px; }.reference-overview-grid { grid-template-columns: .85fr 1fr 1fr; }.reference-summary,.reference-revenue,.reference-occupancy { padding: 18px; }.reference-summary-icon { width: 38px; height: 38px; right: 14px; }.reference-ring-legend { column-gap: 10px; }.reference-details-grid { grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); }
+}
+@media (max-width: 1023px) {
+  .admin-reference { padding: 18px; }.reference-nav { display: none; }.admin-reference .admin-topbar { padding: 12px 20px; }.reference-toolbar { flex-wrap: wrap; }.reference-toolbar-actions { flex-wrap: wrap; }.reference-overview-grid { grid-template-columns: 1fr 1fr; }.reference-summary-stack { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; grid-template-rows: auto; }.reference-details-grid { grid-template-columns: 1fr; }.reference-ranking-chart { max-width: 480px; margin-inline: auto; }.reference-top-facility { max-width: 480px; margin-inline: auto; }.reference-invoice-summary { font-size: 10px; }.reference-ranking-column > span { font-size: 12px; }
+}
+@media (max-width: 639px) {
+  .admin-reference { padding: 8px; }.admin-reference > .flex { padding: 6px; border-radius: 20px; }.admin-reference .admin-content { padding: 16px 12px; border-radius: 22px; }.admin-reference .admin-topbar { min-height: 62px; padding: 10px 12px; gap: 8px; }.reference-brand { font-size: 19px; gap: 6px; }.reference-brand svg { width: 24px; }.reference-toolbar { gap: 14px; margin-bottom: 18px; }.reference-toolbar h1 { font-size: 22px; }.reference-toolbar-actions { width: 100%; gap: 7px; }.reference-search { width: 100%; }.reference-search input { width: 100%; }.reference-outline-button { padding: 8px 13px; font-size: 11px; }.reference-refresh { margin-left: auto; }.reference-overview-grid { grid-template-columns: 1fr; gap: 12px; }.reference-summary-stack { grid-template-columns: 1fr; gap: 12px; }.reference-summary { min-height: 190px; }.reference-summary-value > strong { font-size: 36px; }.reference-card { border-radius: 23px; }.reference-revenue-value { font-size: 34px; }.reference-ring-wrap { width: 240px; }.reference-summary-icon { top: 28px; }.reference-details-grid { margin-top: 12px; gap: 12px; }.reference-table-card > .reference-card-heading { align-items: flex-start; padding: 20px 16px 14px; }.reference-view-all { padding: 7px 9px; }.reference-card-heading h2 { font-size: 14px; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  .admin-reference { display: block; padding: 0; background: white; min-height: auto; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .admin-reference > .flex { padding: 0; background: white; max-width: none; }
+  .admin-reference .admin-topbar,.admin-reference .admin-sidebar,.admin-reference .admin-skip-link,.reference-toolbar-actions,.reference-card-link,.reference-view-all { display: none !important; }
+  .admin-reference .admin-content { margin: 0; padding: 0; }
+  .reference-overview-grid { grid-template-columns: .9fr 1.06fr 1.1fr; }.reference-summary-stack { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; grid-column: auto; }
+  .reference-details-grid { display: block; }.reference-table-card { margin-top: 16px; }.reference-ranking { margin-top: 16px; break-inside: avoid; }
+  .reference-table-scroll { max-height: none; overflow: visible; }.reference-card { break-inside: avoid; }.reference-table-card { break-inside: auto; }.reference-table tr { break-inside: avoid; }
+}
+/* Keep labels readable while preserving the compact reference layout. */
+.reference-nav { flex: 1; }
+.reference-nav a { font-size: 13px; }
+.reference-card-heading h2 { font-size: 16px; }
+.reference-card-label { font-size: 14px; }
+.reference-muted { font-size: 12px; }
+.reference-table { font-size: 12px; }
+.reference-table th { font-size: 10px; }
+.reference-table td { padding-block: 12px; }
+.reference-status { font-size: 9px; }
+.reference-revenue-chart { height: 185px; }
+.reference-chart-legend { margin-top: 14px; margin-bottom: 14px; }
+.reference-revenue-foot { margin-top: 14px; }
+.reference-ring-wrap { width: 212px; margin-top: 12px; }
+.reference-ranking-chart { height: 125px; }
+.reference-ranking .reference-card-heading h2 { font-size: 14px; }
+.reference-invoice-summary { font-size: 9px; }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .reference-nav a { font-size: 11px; }
+  .reference-card-heading h2 { font-size: 14px; }
+}
+@media (max-width: 639px) {
+  .reference-revenue-chart { height: 210px; }
+  .reference-ring-wrap { width: 240px; }
+}
+
+/* Reference Design System UI Components for all Admin tabs */
+.reference-button-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 9px 18px; font-size: 12px; font-weight: 600; background: #171717; color: #fff; border: 1px solid #171717; cursor: pointer; transition: all 0.15s ease; }
+.reference-button-primary:hover:not(:disabled) { background: #000; border-color: #000; }
+.reference-button-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.reference-button-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #d2d2d2; border-radius: 999px; padding: 9px 17px; font-size: 12px; font-weight: 500; white-space: nowrap; background: #fff; color: #242424; cursor: pointer; transition: all 0.15s ease; }
+.reference-button-secondary:hover:not(:disabled) { background: #f4f4f4; border-color: #b0b0b0; }
+.reference-button-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.reference-button-danger { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 6px 14px; font-size: 11px; font-weight: 500; background: #fff0f0; color: #c92a2a; border: 1px solid #fecaca; cursor: pointer; transition: all 0.15s ease; }
+.reference-button-danger:hover { background: #ff6460; color: #fff; border-color: #ff6460; }
+.reference-input, .reference-select { width: 100%; background: #fff; border: 1px solid #e2e4e8; border-radius: 14px; padding: 8px 14px; font-size: 12px; color: #14121b; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.reference-input:focus, .reference-select:focus { outline: none; border-color: #171717; box-shadow: 0 0 0 2px rgba(179, 250, 101, 0.45); }
+.reference-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.reference-badge.lime { background: #b3fa65; color: #173000; }
+.reference-badge.gray { background: #e8e8e8; color: #444; }
+.reference-badge.blue { background: #e0e8ff; color: #1c3d94; }
+.reference-badge.red { background: #ff6460; color: #fff; }
+.reference-badge.amber { background: #fef08a; color: #854d0e; }
+.reference-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-top: 1px solid #ededed; font-size: 11px; color: #767679; }
+.reference-pagination-buttons { display: flex; align-items: center; gap: 6px; }
+

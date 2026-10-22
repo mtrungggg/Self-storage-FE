@@ -1,18 +1,12 @@
+/**
+ * Admin CRUD repository - Local storage fallback without mock seed data.
+ */
 const STORAGE_KEY = "g1_admin_crud_v1";
 
 const seed = {
-  facilities: [
-    { id: "f1", code: "HCM-TD", name: "Kho Thủ Đức", address: "TP. Thủ Đức, TP.HCM", status: "active" },
-    { id: "f2", code: "HCM-D7", name: "Kho Quận 7", address: "Quận 7, TP.HCM", status: "active" },
-  ],
-  users: [
-    { id: "u1", fullName: "Nguyễn Minh Anh", email: "manager@g1.vn", phone: "0901234567", role: "manager", facility: "HCM-TD", status: "active" },
-    { id: "u2", fullName: "Trần Hoàng Nam", email: "staff@g1.vn", phone: "0907654321", role: "staff", facility: "HCM-D7", status: "active" },
-  ],
-  tickets: [
-    { id: "t1", code: "TCK-20261001", subject: "Khóa thông minh báo pin yếu", customer: "Khôi Võ", facility: "HCM-TD", priority: "high", status: "in_progress", description: "Kiểm tra và thay pin khóa A-101." },
-    { id: "t2", code: "TCK-20261002", subject: "Không mở được cổng chính", customer: "Thu Hà", facility: "HCM-D7", priority: "normal", status: "open", description: "Mã PIN không được hệ thống chấp nhận." },
-  ],
+  facilities: [],
+  users: [],
+  tickets: [],
   notifications: [],
 };
 
