@@ -68,7 +68,7 @@ function Home() {
 
   // Convert filteredUnits into CoverflowSlides
   const slides = useMemo(() => {
-    return filteredUnits.map((u) => {
+    return filteredUnits.slice(0, 36).map((u) => {
       return {
         src: u.image || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=640&h=640&fit=crop&q=70&auto=format",
         alt: `Unit ${u.unitCode} - ${u.facilityName}`,
@@ -116,7 +116,7 @@ function Home() {
                 >
                   <label className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
                     <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">location_on</span>
-                    Facility Location
+                    Location
                   </label>
                   <div className="flex w-full items-center justify-between">
                     <span className="truncate text-[13px] font-bold text-[#0b1c30]">
@@ -176,11 +176,11 @@ function Home() {
                 >
                   <label className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
                     <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">warehouse</span>
-                    Unit Type
+                    Type
                   </label>
                   <div className="flex w-full items-center justify-between">
                     <span className="truncate text-[13px] font-bold text-[#0b1c30]">
-                      {selectedTypeObj?.label || "All Unit Types"}
+                      {selectedTypeObj?.label || "All Types"}
                     </span>
                     <span
                       className={`material-symbols-outlined text-[18px] text-[#8996a9] transition-transform duration-200 ${
@@ -254,7 +254,7 @@ function Home() {
                 >
                   <label className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
                     <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">straighten</span>
-                    Desired Size
+                    Size
                   </label>
                   <div className="flex w-full items-center justify-between">
                     <span className="truncate text-[13px] font-bold text-[#0b1c30]">
@@ -322,7 +322,7 @@ function Home() {
                   </span>
                   <input
                     type="text"
-                    placeholder="Search by unit code, facility name, address..."
+                    placeholder="Search units"
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                     className="w-full rounded-[12px] border border-[#d8e3f5] bg-white/80 py-2 pl-10 pr-4 text-[12px] font-semibold text-[#0b1c30] placeholder-[#8996a9] outline-none transition focus:border-[#1d5fe5] focus:bg-white focus:ring-2 focus:ring-[#1d5fe5]/10"
@@ -460,7 +460,8 @@ function Home() {
 
                   <CoverflowCarousel
                     slides={slides}
-                    showCaption={true}
+                    showCaption
+                    showCaptionDetails={false}
                     showNavigation={true}
                     showPagination={true}
                     cardWidth="clamp(220px, 26vw, 320px)"

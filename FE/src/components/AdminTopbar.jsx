@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
  * - Hiển thị cơ sở kho đang chọn hoặc trạng thái toàn hệ thống.
  * - Menu tài khoản người dùng với Avatar, tên, vai trò và nút Đăng xuất.
  */
-function AdminTopbar({ activeHub, statusBanner, profile, onToggleMobileSidebar, logout }) {
+function AdminTopbar({ profile, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -38,7 +38,7 @@ function AdminTopbar({ activeHub, statusBanner, profile, onToggleMobileSidebar, 
 
   return (
     <header className="relative z-40 flex h-14 items-center justify-between gap-3 border-b border-[#e6ebf5] bg-white px-4 lg:px-6">
-      {/* Mobile toggle button & Active Hub display */}
+      {/* Mobile navigation toggle */}
       <div className="flex items-center gap-2">
         {onToggleMobileSidebar && (
           <button
@@ -50,31 +50,10 @@ function AdminTopbar({ activeHub, statusBanner, profile, onToggleMobileSidebar, 
             <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
         )}
-
-        <div className="hidden items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] bg-[#fafbfd] px-3 py-1.5 text-[11px] font-semibold text-[#3a475a] sm:flex">
-          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">domain</span>
-          <span className="truncate max-w-[200px] md:max-w-[280px]">{activeHub}</span>
-        </div>
       </div>
 
-      {/* Global Search Bar */}
-      <div className="flex max-w-[340px] flex-1 items-center gap-1.5 rounded-[8px] bg-[#f5f7fd] px-3 py-1.5">
-        <span className="material-symbols-outlined text-[15px] text-[#8996a9]">search</span>
-        <input
-          placeholder="Tìm kiếm dữ liệu, ID, cơ sở..."
-          className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
-        />
-      </div>
-
-      {/* Status banner, quick icons & Profile menu */}
+      {/* Profile menu */}
       <div className="flex items-center gap-2.5">
-        {statusBanner && (
-          <span className="hidden items-center gap-1.5 text-[10px] font-semibold text-[#0e7b4c] xl:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-            {statusBanner.label} • {statusBanner.detail}
-          </span>
-        )}
-
         {/* User Profile Dropdown Button */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -112,23 +91,27 @@ function AdminTopbar({ activeHub, statusBanner, profile, onToggleMobileSidebar, 
               </div>
 
               <div className="space-y-0.5 py-1">
-                <Link
-                  to="/admin-overview"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">dashboard</span>
-                  Dashboard Admin
-                </Link>
+                {profile?.isAdmin && (
+                  <Link
+                    to="/admin-overview"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">dashboard</span>
+                    Dashboard Admin
+                  </Link>
+                )}
 
-                <Link
-                  to="/manager-dashboard"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">space_dashboard</span>
-                  Dashboard Manager
-                </Link>
+                {!profile?.isAdmin && (profile?.isManager || profile?.role?.includes("Manager")) && (
+                  <Link
+                    to="/manager-units"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">space_dashboard</span>
+                    Vận hành kho (Manager)
+                  </Link>
+                )}
 
                 <Link
                   to="/home"

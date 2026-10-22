@@ -17,6 +17,11 @@ export const paymentService = {
     const res = await apiClient.get("/customer/payments/my-history");
     return res?.data ?? [];
   },
+
+  async getUnpaidInvoices() {
+    const res = await apiClient.get("/customer/payments/unpaid-invoices");
+    return res?.data ?? [];
+  },
 };
 
 export default paymentService;

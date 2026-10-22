@@ -29,10 +29,13 @@ export const STAFF_TASK_STATUSES = [
 ];
 
 export const UNIT_PHYSICAL_STATUS_OPTIONS = [
+  ["under_inspection", "Chờ kiểm tra (under_inspection)"],
+  ["pending_inspection", "Chờ kiểm tra (pending_inspection)"],
   ["available", "Sẵn sàng"],
   ["reserved", "Đã đặt trước"],
   ["occupied", "Đang thuê"],
   ["maintenance", "Bảo trì"],
+  ["out_of_service", "Ngừng hoạt động (out_of_service)"],
   ["blocked", "Khoá"],
 ];
 

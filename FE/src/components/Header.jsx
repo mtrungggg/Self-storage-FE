@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { ADMIN_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
+import { ADMIN_ROLES, CUSTOMER_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
 
 const NAV_ITEMS = [
   { key: "rent", label: "Rent a Unit", to: "/home", style: "soft" },
-  { key: "billing", label: "Invoices", to: "/billing", style: "hard" },
   { key: "access", label: "PIN Code", to: "/access-control", style: "hard" },
 ];
 
@@ -36,6 +35,9 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
   const isStaffRole = user?.roles?.some((r) =>
     ["staff", "facility_staff", "manager", "admin", "system_admin"].includes(r)
   );
+  const isCustomerOnly = Boolean(user) &&
+    hasAnyRole(user?.roles || [], CUSTOMER_ROLES) &&
+    !hasAnyRole(user?.roles || [], [...ADMIN_ROLES, ...MANAGER_ROLES, ...STAFF_ROLES]);
   const shouldHideCustomerNav = hideCustomerNav || (isStaffRole && (active === "ops" || active === "staff"));
 
   return (
@@ -127,6 +129,16 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                   </div>
 
                   <div className="py-1 border-b border-[#f0f3f8]">
+                    {isCustomerOnly && (
+                      <Link
+                        to="/billing"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">receipt_long</span>
+                        Invoices &amp; payments
+                      </Link>
+                    )}
                     {hasAnyRole(user?.roles || [], ADMIN_ROLES) && (
                       <Link
                         to="/admin-overview"
@@ -137,14 +149,14 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         Dashboard Admin
                       </Link>
                     )}
-                    {hasAnyRole(user?.roles || [], [...ADMIN_ROLES, ...MANAGER_ROLES]) && (
+                    {!hasAnyRole(user?.roles || [], ADMIN_ROLES) && hasAnyRole(user?.roles || [], MANAGER_ROLES) && (
                       <Link
-                        to="/manager-dashboard"
+                        to="/manager-units"
                         onClick={() => setMenuOpen(false)}
                         className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                       >
                         <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">space_dashboard</span>
-                        Dashboard Manager
+                        Vận hành kho (Manager)
                       </Link>
                     )}
                     {hasAnyRole(user?.roles || [], STAFF_ROLES) && (

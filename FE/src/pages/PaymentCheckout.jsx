@@ -84,7 +84,7 @@ function PaymentCheckout() {
               Payment Successful!
             </h1>
             <p className="mt-2 text-[14px] leading-relaxed text-[#475467]">
-              We have received your payment via SePay. Your storage unit has been automatically activated.
+              Chúng tôi đã nhận được thanh toán. Vui lòng xuất trình mã đặt chỗ cho nhân viên để hoàn tất bàn giao kho và kích hoạt mã ra vào.
             </p>
 
             <div className="mt-6 rounded-[14px] border border-[#e4e7ec] bg-[#f8f9fc] p-4 text-left text-[13px]">
@@ -104,25 +104,29 @@ function PaymentCheckout() {
                 <span className="text-[#667085]">Status:</span>
                 <span className="inline-flex items-center gap-1 font-bold text-[#0e7b4c]">
                   <span className="h-2 w-2 rounded-full bg-[#12b76a]"></span>
-                  Active &amp; Ready to Use
+                  Đã xác nhận — chờ bàn giao
                 </span>
               </div>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && <button onClick={() => navigate(`/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`)} className="rounded-xl bg-[#1d5fe5] px-5 py-3 text-sm font-bold text-white">View reservation details</button>}
-              <button
-                onClick={() => navigate("/access-control")}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#12b76a] px-6 py-3 text-[14px] font-bold text-white shadow-md transition hover:bg-[#0e9f5d]"
-              >
-                <span className="material-symbols-outlined text-[20px]">inventory_2</span>
-                Go to My Units Now
-              </button>
+              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && (
+                <button
+                  onClick={() => {
+                    const targetId = reservation?.reservationId || reservation?.id || checkout?.reservationId;
+                    navigate(targetId ? `/reservations/${targetId}` : "/reservations");
+                  }}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#1d5fe5] px-6 py-3 text-[14px] font-bold text-white shadow-md transition hover:bg-[#154ec1]"
+                >
+                  <span className="material-symbols-outlined text-[20px]">qr_code_2</span>
+                  Xem mã nhận kho (Gặp nhân viên check-in)
+                </button>
+              )}
               <button
                 onClick={() => navigate("/billing")}
                 className="w-full sm:w-auto rounded-[12px] border border-[#d0d5dd] bg-white px-5 py-3 text-[14px] font-semibold text-[#344054] transition hover:bg-[#f9fafb]"
               >
-                View Invoice History
+                Lịch sử hóa đơn
               </button>
             </div>
           </div>

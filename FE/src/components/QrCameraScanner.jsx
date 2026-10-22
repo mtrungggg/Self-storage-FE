@@ -53,8 +53,8 @@ export default function QrCameraScanner({ onScan, onClose }) {
           const msg = err?.message || String(err);
           setError(
             msg.includes("Permission") || msg.includes("NotAllowedError")
-              ? "Trình duyệt đã chặn quyền truy cập Camera. Vui lòng cho phép quyền Camera trên thanh địa chỉ và thử lại."
-              : `Không thể kết nối với Webcam/Camera: ${msg}`
+              ? "Camera access is blocked. Allow camera access in your browser and try again."
+              : `Unable to connect to the camera: ${msg}`
           );
         }
       }
@@ -91,7 +91,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[20px] text-[#2dd4a0]">photo_camera</span>
-          <span className="text-[13px] font-bold">Quét Mã QR Check-in Qua Camera</span>
+          <span className="text-[13px] font-bold">Scan Check-in QR Code</span>
         </div>
         <button
           type="button"
@@ -105,7 +105,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
       {starting && (
         <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs text-[#8996a9]">
           <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5]">progress_activity</span>
-          <span>Đang kích hoạt camera...</span>
+          <span>Starting camera...</span>
         </div>
       )}
 
@@ -118,7 +118,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
             onClick={onClose}
             className="mt-3 rounded-[8px] bg-white/20 px-4 py-1.5 font-bold text-white hover:bg-white/30"
           >
-            Đóng Camera
+            Close camera
           </button>
         </div>
       ) : (
@@ -143,7 +143,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
       )}
 
       <p className="mt-3 text-center text-[11px] text-[#8996a9]">
-        Hướng camera về mã QR trên điện thoại của khách hàng để tự động nhận diện và tra cứu.
+        Point the camera at the customer's QR code to scan and look up their check-in.
       </p>
     </div>
   );

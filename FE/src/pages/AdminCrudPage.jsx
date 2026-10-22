@@ -19,7 +19,7 @@ function toFacilityPayload(form) {
 
 const configurations = {
   facilities: {
-    title: "Quản lý kho", singular: "kho", icon: "warehouse", allowDelete: false,
+    title: "Quản lý cơ sở kho", singular: "kho", icon: "warehouse", allowDelete: false,
     fields: [
       ["code", "Mã kho", "text", true], ["name", "Tên kho", "text", true], ["address", "Địa chỉ", "text", true],
       ["city", "Thành phố", "text", true],
@@ -41,31 +41,6 @@ const configurations = {
       create: (data) => operationsService.createFacility(toFacilityPayload(data)),
       update: (id, data) => operationsService.updateFacilityById(id, toFacilityPayload(data)),
     },
-  },
-  users: {
-    title: "Quản lý manager & staff", singular: "người dùng", icon: "manage_accounts",
-    fields: [
-      ["fullName", "Họ và tên", "text", true], ["email", "Email", "email", true], ["phone", "Số điện thoại", "tel", false],
-      ["role", "Vai trò", "select", true, [["manager", "Manager"], ["staff", "Staff"]]],
-      ["facility", "Mã kho phụ trách", "text", true], ["status", "Trạng thái", "select", true, [["active", "Hoạt động"], ["locked", "Đã khóa"]]],
-    ],
-  },
-  tickets: {
-    title: "Quản lý ticket", singular: "ticket", icon: "support_agent",
-    fields: [
-      ["code", "Mã ticket", "text", true], ["subject", "Tiêu đề", "text", true], ["customer", "Khách hàng", "text", true],
-      ["facility", "Mã kho", "text", true], ["priority", "Ưu tiên", "select", true, [["low", "Thấp"], ["normal", "Bình thường"], ["high", "Cao"], ["urgent", "Khẩn cấp"]]],
-      ["status", "Trạng thái", "select", true, [["open", "Mới mở"], ["in_progress", "Đang xử lý"], ["resolved", "Đã giải quyết"], ["closed", "Đã đóng"]]],
-      ["description", "Mô tả", "textarea", false],
-    ],
-  },
-  notifications: {
-    title: "Gửi thông báo", singular: "thông báo", icon: "notifications_active", submitLabel: "Gửi thông báo",
-    fields: [
-      ["title", "Tiêu đề", "text", true], ["message", "Nội dung", "textarea", true],
-      ["audience", "Người nhận", "select", true, [["all", "Tất cả"], ["manager", "Manager"], ["staff", "Staff"], ["customer", "Khách hàng"]]],
-      ["channel", "Kênh gửi", "select", true, [["in_app", "Trong ứng dụng"], ["email", "Email"], ["both", "Ứng dụng + Email"]]],
-    ],
   },
 };
 

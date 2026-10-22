@@ -12,6 +12,7 @@ export function usePaymentCheckout() {
   const stateCheckout = location.state?.checkout || null;
   const stateReservation = location.state?.reservation || null;
   const stateReservationId = location.state?.reservationId || stateCheckout?.reservationId || null;
+  const stateInvoiceId = location.state?.invoiceId || stateCheckout?.invoiceId || null;
   const stateRenewalId = location.state?.renewalId || null;
 
   const [checkout, setCheckout] = useState(
@@ -56,30 +57,30 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
+        if (stateInvoiceId) {
+          const invoiceCheckout = await paymentService.createCheckout({
+            invoiceId: Number(stateInvoiceId),
+            paymentMethod: "vietqr",
+          });
+          if (active) {
+            setCheckout(invoiceCheckout);
+            setReservation(null);
+            setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
+            totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
+          }
+          return;
+        }
+
         if (stateRenewalId) {
-          const amount = Number(location.state?.amount || 0);
-          const memo = `DH${stateRenewalId}`;
-          const qrUrl = `https://vietqr.app/img?bank=MBBank&acc=0817495759&template=compact&showinfo=true&holder=G1SelfStorageSystem&amount=${amount}&memo=${encodeURIComponent(memo)}`;
-          const renewalCheckout = {
-            paymentId: 0,
-            renewalId: stateRenewalId,
-            invoiceNo: `RNW-${stateRenewalId}`,
-            amount: amount,
-            currency: "VND",
-            expiresInSeconds: 900,
-            vietQr: {
-              bankCode: "MBBank",
-              accountName: "G1SelfStorageSystem",
-              transferContent: memo,
-              qrImageUrl: qrUrl,
-              amount: amount,
-            },
-          };
+          const renewalCheckout = await paymentService.createCheckout({
+            renewalId: Number(stateRenewalId),
+            paymentMethod: "vietqr",
+          });
           if (active) {
             setCheckout(renewalCheckout);
             setReservation({
               reservationCode: `RNW-${location.state?.agreementNo || stateRenewalId}`,
-              quotedTotal: amount,
+              quotedTotal: renewalCheckout?.amount || 0,
             });
             setTimeLeft(900);
             totalSecondsRef.current = 900;
@@ -137,7 +138,7 @@ export function usePaymentCheckout() {
     return () => {
       active = false;
     };
-  }, [stateReservationId, checkout?.vietQr?.qrImageUrl]);
+  }, [stateReservationId, stateInvoiceId, stateRenewalId, checkout?.vietQr?.qrImageUrl]);
 
   // 15-Minute Countdown Timer
   useEffect(() => {

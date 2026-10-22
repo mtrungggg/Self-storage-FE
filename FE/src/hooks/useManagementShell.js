@@ -27,10 +27,14 @@ export function useManagementShell() {
     email: user?.email || "",
     role: roleLabel,
     roles: user?.roles || [],
+    isAdmin,
+    isManager,
   };
 
   const activeHub = facilityLoading
     ? "Đang tải kho..."
+    : isAdmin
+    ? "Hệ thống trung tâm"
     : activeFacility
     ? `${activeFacility.code} — ${activeFacility.name}`
     : "Toàn bộ hệ thống";
@@ -50,11 +54,6 @@ export function useManagementShell() {
       { id: "admin-facilities", label: "Quản lý cơ sở kho", icon: "warehouse", to: "/admin-facilities" },
       { id: "admin-pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/admin-pricing" },
       { id: "admin-users", label: "Tài khoản & Phân quyền", icon: "manage_accounts", to: "/admin-users" },
-      { id: "admin-staffing", label: "Lịch trực & Ca làm", icon: "groups", to: "/admin-staffing" },
-      { id: "admin-contracts", label: "Hợp đồng & Khách hàng", icon: "description", to: "/admin-contracts" },
-      { id: "admin-tickets", label: "Quản lý Ticket hỗ trợ", icon: "support_agent", to: "/admin-tickets" },
-      { id: "admin-notifications", label: "Gửi thông báo", icon: "notifications_active", to: "/admin-notifications" },
-      { id: "admin-system", label: "Bảo mật & Cấu hình", icon: "admin_panel_settings", to: "/admin-system" },
       { id: "admin-audit-log", label: "Nhật ký kiểm toán", icon: "history", to: "/admin-audit-log" },
       { id: "admin-login-histories", label: "Lịch sử đăng nhập", icon: "login", to: "/admin-login-histories" },
     ],
@@ -65,11 +64,13 @@ export function useManagementShell() {
     id: "manager-operations",
     label: "Vận hành kho (Manager)",
     badge: "FACILITY",
+    hideHeader: true,
     items: [
-      { id: "manager-dashboard", label: "Dashboard Manager", icon: "space_dashboard", to: "/manager-dashboard" },
       { id: "manager-units", label: "Sơ đồ & Ô kho", icon: "grid_view", to: "/manager-units" },
       { id: "manager-transfer-requests", label: "Yêu cầu chuyển ô", icon: "swap_horiz", to: "/manager-transfer-requests" },
       { id: "manager-shifts", label: "Phân ca trực kho", icon: "badge", to: "/manager-shifts" },
+      { id: "manager-tickets", label: "Sự cố & Ticket kho", icon: "support_agent", to: "/manager-tickets" },
+      { id: "manager-move-outs", label: "Lịch trả kho & Kiểm tra", icon: "output", to: "/manager-move-outs" },
     ],
   };
 
@@ -83,6 +84,7 @@ export function useManagementShell() {
       { id: "manager-refund-approvals", label: "Duyệt hoàn tiền", icon: "currency_exchange", to: "/manager-refund-approvals" },
       { id: "manager-agreements", label: "Hợp đồng thuê tại kho", icon: "assignment", to: "/manager-agreements" },
       { id: "manager-delinquent-cases", label: "Xử lý nợ quá hạn", icon: "report_problem", to: "/manager-delinquent-cases" },
+      { id: "manager-pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/manager-pricing" },
     ],
   };
 
@@ -91,7 +93,8 @@ export function useManagementShell() {
   // - Manager: Chỉ nhìn thấy các chức năng vận hành cơ sở kho.
   let sidebarNav = [];
   if (isAdmin) {
-    sidebarNav = [adminGroupOperations, managerGroupOperations, managerGroupFinance];
+
+    sidebarNav = [adminGroupOperations];
   } else {
     sidebarNav = [managerGroupOperations, managerGroupFinance];
   }

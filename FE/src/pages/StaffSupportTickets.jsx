@@ -61,10 +61,10 @@ export default function StaffSupportTickets() {
       const message = err.message || "";
       const alreadyAssigned = message.includes("ticket_assignments_one_active_uidx");
       setAssignError(alreadyAssigned
-        ? "Ticket này đã được phân công cho nhân viên xử lý. Bạn không cần Assign lại. Hãy tải lại danh sách để xem trạng thái mới nhất."
+        ? "This ticket has already been assigned. Refresh the list to view its latest status."
         : err.status >= 500
-          ? "Không thể nhận xử lý ticket lúc này. Vui lòng thử lại sau."
-          : message || "Không thể nhận xử lý ticket. Vui lòng thử lại.");
+          ? "Unable to claim this ticket right now. Please try again later."
+          : message || "Unable to claim this ticket. Please try again.");
       assignDialog.current?.showModal();
     } finally {
       assignLock.current = false;
@@ -146,11 +146,11 @@ export default function StaffSupportTickets() {
         </section>
       </main>
       <dialog ref={assignDialog} aria-labelledby="assign-error-title" aria-describedby="assign-error-description" className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white p-6 text-[#0b1c30] shadow-xl backdrop:bg-black/40">
-        <h2 id="assign-error-title" className="text-lg font-bold">Không thể phân công ticket</h2>
+        <h2 id="assign-error-title" className="text-lg font-bold">Unable to assign ticket</h2>
         <p id="assign-error-description" className="mt-3 text-sm leading-6 text-[#58657a]">{assignError}</p>
         <div className="mt-5 flex justify-end gap-3">
-          <button type="button" onClick={() => assignDialog.current.close()} className="rounded-lg border border-[#dfe7f5] px-4 py-2 text-sm font-semibold">Đóng</button>
-          <button type="button" onClick={() => { assignDialog.current.close(); load(query); }} className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white">Tải lại danh sách</button>
+          <button type="button" onClick={() => assignDialog.current.close()} className="rounded-lg border border-[#dfe7f5] px-4 py-2 text-sm font-semibold">Close</button>
+          <button type="button" onClick={() => { assignDialog.current.close(); load(query); }} className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white">Refresh list</button>
         </div>
       </dialog>
     </div>

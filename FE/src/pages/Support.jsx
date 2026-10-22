@@ -4,8 +4,8 @@ import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
 import MoveOutRequest from "../components/MoveOutRequest";
 import UnitTransferRequest from "../components/UnitTransferRequest";
-import RefundPreview from "../components/RefundPreview";
 import RentalRenewal from "../components/RentalRenewal";
+import SupportDropdown from "../components/SupportDropdown";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -182,26 +182,6 @@ function Support() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => navigate("/access-control")}
-                        className="inline-flex h-8 items-center gap-1 rounded-md bg-[#0b1c30] px-3 text-xs font-semibold text-white transition hover:bg-[#132741]"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">key</span>
-                        Access
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUnitCode(String(activeGalleryUnit.id));
-                          const el = document.getElementById("request-form");
-                          if (el) el.scrollIntoView({ behavior: "smooth" });
-                        }}
-                        className="inline-flex h-8 items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 text-xs font-semibold text-[#1d5fe5] transition hover:bg-[#f0f5ff]"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">report_problem</span>
-                        Report
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => setRenewalUnit(activeGalleryUnit)}
                         className="inline-flex h-8 items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-[#f8faff]"
                       >
@@ -218,7 +198,6 @@ function Support() {
                     <div className="mt-1.5 space-y-1 rounded-lg bg-white p-2">
                       <MoveOutRequest agreementId={activeGalleryUnit.id} />
                       <UnitTransferRequest agreementId={activeGalleryUnit.id} />
-                      <RefundPreview agreementId={activeGalleryUnit.id} />
                     </div>
                   </details>
                 </div>
@@ -250,37 +229,28 @@ function Support() {
             <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
               <fieldset disabled={submitting} className="space-y-2.5">
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-slate-700">Unit</label>
-                  <select
-                    required
+                  <SupportDropdown
+                    label="Unit"
+                    icon="warehouse"
                     disabled={rentalsLoading || activeRentals.length === 0}
                     value={selectedUnitCode}
-                    onChange={(e) => setSelectedUnitCode(e.target.value)}
-                    className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-xs outline-none transition focus:border-[#1d5fe5] focus:bg-white"
-                  >
-                    {activeRentals.length > 0 ? (
-                      activeRentals.map((u) => (
-                        <option key={u.agreementId} value={String(u.agreementId)}>
-                          Unit {u.unitCode} ({u.facilityName})
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">No active rentals</option>
-                    )}
-                  </select>
+                    onChange={setSelectedUnitCode}
+                    placeholder={rentalsLoading ? "Loading units..." : "No active rentals"}
+                    options={activeRentals.map((unit) => ({
+                      value: String(unit.agreementId),
+                      label: `Unit ${unit.unitCode} · ${unit.facilityName}`,
+                    }))}
+                  />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-slate-700">Category</label>
-                  <select
+                  <SupportDropdown
+                    label="Category"
+                    icon="support_agent"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1.5 text-xs outline-none transition focus:border-[#1d5fe5] focus:bg-white"
-                  >
-                    {SUPPORT_CATEGORIES.map((item) => (
-                      <option key={item.value} value={item.value}>{item.label}</option>
-                    ))}
-                  </select>
+                    onChange={setCategory}
+                    options={SUPPORT_CATEGORIES.map((item) => ({ value: item.value, label: item.label }))}
+                  />
                 </div>
 
                 <div>

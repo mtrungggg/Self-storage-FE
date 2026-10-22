@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import staffReservationService from "../api/staffReservationService";
 import staffFacilityService from "../api/staffFacilityService";
 import StaffAssignUnit from "./StaffAssignUnit";
-import StaffHandoverForm from "./StaffHandoverForm";
 import QrCameraScanner from "./QrCameraScanner";
 
 function formatMoney(value) {
@@ -40,6 +39,18 @@ function parseCheckInQr(raw) {
   };
 }
 
+function shortTime(timeLabel) {
+  return String(timeLabel || "").split(" ")[0] || "just now";
+}
+
+function compactUnitType(unitTypeName) {
+  const name = String(unitTypeName || "").toLowerCase();
+  const area = String(unitTypeName || "").match(/\d+(?:[.,]\d+)?\s*m[²2]?/i)?.[0]?.replace("m2", "m²") || "";
+  const size = name.includes("extra large") ? "XL" : name.includes("large") ? "Large" : name.includes("medium") ? "Medium" : name.includes("small") ? "Small" : name.includes("mini") ? "Mini" : "Storage";
+  const condition = name.includes("seafood") || name.includes("freeze") || name.includes("cold") ? "Cold" : name.includes("warm") || name.includes("heat") ? "Warm" : name.includes("climate") ? "Climate" : "Dry";
+  return [size, condition, area].filter(Boolean).join(" · ");
+}
+
 export default function StaffReservationLookup() {
   const [query, setQuery] = useState("");
   const [facilityId, setFacilityId] = useState("");
@@ -61,13 +72,13 @@ export default function StaffReservationLookup() {
 
   function confirmFacilityCheckIn({ unitCode, agreementNo, reservationCode, customerName, facilityCode }) {
     const now = new Date();
-    const timeLabel = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")} hôm nay`;
+    const timeLabel = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")} today`;
     const record = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       unitCode: unitCode || "—",
       agreementNo: agreementNo || "",
       reservationCode: reservationCode || "",
-      customerName: customerName || "Khách thuê kho",
+      customerName: customerName || "Storage customer",
       facilityCode: facilityCode || "HCM-TD",
       checkedInAt: now.toISOString(),
       timeLabel,
@@ -83,6 +94,7 @@ export default function StaffReservationLookup() {
     const updated = [record, ...existing].slice(0, 30);
     localStorage.setItem("g1_facility_checkins", JSON.stringify(updated));
     setCheckIns(updated);
+    setQuery("");
 
     try {
       const channel = new BroadcastChannel("g1_facility_checkin");
@@ -92,7 +104,7 @@ export default function StaffReservationLookup() {
       // BroadcastChannel not supported
     }
 
-    setToastMsg(`Đã xác nhận Check-in vào cơ sở cho khách hàng (${record.unitCode !== "—" ? `Ô kho ${record.unitCode}` : record.reservationCode || record.agreementNo}) lúc ${timeLabel}!`);
+    setToastMsg(`Checked in · ${record.unitCode !== "—" ? record.unitCode : record.reservationCode || record.agreementNo} · ${shortTime(timeLabel)}`);
   }
 
   function isAlreadyCheckedIn({ unitCode, agreementNo, reservationCode }) {
@@ -166,7 +178,7 @@ export default function StaffReservationLookup() {
                 unitId: `qr-${parsed.unitCode}`,
                 unitCode: parsed.unitCode,
                 currentAgreementNo: parsed.agreementNo,
-                customerName: rsvList[0]?.customerName || "Khách hàng (Mã QR hợp lệ)",
+                customerName: rsvList[0]?.customerName || "Customer (valid QR code)",
                 unitTypeName: rsvList[0]?.unitTypeName || "Active Rental Unit",
                 status: "occupied",
                 currentRate: rsvList[0]?.quotedTotal || null,
@@ -222,7 +234,7 @@ export default function StaffReservationLookup() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#1d5fe5]">qr_code_scanner</span>
-          <h2 className="text-[14px] font-bold">Check-in vào cơ sở (Quét QR / Tra cứu)</h2>
+          <h2 className="text-[14px] font-bold">Facility Check-in (Scan QR / Search)</h2>
         </div>
         <button
           type="button"
@@ -257,7 +269,7 @@ export default function StaffReservationLookup() {
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Quét mã QR, dán mã CHK|..., mã đặt chỗ, SĐT hoặc mã kho..."
+            placeholder="Search reservation, phone, or unit"
             className="mt-1 w-full rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
           />
         </label>
@@ -293,9 +305,9 @@ export default function StaffReservationLookup() {
       {matchedUnits.length > 0 && (
         <div className="mt-4 space-y-2.5">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#1d5fe5]">
-            Thông tin Ô kho &amp; Check-in Cơ sở
+            Unit check-in
           </h3>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="mx-auto grid w-full max-w-3xl gap-3">
             {matchedUnits.map((unit) => {
               const checkedRecord = isAlreadyCheckedIn({
                 unitCode: unit.unitCode,
@@ -311,28 +323,24 @@ export default function StaffReservationLookup() {
                       <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">warehouse</span>
                       <strong className="text-sm text-[#0b1c30]">Unit {unit.unitCode}</strong>
                     </div>
-                    <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 font-bold text-[#1d5fe5]">
-                      {unit.currentAgreementNo || unit.status || "Active"}
+                    <span className="rounded-full bg-[#ecfdf3] px-2.5 py-0.5 font-bold text-[#027a48]">
+                      {checkedRecord ? "Checked in" : "Ready"}
                     </span>
                   </div>
 
-                  <div className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                    <span className="font-semibold text-slate-800 truncate">
-                      Khách: {unit.customerName || "Khách thuê"}
-                    </span>
-                    <span className="text-right text-slate-500">
-                      {unit.unitTypeName || "Storage Unit"}
-                    </span>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                    <span className="font-semibold text-slate-800 truncate">{unit.customerName || "Customer"}</span>
+                    <span className="text-slate-500">{compactUnitType(unit.unitTypeName)}</span>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#dfe7f5] pt-2.5">
                     {checkedRecord ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-[#027a48]">
                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                        Đã Check-in ({checkedRecord.timeLabel})
+                        Checked in · {shortTime(checkedRecord.timeLabel)}
                       </span>
                     ) : (
-                      <span className="text-[11px] text-[#58657a]">Chờ xác nhận vào cơ sở</span>
+                      <span className="text-[11px] text-[#58657a]">Awaiting confirmation</span>
                     )}
                     <button
                       type="button"
@@ -346,7 +354,7 @@ export default function StaffReservationLookup() {
                       className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d]"
                     >
                       <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-                      <span>{checkedRecord ? "Check-in lại" : "Xác nhận Check-in vào cơ sở"}</span>
+                      <span>{checkedRecord ? "Check in again" : "Confirm check-in"}</span>
                     </button>
                   </div>
                 </article>
@@ -358,7 +366,7 @@ export default function StaffReservationLookup() {
 
       {/* Matched Reservations */}
       {results.length > 0 && (
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="mx-auto mt-4 grid w-full max-w-3xl gap-3">
           {results.map((item) => {
             const resolvedUnitCode = item.assignedUnitCode || item.unitCode;
             const checkedRecord = isAlreadyCheckedIn({
@@ -382,10 +390,10 @@ export default function StaffReservationLookup() {
                   {checkedRecord ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
                       <span className="material-symbols-outlined text-[15px]">check_circle</span>
-                      Đã Check-in ({checkedRecord.timeLabel})
+                      Checked in · {shortTime(checkedRecord.timeLabel)}
                     </span>
                   ) : (
-                    <span className="text-[11px] text-[#58657a]">Khách đến nhận/vào kho</span>
+                    <span className="text-[11px] text-[#58657a]">Customer arrival</span>
                   )}
                   <button
                     type="button"
@@ -400,15 +408,12 @@ export default function StaffReservationLookup() {
                     className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#0b633d]"
                   >
                     <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-                    <span>{checkedRecord ? "Check-in lại" : "Xác nhận Check-in"}</span>
+                    <span>{checkedRecord ? "Check in again" : "Confirm check-in"}</span>
                   </button>
                 </div>
 
                 {!resolvedUnitCode && (
                   <StaffAssignUnit reservationId={item.reservationId} facilityId={item.facilityId} onAssigned={() => search(query.trim(), false)} />
-                )}
-                {resolvedUnitCode && !["checked_in", "completed"].includes(String(item.status).toLowerCase()) && (
-                  <StaffHandoverForm reservationId={item.reservationId} onCreated={() => search(query.trim(), false)} />
                 )}
               </article>
             );
@@ -420,8 +425,8 @@ export default function StaffReservationLookup() {
       {checkIns.length > 0 && (
         <div className="mt-4 border-t border-[#eef1f8] pt-3">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#8996a9]">
-            <span>Lịch sử khách Check-in vào cơ sở gần đây</span>
-            <span>{checkIns.length} lượt</span>
+            <span>Recent facility check-ins</span>
+            <span>{checkIns.length} entries</span>
           </div>
           <div className="mt-2 space-y-1.5">
             {checkIns.slice(0, 4).map((c) => (

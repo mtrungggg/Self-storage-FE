@@ -47,7 +47,7 @@ export default function StaffMaintenanceOrder({ unitId, onCreated }) {
   if (created) return <p role="status" className="mt-3 rounded-lg bg-green-100 p-2 text-xs font-semibold text-green-800">Maintenance order {created.workOrderNo || `#${created.id}`} created ({created.status}).</p>;
 
   return <div className="mt-3 border-t border-current/15 pt-3 text-xs">
-    <button type="button" onClick={() => setOpen((value) => !value)} className="font-bold underline">{open ? "Close maintenance form" : "Create maintenance order"}</button>
+    <button type="button" onClick={() => setOpen((value) => !value)} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 font-bold transition ${open ? "border border-[#dfe7f5] bg-white text-[#58657a]" : "bg-[#b42318] text-white hover:bg-[#8f1d13]"}`}><span className="material-symbols-outlined text-[15px]">{open ? "close" : "add"}</span>{open ? "Close form" : "Create order"}</button>
     {open && <form onSubmit={submit} className="mt-3 space-y-2">
       <label className="block font-semibold">Title<input required maxLength="255" value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
       <label className="block font-semibold">Description<textarea required rows="3" value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>

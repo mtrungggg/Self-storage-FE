@@ -67,12 +67,28 @@ export function useBilling() {
     let active = true;
     setLoading(true);
     setError("");
-    paymentService
-      .getPaymentHistory()
-      .then((data) => {
+    Promise.all([paymentService.getPaymentHistory(), paymentService.getUnpaidInvoices()])
+      .then(([history, unpaid]) => {
         if (!active) return;
-        const list = Array.isArray(data) ? data : [];
-        setPayments(list);
+        const list = Array.isArray(history) ? history : [];
+        const paymentInvoiceIds = new Set(list.map((item) => Number(item.invoiceId)).filter(Boolean));
+        const unpaidRows = (Array.isArray(unpaid) ? unpaid : [])
+          .filter((invoice) => !paymentInvoiceIds.has(Number(invoice.invoiceId)))
+          .map((invoice) => ({
+            paymentId: 0,
+            invoiceId: invoice.invoiceId,
+            invoiceNo: invoice.invoiceNo,
+            reservationId: invoice.reservationId,
+            reservationCode: invoice.reservationCode,
+            agreementNo: invoice.agreementNo,
+            amount: invoice.amountDue,
+            currency: invoice.currency,
+            method: "bank_transfer",
+            provider: "SePay",
+            status: invoice.status,
+            createdAt: invoice.createdAt,
+          }));
+        setPayments([...list, ...unpaidRows]);
       })
       .catch((err) => {
         if (active) setError(err?.message || "Không thể tải lịch sử thanh toán.");
@@ -89,6 +105,7 @@ export function useBilling() {
 
   // Live timer tick every second for 15-minute hold countdown
   useEffect(() => {
+    if (!payments.length || !payments.some((p) => p.status === "pending" || p.status === "pending_payment")) return;
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);

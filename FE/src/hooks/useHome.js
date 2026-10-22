@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  getSizeFilters,
   getRentalTerms,
   getSizeGuideTabs,
   getHomeHighlights,
@@ -42,6 +41,45 @@ function sizeCategoryOf(areaM2) {
   if (areaM2 <= 8) return "medium";
   if (areaM2 <= 12) return "large";
   return "xlarge";
+}
+
+function shortSizeName(areaM2) {
+  switch (sizeCategoryOf(areaM2)) {
+    case "mini":
+      return "Mini";
+    case "small":
+      return "Small";
+    case "medium":
+      return "Medium";
+    case "large":
+      return "Large";
+    case "xlarge":
+      return "XL";
+    default:
+      return "Storage";
+  }
+}
+
+function shortUnitTypeLabel(unitType) {
+  const code = String(unitType?.code || "").toUpperCase();
+  const name = String(unitType?.name || "").toLowerCase();
+  const area = Number(unitType?.areaM2);
+  let condition = "Storage";
+
+  if (code.includes("SEAFOOD") || name.includes("seafood") || name.includes("freeze")) {
+    condition = "Cold";
+  } else if (code.includes("WARM") || name.includes("warm") || name.includes("heat")) {
+    condition = "Warm";
+  } else if (code.includes("CLIMATE") || name.includes("climate")) {
+    condition = "Climate";
+  } else if (code.includes("DRY") || name.includes("dry")) {
+    condition = "Dry";
+  } else if (code.includes("MINI") || name.includes("locker")) {
+    condition = "Locker";
+  }
+
+  const size = shortSizeName(area);
+  return Number.isFinite(area) ? `${size}-${condition}-${area}m²` : `${size}-${condition}`;
 }
 
 // Application layer: encapsulates Home (storage search & reservation) page state and data wiring.
@@ -95,7 +133,6 @@ export function useHome() {
   }, []);
 
   // Static UI reference data (not backend-driven)
-  const sizeFilters = useMemo(() => getSizeFilters(), []);
   const rentalTerms = useMemo(() => getRentalTerms(), []);
   const sizeGuideTabs = useMemo(() => getSizeGuideTabs(), []);
   const highlights = useMemo(() => getHomeHighlights(), []);
@@ -103,17 +140,34 @@ export function useHome() {
   const facilityById = useMemo(() => new Map(facilities.map((f) => [f.id, f])), [facilities]);
   const unitTypeById = useMemo(() => new Map(unitTypes.map((t) => [t.id, t])), [unitTypes]);
 
+  const availableFacilityIds = useMemo(
+    () => new Set(rawUnits.map((unit) => String(unit.facilityId))),
+    [rawUnits]
+  );
+
+  const availableUnitTypeIds = useMemo(
+    () => new Set(rawUnits.map((unit) => String(unit.unitTypeId))),
+    [rawUnits]
+  );
+
   const locations = useMemo(
     () => [
       { id: "all", label: "All Locations" },
-      ...facilities.map((f) => ({ id: String(f.id), label: `${f.name} • ${f.city}` })),
+      ...facilities
+        .filter((facility) => availableFacilityIds.has(String(facility.id)))
+        .map((facility) => ({
+          id: String(facility.id),
+          label: facility.city ? `${facility.name} · ${facility.city}` : facility.name,
+        })),
     ],
-    [facilities]
+    [facilities, availableFacilityIds]
   );
 
   const storageTypes = useMemo(() => {
-    const list = [{ id: "all", label: "All Unit Types", code: "ALL", icon: "warehouse" }];
-    const sorted = [...unitTypes].sort((a, b) => a.id - b.id);
+    const list = [{ id: "all", label: "All Types", code: "ALL", icon: "warehouse" }];
+    const sorted = unitTypes
+      .filter((unitType) => availableUnitTypeIds.has(String(unitType.id)))
+      .sort((a, b) => a.id - b.id);
     sorted.forEach((t) => {
       let icon = "warehouse";
       const code = String(t.code || "").toUpperCase();
@@ -131,7 +185,7 @@ export function useHome() {
       list.push({
         id: String(t.id),
         code: t.code || `TYPE-${t.id}`,
-        label: t.name || `Type #${t.id}`,
+        label: shortUnitTypeLabel(t),
         icon,
         climateControlled: t.climateControlled,
         areaM2: t.areaM2,
@@ -139,7 +193,7 @@ export function useHome() {
       });
     });
     return list;
-  }, [unitTypes]);
+  }, [unitTypes, availableUnitTypeIds]);
 
   // Adapt raw storage units (backend shape) into the shape the UI cards expect
   const allUnits = useMemo(() => {
@@ -190,6 +244,25 @@ export function useHome() {
       };
     });
   }, [rawUnits, facilityById, unitTypeById]);
+
+  const sizeFilters = useMemo(() => {
+    const sizes = new Map();
+    allUnits.forEach((unit) => {
+      if (unit.sizeCategory !== "all" && !sizes.has(unit.sizeCategory)) {
+        sizes.set(unit.sizeCategory, unit.areaM2);
+      }
+    });
+
+    return [
+      { id: "all", label: "All Sizes" },
+      ...[...sizes.entries()]
+        .sort(([, firstArea], [, secondArea]) => (firstArea ?? 0) - (secondArea ?? 0))
+        .map(([id, area]) => ({
+          id,
+          label: Number.isFinite(Number(area)) ? `${shortSizeName(area)}-${area}m²` : shortSizeName(area),
+        })),
+    ];
+  }, [allUnits]);
 
   const facilitiesWithFromPrice = useMemo(() => {
     return facilities.map((f) => {

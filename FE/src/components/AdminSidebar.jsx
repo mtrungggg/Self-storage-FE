@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
  * - Hiển thị rạch ròi 2 khu vực: Quản trị hệ thống (Admin) và Vận hành kho (Manager).
  * - Hỗ trợ responsive: Drawer trượt trên mobile / tablet và cố định trên desktop.
  */
-function AdminSidebar({ navGroups, activeId, footer, sectionBadge, networkStatus, isOpen = false, onClose }) {
+function AdminSidebar({ navGroups = [], activeId, isOpen = false, onClose }) {
   const content = (
     <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[#e6ebf5] bg-white">
       {/* Brand header */}
@@ -30,34 +30,18 @@ function AdminSidebar({ navGroups, activeId, footer, sectionBadge, networkStatus
         )}
       </div>
 
-      {/* System status pill */}
-      <div className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-semibold text-[#0e7b4c]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-        System Active
-        <span className="ml-auto text-[9px] text-[#8996a9]">{footer?.version || "v2.0"}</span>
-      </div>
-
-      {/* Console Section Badge */}
-      <div className="flex items-center gap-1.5 border-b border-[#eef1f8] px-4 pb-2 text-[10px] font-semibold text-[#3a475a]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#1d5fe5]" />
-        {sectionBadge?.label || "Management Portal"}
-        <span className="ml-auto rounded-full bg-[#eef4ff] px-2 py-0.5 text-[8px] font-bold text-[#1d5fe5]">
-          {sectionBadge?.tag || "PORTAL"}
-        </span>
-      </div>
-
       {/* Navigation menu list */}
       <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
         {navGroups.map((group) => (
           <div key={group.id} className="space-y-1">
-            <div className="flex items-center justify-between px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
-              <span>{group.label}</span>
-              {group.badge && (
-                <span className="rounded-[4px] bg-[#f1f4f9] px-1.5 py-0.2 text-[8px] font-bold text-[#627184]">
-                  {group.badge}
-                </span>
-              )}
-            </div>
+            {!group.hideHeader && <div className="flex items-center justify-between px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">
+                <span>{group.label}</span>
+                {group.badge && (
+                  <span className="rounded-[4px] bg-[#f1f4f9] px-1.5 py-0.2 text-[8px] font-bold text-[#627184]">
+                    {group.badge}
+                  </span>
+                )}
+              </div>}
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = activeId === item.id;
@@ -107,13 +91,6 @@ function AdminSidebar({ navGroups, activeId, footer, sectionBadge, networkStatus
           <span className="material-symbols-outlined text-[16px] text-[#8996a9]">storefront</span>
           Trang chủ khách hàng
         </Link>
-      </div>
-
-      {/* Network / Security badge */}
-      <div className="flex items-center gap-1.5 border-t border-[#eef1f8] px-4 py-2.5 text-[10px] font-semibold text-[#3a475a]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4a0]" />
-        {networkStatus?.label || "Bảo mật kết nối"}
-        <span className="ml-auto text-[9px] text-[#8996a9]">{networkStatus?.detail || "TLS 1.3"}</span>
       </div>
     </aside>
   );

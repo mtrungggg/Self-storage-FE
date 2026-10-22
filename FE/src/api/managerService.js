@@ -57,6 +57,15 @@ export const managerService = {
     return res?.data ?? null;
   },
 
+  async deleteShiftAssignment(facilityId, shiftId, employeeId) {
+    const res = await apiClient.delete(`/manager/facilities/${facilityId}/shift-assignments/${shiftId}/${employeeId}`);
+    return res?.data ?? null;
+  },
+  async getFacilityStaff(facilityId) {
+    const res = await apiClient.get(`/manager/facilities/${facilityId}/staff`);
+    return res?.data ?? [];
+  },
+
   // --- Tasks ---
   /** @param {{ assignedEmployeeId?: number, shiftId?: number, ticketId?: number, maintenanceWorkOrderId?: number, taskType: string, title: string, dueAt?: string, status?: string, progressPercent?: number }} payload */
   async createTask(facilityId, payload) {
