@@ -1,144 +1,54 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Menu, ChevronDown, ChevronRight, LayoutDashboard, LogOut, Store, CalendarDays, Box, Boxes, SlidersHorizontal, Users, History, ShieldCheck } from "lucide-react";
 
-/**
- * Topbar thanh điều hướng trên cùng dùng chung cho cả Admin và Manager.
- * - Hỗ trợ mở menu trên điện thoại di động (hamburger).
- * - Hiển thị cơ sở kho đang chọn hoặc trạng thái toàn hệ thống.
- * - Menu tài khoản người dùng với Avatar, tên, vai trò và nút Đăng xuất.
- */
-function AdminTopbar({ profile, onToggleMobileSidebar, logout }) {
+const adminNavigation = {
+  "admin-overview": ["Dashboard", LayoutDashboard],
+  "admin-facilities": ["Cơ sở kho", Boxes],
+  "admin-pricing": ["Bảng giá", SlidersHorizontal],
+  "admin-users": ["Tài khoản", Users],
+  "admin-audit-log": ["Kiểm toán", History],
+  "admin-login-histories": ["Đăng nhập", ShieldCheck],
+};
+
+export default function AdminTopbar({ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  // Đóng dropdown khi click bên ngoài
+  const triggerRef = useRef(null);
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setProfileOpen(false);
-      }
-    }
-    if (profileOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (!profileOpen) return;
+    const closeOutside = (event) => { if (!dropdownRef.current?.contains(event.target)) setProfileOpen(false); };
+    const closeEscape = (event) => { if (event.key === "Escape") { setProfileOpen(false); triggerRef.current?.focus(); } };
+    document.addEventListener("mousedown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => { document.removeEventListener("mousedown", closeOutside); document.removeEventListener("keydown", closeEscape); };
   }, [profileOpen]);
-
-  const handleLogout = () => {
-    if (logout) {
-      logout();
-    }
-    navigate("/login");
-  };
-
   const initial = (profile?.name || "U").charAt(0).toUpperCase();
-
-  return (
-    <header className="relative z-40 flex h-14 items-center justify-between gap-3 border-b border-[#e6ebf5] bg-white px-4 lg:px-6">
-      {/* Mobile navigation toggle */}
-      <div className="flex items-center gap-2">
-        {onToggleMobileSidebar && (
-          <button
-            type="button"
-            onClick={onToggleMobileSidebar}
-            className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#e6ebf5] text-[#58657a] hover:bg-[#f5f7fd] lg:hidden"
-            title="Mở menu điều hướng"
-          >
-            <span className="material-symbols-outlined text-[20px]">menu</span>
-          </button>
-        )}
+  return <header className="admin-topbar">
+    <div className="flex min-w-0 items-center gap-3">
+      <button type="button" onClick={onToggleMobileSidebar} className="admin-icon-button lg:hidden" aria-label="Mở menu điều hướng"><Menu size={21} /></button>
+      {profile?.isAdmin ? <Link to="/admin-overview" className="reference-brand"><Box size={29} strokeWidth={2.2} /><span>G1<span className="reference-brand-detail"> Storage</span></span></Link> : <div className="flex min-w-0 items-center gap-2 text-sm"><span className="hidden text-slate-400 md:inline">Quản trị</span><ChevronRight size={14} className="hidden text-slate-300 md:block" /><span className="truncate font-semibold">{pageTitle || "Không gian quản trị"}</span></div>}
+    </div>
+    {profile?.isAdmin && <nav className="reference-nav" aria-label="Điều hướng quản trị">
+      {navGroups.flatMap((group) => group.items).map((item) => {
+        const [label, Icon] = adminNavigation[item.id] || [item.label, Box];
+        return <Link key={item.id} to={item.to} aria-current={activeId === item.id ? "page" : undefined}><Icon size={19} strokeWidth={1.5} /><span>{label}</span></Link>;
+      })}
+    </nav>}
+    <div className="flex shrink-0 items-center gap-5">
+      {!profile?.isAdmin && <span className="hidden items-center gap-2 text-xs text-slate-500 xl:flex"><CalendarDays size={16} />{new Intl.DateTimeFormat("vi-VN", { dateStyle: "long", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date())}</span>}
+      <div className="relative" ref={dropdownRef} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setProfileOpen(false); }}>
+        <button ref={triggerRef} type="button" aria-expanded={profileOpen} aria-controls="admin-profile-menu" onClick={() => setProfileOpen(!profileOpen)} className="admin-profile-trigger">
+          <span className="admin-avatar">{initial}</span><span className="hidden text-left sm:block"><strong>{profile?.name || "Tài khoản"}</strong><small>{profile?.role || "Quản trị"}</small></span><ChevronDown size={15} className="text-slate-400" />
+        </button>
+        {profileOpen && <div id="admin-profile-menu" className="admin-profile-menu">
+          <div className="border-b border-slate-100 px-3 py-3"><strong className="block truncate text-sm">{profile?.name}</strong><span className="block truncate text-xs text-slate-500">{profile?.email}</span></div>
+          <Link onClick={() => setProfileOpen(false)} to={profile?.isAdmin ? "/admin-overview" : "/manager-units"}><LayoutDashboard size={17} />Không gian quản trị</Link>
+          <Link onClick={() => setProfileOpen(false)} to="/home"><Store size={17} />Trang chủ khách hàng</Link>
+          <button type="button" onClick={() => { logout?.(); navigate("/login"); }}><LogOut size={17} />Đăng xuất tài khoản</button>
+        </div>}
       </div>
-
-      {/* Profile menu */}
-      <div className="flex items-center gap-2.5">
-        {/* User Profile Dropdown Button */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            type="button"
-            onClick={() => setProfileOpen((prev) => !prev)}
-            className="flex items-center gap-2 rounded-full border border-[#dfe7f5] bg-white p-1 pr-2.5 transition hover:bg-[#f8faff] hover:border-[#1d5fe5]"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1c30] text-[12px] font-bold text-white shadow-xs">
-              {initial}
-            </div>
-            <div className="hidden text-left leading-tight md:block">
-              <div className="max-w-[130px] truncate text-[11px] font-bold text-[#0b1c30]">
-                {profile?.name || "Tài khoản"}
-              </div>
-              <div className="truncate text-[9px] font-medium text-[#8996a9]">
-                {profile?.role || "Console"}
-              </div>
-            </div>
-            <span className="material-symbols-outlined text-[15px] text-[#8996a9]">expand_more</span>
-          </button>
-
-          {/* User Profile Dropdown Menu */}
-          {profileOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-[12px] border border-[#dfe7f5] bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.12)] z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="border-b border-[#f0f3f8] px-3 py-2.5">
-                <div className="truncate text-[12px] font-bold text-[#0b1c30]">{profile?.name}</div>
-                {profile?.email && (
-                  <div className="truncate text-[10px] text-[#8996a9]">{profile?.email}</div>
-                )}
-                <div className="mt-1">
-                  <span className="inline-block rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">
-                    {profile?.role}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-0.5 py-1">
-                {profile?.isAdmin && (
-                  <Link
-                    to="/admin-overview"
-                    onClick={() => setProfileOpen(false)}
-                    className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
-                  >
-                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">dashboard</span>
-                    Dashboard Admin
-                  </Link>
-                )}
-
-                {!profile?.isAdmin && (profile?.isManager || profile?.role?.includes("Manager")) && (
-                  <Link
-                    to="/manager-units"
-                    onClick={() => setProfileOpen(false)}
-                    className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
-                  >
-                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">space_dashboard</span>
-                    Vận hành kho (Manager)
-                  </Link>
-                )}
-
-                <Link
-                  to="/home"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 rounded-[8px] px-3 py-2 text-[11px] font-semibold text-[#58657a] hover:bg-[#f5f7fd] hover:text-[#0b1c30]"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-[#7b8a9f]">storefront</span>
-                  Trang chủ khách hàng
-                </Link>
-              </div>
-
-              <div className="border-t border-[#f0f3f8] pt-1">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-[8px] px-3 py-2 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">logout</span>
-                  Đăng xuất tài khoản
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
-  );
+    </div>
+  </header>;
 }
-
-export default AdminTopbar;

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 
 const roleOptions = [
-  ["storage_customer", "Khách hàng"], ["facility_staff", "Nhân viên kho"],
-  ["facility_manager", "Quản lý kho"], ["business_operations_manager", "Quản lý vận hành"],
+  ["storage_customer", "Khách hàng"],
+  ["facility_staff", "Nhân viên kho"],
+  ["facility_manager", "Quản lý kho"],
+  ["business_operations_manager", "Quản lý vận hành"],
   ["system_administrator", "Quản trị viên"],
 ];
 
@@ -15,11 +18,16 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
   const submitting = useRef(false);
   const mounted = useRef(true);
   const changed = selected.length !== original.length || selected.some((role) => !original.includes(role));
-  const options = [...roleOptions, ...original.filter((code) => !roleOptions.some(([value]) => value === code)).map((code) => [code, code])];
+  const options = [
+    ...roleOptions,
+    ...original.filter((code) => !roleOptions.some(([value]) => value === code)).map((code) => [code, code]),
+  ];
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   async function submit(event) {
@@ -32,31 +40,89 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
     try {
       await adminUserService.updateRoles(user.id, selected);
     } catch (err) {
-      if (mounted.current) setError(err.status === 404 ? "Không tìm thấy người dùng này." : err.message || "Không thể cập nhật vai trò.");
+      if (mounted.current)
+        setError(err.status === 404 ? "Không tìm thấy người dùng này." : err.message || "Không thể cập nhật vai trò.");
       return;
     } finally {
       submitting.current = false;
-      if (mounted.current) { setSaving(false); onSavingChange(false); }
+      if (mounted.current) {
+        setSaving(false);
+        onSavingChange(false);
+      }
     }
     window.dispatchEvent(new Event("admin-data-changed"));
     if (mounted.current) onUpdated();
   }
 
-  return <section className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
-    <h2 className="font-bold">Cập nhật vai trò</h2>
-    <p className="mt-1 text-sm text-[#58657a]">Chọn các vai trò cần giữ hoặc cấp cho tài khoản. Bỏ chọn để thu hồi vai trò.</p>
-    <form onSubmit={submit} className="mt-4" aria-busy={saving}>
-      <fieldset disabled={saving || disabled} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <legend className="sr-only">Vai trò người dùng</legend>
-        {options.map(([code, label]) => <label key={code} className="flex items-center gap-3 rounded-xl border border-[#dfe7f5] p-3 text-sm">
-          <input type="checkbox" checked={selected.includes(code)} onChange={(event) => {
-            setSelected((current) => event.target.checked ? [...current, code] : current.filter((role) => role !== code));
-            setError("");
-          }} className="h-4 w-4 accent-[#1d5fe5]" />{label}
-        </label>)}
-      </fieldset>
-      {error && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      <button type="submit" disabled={disabled || saving || !changed} className="mt-4 rounded-xl bg-[#1d5fe5] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Đang lưu..." : "Lưu vai trò"}</button>
-    </form>
-  </section>;
+  return (
+    <section className="reference-card mb-5 p-6">
+      <div className="reference-card-heading mb-4">
+        <div>
+          <h2>Cập nhật vai trò &amp; Quyền hạn</h2>
+          <p className="reference-muted">
+            Chọn các vai trò cần cấp cho tài khoản. Bỏ chọn để thu hồi quyền truy cập tương ứng.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div role="alert" className="reference-error mb-4">
+          <AlertTriangle size={20} />
+          <div>
+            <strong>Lỗi cập nhật</strong>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={submit} aria-busy={saving}>
+        <fieldset disabled={saving || disabled} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <legend className="sr-only">Vai trò người dùng</legend>
+          {options.map(([code, label]) => {
+            const isChecked = selected.includes(code);
+            return (
+              <label
+                key={code}
+                className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                  isChecked
+                    ? "bg-[#fff] border-[#171717] shadow-2xs"
+                    : "bg-[#fafafa] border-[#e5e5e5] hover:bg-[#fff]"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...selected, code]
+                      : selected.filter((item) => item !== code);
+                    setSelected(next);
+                  }}
+                  className="h-4 w-4 rounded accent-black"
+                />
+                <div>
+                  <span className="block text-xs font-semibold text-[#14121b]">{label}</span>
+                  <span className="block font-mono text-[10px] text-[#767679]">{code}</span>
+                </div>
+              </label>
+            );
+          })}
+        </fieldset>
+
+        <div className="mt-5 flex items-center justify-between border-t border-[#ededed] pt-4">
+          <span className="text-xs text-[#767679]">
+            {changed ? "Đang có thay đổi chưa lưu." : "Chưa có thay đổi nào."}
+          </span>
+          <button
+            type="submit"
+            disabled={saving || disabled || !changed}
+            className="reference-button-primary"
+          >
+            <ShieldCheck size={15} />
+            {saving ? "Đang lưu..." : "Lưu thay đổi vai trò"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 }

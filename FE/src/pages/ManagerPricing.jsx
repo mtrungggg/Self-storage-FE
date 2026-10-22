@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { RefreshCw, Save, Plus, X, Tag, Receipt, Warehouse, AlertTriangle, CheckCircle2 } from "lucide-react";
 import operationsService from "../api/operationsService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
@@ -59,21 +60,13 @@ function ManagerPricing() {
 
       const items = ratesRes?.items ?? [];
       setRates(items);
-      const initEdited = {};
-      items.forEach((r) => {
-        initEdited[r.id] = {
-          monthlyRate: r.monthlyRate,
-          depositAmount: r.depositAmount,
-          bookingFee: r.bookingFee,
-        };
-      });
-      setEditedRates(initEdited);
+      setEditedRates({});
       setDirtyIds(new Set());
 
       setFees(feesRes?.items ?? []);
       setPromotions(promosRes?.items ?? []);
     } catch (err) {
-      setError(err?.message || "Không thể tải dữ liệu bảng giá từ máy chủ.");
+      setError(err?.message || "Không thể tải bảng giá từ máy chủ.");
     } finally {
       setLoading(false);
     }
@@ -138,36 +131,31 @@ function ManagerPricing() {
     );
     try {
       await operationsService.updatePromotionStatus(promoId, next);
-      setNotice(next ? "Đã bật khuyến mãi." : "Đã tạm dừng khuyến mãi.");
-      setTimeout(() => setNotice(""), 3000);
     } catch (err) {
       setPromotions((prev) =>
         prev.map((p) => (p.id === promoId ? { ...p, isActive: currentStatus } : p))
       );
-      setError(err?.message || "Không thể đổi trạng thái mã khuyến mãi.");
+      setError(err?.message || "Không thể cập nhật trạng thái khuyến mãi.");
     }
   };
 
-  // Create promo submit
+  // Create new promotion
   const handleCreatePromo = async (e) => {
     e.preventDefault();
+    if (!promoForm.code.trim() || !promoForm.name.trim() || !promoForm.discountValue) {
+      setError("Vui lòng điền đầy đủ thông tin mã khuyến mãi.");
+      return;
+    }
     setSavingPromo(true);
     setError("");
     try {
-      const now = new Date();
-      const nextYear = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
       await operationsService.createPromotion({
         code: promoForm.code.trim().toUpperCase(),
         name: promoForm.name.trim(),
         discountType: promoForm.discountType,
-        discountValue: Number(promoForm.discountValue) || 0,
-        usageLimit: Number(promoForm.usageLimit) || 100,
-        validFrom: now.toISOString(),
-        validTo: nextYear.toISOString(),
-        isActive: true,
+        discountValue: Number(promoForm.discountValue),
+        usageLimit: promoForm.usageLimit ? Number(promoForm.usageLimit) : undefined,
       });
-      setNotice(`Đã tạo mã khuyến mãi ${promoForm.code.toUpperCase()}!`);
-      setTimeout(() => setNotice(""), 3500);
       setShowPromoModal(false);
       setPromoForm({
         code: "",
@@ -176,6 +164,8 @@ function ManagerPricing() {
         discountValue: "",
         usageLimit: "100",
       });
+      setNotice("Đã tạo mã khuyến mãi thành công!");
+      setTimeout(() => setNotice(""), 3500);
       await loadData();
     } catch (err) {
       setError(err?.message || "Không thể tạo mã khuyến mãi.");
@@ -185,128 +175,134 @@ function ManagerPricing() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="reference-dashboard">
+      {/* Top Toolbar matching Dashboard */}
+      <div className="reference-toolbar">
         <div>
-          <h1 className="text-[22px] font-black tracking-tight text-[#0b1c30]">
-            Bảng Giá &amp; Chính Sách
-          </h1>
-          <p className="mt-0.5 text-xs text-[#58657a]">
-            {activeFacility ? `Cơ sở: ${activeFacility.name} (${activeFacility.code})` : "Cơ sở vận hành"} • Đồng bộ trực tiếp từ máy chủ
+          <div className="flex items-center gap-3">
+            <h1>Bảng giá &amp; Chính sách</h1>
+            <span className="reference-pill">
+              {activeFacility ? `Cơ sở: ${activeFacility.name} (${activeFacility.code})` : "Toàn bộ hệ thống"}
+            </span>
+          </div>
+          <p className="reference-muted mt-1">
+            Điều chỉnh biểu phí thuê theo kích thước ô kho, quy định các khoản phạt và quản lý voucher ưu đãi.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={loadData}
-            disabled={loading}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#dfe7f5] bg-white px-3.5 text-xs font-bold text-[#3a475a] hover:bg-[#f8faff] transition shadow-2xs"
-          >
-            <span className={`material-symbols-outlined text-[16px] ${loading ? "animate-spin" : ""}`}>
-              refresh
-            </span>
-            Làm mới
-          </button>
-
+        <div className="reference-toolbar-actions">
           {dirtyIds.size > 0 && (
             <button
               type="button"
               onClick={handleSaveRates}
               disabled={saving}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#1d5fe5] px-4 text-xs font-bold text-white shadow-2xs hover:bg-[#1550c7] transition disabled:opacity-60"
+              className="reference-button-primary !bg-[#23866a] !border-[#23866a] hover:!bg-[#1b6b54]"
             >
-              <span className="material-symbols-outlined text-[16px]">save</span>
+              <Save size={15} />
               {saving ? "Đang lưu..." : `Lưu thay đổi (${dirtyIds.size})`}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading}
+            className="reference-refresh"
+            title="Làm mới bảng giá"
+          >
+            <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
 
       {notice && (
-        <div role="status" className="flex items-center gap-2 rounded-xl bg-[#ecfdf3] px-4 py-2.5 text-xs font-bold text-[#027a48] border border-[#a6f4c5]">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+        <div role="status" className="mb-4 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
+          <CheckCircle2 size={18} className="text-[#23866a]" />
           <span>{notice}</span>
         </div>
       )}
 
       {error && (
-        <div role="alert" className="flex items-center gap-2 rounded-xl bg-[#fff1f3] px-4 py-2.5 text-xs font-bold text-[#b42318] border border-[#fecdca]">
-          <span className="material-symbols-outlined text-[18px]">error</span>
-          <span>{error}</span>
+        <div role="alert" className="reference-error mb-4">
+          <AlertTriangle size={20} />
+          <div>
+            <strong>Thông báo</strong>
+            <p>{error}</p>
+          </div>
         </div>
       )}
 
-      {/* 3 Metric Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#dfe7f5] bg-white p-3.5 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#475467]">
-            <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">warehouse</span>
-            Loại Ô Kho &amp; Đơn Giá
+      {/* 3 Metric Cards matching Dashboard */}
+      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <div className="reference-card p-5">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
+            <span>Loại ô kho &amp; Đơn giá</span>
+            <Warehouse size={18} className="text-[#14121b]" />
           </div>
-          <div className="mt-2 text-xl font-black text-[#0b1c30]">
+          <div className="mt-2 text-2xl font-bold text-[#14121b]">
             {loading ? "..." : `${rates.length} loại ô`}
           </div>
-          <div className="mt-0.5 text-[11px] font-medium text-[#12b76a]">Đang áp dụng tại kho</div>
+          <div className="mt-1">
+            <span className="reference-badge lime">Đang áp dụng</span>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-[#dfe7f5] bg-white p-3.5 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#475467]">
-            <span className="material-symbols-outlined text-[18px] text-[#7f56d9]">receipt_long</span>
-            Quy Định Phụ Phí
+        <div className="reference-card p-5">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
+            <span>Quy định phụ phí</span>
+            <Receipt size={18} className="text-[#14121b]" />
           </div>
-          <div className="mt-2 text-xl font-black text-[#0b1c30]">
+          <div className="mt-2 text-2xl font-bold text-[#14121b]">
             {loading ? "..." : `${fees.length} khoản phí`}
           </div>
-          <div className="mt-0.5 text-[11px] font-medium text-[#475467]">Phí trễ hạn, mất khóa</div>
+          <div className="mt-1 text-xs text-[#767679]">Phí trễ hạn, phạt hư hại, mất khóa</div>
         </div>
 
-        <div className="rounded-2xl border border-[#dfe7f5] bg-white p-3.5 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#475467]">
-            <span className="material-symbols-outlined text-[18px] text-[#b54708]">local_offer</span>
-            Mã Khuyến Mãi
+        <div className="reference-card p-5">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
+            <span>Mã khuyến mãi &amp; Voucher</span>
+            <Tag size={18} className="text-[#14121b]" />
           </div>
-          <div className="mt-2 text-xl font-black text-[#0b1c30]">
+          <div className="mt-2 text-2xl font-bold text-[#14121b]">
             {loading ? "..." : `${promotions.filter((p) => p.isActive).length} mã đang chạy`}
           </div>
-          <div className="mt-0.5 text-[11px] font-medium text-[#b54708]">Tổng {promotions.length} mã tạo</div>
+          <div className="mt-1 text-xs text-[#767679]">Tổng cộng {promotions.length} mã đã tạo</div>
         </div>
       </div>
 
       {/* Main Rates Table */}
-      <div className="overflow-hidden rounded-2xl border border-[#eaecf0] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#eaecf0] px-4 py-3">
-          <h2 className="text-sm font-black text-[#0b1c30]">
-            Bảng Đơn Giá Thuê Theo Loại Ô
-          </h2>
-          <span className="text-[11px] font-medium text-[#8996a9]">
-            Nhập trực tiếp để điều chỉnh giá • Đơn vị: VNĐ / tháng
-          </span>
+      <section className="reference-card reference-table-card mb-6">
+        <div className="reference-card-heading">
+          <div>
+            <h2>Bảng đơn giá thuê theo loại ô kho</h2>
+            <p className="reference-muted">
+              Nhập trực tiếp số tiền vào các ô để điều chỉnh mức giá • Đơn vị tính: VNĐ / tháng
+            </p>
+          </div>
+          <span className="reference-pill">{rates.length} cấu hình giá</span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+        <div className="reference-table-scroll">
+          <table className="reference-table">
             <thead>
-              <tr className="border-b border-[#eaecf0] bg-[#f8f9fc] text-[11px] font-bold text-[#475467]">
-                <th className="py-2.5 px-4">Loại Ô Kho</th>
-                <th className="py-2.5 px-4 text-right">Giá Thuê / Tháng (₫)</th>
-                <th className="py-2.5 px-4 text-right">Tiền Cọc (₫)</th>
-                <th className="py-2.5 px-4 text-right">Phí Giữ Chỗ (₫)</th>
-                <th className="py-2.5 px-4 text-center">Hiệu Lực</th>
+              <tr>
+                <th scope="col">Loại ô kho</th>
+                <th scope="col" className="text-right">Giá thuê / tháng (₫)</th>
+                <th scope="col" className="text-right">Tiền đặt cọc (₫)</th>
+                <th scope="col" className="text-right">Phí giữ chỗ (₫)</th>
+                <th scope="col" className="text-center">Ngày hiệu lực</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#eaecf0]">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs font-bold text-[#8996a9]">
-                    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#1d5fe5] border-t-transparent mb-1" />
-                    <div>Đang tải bảng giá từ máy chủ...</div>
+                  <td colSpan={5} className="py-12 text-center text-xs text-[#767679]">
+                    Đang tải bảng giá từ máy chủ...
                   </td>
                 </tr>
               ) : rates.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-xs text-[#8996a9]">
+                  <td colSpan={5} className="py-12 text-center text-xs text-[#767679]">
                     Chưa có cấu hình giá nào cho cơ sở này.
                   </td>
                 </tr>
@@ -318,20 +314,16 @@ function ManagerPricing() {
                   return (
                     <tr
                       key={rate.id}
-                      className={`hover:bg-[#fcfdfd] transition ${
-                        isDirty ? "bg-[#fffbf0]" : ""
-                      }`}
+                      className={isDirty ? "bg-[#fffef0] hover:bg-[#fff9d6]" : ""}
                     >
-                      <td className="py-3 px-4">
-                        <div className="font-extrabold text-[#0b1c30]">
+                      <td>
+                        <strong className="font-semibold text-[#14121b]">
                           {rate.unitTypeName}
-                        </div>
-                        <div className="text-[10px] text-[#58657a]">
-                          {rate.facilityName}
-                        </div>
+                        </strong>
+                        <div className="text-[10px] text-[#767679]">{rate.facilityName}</div>
                       </td>
 
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         <input
                           type="number"
                           step="1000"
@@ -339,11 +331,11 @@ function ManagerPricing() {
                           onChange={(e) =>
                             handleRateChange(rate.id, "monthlyRate", e.target.value)
                           }
-                          className="w-32 rounded-lg border border-[#dfe7f5] px-2 py-1 text-right text-xs font-bold text-[#0b1c30] outline-none transition focus:border-[#1d5fe5]"
+                          className="w-32 rounded-xl border border-[#e2e4e8] bg-white px-2.5 py-1 text-right text-xs font-bold text-[#14121b] outline-none transition focus:border-black"
                         />
                       </td>
 
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         <input
                           type="number"
                           step="1000"
@@ -351,19 +343,21 @@ function ManagerPricing() {
                           onChange={(e) =>
                             handleRateChange(rate.id, "depositAmount", e.target.value)
                           }
-                          className="w-28 rounded-lg border border-[#dfe7f5] px-2 py-1 text-right text-xs font-medium text-[#475467] outline-none transition focus:border-[#1d5fe5]"
+                          className="w-28 rounded-xl border border-[#e2e4e8] bg-white px-2.5 py-1 text-right text-xs font-medium text-[#475467] outline-none transition focus:border-black"
                         />
                       </td>
 
-                      <td className="py-3 px-4 text-right">
+                      <td className="text-right">
                         <span className="font-medium text-[#475467]">
                           {formatCurrency(rate.bookingFee)}
                         </span>
                       </td>
 
-                      <td className="py-3 px-4 text-center">
-                        <span className="rounded-md bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-bold text-[#475467]">
-                          {rate.validFrom ? new Date(rate.validFrom).toLocaleDateString("vi-VN") : "Hiện hành"}
+                      <td className="text-center">
+                        <span className="reference-pill !py-0.5 !px-2.5">
+                          {rate.validFrom
+                            ? new Date(rate.validFrom).toLocaleDateString("vi-VN")
+                            : "Hiện hành"}
                         </span>
                       </td>
                     </tr>
@@ -373,81 +367,90 @@ function ManagerPricing() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Two Columns: Fees & Promotions */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Two Columns: Ancillary Fees & Promotions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Ancillary Fees */}
-        <div className="rounded-2xl border border-[#eaecf0] bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#eaecf0] pb-2.5">
-            <h2 className="text-sm font-black text-[#0b1c30]">Quy Định Phụ Phí &amp; Phạt</h2>
-            <span className="text-[11px] font-medium text-[#8996a9]">Áp dụng tự động</span>
+        <section className="reference-card p-5">
+          <div className="reference-card-heading mb-3">
+            <div>
+              <h2>Quy định phụ phí &amp; Phạt vi phạm</h2>
+              <p className="reference-muted">Các khoản phí tự động tính vào hóa đơn khi phát sinh</p>
+            </div>
+            <span className="reference-pill">{fees.length} khoản phí</span>
           </div>
 
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2.5">
             {loading ? (
-              <p className="py-4 text-center text-xs text-[#8996a9]">Đang tải phụ phí...</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Đang tải phụ phí...</p>
             ) : fees.length === 0 ? (
-              <p className="py-4 text-center text-xs text-[#8996a9]">Chưa có quy định phụ phí nào.</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Chưa có quy định phụ phí nào.</p>
             ) : (
               fees.map((fee) => (
                 <div
                   key={fee.id}
-                  className="flex items-center justify-between rounded-xl border border-[#eaecf0] bg-[#fafcff] p-3 transition hover:shadow-2xs"
+                  className="flex items-center justify-between rounded-2xl border border-[#ededed] bg-white p-3.5 transition hover:shadow-2xs"
                 >
                   <div>
-                    <div className="font-extrabold text-[#0b1c30]">{fee.code}</div>
-                    <div className="text-[10px] text-[#58657a]">
+                    <div className="font-bold text-[#14121b]">{fee.code}</div>
+                    <div className="text-[10px] text-[#767679] mt-0.5">
                       Loại: {fee.feeType} {fee.facilityName ? `• ${fee.facilityName}` : "• Toàn hệ thống"}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-black text-[#b54708]">
+                    <div className="text-xs font-bold text-[#b54708]">
                       {formatFeeValue(fee)}
                     </div>
-                    <span className="inline-block rounded bg-[#d1fadf] px-1.5 py-0.5 text-[9px] font-bold text-[#027a48]">
-                      {fee.isActive ? "Hoạt động" : "Tạm dừng"}
+                    <span
+                      className={`reference-status !text-[8px] !py-0.5 !px-2 mt-1 ${
+                        fee.isActive ? "active" : "inactive"
+                      }`}
+                    >
+                      {fee.isActive ? "Áp dụng" : "Tạm ngưng"}
                     </span>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </section>
 
         {/* Promotions */}
-        <div className="rounded-2xl border border-[#eaecf0] bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#eaecf0] pb-2.5">
-            <h2 className="text-sm font-black text-[#0b1c30]">Mã Giảm Giá &amp; Khuyến Mãi</h2>
+        <section className="reference-card p-5">
+          <div className="reference-card-heading mb-3">
+            <div>
+              <h2>Mã giảm giá &amp; Khuyến mãi</h2>
+              <p className="reference-muted">Chương trình ưu đãi áp dụng khi khách hàng thuê kho</p>
+            </div>
             <button
               type="button"
               onClick={() => setShowPromoModal(true)}
-              className="inline-flex items-center gap-1 rounded-lg bg-[#1d5fe5] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#1550c7] transition"
+              className="reference-button-primary !py-1 !px-3 !text-xs"
             >
-              <span className="material-symbols-outlined text-[13px]">add</span>
-              Tạo mã mới
+              <Plus size={13} /> Tạo mã mới
             </button>
           </div>
 
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2.5">
             {loading ? (
-              <p className="py-4 text-center text-xs text-[#8996a9]">Đang tải mã khuyến mãi...</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Đang tải mã khuyến mãi...</p>
             ) : promotions.length === 0 ? (
-              <p className="py-4 text-center text-xs text-[#8996a9]">Chưa có mã khuyến mãi nào.</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Chưa có mã khuyến mãi nào.</p>
             ) : (
               promotions.map((promo) => (
                 <div
                   key={promo.id}
-                  className="flex items-center justify-between rounded-xl border border-[#eaecf0] bg-[#fafcff] p-3 transition hover:shadow-2xs"
+                  className="flex items-center justify-between rounded-2xl border border-[#ededed] bg-white p-3.5 transition hover:shadow-2xs"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-[#eef4ff] px-2 py-0.5 font-mono text-xs font-extrabold text-[#1d5fe5]">
+                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
                         {promo.code}
                       </span>
-                      <span className="text-xs font-bold text-[#0b1c30]">{promo.name}</span>
+                      <span className="text-xs font-semibold text-[#14121b]">{promo.name}</span>
                     </div>
-                    <div className="mt-1 text-[10px] text-[#58657a]">
+                    <div className="mt-1 text-[11px] text-[#767679]">
                       {promo.discountType === "percentage"
                         ? `Giảm ${promo.discountValue}%`
                         : `Giảm ${formatCurrency(promo.discountValue)}`}
@@ -459,10 +462,10 @@ function ManagerPricing() {
                     <button
                       type="button"
                       onClick={() => handleTogglePromo(promo.id, promo.isActive)}
-                      className={`h-5 w-9 rounded-full transition-colors ${
-                        promo.isActive ? "bg-[#1d5fe5]" : "bg-[#dfe7f5]"
+                      className={`h-5 w-9 rounded-full transition-colors cursor-pointer ${
+                        promo.isActive ? "bg-black" : "bg-slate-200"
                       }`}
-                      title={promo.isActive ? "Nhấp để tạm dừng" : "Nhấp để kích hoạt"}
+                      title={promo.isActive ? "Nhấp để tạm ngưng" : "Nhấp để kích hoạt"}
                     >
                       <span
                         className={`block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
@@ -475,7 +478,7 @@ function ManagerPricing() {
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Modal: Create Promotion */}
@@ -485,58 +488,64 @@ function ManagerPricing() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#eaecf0] pb-2.5">
-              <h3 className="text-sm font-extrabold text-[#0b1c30]">Tạo Mã Khuyến Mãi Mới</h3>
+          <div className="w-full max-w-sm reference-card !bg-white p-6 shadow-2xl">
+            <div className="reference-card-heading mb-4 pb-3 border-b border-[#ededed]">
+              <h2>Tạo mã khuyến mãi mới</h2>
               <button
                 type="button"
                 onClick={() => setShowPromoModal(false)}
-                className="text-[#8996a9] hover:text-[#0b1c30]"
+                className="reference-pill hover:bg-slate-50 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <X size={14} />
               </button>
             </div>
 
-            <form onSubmit={handleCreatePromo} className="mt-3 space-y-3">
-              <div>
-                <label className="text-[11px] font-bold text-[#3a475a]">Mã Voucher (Code) *</label>
+            <form onSubmit={handleCreatePromo} className="space-y-3.5">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[#25232c]">
+                  Mã Voucher (Code) <span className="text-red-500">*</span>
+                </span>
                 <input
                   type="text"
                   required
-                  placeholder="VOUCHER10"
+                  placeholder="VD: GIAM20"
                   value={promoForm.code}
                   onChange={(e) => setPromoForm({ ...promoForm, code: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs font-bold uppercase text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                  className="reference-input uppercase font-mono"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-[11px] font-bold text-[#3a475a]">Tên chương trình *</label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[#25232c]">
+                  Tên chương trình ưu đãi <span className="text-red-500">*</span>
+                </span>
                 <input
                   type="text"
                   required
-                  placeholder="Giảm giá mùa hè"
+                  placeholder="VD: Khuyến mãi khai trương"
                   value={promoForm.name}
                   onChange={(e) => setPromoForm({ ...promoForm, name: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs font-medium text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                  className="reference-input"
                 />
-              </div>
+              </label>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] font-bold text-[#3a475a]">Hình thức *</label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-[#25232c]">Hình thức</span>
                   <select
                     value={promoForm.discountType}
                     onChange={(e) => setPromoForm({ ...promoForm, discountType: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                    className="reference-select"
                   >
                     <option value="percentage">Phần trăm (%)</option>
-                    <option value="fixed">Số tiền cố định (₫)</option>
+                    <option value="fixed">Cố định (₫)</option>
                   </select>
-                </div>
+                </label>
 
-                <div>
-                  <label className="text-[11px] font-bold text-[#3a475a]">Mức giảm *</label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-[#25232c]">
+                    Mức giảm <span className="text-red-500">*</span>
+                  </span>
                   <input
                     type="number"
                     min="1"
@@ -544,36 +553,36 @@ function ManagerPricing() {
                     placeholder={promoForm.discountType === "percentage" ? "10" : "50000"}
                     value={promoForm.discountValue}
                     onChange={(e) => setPromoForm({ ...promoForm, discountValue: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs font-bold text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                    className="reference-input font-bold"
                   />
-                </div>
+                </label>
               </div>
 
-              <div>
-                <label className="text-[11px] font-bold text-[#3a475a]">Lượt sử dụng tối đa</label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[#25232c]">Lượt dùng tối đa</span>
                 <input
                   type="number"
                   min="1"
                   value={promoForm.usageLimit}
                   onChange={(e) => setPromoForm({ ...promoForm, usageLimit: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs font-medium text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+                  className="reference-input"
                 />
-              </div>
+              </label>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#ededed]">
                 <button
                   type="button"
                   onClick={() => setShowPromoModal(false)}
-                  className="rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs font-bold text-[#3a475a] hover:bg-[#f8faff]"
+                  className="reference-button-secondary"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={savingPromo}
-                  className="rounded-xl bg-[#1d5fe5] px-4 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#1550c7] disabled:opacity-60"
+                  className="reference-button-primary"
                 >
-                  {savingPromo ? "Đang tạo..." : "Xác nhận tạo"}
+                  {savingPromo ? "Đang tạo..." : "Xác nhận tạo mã"}
                 </button>
               </div>
             </form>
