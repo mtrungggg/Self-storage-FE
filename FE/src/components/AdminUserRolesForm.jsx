@@ -3,11 +3,11 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 
 const roleOptions = [
-  ["storage_customer", "Khách hàng"],
-  ["facility_staff", "Nhân viên kho"],
-  ["facility_manager", "Quản lý kho"],
-  ["business_operations_manager", "Quản lý vận hành"],
-  ["system_administrator", "Quản trị viên"],
+  ["storage_customer", "Customer"],
+  ["facility_staff", "Facility Staff"],
+  ["facility_manager", "Facility Manager"],
+  ["business_operations_manager", "Operations Manager"],
+  ["system_administrator", "System Administrator"],
 ];
 
 export default function AdminUserRolesForm({ user, disabled, onSavingChange, onUpdated }) {
@@ -41,7 +41,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
       await adminUserService.updateRoles(user.id, selected);
     } catch (err) {
       if (mounted.current)
-        setError(err.status === 404 ? "Không tìm thấy người dùng này." : err.message || "Không thể cập nhật vai trò.");
+        setError(err.status === 404 ? "User not found." : err.message || "Failed to update roles.");
       return;
     } finally {
       submitting.current = false;
@@ -58,9 +58,9 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
     <section className="reference-card mb-5 p-6">
       <div className="reference-card-heading mb-4">
         <div>
-          <h2>Cập nhật vai trò &amp; Quyền hạn</h2>
+          <h2>Manage System Roles &amp; Permissions</h2>
           <p className="reference-muted">
-            Chọn các vai trò cần cấp cho tài khoản. Bỏ chọn để thu hồi quyền truy cập tương ứng.
+            Select the roles to grant for this account. Uncheck to revoke system access permissions.
           </p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Lỗi cập nhật</strong>
+            <strong>Role Update Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
 
       <form onSubmit={submit} aria-busy={saving}>
         <fieldset disabled={saving || disabled} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <legend className="sr-only">Vai trò người dùng</legend>
+          <legend className="sr-only">User Roles</legend>
           {options.map(([code, label]) => {
             const isChecked = selected.includes(code);
             return (
@@ -111,7 +111,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
 
         <div className="mt-5 flex items-center justify-between border-t border-[#ededed] pt-4">
           <span className="text-xs text-[#767679]">
-            {changed ? "Đang có thay đổi chưa lưu." : "Chưa có thay đổi nào."}
+            {changed ? "Unsaved role modifications pending." : "No role changes pending."}
           </span>
           <button
             type="submit"
@@ -119,7 +119,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
             className="reference-button-primary"
           >
             <ShieldCheck size={15} />
-            {saving ? "Đang lưu..." : "Lưu thay đổi vai trò"}
+            {saving ? "Saving..." : "Save Role Changes"}
           </button>
         </div>
       </form>

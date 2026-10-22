@@ -1,28 +1,28 @@
 // Data layer: shared chrome definitions for Admin console.
 export function getAdminProfile() {
-  return { name: "Quản trị viên", role: "Quản trị hệ thống (Admin)" };
+  return { name: "Administrator", role: "System Administrator (Admin)" };
 }
 
 export function getActiveHub() {
-  return "Hệ thống trung tâm";
+  return "Central System";
 }
 
 export function getSystemStatusBanner() {
-  return { label: "Hệ thống trực tuyến", detail: "TLS 1.3 • Trực tuyến" };
+  return { label: "System Online", detail: "TLS 1.3 • Operational" };
 }
 
 export function getSidebarNav() {
   return [
     {
       id: "operations",
-      label: "Quản trị hệ thống (Admin)",
+      label: "System Administration (Admin)",
       items: [
-        { id: "overview", label: "Dashboard Admin", icon: "dashboard", to: "/admin-overview" },
-        { id: "facilities", label: "Quản lý cơ sở kho", icon: "warehouse", to: "/admin-facilities" },
-        { id: "pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/admin-pricing" },
-        { id: "users", label: "Tài khoản & Phân quyền", icon: "manage_accounts", to: "/admin-users" },
-        { id: "audit_log", label: "Nhật ký kiểm toán", icon: "history", to: "/admin-audit-log" },
-        { id: "login_histories", label: "Lịch sử đăng nhập", icon: "login", to: "/admin-login-histories" },
+        { id: "overview", label: "Admin Dashboard", icon: "dashboard", to: "/admin-overview" },
+        { id: "facilities", label: "Facilities Management", icon: "warehouse", to: "/admin-facilities" },
+        { id: "pricing", label: "Pricing & Policies", icon: "tune", to: "/admin-pricing" },
+        { id: "users", label: "Users & Permissions", icon: "manage_accounts", to: "/admin-users" },
+        { id: "audit_log", label: "Audit Logs", icon: "history", to: "/admin-audit-log" },
+        { id: "login_histories", label: "Login History", icon: "login", to: "/admin-login-histories" },
       ],
     },
   ];
@@ -37,5 +37,5 @@ export function getSidebarFooter() {
 }
 
 export function getSidebarNetworkStatus() {
-  return { label: "Hệ thống kết nối", detail: "Bình thường" };
+  return { label: "Network Security", detail: "Online • Normal" };
 }

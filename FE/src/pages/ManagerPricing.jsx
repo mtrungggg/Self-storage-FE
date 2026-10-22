@@ -5,12 +5,12 @@ import { useManagerFacility } from "../context/ManagerFacilityContext";
 
 function formatCurrency(val) {
   if (val == null || isNaN(val)) return "0 ₫";
-  return `${Number(val).toLocaleString("vi-VN")} ₫`;
+  return `${Number(val).toLocaleString("en-US")} ₫`;
 }
 
 function formatFeeValue(fee) {
   if (fee.calculationMethod === "percentage") {
-    return `${fee.ratePercent || 0}% / ngày`;
+    return `${fee.ratePercent || 0}% / day`;
   }
   return formatCurrency(fee.amount);
 }
@@ -66,7 +66,7 @@ function ManagerPricing() {
       setFees(feesRes?.items ?? []);
       setPromotions(promosRes?.items ?? []);
     } catch (err) {
-      setError(err?.message || "Không thể tải bảng giá từ máy chủ.");
+      setError(err?.message || "Failed to load pricing configurations from server.");
     } finally {
       setLoading(false);
     }
@@ -112,12 +112,12 @@ function ManagerPricing() {
           });
         })
       );
-      setNotice("Đã lưu thay đổi bảng giá thành công!");
+      setNotice("Pricing rates updated successfully!");
       setTimeout(() => setNotice(""), 3500);
       setDirtyIds(new Set());
       await loadData();
     } catch (err) {
-      setError(err?.message || "Không thể lưu thay đổi bảng giá.");
+      setError(err?.message || "Failed to save rate updates.");
     } finally {
       setSaving(false);
     }
@@ -135,7 +135,7 @@ function ManagerPricing() {
       setPromotions((prev) =>
         prev.map((p) => (p.id === promoId ? { ...p, isActive: currentStatus } : p))
       );
-      setError(err?.message || "Không thể cập nhật trạng thái khuyến mãi.");
+      setError(err?.message || "Failed to update promotion status.");
     }
   };
 
@@ -143,7 +143,7 @@ function ManagerPricing() {
   const handleCreatePromo = async (e) => {
     e.preventDefault();
     if (!promoForm.code.trim() || !promoForm.name.trim() || !promoForm.discountValue) {
-      setError("Vui lòng điền đầy đủ thông tin mã khuyến mãi.");
+      setError("Please fill in all required promotion fields.");
       return;
     }
     setSavingPromo(true);
@@ -164,11 +164,11 @@ function ManagerPricing() {
         discountValue: "",
         usageLimit: "100",
       });
-      setNotice("Đã tạo mã khuyến mãi thành công!");
+      setNotice("Promotion voucher created successfully!");
       setTimeout(() => setNotice(""), 3500);
       await loadData();
     } catch (err) {
-      setError(err?.message || "Không thể tạo mã khuyến mãi.");
+      setError(err?.message || "Failed to create promotion voucher.");
     } finally {
       setSavingPromo(false);
     }
@@ -180,13 +180,13 @@ function ManagerPricing() {
       <div className="reference-toolbar">
         <div>
           <div className="flex items-center gap-3">
-            <h1>Bảng giá &amp; Chính sách</h1>
+            <h1>Pricing &amp; Rate Policies</h1>
             <span className="reference-pill">
-              {activeFacility ? `Cơ sở: ${activeFacility.name} (${activeFacility.code})` : "Toàn bộ hệ thống"}
+              {activeFacility ? `Facility: ${activeFacility.name} (${activeFacility.code})` : "Network Wide"}
             </span>
           </div>
           <p className="reference-muted mt-1">
-            Điều chỉnh biểu phí thuê theo kích thước ô kho, quy định các khoản phạt và quản lý voucher ưu đãi.
+            Configure monthly rental rates by unit dimension, establish ancillary penalty surcharges, and govern promotional vouchers.
           </p>
         </div>
 
@@ -199,7 +199,7 @@ function ManagerPricing() {
               className="reference-button-primary !bg-[#23866a] !border-[#23866a] hover:!bg-[#1b6b54]"
             >
               <Save size={15} />
-              {saving ? "Đang lưu..." : `Lưu thay đổi (${dirtyIds.size})`}
+              {saving ? "Saving..." : `Save Changes (${dirtyIds.size})`}
             </button>
           )}
 
@@ -208,7 +208,7 @@ function ManagerPricing() {
             onClick={loadData}
             disabled={loading}
             className="reference-refresh"
-            title="Làm mới bảng giá"
+            title="Refresh pricing data"
           >
             <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
           </button>
@@ -226,7 +226,7 @@ function ManagerPricing() {
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Thông báo</strong>
+            <strong>Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -236,37 +236,37 @@ function ManagerPricing() {
       <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         <div className="reference-card p-5">
           <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
-            <span>Loại ô kho &amp; Đơn giá</span>
+            <span>Unit Types &amp; Rates</span>
             <Warehouse size={18} className="text-[#14121b]" />
           </div>
           <div className="mt-2 text-2xl font-bold text-[#14121b]">
-            {loading ? "..." : `${rates.length} loại ô`}
+            {loading ? "..." : `${rates.length} unit types`}
           </div>
           <div className="mt-1">
-            <span className="reference-badge lime">Đang áp dụng</span>
+            <span className="reference-badge lime">Active In Network</span>
           </div>
         </div>
 
         <div className="reference-card p-5">
           <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
-            <span>Quy định phụ phí</span>
+            <span>Ancillary Fee Policies</span>
             <Receipt size={18} className="text-[#14121b]" />
           </div>
           <div className="mt-2 text-2xl font-bold text-[#14121b]">
-            {loading ? "..." : `${fees.length} khoản phí`}
+            {loading ? "..." : `${fees.length} fee rules`}
           </div>
-          <div className="mt-1 text-xs text-[#767679]">Phí trễ hạn, phạt hư hại, mất khóa</div>
+          <div className="mt-1 text-xs text-[#767679]">Overdue penalty, key loss, cleaning fees</div>
         </div>
 
         <div className="reference-card p-5">
           <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
-            <span>Mã khuyến mãi &amp; Voucher</span>
+            <span>Promotions &amp; Vouchers</span>
             <Tag size={18} className="text-[#14121b]" />
           </div>
           <div className="mt-2 text-2xl font-bold text-[#14121b]">
-            {loading ? "..." : `${promotions.filter((p) => p.isActive).length} mã đang chạy`}
+            {loading ? "..." : `${promotions.filter((p) => p.isActive).length} active campaigns`}
           </div>
-          <div className="mt-1 text-xs text-[#767679]">Tổng cộng {promotions.length} mã đã tạo</div>
+          <div className="mt-1 text-xs text-[#767679]">Total {promotions.length} created campaigns</div>
         </div>
       </div>
 
@@ -274,36 +274,36 @@ function ManagerPricing() {
       <section className="reference-card reference-table-card mb-6">
         <div className="reference-card-heading">
           <div>
-            <h2>Bảng đơn giá thuê theo loại ô kho</h2>
+            <h2>Unit Rental Rates Directory</h2>
             <p className="reference-muted">
-              Nhập trực tiếp số tiền vào các ô để điều chỉnh mức giá • Đơn vị tính: VNĐ / tháng
+              Edit values directly in table cells to adjust rates • Currency: VND / month
             </p>
           </div>
-          <span className="reference-pill">{rates.length} cấu hình giá</span>
+          <span className="reference-pill">{rates.length} rate entries</span>
         </div>
 
         <div className="reference-table-scroll">
           <table className="reference-table">
             <thead>
               <tr>
-                <th scope="col">Loại ô kho</th>
-                <th scope="col" className="text-right">Giá thuê / tháng (₫)</th>
-                <th scope="col" className="text-right">Tiền đặt cọc (₫)</th>
-                <th scope="col" className="text-right">Phí giữ chỗ (₫)</th>
-                <th scope="col" className="text-center">Ngày hiệu lực</th>
+                <th scope="col">Unit Type</th>
+                <th scope="col" className="text-right">Monthly Rate (₫)</th>
+                <th scope="col" className="text-right">Deposit Amount (₫)</th>
+                <th scope="col" className="text-right">Reservation Fee (₫)</th>
+                <th scope="col" className="text-center">Effective Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-xs text-[#767679]">
-                    Đang tải bảng giá từ máy chủ...
+                    Loading rate policies from server...
                   </td>
                 </tr>
               ) : rates.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-xs text-[#767679]">
-                    Chưa có cấu hình giá nào cho cơ sở này.
+                    No rate configurations defined for this facility.
                   </td>
                 </tr>
               ) : (
@@ -356,8 +356,8 @@ function ManagerPricing() {
                       <td className="text-center">
                         <span className="reference-pill !py-0.5 !px-2.5">
                           {rate.validFrom
-                            ? new Date(rate.validFrom).toLocaleDateString("vi-VN")
-                            : "Hiện hành"}
+                            ? new Date(rate.validFrom).toLocaleDateString("en-US")
+                            : "Current"}
                         </span>
                       </td>
                     </tr>
@@ -375,17 +375,17 @@ function ManagerPricing() {
         <section className="reference-card p-5">
           <div className="reference-card-heading mb-3">
             <div>
-              <h2>Quy định phụ phí &amp; Phạt vi phạm</h2>
-              <p className="reference-muted">Các khoản phí tự động tính vào hóa đơn khi phát sinh</p>
+              <h2>Ancillary Fees &amp; Penalty Surcharges</h2>
+              <p className="reference-muted">Automated fee items calculated into invoices when incurred</p>
             </div>
-            <span className="reference-pill">{fees.length} khoản phí</span>
+            <span className="reference-pill">{fees.length} fee rules</span>
           </div>
 
           <div className="space-y-2.5">
             {loading ? (
-              <p className="py-6 text-center text-xs text-[#767679]">Đang tải phụ phí...</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Loading ancillary fees...</p>
             ) : fees.length === 0 ? (
-              <p className="py-6 text-center text-xs text-[#767679]">Chưa có quy định phụ phí nào.</p>
+              <p className="py-6 text-center text-xs text-[#767679]">No ancillary fee rules configured.</p>
             ) : (
               fees.map((fee) => (
                 <div
@@ -395,7 +395,7 @@ function ManagerPricing() {
                   <div>
                     <div className="font-bold text-[#14121b]">{fee.code}</div>
                     <div className="text-[10px] text-[#767679] mt-0.5">
-                      Loại: {fee.feeType} {fee.facilityName ? `• ${fee.facilityName}` : "• Toàn hệ thống"}
+                      Type: {fee.feeType} {fee.facilityName ? `• ${fee.facilityName}` : "• Network Wide"}
                     </div>
                   </div>
                   <div className="text-right">
@@ -407,7 +407,7 @@ function ManagerPricing() {
                         fee.isActive ? "active" : "inactive"
                       }`}
                     >
-                      {fee.isActive ? "Áp dụng" : "Tạm ngưng"}
+                      {fee.isActive ? "Active" : "Suspended"}
                     </span>
                   </div>
                 </div>
@@ -420,23 +420,23 @@ function ManagerPricing() {
         <section className="reference-card p-5">
           <div className="reference-card-heading mb-3">
             <div>
-              <h2>Mã giảm giá &amp; Khuyến mãi</h2>
-              <p className="reference-muted">Chương trình ưu đãi áp dụng khi khách hàng thuê kho</p>
+              <h2>Discount Vouchers &amp; Promotions</h2>
+              <p className="reference-muted">Promotional codes applicable when customers rent storage units</p>
             </div>
             <button
               type="button"
               onClick={() => setShowPromoModal(true)}
               className="reference-button-primary !py-1 !px-3 !text-xs"
             >
-              <Plus size={13} /> Tạo mã mới
+              <Plus size={13} /> Create Voucher
             </button>
           </div>
 
           <div className="space-y-2.5">
             {loading ? (
-              <p className="py-6 text-center text-xs text-[#767679]">Đang tải mã khuyến mãi...</p>
+              <p className="py-6 text-center text-xs text-[#767679]">Loading promotional vouchers...</p>
             ) : promotions.length === 0 ? (
-              <p className="py-6 text-center text-xs text-[#767679]">Chưa có mã khuyến mãi nào.</p>
+              <p className="py-6 text-center text-xs text-[#767679]">No promotional vouchers configured.</p>
             ) : (
               promotions.map((promo) => (
                 <div
@@ -452,9 +452,9 @@ function ManagerPricing() {
                     </div>
                     <div className="mt-1 text-[11px] text-[#767679]">
                       {promo.discountType === "percentage"
-                        ? `Giảm ${promo.discountValue}%`
-                        : `Giảm ${formatCurrency(promo.discountValue)}`}
-                      {promo.usageLimit ? ` • Giới hạn: ${promo.usageLimit} lượt` : ""}
+                        ? `Discount ${promo.discountValue}%`
+                        : `Discount ${formatCurrency(promo.discountValue)}`}
+                      {promo.usageLimit ? ` • Usage limit: ${promo.usageLimit}` : ""}
                     </div>
                   </div>
 
@@ -465,7 +465,7 @@ function ManagerPricing() {
                       className={`h-5 w-9 rounded-full transition-colors cursor-pointer ${
                         promo.isActive ? "bg-black" : "bg-slate-200"
                       }`}
-                      title={promo.isActive ? "Nhấp để tạm ngưng" : "Nhấp để kích hoạt"}
+                      title={promo.isActive ? "Click to suspend" : "Click to activate"}
                     >
                       <span
                         className={`block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
@@ -490,7 +490,7 @@ function ManagerPricing() {
         >
           <div className="w-full max-w-sm reference-card !bg-white p-6 shadow-2xl">
             <div className="reference-card-heading mb-4 pb-3 border-b border-[#ededed]">
-              <h2>Tạo mã khuyến mãi mới</h2>
+              <h2>Create New Promotional Voucher</h2>
               <button
                 type="button"
                 onClick={() => setShowPromoModal(false)}
@@ -503,12 +503,12 @@ function ManagerPricing() {
             <form onSubmit={handleCreatePromo} className="space-y-3.5">
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-[#25232c]">
-                  Mã Voucher (Code) <span className="text-red-500">*</span>
+                  Voucher Code <span className="text-red-500">*</span>
                 </span>
                 <input
                   type="text"
                   required
-                  placeholder="VD: GIAM20"
+                  placeholder="e.g. SUMMER20"
                   value={promoForm.code}
                   onChange={(e) => setPromoForm({ ...promoForm, code: e.target.value })}
                   className="reference-input uppercase font-mono"
@@ -517,12 +517,12 @@ function ManagerPricing() {
 
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-[#25232c]">
-                  Tên chương trình ưu đãi <span className="text-red-500">*</span>
+                  Campaign Name <span className="text-red-500">*</span>
                 </span>
                 <input
                   type="text"
                   required
-                  placeholder="VD: Khuyến mãi khai trương"
+                  placeholder="e.g. Summer Opening Special"
                   value={promoForm.name}
                   onChange={(e) => setPromoForm({ ...promoForm, name: e.target.value })}
                   className="reference-input"
@@ -531,20 +531,20 @@ function ManagerPricing() {
 
               <div className="grid grid-cols-2 gap-2.5">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-[#25232c]">Hình thức</span>
+                  <span className="mb-1 block text-xs font-semibold text-[#25232c]">Discount Type</span>
                   <select
                     value={promoForm.discountType}
                     onChange={(e) => setPromoForm({ ...promoForm, discountType: e.target.value })}
                     className="reference-select"
                   >
-                    <option value="percentage">Phần trăm (%)</option>
-                    <option value="fixed">Cố định (₫)</option>
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (₫)</option>
                   </select>
                 </label>
 
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-[#25232c]">
-                    Mức giảm <span className="text-red-500">*</span>
+                    Discount Value <span className="text-red-500">*</span>
                   </span>
                   <input
                     type="number"
@@ -559,7 +559,7 @@ function ManagerPricing() {
               </div>
 
               <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-[#25232c]">Lượt dùng tối đa</span>
+                <span className="mb-1 block text-xs font-semibold text-[#25232c]">Usage Limit</span>
                 <input
                   type="number"
                   min="1"
@@ -575,14 +575,14 @@ function ManagerPricing() {
                   onClick={() => setShowPromoModal(false)}
                   className="reference-button-secondary"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingPromo}
                   className="reference-button-primary"
                 >
-                  {savingPromo ? "Đang tạo..." : "Xác nhận tạo mã"}
+                  {savingPromo ? "Creating..." : "Confirm & Create"}
                 </button>
               </div>
             </form>

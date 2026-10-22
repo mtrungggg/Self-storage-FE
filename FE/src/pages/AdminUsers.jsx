@@ -5,20 +5,20 @@ import adminUserService from "../api/adminUserService";
 import AdminCreateUserForm from "../components/AdminCreateUserForm";
 
 const roles = [
-  ["storage_customer", "Khách hàng"],
-  ["facility_staff", "Nhân viên kho"],
-  ["facility_manager", "Quản lý kho"],
-  ["business_operations_manager", "Quản lý vận hành"],
-  ["system_administrator", "Quản trị viên"],
+  ["storage_customer", "Customer"],
+  ["facility_staff", "Facility Staff"],
+  ["facility_manager", "Facility Manager"],
+  ["business_operations_manager", "Operations Manager"],
+  ["system_administrator", "System Administrator"],
 ];
 const statuses = [
-  ["active", "Hoạt động"],
-  ["disabled", "Vô hiệu hóa"],
-  ["locked", "Đã khóa"],
+  ["active", "Active"],
+  ["disabled", "Disabled"],
+  ["locked", "Locked"],
 ];
 const initialFilters = { Search: "", Role: "", Status: "", FacilityId: "", PageSize: 10 };
 const labelFor = (options, value) => options.find(([key]) => key === value)?.[1] || value || "—";
-const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
+const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -41,7 +41,7 @@ export default function AdminUsers() {
         if (active) setResult({ query, data });
       },
       (err) => {
-        if (active) setResult({ query, error: err.message || "Không thể tải danh sách người dùng." });
+        if (active) setResult({ query, error: err.message || "Failed to load user accounts." });
       }
     );
     return () => {
@@ -60,11 +60,11 @@ export default function AdminUsers() {
       <div className="reference-toolbar">
         <div>
           <div className="flex items-center gap-3">
-            <h1>Tài khoản &amp; Phân quyền</h1>
-            {data && <span className="reference-pill">{data.totalCount} tài khoản</span>}
+            <h1>Users &amp; Permissions</h1>
+            {data && <span className="reference-pill">{data.totalCount} accounts</span>}
           </div>
           <p className="reference-muted mt-1">
-            Quản trị toàn bộ tài khoản người dùng, phân quyền vai trò (Admin, Manager, Staff, Customer) và cơ sở phụ trách.
+            System account governance, role-based authorization (Admin, Manager, Staff, Customer), and facility scoping.
           </p>
         </div>
         <div className="reference-toolbar-actions">
@@ -72,7 +72,7 @@ export default function AdminUsers() {
             <Search size={18} strokeWidth={1.5} />
             <input
               type="search"
-              aria-label="Tìm kiếm người dùng"
+              aria-label="Search users"
               value={filters.Search}
               onChange={(e) => setFilters({ ...filters, Search: e.target.value })}
               onKeyDown={(e) => {
@@ -81,7 +81,7 @@ export default function AdminUsers() {
                   setQuery({ ...filters, Search: filters.Search.trim(), PageNumber: 1 });
                 }
               }}
-              placeholder="Tìm kiếm họ tên, email, SĐT..."
+              placeholder="Search name, email, phone..."
             />
           </label>
           <button
@@ -89,22 +89,22 @@ export default function AdminUsers() {
             onClick={() => setCreateOpen(!createOpen)}
             className="reference-button-primary"
           >
-            <UserPlus size={15} /> Thêm tài khoản
+            <UserPlus size={15} /> Add User
           </button>
           <button
             className="reference-refresh"
             type="button"
             disabled={loading}
             onClick={() => setQuery({ ...query })}
-            aria-label="Làm mới dữ liệu"
-            title="Làm mới dữ liệu"
+            aria-label="Refresh data"
+            title="Refresh data"
           >
             <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
 
-      {/* Form Tạo Người Dùng */}
+      {/* Form: Create User */}
       <AdminCreateUserForm
         roles={roles}
         open={createOpen}
@@ -119,19 +119,19 @@ export default function AdminUsers() {
       <form onSubmit={applyFilters} className="reference-card mb-6 p-5">
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5 items-end">
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Từ khóa</span>
+            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Keyword</span>
             <input
               type="search"
               value={filters.Search}
               onChange={(e) => setFilters({ ...filters, Search: e.target.value })}
-              placeholder="Họ tên, email, SĐT..."
+              placeholder="Name, email, phone..."
               className="reference-input"
             />
           </label>
 
           {[
-            ["Role", "Vai trò", roles],
-            ["Status", "Trạng thái", statuses],
+            ["Role", "Role", roles],
+            ["Status", "Status", statuses],
           ].map(([key, label, options]) => (
             <label key={key} className="block">
               <span className="mb-1 block text-xs font-semibold text-[#25232c]">{label}</span>
@@ -140,7 +140,7 @@ export default function AdminUsers() {
                 onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
                 className="reference-select"
               >
-                <option value="">Tất cả</option>
+                <option value="">All</option>
                 {options.map(([value, text]) => (
                   <option key={value} value={value}>
                     {text}
@@ -151,20 +151,20 @@ export default function AdminUsers() {
           ))}
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Mã cơ sở phụ trách</span>
+            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Facility ID</span>
             <input
               type="number"
               min="1"
               step="1"
               value={filters.FacilityId}
               onChange={(e) => setFilters({ ...filters, FacilityId: e.target.value })}
-              placeholder="ID cơ sở kho"
+              placeholder="Facility ID"
               className="reference-input"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Số dòng / trang</span>
+            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Rows per page</span>
             <select
               value={filters.PageSize}
               onChange={(e) => setFilters({ ...filters, PageSize: Number(e.target.value) })}
@@ -172,7 +172,7 @@ export default function AdminUsers() {
             >
               {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
-                  {size} dòng
+                  {size} rows
                 </option>
               ))}
             </select>
@@ -188,10 +188,10 @@ export default function AdminUsers() {
             }}
             className="reference-button-secondary"
           >
-            Đặt lại
+            Reset
           </button>
           <button type="submit" className="reference-button-primary">
-            Áp dụng bộ lọc
+            Apply Filters
           </button>
         </div>
       </form>
@@ -200,14 +200,14 @@ export default function AdminUsers() {
       <section aria-busy={loading} className="reference-card reference-table-card">
         <div className="reference-card-heading">
           <div>
-            <h2>Danh sách người dùng</h2>
+            <h2>User Accounts Directory</h2>
             <p className="reference-muted">
-              {data ? `Tổng số ${data.totalCount} tài khoản được ghi nhận trên hệ thống.` : "Đang tải dữ liệu..."}
+              {data ? `Total ${data.totalCount} accounts registered in the system.` : "Loading directory..."}
             </p>
           </div>
           {data && (
             <span className="reference-pill">
-              Trang {data.pageNumber} / {Math.max(1, data.totalPages)}
+              Page {data.pageNumber} / {Math.max(1, data.totalPages)}
             </span>
           )}
         </div>
@@ -216,10 +216,10 @@ export default function AdminUsers() {
           <div role="alert" className="reference-error mx-5 my-4">
             <AlertTriangle size={20} />
             <div>
-              <strong>Lỗi tải danh sách người dùng</strong>
+              <strong>Error Loading User Accounts</strong>
               <p>{error}</p>
               <button type="button" onClick={() => setQuery({ ...query })}>
-                Thử lại
+                Retry
               </button>
             </div>
           </div>
@@ -230,22 +230,22 @@ export default function AdminUsers() {
             <thead>
               <tr>
                 <th scope="col">ID</th>
-                <th scope="col">Họ và tên</th>
+                <th scope="col">Full Name</th>
                 <th scope="col">Email</th>
-                <th scope="col">Số điện thoại</th>
-                <th scope="col">Mã NV</th>
-                <th scope="col">Vai trò</th>
-                <th scope="col">Cơ sở kho phụ trách</th>
-                <th scope="col">Trạng thái</th>
-                <th scope="col">Đăng nhập gần nhất</th>
-                <th scope="col" className="text-right pr-6">Chi tiết</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Emp Code</th>
+                <th scope="col">Roles</th>
+                <th scope="col">Assigned Facility</th>
+                <th scope="col">Status</th>
+                <th scope="col">Last Login</th>
+                <th scope="col" className="text-right pr-6">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-xs text-[#767679]">
-                    Đang tải danh sách người dùng...
+                    Loading user directory...
                   </td>
                 </tr>
               ) : !data || data.items.length === 0 ? (
@@ -253,8 +253,8 @@ export default function AdminUsers() {
                   <td colSpan={10} className="py-12 text-center">
                     <div className="admin-empty py-4">
                       <Users size={32} className="mx-auto text-slate-400 mb-2" />
-                      <strong className="block text-sm text-[#14121b]">Không tìm thấy người dùng phù hợp</strong>
-                      <p className="text-xs text-[#767679] mt-1">Hãy thử tìm với từ khóa hoặc bộ lọc khác.</p>
+                      <strong className="block text-sm text-[#14121b]">No matching user accounts</strong>
+                      <p className="text-xs text-[#767679] mt-1">Try adjusting keywords or filter parameters.</p>
                     </div>
                   </td>
                 </tr>
@@ -317,7 +317,7 @@ export default function AdminUsers() {
                         to={`/admin-users/${encodeURIComponent(user.id)}`}
                         className="reference-button-secondary !py-1 !px-3 !text-[11px]"
                       >
-                        Chi tiết <ArrowRight size={12} />
+                        Details <ArrowRight size={12} />
                       </Link>
                     </td>
                   </tr>
@@ -332,8 +332,8 @@ export default function AdminUsers() {
           <div className="reference-pagination">
             <span>
               {data.totalCount === 0
-                ? "0 người dùng"
-                : `Hiển thị trang ${data.pageNumber} / ${Math.max(1, data.totalPages)} (Tổng ${data.totalCount} tài khoản)`}
+                ? "0 accounts"
+                : `Showing page ${data.pageNumber} of ${Math.max(1, data.totalPages)} (Total ${data.totalCount} accounts)`}
             </span>
             <div className="reference-pagination-buttons">
               <button
@@ -342,7 +342,7 @@ export default function AdminUsers() {
                 onClick={() => setQuery({ ...query, PageNumber: query.PageNumber - 1 })}
                 className="reference-button-secondary !py-1 !px-3 !text-xs"
               >
-                <ChevronLeft size={14} /> Trước
+                <ChevronLeft size={14} /> Previous
               </button>
               <button
                 type="button"
@@ -350,7 +350,7 @@ export default function AdminUsers() {
                 onClick={() => setQuery({ ...query, PageNumber: query.PageNumber + 1 })}
                 className="reference-button-secondary !py-1 !px-3 !text-xs"
               >
-                Sau <ChevronRight size={14} />
+                Next <ChevronRight size={14} />
               </button>
             </div>
           </div>

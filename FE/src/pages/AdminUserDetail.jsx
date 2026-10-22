@@ -7,15 +7,15 @@ import AdminUserRolesForm from "../components/AdminUserRolesForm";
 import AdminStaffAssignmentForm from "../components/AdminStaffAssignmentForm";
 import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
 
-const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
+const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
 const date = (value) => {
   if (!value) return "—";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.split("-").reverse().join("/");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? "—" : dateFormat.format(parsed);
 };
 const statusLabel = (value) =>
-  ({ active: "Hoạt động", disabled: "Vô hiệu hóa", locked: "Đã khóa" }[value] || value);
+  ({ active: "Active", disabled: "Disabled", locked: "Locked" }[value] || value);
 
 function Fields({ title, entries, icon: Icon }) {
   return (
@@ -56,7 +56,7 @@ function TableSection({ title, rows, columns, rowKey, emptyText, icon: Icon }) {
           )}
           <h2>{title}</h2>
         </div>
-        <span className="reference-pill">{rows?.length || 0} mục</span>
+        <span className="reference-pill">{rows?.length || 0} items</span>
       </div>
       {!rows?.length ? (
         <p className="py-8 text-center text-xs text-[#767679]">{emptyText}</p>
@@ -111,7 +111,7 @@ export default function AdminUserDetail() {
   const [roleNotice, setRoleNotice] = useState(null);
   const validId = /^[1-9]\d*$/.test(id || "");
   const loading = validId && (result?.id !== id || result?.attempt !== attempt);
-  const error = !validId ? "ID người dùng không hợp lệ." : loading ? "" : result?.error;
+  const error = !validId ? "Invalid user ID." : loading ? "" : result?.error;
   const user = !loading && !error ? result?.data : null;
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function AdminUserDetail() {
           setResult({
             id,
             attempt,
-            error: err.status === 404 ? "Không tìm thấy người dùng này." : err.message || "Không thể tải thông tin người dùng.",
+            error: err.status === 404 ? "User account not found." : err.message || "Failed to load user information.",
           });
       }
     );
@@ -142,9 +142,7 @@ export default function AdminUserDetail() {
     if (deletePending.current || savingStatus || savingRoles || savingAssignment) return;
     if (
       !window.confirm(
-        `Xóa phân công tại ${assignment.facilityName || assignment.facilityCode || assignment.facilityId} của ${
-          employee?.fullName || employee?.employeeCode
-        }?`
+        `Remove facility assignment for ${assignment.facilityName || assignment.facilityCode || assignment.facilityId}?`
       )
     )
       return;
@@ -158,7 +156,7 @@ export default function AdminUserDetail() {
         setDeleteMessage({
           id,
           error: true,
-          text: err.status === 404 ? "Phân công không còn tồn tại. Hãy làm mới danh sách." : err.message || "Không thể xóa phân công.",
+          text: err.status === 404 ? "Assignment no longer exists. Please refresh." : err.message || "Failed to remove assignment.",
         });
       return;
     } finally {
@@ -183,7 +181,7 @@ export default function AdminUserDetail() {
           }
         : current
     );
-    setDeleteMessage({ id, error: false, text: "Đã xóa phân công cơ sở thành công." });
+    setDeleteMessage({ id, error: false, text: "Facility assignment removed successfully." });
     setTimeout(() => setDeleteMessage(null), 3500);
   }
 
@@ -196,10 +194,10 @@ export default function AdminUserDetail() {
             to="/admin-users"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#767679] hover:text-black mb-2 transition"
           >
-            <ArrowLeft size={14} /> Quay lại danh sách người dùng
+            <ArrowLeft size={14} /> Back to User Directory
           </Link>
           <div className="flex items-center gap-3">
-            <h1>Chi tiết tài khoản</h1>
+            <h1>Account Details</h1>
             {user && (
               <span
                 className={`reference-status ${
@@ -222,24 +220,24 @@ export default function AdminUserDetail() {
             className="reference-button-secondary"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-            Làm mới
+            Refresh
           </button>
         </div>
       </div>
 
       {roleNotice === id && (
         <div role="status" className="mb-5 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
-          <span>Đã cập nhật vai trò thành công. Người dùng cần đăng nhập lại để nhận quyền hạn mới.</span>
+          <span>Role updated successfully. User must sign in again to receive new permissions.</span>
         </div>
       )}
 
-      {loading && <p className="py-8 text-center text-xs text-[#767679]">Đang tải thông tin người dùng...</p>}
+      {loading && <p className="py-8 text-center text-xs text-[#767679]">Loading user information...</p>}
 
       {error && (
         <div role="alert" className="reference-error mb-5">
           <AlertTriangle size={20} />
           <div>
-            <strong>Lỗi tải người dùng</strong>
+            <strong>Error Loading User Details</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -248,16 +246,16 @@ export default function AdminUserDetail() {
       {user && (
         <>
           <Fields
-            title="Thông tin cơ bản"
+            title="Account Summary"
             icon={User}
             entries={[
-              ["Mã ID tài khoản", `#${user.id}`],
-              ["Email đăng nhập", user.email],
-              ["Số điện thoại", user.phoneNumber],
-              ["Trạng thái tài khoản", statusLabel(user.status)],
-              ["Đăng nhập gần nhất", date(user.lastLoginAt)],
-              ["Ngày tạo tài khoản", date(user.createdAt)],
-              ["Thời gian cập nhật", date(user.updatedAt)],
+              ["Account ID", `#${user.id}`],
+              ["Email", user.email],
+              ["Phone Number", user.phoneNumber],
+              ["Status", statusLabel(user.status)],
+              ["Last Login", date(user.lastLoginAt)],
+              ["Created Date", date(user.createdAt)],
+              ["Last Updated", date(user.updatedAt)],
             ]}
           />
 
@@ -294,54 +292,54 @@ export default function AdminUserDetail() {
           />
 
           <TableSection
-            title="Vai trò và quyền hạn hiện tại"
+            title="Assigned Roles &amp; Permissions"
             icon={Shield}
             rows={user.roles}
             rowKey="roleId"
-            emptyText="Chưa có vai trò nào được gán."
+            emptyText="No roles assigned to this account."
             columns={[
-              ["Mã vai trò", (r) => <span className="font-mono text-xs">{r.code}</span>],
-              ["Tên vai trò", (r) => <span className="font-semibold text-[#14121b]">{r.displayName || r.code}</span>],
-              ["Ngày cấp", (r) => date(r.grantedAt)],
-              ["Người cấp quyền", (r) => r.grantedByEmail || r.grantedBy || "Hệ thống"],
+              ["Role Code", (r) => <span className="font-mono text-xs">{r.code}</span>],
+              ["Display Name", (r) => <span className="font-semibold text-[#14121b]">{r.displayName || r.code}</span>],
+              ["Granted Date", (r) => date(r.grantedAt)],
+              ["Granted By", (r) => r.grantedByEmail || r.grantedBy || "System"],
             ]}
           />
 
           {customer ? (
             <Fields
-              title="Hồ sơ khách hàng (Customer Profile)"
+              title="Customer Profile"
               icon={User}
               entries={[
-                ["Họ và tên", customer.fullName],
-                ["Số CCCD / CMND", customer.identityNumber],
-                ["Ngày sinh", date(customer.dateOfBirth)],
-                ["Địa chỉ thường trú", customer.address],
-                ["Người liên hệ khẩn cấp", customer.emergencyContactName],
-                ["SĐT liên hệ khẩn cấp", customer.emergencyContactPhone],
-                ["Ngày tạo hồ sơ", date(customer.createdAt)],
+                ["Full Name", customer.fullName],
+                ["ID / Passport Number", customer.identityNumber],
+                ["Date of Birth", date(customer.dateOfBirth)],
+                ["Residential Address", customer.address],
+                ["Emergency Contact", customer.emergencyContactName],
+                ["Emergency Phone", customer.emergencyContactPhone],
+                ["Profile Created", date(customer.createdAt)],
               ]}
             />
           ) : (
             <section className="reference-card mb-5 p-6">
               <div className="reference-card-heading">
-                <h2>Hồ sơ khách hàng</h2>
-                <span className="reference-pill">Không có</span>
+                <h2>Customer Profile</h2>
+                <span className="reference-pill">None</span>
               </div>
-              <p className="reference-muted mt-2">Người dùng này chưa có hồ sơ khách hàng thuê kho.</p>
+              <p className="reference-muted mt-2">No storage customer profile associated with this account.</p>
             </section>
           )}
 
           {employee ? (
             <>
               <Fields
-                title="Hồ sơ nhân viên (Employee Profile)"
+                title="Employee Profile"
                 icon={Building2}
                 entries={[
-                  ["Mã nhân viên", employee.employeeCode],
-                  ["Họ và tên", employee.fullName],
-                  ["Ngày vào làm", date(employee.hireDate)],
-                  ["Trạng thái làm việc", statusLabel(employee.employmentStatus)],
-                  ["Ngày tạo hồ sơ", date(employee.createdAt)],
+                  ["Employee Code", employee.employeeCode],
+                  ["Full Name", employee.fullName],
+                  ["Hire Date", date(employee.hireDate)],
+                  ["Employment Status", statusLabel(employee.employmentStatus)],
+                  ["Profile Created", date(employee.createdAt)],
                 ]}
               />
 
@@ -387,25 +385,25 @@ export default function AdminUserDetail() {
               )}
 
               <TableSection
-                title="Phân công cơ sở kho"
+                title="Facility Branch Assignments"
                 icon={Building2}
                 rows={employee.facilityAssignments}
                 rowKey="id"
-                emptyText="Chưa có phân công cơ sở nào."
+                emptyText="No facility branch assignments recorded."
                 columns={[
                   ["ID", (r) => `#${r.id}`],
-                  ["Cơ sở kho", (r) => <strong className="font-semibold text-[#14121b]">{r.facilityName || r.facilityCode}</strong>],
-                  ["Mã kho", (r) => <span className="font-mono text-xs">{r.facilityCode || r.facilityId}</span>],
-                  ["Vai trò", (r) => <span className="reference-pill !py-0.5 !px-2">{r.assignmentRole}</span>],
-                  ["Bắt đầu", (r) => date(r.startsAt)],
-                  ["Kết thúc", (r) => date(r.endsAt)],
-                  ["Trạng thái", (r) => (
+                  ["Facility Name", (r) => <strong className="font-semibold text-[#14121b]">{r.facilityName || r.facilityCode}</strong>],
+                  ["Facility Code", (r) => <span className="font-mono text-xs">{r.facilityCode || r.facilityId}</span>],
+                  ["Role", (r) => <span className="reference-pill !py-0.5 !px-2">{r.assignmentRole}</span>],
+                  ["Starts At", (r) => date(r.startsAt)],
+                  ["Ends At", (r) => date(r.endsAt)],
+                  ["Status", (r) => (
                     <span className={`reference-status ${r.isActive ? "active" : "inactive"}`}>
-                      {r.isActive ? "Đang trực" : "Đã kết thúc"}
+                      {r.isActive ? "Active Duty" : "Ended"}
                     </span>
                   )],
                   [
-                    "Thao tác",
+                    "Actions",
                     (r) => (
                       <button
                         type="button"
@@ -413,7 +411,7 @@ export default function AdminUserDetail() {
                         onClick={() => removeAssignment(r)}
                         className="reference-button-danger"
                       >
-                        <Trash2 size={12} /> {deletingAssignment === r.id ? "Đang xóa..." : "Xóa"}
+                        <Trash2 size={12} /> {deletingAssignment === r.id ? "Removing..." : "Remove"}
                       </button>
                     ),
                   ],
@@ -423,24 +421,24 @@ export default function AdminUserDetail() {
           ) : (
             <section className="reference-card mb-5 p-6">
               <div className="reference-card-heading">
-                <h2>Hồ sơ nhân viên</h2>
-                <span className="reference-pill">Không có</span>
+                <h2>Employee Profile</h2>
+                <span className="reference-pill">None</span>
               </div>
-              <p className="reference-muted mt-2">Người dùng này không phải là nhân sự / quản lý cơ sở kho.</p>
+              <p className="reference-muted mt-2">This account is not designated as facility staff or manager.</p>
             </section>
           )}
 
           <TableSection
-            title="Lịch sử đăng nhập gần đây"
+            title="Recent Login Activity"
             icon={Calendar}
             rows={user.recentLoginHistories}
             rowKey="id"
-            emptyText="Chưa có lịch sử đăng nhập nào."
+            emptyText="No recent login history recorded."
             columns={[
-              ["Thời gian", (r) => date(r.occurredAt)],
-              ["Email đăng nhập", (r) => <span className="font-mono text-xs">{r.attemptedEmail}</span>],
+              ["Timestamp", (r) => date(r.occurredAt)],
+              ["Login Email", (r) => <span className="font-mono text-xs">{r.attemptedEmail}</span>],
               [
-                "Kết quả",
+                "Result",
                 (r) => (
                   <span
                     className={`reference-status ${
@@ -451,20 +449,20 @@ export default function AdminUserDetail() {
                   </span>
                 ),
               ],
-              ["Địa chỉ IP", (r) => <span className="font-mono text-xs">{r.ipAddress}</span>],
+              ["IP Address", (r) => <span className="font-mono text-xs">{r.ipAddress}</span>],
               [
-                "Đáng ngờ",
+                "Suspicious",
                 (r) => (
                   <span
                     className={`reference-badge ${
                       r.isSuspicious ? "red" : "gray"
                     }`}
                   >
-                    {r.isSuspicious ? "Cảnh báo" : "Bình thường"}
+                    {r.isSuspicious ? "Suspicious" : "Normal"}
                   </span>
                 ),
               ],
-              ["Lý do cảnh báo", (r) => r.suspiciousReason || "—"],
+              ["Flag Reason", (r) => r.suspiciousReason || "—"],
             ]}
           />
         </>
