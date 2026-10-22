@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLogin } from "../hooks/useLogin";
 import { useRegister } from "../hooks/useRegister";
 import { cn } from "@/lib/utils";
+import { getDefaultRouteForUser } from "../constants/roles";
 
 const slideVariants = {
   enter: (direction) => ({
@@ -59,19 +60,9 @@ export default function AuthScene() {
     try {
       const res = await googleLogin(idToken);
       const user = res?.data?.user;
-      const roles = user?.roles || [];
       setTimeout(() => {
-        if (roles.includes("admin") || roles.includes("system_admin")) {
-          navigate("/admin-overview");
-        } else if (
-          roles.includes("staff") ||
-          roles.includes("facility_staff") ||
-          roles.includes("manager")
-        ) {
-          navigate("/staff-dashboard");
-        } else {
-          navigate("/home");
-        }
+        const dest = getDefaultRouteForUser(user);
+        navigate(dest);
       }, 700);
     } catch (err) {
       setGoogleError(err?.message || "Google sign-in failed. Please try again.");
