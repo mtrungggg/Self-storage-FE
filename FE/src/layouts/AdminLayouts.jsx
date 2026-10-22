@@ -10,12 +10,7 @@ import FacilitySwitcher from "../components/FacilitySwitcher";
 function ManagementShell() {
   const {
     profile,
-    activeHub,
-    statusBanner,
     sidebarNav,
-    sidebarFooter,
-    sidebarSectionBadge,
-    sidebarNetworkStatus,
     logout,
   } = useManagementShell();
 
@@ -28,7 +23,8 @@ function ManagementShell() {
     .find(
       (item) =>
         pathname === item.to ||
-        (item.to !== "/admin-overview" && item.to !== "/manager-dashboard" && pathname.startsWith(item.to))
+        (item.to === "/admin-pricing" && pathname === "/admin-pricing-policy") ||
+        (item.to !== "/admin-overview" && pathname.startsWith(item.to))
     )?.id;
 
   // Hiển thị thanh FacilitySwitcher khi đang ở các trang Manager để quản lý kho
@@ -40,16 +36,11 @@ function ManagementShell() {
       <AdminSidebar
         navGroups={sidebarNav}
         activeId={activeId}
-        footer={sidebarFooter}
-        sectionBadge={sidebarSectionBadge}
-        networkStatus={sidebarNetworkStatus}
         isOpen={mobileSidebarOpen}
         onClose={() => setMobileSidebarOpen(false)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar
-          activeHub={activeHub}
-          statusBanner={statusBanner}
           profile={profile}
           logout={logout}
           onToggleMobileSidebar={() => setMobileSidebarOpen((prev) => !prev)}

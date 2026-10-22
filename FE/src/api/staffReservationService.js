@@ -2,7 +2,7 @@ import apiClient from "./apiClient";
 
 const staffReservationService = {
   async lookup(query, facilityId) {
-    const params = { query: query.trim() };
+    const params = { query: query?.trim() || "" };
     if (facilityId) params.facilityId = Number(facilityId);
 
     const response = await apiClient.get("/staff/reservations/lookup", { params });

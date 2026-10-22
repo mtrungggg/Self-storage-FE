@@ -38,7 +38,7 @@ export default function RefundPreview({ agreementId }) {
   return (
     <section className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
       <button type="button" onClick={load} disabled={loading} aria-expanded={opened} aria-controls={panelId} className="font-semibold text-[#1d5fe5] disabled:opacity-50">
-        {loading ? "..." : opened ? "Refresh estimate" : "Refund estimate"}
+        {loading ? "..." : "Refund estimate"}
       </button>
       <div id={panelId} hidden={!opened} aria-busy={loading}>
         {loading && <p role="status" className="mt-1 text-slate-400">Loading...</p>}

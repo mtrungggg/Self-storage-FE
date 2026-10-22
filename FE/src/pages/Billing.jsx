@@ -201,6 +201,7 @@ function Billing() {
                                 navigate("/checkout", {
                                   state: {
                                     reservationId: inv.reservationId,
+                                    invoiceId: inv.invoiceId || null,
                                     reservationCode: inv.reservationCode,
                                     renewalId: inv.renewalId,
                                     agreementNo: inv.agreementNo,

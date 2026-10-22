@@ -39,30 +39,3 @@ export function getGuestPins(unitCode) {
     },
   ];
 }
-
-export function getAccessControlLogs(unitCode) {
-  if (!unitCode) return [];
-  return [
-    {
-      icon: "lock_open",
-      title: `Unit ${unitCode} Unlocked`,
-      time: "14:45 today",
-      note: "Door keypad PIN",
-      dot: "#2dd4a0",
-    },
-    {
-      icon: "dialpad",
-      title: `Unit ${unitCode} Unlocked`,
-      time: "18 Oct, 10:12",
-      note: "Guest PIN • Express Delivery",
-      dot: "#8996a9",
-    },
-    {
-      icon: "key",
-      title: `Unit ${unitCode} Unlocked`,
-      time: "10 Oct, 09:30",
-      note: "Door keypad PIN",
-      dot: "#8996a9",
-    },
-  ];
-}

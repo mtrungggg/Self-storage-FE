@@ -5,7 +5,7 @@ import { useManagerFacility } from "../context/ManagerFacilityContext";
  * Hiển thị mã kho, tên kho, địa chỉ và cho phép chuyển đổi nhanh kho đang làm việc.
  */
 export function FacilitySwitcher() {
-  const { facilities, facilityId, setFacilityId, loading, error, activeFacility } = useManagerFacility();
+  const { facilities, facilityId, setFacilityId, loading, error } = useManagerFacility();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef1f8] bg-white px-4 py-2.5 lg:px-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
@@ -34,15 +34,6 @@ export function FacilitySwitcher() {
           </select>
         )}
       </div>
-
-      {activeFacility && (
-        <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#64748b]">
-          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">location_on</span>
-          <span className="truncate max-w-[350px]">
-            {activeFacility.addressLine || activeFacility.city}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

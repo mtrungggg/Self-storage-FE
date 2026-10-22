@@ -4,7 +4,15 @@ import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
 
-const emptyUnitForm = { unitCode: "", unitTypeId: "", areaId: "", floorLabel: "", zoneLabel: "", physicalStatus: "available", isListed: true, notes: "" };
+const emptyUnitForm = { unitCode: "", unitTypeId: "", areaId: "", floorLabel: "", zoneLabel: "", physicalStatus: "under_inspection", isListed: true, notes: "" };
+
+function mapStatusStyle(status) {
+  const key = String(status || "").toLowerCase();
+  if (key === "available") return "border-emerald-300 bg-emerald-100 text-emerald-800 shadow-[0_7px_0_#79c99d]";
+  if (key === "occupied") return "border-blue-300 bg-blue-100 text-blue-800 shadow-[0_7px_0_#8eb5e9]";
+  if (key === "reserved") return "border-amber-300 bg-amber-100 text-amber-800 shadow-[0_7px_0_#dfbc68]";
+  return "border-rose-300 bg-rose-100 text-rose-800 shadow-[0_7px_0_#e8a0a0]";
+}
 
 function ManagerUnits() {
   const { facilityId } = useManagerFacility();
@@ -25,6 +33,7 @@ function ManagerUnits() {
   const [layout, setLayout] = useState(null);
   const [loadingLayout, setLoadingLayout] = useState(true);
   const [savingLayout, setSavingLayout] = useState(false);
+  const [selectedMapUnitId, setSelectedMapUnitId] = useState(null);
 
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -79,7 +88,7 @@ function ManagerUnits() {
       areaId: unit.areaId ? String(unit.areaId) : "",
       floorLabel: unit.floorLabel || "",
       zoneLabel: unit.zoneLabel || "",
-      physicalStatus: unit.physicalStatus || "available",
+      physicalStatus: unit.physicalStatus || "under_inspection",
       isListed: unit.isListed,
       notes: unit.notes || "",
     });
@@ -97,7 +106,10 @@ function ManagerUnits() {
         areaId: unitForm.areaId ? Number(unitForm.areaId) : undefined,
         floorLabel: unitForm.floorLabel || undefined,
         zoneLabel: unitForm.zoneLabel || undefined,
-        physicalStatus: unitForm.physicalStatus,
+        physicalStatus:
+          unitForm.physicalStatus === "under_inspection"
+            ? "pending_inspection"
+            : unitForm.physicalStatus,
         isListed: unitForm.isListed,
         notes: unitForm.notes || undefined,
       };
@@ -141,6 +153,20 @@ function ManagerUnits() {
   }
 
   const areaNameById = useMemo(() => Object.fromEntries((layout?.areas ?? []).map((area) => [area.areaId, area.name])), [layout]);
+  const mapPositions = useMemo(() => {
+    if (layout?.unitPositions?.length) return layout.unitPositions;
+    return units.map((unit, index) => ({
+      unitId: unit.id,
+      unitCode: unit.unitCode,
+      areaId: unit.areaId || layout?.areas?.[0]?.areaId || 0,
+      x: 7 + (index % 8) * 11,
+      y: 22 + Math.floor(index / 8) * 19,
+      width: 74,
+      height: 42,
+      rotationDegrees: 0,
+      physicalStatus: unit.physicalStatus,
+    }));
+  }, [layout, units]);
 
   return (
     <>
@@ -211,11 +237,35 @@ function ManagerUnits() {
       {tab === "layout" && (
         <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[10px] text-[#8996a9]">Chỉnh toạ độ/kích thước từng ô kho trên sơ đồ, sau đó lưu lại.</p>
+            <p className="text-[10px] text-[#8996a9]">Chọn một ô kho trên sơ đồ để xem vị trí; dữ liệu toạ độ bên dưới vẫn có thể chỉnh sửa.</p>
             <button type="button" disabled={savingLayout || !layout} onClick={saveLayout} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60">
               {savingLayout ? "Đang lưu..." : "Lưu sơ đồ"}
             </button>
           </div>
+          {loadingLayout ? (
+            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Đang dựng sơ đồ...</div>
+          ) : mapPositions.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Chưa có vị trí nào để hiển thị trên sơ đồ.</div>
+          ) : (
+            <>
+              <div className="mt-4 overflow-x-auto rounded-2xl border border-[#c9d9ef] bg-[radial-gradient(circle_at_20%_10%,#eff7ff,transparent_38%),linear-gradient(145deg,#cbdcf0,#eaf2fb_45%,#d7e4f3)] p-4 shadow-inner">
+                <div className="relative min-h-[440px] min-w-[760px] overflow-hidden rounded-xl border border-white/80 bg-[linear-gradient(rgba(65,103,146,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(65,103,146,0.12)_1px,transparent_1px)] bg-[size:32px_32px] [perspective:1000px]">
+                  <div className="absolute left-5 top-4 rounded-lg bg-slate-900/85 px-3 py-2 text-[10px] font-bold text-white shadow-lg">{layout.facilityName} · FLOORPLAN</div>
+                  <div className="absolute bottom-4 left-5 flex gap-2 text-[9px] font-bold"><span className="rounded bg-emerald-100 px-2 py-1 text-emerald-700">Available</span><span className="rounded bg-blue-100 px-2 py-1 text-blue-700">Occupied</span><span className="rounded bg-amber-100 px-2 py-1 text-amber-700">Reserved</span></div>
+                  {layout.areas.map((area, index) => <div key={area.areaId} className="absolute top-16 rounded-xl border border-dashed border-[#7896ba]/50 bg-white/25 px-3 py-2 text-[10px] font-bold text-[#476584]" style={{ left: `${4 + (index % 3) * 32}%`, width: "29%", height: "78%" }}>{area.code || area.name}</div>)}
+                  {mapPositions.map((pos, index) => {
+                    const selected = selectedMapUnitId === pos.unitId;
+                    const left = Number(pos.x) || 7 + (index % 8) * 11;
+                    const top = Number(pos.y) || 22 + Math.floor(index / 8) * 19;
+                    const width = Math.max(Number(pos.width) || 74, 54);
+                    const height = Math.max(Number(pos.height) || 42, 34);
+                    return <button key={pos.unitId} type="button" onClick={() => setSelectedMapUnitId(pos.unitId)} title={`${pos.unitCode} · ${pos.physicalStatus}`} className={`absolute flex items-center justify-center rounded-md border text-[10px] font-extrabold transition duration-200 hover:-translate-y-1 hover:brightness-105 ${mapStatusStyle(pos.physicalStatus)} ${selected ? "ring-4 ring-[#1d5fe5]/30 -translate-y-1" : ""}`} style={{ left, top, width, height, transform: `rotate(${Number(pos.rotationDegrees) || 0}deg) skewY(-5deg)` }}>{pos.unitCode}</button>;
+                  })}
+                </div>
+              </div>
+              {selectedMapUnitId && <p className="mt-2 text-[10px] font-semibold text-[#1d5fe5]">Đang chọn: {mapPositions.find((position) => position.unitId === selectedMapUnitId)?.unitCode}</p>}
+            </>
+          )}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-[11px]">
               <thead>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
 import facilityService from "../api/facilityService";
+import SupportDropdown from "./SupportDropdown";
 
 function localDate() {
   const date = new Date();
@@ -62,9 +63,15 @@ export default function UnitTransferRequest({ agreementId }) {
   return <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
     <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Transfer</summary>
     <form onSubmit={submit} className="mt-2 space-y-2">
-      <label className="block font-semibold text-slate-600">Type
-        <select required disabled={typesLoading} value={requestedUnitTypeId} onChange={(event) => setRequestedUnitTypeId(event.target.value)} className="mt-1 block w-full rounded-lg border bg-white p-1.5 text-xs text-[#0b1c30]"><option value="">{typesLoading ? "..." : "Select type"}</option>{unitTypes.map((type) => <option key={type.id} value={type.id}>{type.name || type.displayName || `Type #${type.id}`}</option>)}</select>
-      </label>
+      <SupportDropdown
+        label="Type"
+        icon="warehouse"
+        disabled={typesLoading}
+        value={requestedUnitTypeId}
+        onChange={setRequestedUnitTypeId}
+        placeholder={typesLoading ? "Loading types..." : "Select type"}
+        options={unitTypes.map((type) => ({ value: String(type.id), label: type.name || type.displayName || `Type #${type.id}` }))}
+      />
       <label className="block font-semibold text-slate-600">Date<input type="date" required min={localDate()} value={requestedEffectiveDate} onChange={(event) => setRequestedEffectiveDate(event.target.value)} className="mt-1 block w-full rounded-lg border p-1.5 text-xs text-[#0b1c30]" /></label>
       <label className="block font-semibold text-slate-600">Reason<textarea required rows="2" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-1 block w-full rounded-lg border p-1.5 text-xs text-[#0b1c30]" placeholder="Reason..." /></label>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-2 text-red-700">{error}</p>}

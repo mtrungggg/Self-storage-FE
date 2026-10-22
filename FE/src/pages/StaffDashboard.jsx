@@ -243,11 +243,11 @@ export default function StaffDashboard() {
 
         </div>
 
-        {/* Center Grid: 2 Columns (7 cols left, 5 cols right) */}
+        {/* Center Grid: balanced workspace columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          {/* Left Column (7 cols): Main Navigation Tabs & Operational Modules */}
-          <div className="lg:col-span-7 space-y-5">
+          {/* Left Column: Main Navigation Tabs & Operational Modules */}
+          <div className="lg:col-span-6 space-y-5">
 
             {/* Main Tabs Container */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
@@ -443,8 +443,8 @@ export default function StaffDashboard() {
 
           </div>
 
-          {/* Right Column (5 cols): Smart Floorplan & Staff Duty Facility Presence */}
-          <div className="lg:col-span-5 space-y-5">
+          {/* Right Column: Smart Floorplan & Staff Duty Facility Presence */}
+          <div className="lg:col-span-6 space-y-5">
 
             {/* Smart Floorplan Card */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">

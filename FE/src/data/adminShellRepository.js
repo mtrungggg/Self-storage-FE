@@ -19,8 +19,7 @@ export function getSidebarNav() {
       items: [
         { id: "overview", label: "Dashboard", icon: "dashboard", to: "/admin-overview" },
         { id: "facilities", label: "Quản lý kho", icon: "warehouse", to: "/admin-facilities" },
-        { id: "tickets", label: "Quản lý ticket", icon: "support_agent", to: "/admin-tickets" },
-        { id: "notifications", label: "Gửi thông báo", icon: "notifications_active", to: "/admin-notifications" },
+        { id: "pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/admin-pricing" },
       ],
     },
     {

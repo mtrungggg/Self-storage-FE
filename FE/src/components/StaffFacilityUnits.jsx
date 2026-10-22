@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import staffFacilityService from "../api/staffFacilityService";
 import StaffUnitStatus from "./StaffUnitStatus";
 import StaffMaintenanceOrder from "./StaffMaintenanceOrder";
-import MusicPortfolio from "./ui/music-portfolio";
 
 const STATUS_CONFIG = {
   available: {
@@ -35,6 +34,14 @@ const STATUS_CONFIG = {
 function formatMoney(value) {
   if (value == null) return "—";
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
+}
+
+function compactUnitType(unitTypeName) {
+  const name = String(unitTypeName || "").toLowerCase();
+  const area = String(unitTypeName || "").match(/\d+(?:[.,]\d+)?\s*m[²2]?/i)?.[0]?.replace("m2", "m²") || "";
+  const size = name.includes("extra large") ? "XL" : name.includes("large") ? "L" : name.includes("medium") ? "M" : name.includes("small") ? "S" : name.includes("mini") ? "MN" : "ST";
+  const condition = name.includes("seafood") || name.includes("freeze") || name.includes("cold") ? "C" : name.includes("warm") || name.includes("heat") ? "W" : name.includes("climate") ? "CL" : "D";
+  return [size, condition, area].filter(Boolean).join(" · ");
 }
 
 export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
@@ -108,60 +115,6 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
       );
     });
   }, [units, activeFilter, searchQuery]);
-
-  const unitProjectsData = useMemo(() => {
-    return filteredUnits.map((unit) => {
-      const typeName = String(unit.unitTypeName || "").toLowerCase();
-      const statusKey = String(unit.status || "available").toLowerCase();
-
-      // Differentiate image based on storage type (Cold Seafood, Heated Warm, Dry, Locker, Climate)
-      let img = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80"; // default dry goods
-      if (typeName.includes("seafood") || typeName.includes("freeze") || typeName.includes("cold")) {
-        img = "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=1200&q=80"; // sub-zero cold room
-      } else if (typeName.includes("warm") || typeName.includes("heated")) {
-        img = "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=1200&q=80"; // heated warm storage
-      } else if (typeName.includes("locker")) {
-        img = "https://images.unsplash.com/photo-1554774853-719586f82d77?auto=format&fit=crop&w=1200&q=80"; // smart locker
-      } else if (typeName.includes("climate")) {
-        img = "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=1200&q=80"; // enterprise logistics
-      }
-
-      if (statusKey === "maintenance" || statusKey === "under_maintenance") {
-        img = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80";
-      }
-
-      const isExpanded = expandedUnitId === unit.unitId;
-
-      return {
-        id: unit.unitId,
-        artist: unit.unitCode || `Unit #${unit.unitId}`,
-        album: unit.unitTypeName || `Type #${unit.unitTypeId}`,
-        category: unit.status?.toUpperCase() || "AVAILABLE",
-        label: unit.customerName
-          ? `${unit.customerName} · ${unit.currentAgreementNo || "Active"}`
-          : "Vacant (No Tenant)",
-        year: unit.currentRate ? formatMoney(unit.currentRate) : "—",
-        image: img,
-        unit,
-        actionButton: (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpandedUnitId(isExpanded ? null : unit.unitId);
-            }}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition shrink-0 ${
-              isExpanded
-                ? "bg-[#1d5fe5] text-white border-[#1d5fe5]"
-                : "bg-white/10 border-white/20 text-white hover:bg-white/20"
-            }`}
-          >
-            {isExpanded ? "Close" : "Manage"}
-          </button>
-        ),
-      };
-    });
-  }, [filteredUnits, expandedUnitId]);
 
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -261,31 +214,28 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
         </div>
       )}
 
-      {/* Interactive MusicPortfolio Facility Unit List */}
       {filteredUnits.length > 0 && (
         <div className="mt-3 space-y-3">
-          <MusicPortfolio
-            PROJECTS_DATA={unitProjectsData}
-            CONFIG={{
-              timeZone: "Asia/Ho_Chi_Minh",
-              timeUpdateInterval: 1000,
-              idleDelay: 4000,
-            }}
-            LOCATION={{
-              label: `FACILITY #${facilityId} · ${filteredUnits.length} UNITS`,
-              latitude: "10.8231° N",
-              longitude: "106.6297° E",
-            }}
-            CALLBACKS={{
-              onProjectClick: (project) => {
-                if (project?.unit) {
-                  setExpandedUnitId(
-                    expandedUnitId === project.unit.unitId ? null : project.unit.unitId
-                  );
-                }
-              },
-            }}
-          />
+          <div className="overflow-hidden rounded-xl border border-[#dfe7f5] bg-white">
+            <div className="grid grid-cols-[72px_minmax(0,1fr)_88px_72px] gap-2 border-b border-[#eef1f8] bg-[#f8faff] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-[#718299] sm:grid-cols-[82px_minmax(0,1.3fr)_92px_minmax(0,1fr)_80px]">
+              <span>Unit</span><span>Type</span><span>Status</span><span className="hidden sm:block">Customer</span><span className="text-right">Manage</span>
+            </div>
+            <div className="max-h-[430px] divide-y divide-[#eef1f8] overflow-y-auto">
+              {filteredUnits.map((unit) => {
+                const status = STATUS_CONFIG[String(unit.status || "").toLowerCase()] || STATUS_CONFIG.available;
+                const expanded = expandedUnitId === unit.unitId;
+                return (
+                  <div key={unit.unitId} className="grid grid-cols-[72px_minmax(0,1fr)_88px_72px] items-center gap-2 px-3 py-2.5 text-xs transition hover:bg-[#f8faff] sm:grid-cols-[82px_minmax(0,1.3fr)_92px_minmax(0,1fr)_80px]">
+                    <span className="font-mono font-bold text-[#0b1c30]">{unit.unitCode || `#${unit.unitId}`}</span>
+                    <span className="truncate text-[#58657a]" title={unit.unitTypeName}>{compactUnitType(unit.unitTypeName)}</span>
+                    <span className={`inline-flex w-fit items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${status.badge}`}><span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />{status.label}</span>
+                    <span className="hidden truncate text-[#58657a] sm:block">{unit.customerName || "—"}</span>
+                    <button type="button" onClick={() => setExpandedUnitId(expanded ? null : unit.unitId)} className={`justify-self-end rounded-lg border px-2 py-1 text-[10px] font-bold transition ${expanded ? "border-[#1d5fe5] bg-[#1d5fe5] text-white" : "border-[#d8e3f5] text-[#1d5fe5] hover:bg-[#eef4ff]"}`}>{expanded ? "Close" : "Manage"}</button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Inline Expanded Management Drawer for selected unit */}
           {expandedUnitId && (() => {
@@ -317,7 +267,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                       <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">
                         tune
                       </span>
-                      <span>Change Physical Status</span>
+                      <span>Unit status</span>
                     </h4>
                     <StaffUnitStatus
                       unit={unit}
@@ -337,7 +287,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                       <span className="material-symbols-outlined text-[16px] text-rose-600">
                         build
                       </span>
-                      <span>Work Order / Maintenance</span>
+                      <span>Maintenance</span>
                     </h4>
                     <StaffMaintenanceOrder
                       unitId={unit.unitId}

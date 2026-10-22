@@ -34,8 +34,12 @@ export interface CoverflowCarouselProps {
   cardWidth?: string;
   /** Space between cards, as a fraction of card width. */
   gap?: number;
+  /** Number of neighbouring cards kept mounted on each side of the active card. */
+  renderRadius?: number;
   loop?: boolean;
   showCaption?: boolean;
+  /** Shows the title and metadata in the caption, independently of its action. */
+  showCaptionDetails?: boolean;
   showPagination?: boolean;
   showNavigation?: boolean;
   /** Names the carousel for assistive tech. */
@@ -49,15 +53,17 @@ export interface CoverflowCarouselProps {
 
 export function CoverflowCarousel({
   slides,
-  rotate = 44,
-  depth = 0.6,
-  perspective = 3,
+  rotate = 30,
+  depth = 0.35,
+  perspective = 4,
   falloff = 0.56,
   fade = 0.1,
   cardWidth = "clamp(240px, 30vw, 360px)",
   gap = 0.08,
+  renderRadius = 2,
   loop = true,
   showCaption = false,
+  showCaptionDetails = true,
   showPagination = false,
   showNavigation = false,
   label = "Cover carousel",
@@ -67,7 +73,6 @@ export function CoverflowCarousel({
   onActiveSlideChange,
 }: CoverflowCarouselProps) {
   const count = slides.length;
-
   const frameRef = React.useRef<HTMLDivElement>(null);
   const cardRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   /** Fractional card index at the centre. The single source of truth. */
@@ -87,6 +92,21 @@ export function CoverflowCarousel({
 
   const [selected, setSelected] = React.useState(0);
   const activeChangeRef = React.useRef(onActiveSlideChange);
+
+  const renderedIndexes = React.useMemo(() => {
+    if (count <= renderRadius * 2 + 1) {
+      return new Set(slides.map((_, index) => index));
+    }
+
+    const indexes = new Set<number>();
+    for (let offset = -renderRadius; offset <= renderRadius; offset += 1) {
+      const index = loop
+        ? ((selected + offset) % count + count) % count
+        : selected + offset;
+      if (index >= 0 && index < count) indexes.add(index);
+    }
+    return indexes;
+  }, [count, loop, renderRadius, selected, slides]);
 
   React.useEffect(() => {
     activeChangeRef.current = onActiveSlideChange;
@@ -121,6 +141,11 @@ export function CoverflowCarousel({
       }
 
       const distance = Math.abs(offset);
+      if (distance > renderRadius) {
+        card.style.display = "none";
+        return;
+      }
+      card.style.display = "block";
       // Both the tilt and the recession ease off as cards travel out —
       // doubling the distance adds only about half again as much of each.
       // A linear ramp folds the second card shut; this keeps it readable.
@@ -138,7 +163,7 @@ export function CoverflowCarousel({
       card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
       card.style.zIndex = String(100 - Math.round(distance));
     });
-  }, [count, depth, fade, falloff, gap, loop, rotate]);
+  }, [count, depth, fade, falloff, gap, loop, renderRadius, rotate]);
 
   const settle = React.useCallback(
     (target: number) => {
@@ -240,7 +265,7 @@ export function CoverflowCarousel({
     if (!frame) return;
 
     const measure = () => {
-      const card = cardRefs.current[0];
+      const card = cardRefs.current.find(Boolean);
       if (!card) return;
       widthRef.current = card.offsetWidth;
       paint();
@@ -288,8 +313,7 @@ export function CoverflowCarousel({
               nudge(1);
             }
           }}
-          // Vertical padding keeps the drop shadows clear of the overflow clip.
-          className="cursor-grab overflow-hidden py-14 outline-none ring-ring focus-visible:ring-2 active:cursor-grabbing"
+          className="cursor-grab overflow-hidden py-10 outline-none ring-ring focus-visible:ring-2 active:cursor-grabbing"
           style={{
             perspective: `calc(var(--cf-card) * ${perspective})`,
             // Horizontal drag is ours; the page keeps vertical scrolling.
@@ -303,7 +327,10 @@ export function CoverflowCarousel({
               transformStyle: "preserve-3d",
             }}
           >
-            {slides.map((slide, index) => (
+            {slides.map((slide, index) => {
+              if (!renderedIndexes.has(index)) return null;
+
+              return (
               <div
                 key={index}
                 ref={(node) => {
@@ -320,10 +347,10 @@ export function CoverflowCarousel({
                   }
                 }}
                 className={cn(
-                  "absolute left-1/2 top-0 aspect-[4/5] cursor-pointer overflow-hidden rounded-[22px] border border-white/20 bg-white/90 shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-md will-change-transform transition-colors",
+                  "absolute left-1/2 top-0 aspect-[4/5] cursor-pointer overflow-hidden rounded-[22px] border border-white/20 bg-white shadow-[0_10px_24px_rgba(0,0,0,0.12)] will-change-transform",
                   cardClassName,
                 )}
-                style={{ width: "var(--cf-card)" }}
+                style={{ width: "var(--cf-card)", contain: "layout paint style" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <div className="relative h-full w-full overflow-hidden">
@@ -331,13 +358,15 @@ export function CoverflowCarousel({
                     src={slide.src}
                     alt={slide.alt}
                     draggable={false}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full select-none object-cover transition-transform duration-500 hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                   
                   {slide.badge && (
                     <div className="absolute top-3.5 left-3.5 z-10">
-                      <span className="rounded-lg bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white shadow backdrop-blur-md border border-white/20">
+                      <span className="rounded-lg border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white">
                         {slide.badge}
                       </span>
                     </div>
@@ -351,7 +380,7 @@ export function CoverflowCarousel({
                       {slide.meta && slide.meta.length > 0 && (
                         <div className="mt-2.5 flex flex-wrap gap-2 text-[11px] font-semibold text-white/90">
                           {slide.meta.slice(0, 2).map((m, i) => (
-                            <span key={i} className="rounded bg-black/40 px-2 py-0.5 backdrop-blur-sm">
+                            <span key={i} className="rounded bg-black/60 px-2 py-0.5">
                               {m.label}: <strong className="text-white">{m.value}</strong>
                             </span>
                           ))}
@@ -361,7 +390,8 @@ export function CoverflowCarousel({
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -392,10 +422,10 @@ export function CoverflowCarousel({
           key={selected}
           className="mt-4 flex flex-col items-center px-6 text-center duration-300 animate-in fade-in"
         >
-          <p className="text-[22px] font-black tracking-tight text-[#0b1c30]">
+          {showCaptionDetails && <p className="text-[22px] font-black tracking-tight text-[#0b1c30]">
             {active.title}
-          </p>
-          {active.meta && active.meta.length > 0 && (
+          </p>}
+          {showCaptionDetails && active.meta && active.meta.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2 max-w-md">
               {active.meta.map((row, i) => (
                 <div
@@ -414,7 +444,7 @@ export function CoverflowCarousel({
               onClick={() => onSelectSlide(active, selected)}
               className="mt-5 flex items-center gap-2 rounded-[14px] bg-[#1d5fe5] px-7 py-3 text-[14px] font-extrabold text-white shadow-[0_10px_25px_rgba(29,95,229,0.3)] transition hover:bg-[#174fc7] hover:scale-105 active:scale-95"
             >
-              <span>Đặt ô kho này ngay</span>
+              <span>Book this unit now</span>
               <ChevronRight className="size-4" />
             </button>
           )}
