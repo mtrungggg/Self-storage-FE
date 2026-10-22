@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 
 const statuses = [
-  ["active", "Hoạt động"],
-  ["disabled", "Vô hiệu hóa"],
-  ["locked", "Đã khóa"],
+  ["active", "Active"],
+  ["disabled", "Disabled"],
+  ["locked", "Locked"],
 ];
 
 export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, disabled = false }) {
@@ -37,7 +37,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
       updated = await adminUserService.updateStatus(user.id, { status, reason: reason.trim() });
     } catch (err) {
       if (mounted.current)
-        setError(err.status === 404 ? "Không tìm thấy người dùng này." : err.message || "Không thể cập nhật trạng thái.");
+        setError(err.status === 404 ? "User not found." : err.message || "Failed to update user status.");
       return;
     } finally {
       submitting.current = false;
@@ -50,7 +50,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
     if (mounted.current) {
       setStatus(updated.status);
       setReason("");
-      setNotice("Đã cập nhật trạng thái người dùng thành công.");
+      setNotice("User status updated successfully.");
       setTimeout(() => setNotice(""), 3500);
       onUpdated(updated);
     }
@@ -60,8 +60,8 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
     <section className="reference-card mb-5 p-6">
       <div className="reference-card-heading mb-4">
         <div>
-          <h2>Quản lý trạng thái tài khoản</h2>
-          <p className="reference-muted">Khóa hoặc mở khóa quyền truy cập hệ thống của người dùng này.</p>
+          <h2>Account Access &amp; Status</h2>
+          <p className="reference-muted">Lock, activate, or disable access for this user account.</p>
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Lỗi cập nhật</strong>
+            <strong>Status Update Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Trạng thái mới</span>
+            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">New Status</span>
             <select
               value={status}
               disabled={disabled || saving}
@@ -101,13 +101,13 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Lý do thay đổi (ghi chú)</span>
+            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Reason / Audit Note</span>
             <input
               type="text"
               value={reason}
               disabled={disabled || saving}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="VD: Theo yêu cầu của quản lý cơ sở..."
+              placeholder="e.g. Requested by facility supervisor..."
               className="reference-input"
             />
           </label>
@@ -119,7 +119,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
             disabled={disabled || saving || status === user.status}
             className="reference-button-primary"
           >
-            {saving ? "Đang lưu..." : "Cập nhật trạng thái"}
+            {saving ? "Saving..." : "Update Status"}
           </button>
         </div>
       </form>

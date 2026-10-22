@@ -27,12 +27,12 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
     setError("");
     setNotice("");
     if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
-      setError("Vui lòng nhập họ tên, email và mật khẩu hợp lệ.");
+      setError("Please provide a valid full name, email, and password.");
       return;
     }
     const facilityId = form.initialFacilityId === "" ? null : Number(form.initialFacilityId);
     if (isEmployee && facilityId !== null && (!Number.isSafeInteger(facilityId) || facilityId <= 0)) {
-      setError("ID cơ sở phải là số nguyên dương hợp lệ.");
+      setError("Facility ID must be a positive integer.");
       return;
     }
     const payload = {
@@ -50,7 +50,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
     try {
       await adminUserService.createUser(payload);
     } catch (err) {
-      setError(err.message || "Không thể tạo người dùng.");
+      setError(err.message || "Failed to create user account.");
       return;
     } finally {
       submitting.current = false;
@@ -58,7 +58,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
     }
     setForm({ ...emptyForm });
     if (setOpen) setOpen(false);
-    setNotice(`Đã tạo người dùng ${payload.email} thành công.`);
+    setNotice(`Created user account for ${payload.email} successfully.`);
     setTimeout(() => setNotice(""), 4000);
     onCreated();
     window.dispatchEvent(new Event("admin-data-changed"));
@@ -78,9 +78,9 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
     <section className="reference-card mb-6 p-6">
       <div className="reference-card-heading mb-4">
         <div>
-          <h2>Thêm tài khoản người dùng mới</h2>
+          <h2>Create New User Account</h2>
           <p className="reference-muted">
-            Khởi tạo tài khoản hệ thống cho Quản lý (Manager), Nhân viên (Staff) hoặc Khách hàng.
+            Provision system accounts for Facility Managers, Staff, or Storage Customers.
           </p>
         </div>
         <button
@@ -92,7 +92,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
           }}
           className="reference-pill hover:bg-slate-50 cursor-pointer"
         >
-          <X size={13} /> Hủy bỏ
+          <X size={13} /> Cancel
         </button>
       </div>
 
@@ -107,7 +107,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Lỗi tạo người dùng</strong>
+            <strong>Account Creation Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -116,10 +116,10 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
       <form onSubmit={submit} aria-busy={saving}>
         <fieldset disabled={saving} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            ["fullName", "Họ và tên", "text", true, "name"],
-            ["email", "Email đăng nhập", "email", true, "off"],
-            ["password", "Mật khẩu ban đầu", "password", true, "new-password"],
-            ["phoneNumber", "Số điện thoại", "tel", false, "tel"],
+            ["fullName", "Full Name", "text", true, "name"],
+            ["email", "Login Email", "email", true, "off"],
+            ["password", "Initial Password", "password", true, "new-password"],
+            ["phoneNumber", "Phone Number", "tel", false, "tel"],
           ].map(([key, label, type, required, autoComplete]) => (
             <label key={key} className="block">
               <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
@@ -133,14 +133,14 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
                 value={form[key]}
                 onChange={(event) => setForm({ ...form, [key]: event.target.value })}
                 className="reference-input"
-                placeholder={`Nhập ${label.toLowerCase()}...`}
+                placeholder={`Enter ${label.toLowerCase()}...`}
               />
             </label>
           ))}
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              Vai trò tài khoản <span className="text-red-500">*</span>
+              Account Role <span className="text-red-500">*</span>
             </span>
             <select
               required
@@ -159,16 +159,16 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
           {isEmployee && (
             <>
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Mã nhân viên</span>
+                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Employee Code</span>
                 <input
                   value={form.employeeCode}
                   onChange={(event) => setForm({ ...form, employeeCode: event.target.value })}
                   className="reference-input"
-                  placeholder="VD: NV-102"
+                  placeholder="e.g. ST-102"
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Ngày vào làm</span>
+                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Hire Date</span>
                 <input
                   type="date"
                   value={form.hireDate}
@@ -177,7 +177,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">ID cơ sở kho ban đầu</span>
+                <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Initial Facility ID</span>
                 <input
                   type="number"
                   min="1"
@@ -185,7 +185,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
                   value={form.initialFacilityId}
                   onChange={(event) => setForm({ ...form, initialFacilityId: event.target.value })}
                   className="reference-input"
-                  placeholder="ID cơ sở kho"
+                  placeholder="Facility ID"
                 />
               </label>
             </>
@@ -201,11 +201,11 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
             }}
             className="reference-button-secondary"
           >
-            Hủy
+            Cancel
           </button>
           <button type="submit" disabled={saving} className="reference-button-primary">
             <UserPlus size={15} />
-            {saving ? "Đang tạo tài khoản..." : "Xác nhận tạo tài khoản"}
+            {saving ? "Creating Account..." : "Confirm & Create Account"}
           </button>
         </div>
       </form>

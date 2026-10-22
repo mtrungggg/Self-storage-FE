@@ -28,15 +28,15 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
     const startsAt = new Date(form.startsAt);
     const endsAt = form.endsAt ? new Date(form.endsAt) : null;
     if (!Number.isSafeInteger(facilityId) || facilityId <= 0) {
-      setError("ID cơ sở phải là số nguyên dương hợp lệ.");
+      setError("Facility ID must be a valid positive integer.");
       return;
     }
     if (Number.isNaN(startsAt.getTime()) || (endsAt && Number.isNaN(endsAt.getTime()))) {
-      setError("Vui lòng nhập thời gian hợp lệ.");
+      setError("Please provide a valid date and time.");
       return;
     }
     if (endsAt && endsAt <= startsAt) {
-      setError("Thời gian kết thúc phải sau thời gian bắt đầu.");
+      setError("End date must be later than start date.");
       return;
     }
     submitting.current = true;
@@ -52,7 +52,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
         endsAt: endsAt ? endsAt.toISOString() : null,
       });
     } catch (err) {
-      if (mounted.current) setError(err.message || "Không thể tạo phân công.");
+      if (mounted.current) setError(err.message || "Failed to create facility assignment.");
       return;
     } finally {
       submitting.current = false;
@@ -64,7 +64,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
     window.dispatchEvent(new Event("admin-data-changed"));
     if (mounted.current) {
       setForm(emptyForm);
-      setNotice("Đã phân công nhân viên vào cơ sở kho thành công.");
+      setNotice("Assigned employee to facility successfully.");
       setTimeout(() => setNotice(""), 3500);
       onCreated(assignment);
     }
@@ -74,8 +74,8 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
     <section className="reference-card mb-5 p-6">
       <div className="reference-card-heading mb-4">
         <div>
-          <h2>Phân công cơ sở kho mới</h2>
-          <p className="reference-muted">Chỉ định điểm kho phụ trách và thời hạn trực cho nhân viên này.</p>
+          <h2>Assign Facility Branch</h2>
+          <p className="reference-muted">Assign a physical storage facility branch and operational shift schedule for this employee.</p>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Lỗi phân công</strong>
+            <strong>Assignment Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              ID cơ sở kho <span className="text-red-500">*</span>
+              Facility ID <span className="text-red-500">*</span>
             </span>
             <input
               type="number"
@@ -110,27 +110,27 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
               disabled={disabled || saving}
               value={form.facilityId}
               onChange={(e) => setForm({ ...form, facilityId: e.target.value })}
-              placeholder="VD: 1, 2, 3..."
+              placeholder="e.g. 1, 2, 3..."
               className="reference-input"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Vai trò tại kho</span>
+            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Operational Role</span>
             <select
               value={form.assignmentRole}
               disabled={disabled || saving}
               onChange={(e) => setForm({ ...form, assignmentRole: e.target.value })}
               className="reference-select"
             >
-              <option value="facility_staff">Nhân viên kho (Staff)</option>
-              <option value="facility_manager">Quản lý kho (Manager)</option>
+              <option value="facility_staff">Facility Staff</option>
+              <option value="facility_manager">Facility Manager</option>
             </select>
           </label>
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              Thời gian bắt đầu <span className="text-red-500">*</span>
+              Start Date &amp; Time <span className="text-red-500">*</span>
             </span>
             <input
               type="datetime-local"
@@ -143,7 +143,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Thời gian kết thúc (tùy chọn)</span>
+            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">End Date &amp; Time (Optional)</span>
             <input
               type="datetime-local"
               disabled={disabled || saving}
@@ -157,7 +157,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
         <div className="flex justify-end pt-2">
           <button type="submit" disabled={disabled || saving} className="reference-button-primary">
             <Plus size={15} />
-            {saving ? "Đang phân công..." : "Tạo phân công cơ sở"}
+            {saving ? "Assigning..." : "Create Facility Assignment"}
           </button>
         </div>
       </form>

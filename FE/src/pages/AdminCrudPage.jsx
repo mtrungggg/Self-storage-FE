@@ -3,7 +3,7 @@ import { Building2, Search, RefreshCw, Plus, Edit3, Trash2, CheckCircle2, AlertT
 import facilityService from "../api/facilityService";
 import operationsService from "../api/operationsService";
 
-// Backend yêu cầu timezone khi tạo/cập nhật kho nhưng UI quản lý kho không cần hiển thị field này.
+// Backend requires timezone when creating/updating facility
 const FACILITY_TIMEZONE = "Asia/Ho_Chi_Minh";
 
 function toFacilityPayload(form) {
@@ -19,23 +19,23 @@ function toFacilityPayload(form) {
 
 const configurations = {
   facilities: {
-    title: "Quản lý cơ sở kho",
-    singular: "cơ sở kho",
+    title: "Facility Management",
+    singular: "facility",
     allowDelete: false,
     fields: [
-      ["code", "Mã kho", "text", true],
-      ["name", "Tên kho", "text", true],
-      ["address", "Địa chỉ", "text", true],
-      ["city", "Thành phố", "text", true],
+      ["code", "Facility Code", "text", true],
+      ["name", "Facility Name", "text", true],
+      ["address", "Address", "text", true],
+      ["city", "City", "text", true],
       [
         "status",
-        "Trạng thái",
+        "Status",
         "select",
         true,
         [
-          ["active", "Đang hoạt động"],
-          ["maintenance", "Bảo trì"],
-          ["inactive", "Ngừng hoạt động"],
+          ["active", "Active"],
+          ["maintenance", "Maintenance"],
+          ["inactive", "Inactive"],
         ],
       ],
     ],
@@ -99,16 +99,12 @@ export default function AdminCrudPage({ resource = "facilities" }) {
   );
 
   async function reload() {
-    if (!config.api) {
-      setRecords(listAdminRecords(resource));
-      return;
-    }
     setLoading(true);
     setError("");
     try {
       setRecords(await config.api.list());
     } catch (err) {
-      setError(err?.message || "Không thể tải dữ liệu cơ sở kho từ máy chủ.");
+      setError(err?.message || "Failed to load facilities from server.");
     } finally {
       setLoading(false);
     }
@@ -125,13 +121,11 @@ export default function AdminCrudPage({ resource = "facilities" }) {
     setError("");
     try {
       if (editingId) {
-        if (config.api) await config.api.update(editingId, form);
-        else updateAdminRecord(resource, editingId, form);
+        await config.api.update(editingId, form);
       } else {
-        if (config.api) await config.api.create(form);
-        else createAdminRecord(resource, form);
+        await config.api.create(form);
       }
-      setNotice(editingId ? `Đã cập nhật ${config.singular} thành công.` : `Đã thêm ${config.singular} mới.`);
+      setNotice(editingId ? `Updated ${config.singular} successfully.` : `Added new ${config.singular} successfully.`);
       setTimeout(() => setNotice(""), 4000);
       setEditingId(null);
       setForm(emptyForm(config));
@@ -139,7 +133,7 @@ export default function AdminCrudPage({ resource = "facilities" }) {
       await reload();
       window.dispatchEvent(new Event("admin-data-changed"));
     } catch (err) {
-      setError(err?.message || `Không thể lưu ${config.singular}.`);
+      setError(err?.message || `Failed to save ${config.singular}.`);
     } finally {
       setSubmitting(false);
     }
@@ -153,16 +147,15 @@ export default function AdminCrudPage({ resource = "facilities" }) {
   }
 
   async function remove(record) {
-    if (!window.confirm(`Xóa ${config.singular} này?`)) return;
+    if (!window.confirm(`Delete this ${config.singular}?`)) return;
     try {
       if (config.api?.remove) await config.api.remove(record.id);
-      else deleteAdminRecord(resource, record.id);
       await reload();
-      setNotice(`Đã xóa ${config.singular}.`);
+      setNotice(`Deleted ${config.singular}.`);
       setTimeout(() => setNotice(""), 4000);
       window.dispatchEvent(new Event("admin-data-changed"));
     } catch (err) {
-      setError(err?.message || `Không thể xóa ${config.singular}.`);
+      setError(err?.message || `Failed to delete ${config.singular}.`);
     }
   }
 
@@ -175,10 +168,10 @@ export default function AdminCrudPage({ resource = "facilities" }) {
         <div>
           <div className="flex items-center gap-3">
             <h1>{config.title}</h1>
-            <span className="reference-pill">{records.length} cơ sở</span>
+            <span className="reference-pill">{records.length} facilities</span>
           </div>
           <p className="reference-muted mt-1">
-            Quản lý thông tin và trạng thái vận hành của các cơ sở lưu trữ toàn hệ thống.
+            Manage storage facilities and operational status across the entire network.
           </p>
         </div>
         <div className="reference-toolbar-actions">
@@ -186,8 +179,8 @@ export default function AdminCrudPage({ resource = "facilities" }) {
             <Search size={18} strokeWidth={1.5} />
             <input
               type="search"
-              aria-label="Tìm cơ sở kho"
-              placeholder="Tìm kiếm mã, tên kho, thành phố..."
+              aria-label="Search facilities"
+              placeholder="Search code, name, city..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -207,11 +200,11 @@ export default function AdminCrudPage({ resource = "facilities" }) {
           >
             {isFormOpen && !editingId ? (
               <>
-                <X size={15} /> Đóng form
+                <X size={15} /> Close Form
               </>
             ) : (
               <>
-                <Plus size={15} /> Thêm cơ sở kho
+                <Plus size={15} /> Add Facility
               </>
             )}
           </button>
@@ -220,8 +213,8 @@ export default function AdminCrudPage({ resource = "facilities" }) {
             type="button"
             disabled={loading}
             onClick={reload}
-            aria-label="Làm mới dữ liệu"
-            title="Làm mới dữ liệu"
+            aria-label="Refresh data"
+            title="Refresh data"
           >
             <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
           </button>
@@ -239,7 +232,7 @@ export default function AdminCrudPage({ resource = "facilities" }) {
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Thông báo lỗi</strong>
+            <strong>Error</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -250,11 +243,11 @@ export default function AdminCrudPage({ resource = "facilities" }) {
         <section className="reference-card mb-6 p-6">
           <div className="reference-card-heading mb-4">
             <div>
-              <h2>{editingId ? "Chỉnh sửa cơ sở kho" : "Thêm cơ sở kho mới"}</h2>
+              <h2>{editingId ? "Edit Facility" : "Add New Facility"}</h2>
               <p className="reference-muted">
                 {editingId
-                  ? "Cập nhật thông tin chi tiết cho cơ sở kho đã chọn."
-                  : "Nhập thông tin cơ bản để khởi tạo một cơ sở kho mới trên hệ thống."}
+                  ? "Update configuration details for the selected storage facility."
+                  : "Enter basic details to provision a new storage facility branch."}
               </p>
             </div>
             <button
@@ -266,7 +259,7 @@ export default function AdminCrudPage({ resource = "facilities" }) {
               }}
               className="reference-pill hover:bg-slate-50 cursor-pointer"
             >
-              Hủy bỏ
+              Cancel
             </button>
           </div>
 
@@ -300,7 +293,7 @@ export default function AdminCrudPage({ resource = "facilities" }) {
                         value={form[name]}
                         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
                         className="reference-input"
-                        placeholder={`Nhập ${label.toLowerCase()}...`}
+                        placeholder={`Enter ${label.toLowerCase()}...`}
                       />
                     )}
                   </label>
@@ -318,14 +311,14 @@ export default function AdminCrudPage({ resource = "facilities" }) {
                 }}
                 className="reference-button-secondary"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
                 className="reference-button-primary"
               >
-                {submitting ? "Đang lưu..." : editingId ? "Lưu thay đổi" : "Tạo cơ sở kho"}
+                {submitting ? "Saving..." : editingId ? "Save Changes" : "Create Facility"}
               </button>
             </div>
           </form>
@@ -336,11 +329,11 @@ export default function AdminCrudPage({ resource = "facilities" }) {
       <section className="reference-card reference-table-card">
         <div className="reference-card-heading">
           <div>
-            <h2>Danh sách cơ sở kho</h2>
-            <p className="reference-muted">Danh sách tất cả cơ sở kho và trạng thái hoạt động thực tế.</p>
+            <h2>Facilities Directory</h2>
+            <p className="reference-muted">Overview of all facility branches and real-time operational status.</p>
           </div>
           <span className="reference-pill">
-            {filtered.length} / {records.length} cơ sở
+            {filtered.length} / {records.length} facilities
           </span>
         </div>
 
@@ -348,13 +341,13 @@ export default function AdminCrudPage({ resource = "facilities" }) {
           <table className="reference-table">
             <thead>
               <tr>
-                <th scope="col">Mã kho</th>
-                <th scope="col">Tên cơ sở kho</th>
-                <th scope="col">Địa chỉ</th>
-                <th scope="col">Thành phố</th>
-                <th scope="col">Trạng thái</th>
+                <th scope="col">Code</th>
+                <th scope="col">Facility Name</th>
+                <th scope="col">Address</th>
+                <th scope="col">City</th>
+                <th scope="col">Status</th>
                 <th scope="col" className="text-right pr-6">
-                  Thao tác
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -362,7 +355,7 @@ export default function AdminCrudPage({ resource = "facilities" }) {
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-xs text-[#767679]">
-                    Đang tải danh sách cơ sở kho...
+                    Loading facilities directory...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
@@ -371,10 +364,10 @@ export default function AdminCrudPage({ resource = "facilities" }) {
                     <div className="admin-empty py-4">
                       <Building2 size={32} className="mx-auto text-slate-400 mb-2" />
                       <strong className="block text-sm text-[#14121b]">
-                        {query ? "Không tìm thấy cơ sở kho phù hợp" : "Chưa có cơ sở kho nào"}
+                        {query ? "No matching facilities found" : "No facilities registered"}
                       </strong>
                       <p className="text-xs text-[#767679] mt-1">
-                        {query ? "Hãy thử tìm bằng từ khóa khác." : "Bấm nút 'Thêm cơ sở kho' để tạo điểm kho đầu tiên."}
+                        {query ? "Try searching with a different keyword." : "Click 'Add Facility' to create the first facility."}
                       </p>
                     </div>
                   </td>
@@ -412,16 +405,16 @@ export default function AdminCrudPage({ resource = "facilities" }) {
                           type="button"
                           onClick={() => edit(record)}
                           className="reference-button-secondary !py-1 !px-3 !text-[11px]"
-                          title="Chỉnh sửa cơ sở này"
+                          title="Edit this facility"
                         >
-                          <Edit3 size={13} /> Sửa
+                          <Edit3 size={13} /> Edit
                         </button>
                         {allowDelete && (
                           <button
                             type="button"
                             onClick={() => remove(record)}
                             className="reference-button-danger"
-                            title="Xóa cơ sở"
+                            title="Delete facility"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -436,8 +429,8 @@ export default function AdminCrudPage({ resource = "facilities" }) {
         </div>
 
         <div className="reference-table-footer">
-          <span>Hiển thị {filtered.length} cơ sở kho</span>
-          <span className="font-medium text-[#25232c]">Hệ thống Self-Storage Operations</span>
+          <span>Showing {filtered.length} facilities</span>
+          <span className="font-medium text-[#25232c]">Self-Storage System Operations</span>
         </div>
       </section>
     </div>

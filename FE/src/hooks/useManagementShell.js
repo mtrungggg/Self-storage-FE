@@ -17,13 +17,13 @@ export function useManagementShell() {
   const isManager = hasAnyRole(userRoles, MANAGER_ROLES);
 
   const roleLabel = isAdmin
-    ? "Quản trị viên (Admin)"
+    ? "System Administrator (Admin)"
     : isManager
-    ? "Quản lý cơ sở (Manager)"
-    : "Vận hành hệ thống";
+    ? "Facility Manager"
+    : "System Operations";
 
   const profile = {
-    name: user?.fullName || user?.email?.split("@")[0] || "Quản trị viên",
+    name: user?.fullName || user?.email?.split("@")[0] || "Administrator",
     email: user?.email || "",
     role: roleLabel,
     roles: user?.roles || [],
@@ -32,68 +32,64 @@ export function useManagementShell() {
   };
 
   const activeHub = facilityLoading
-    ? "Đang tải kho..."
+    ? "Loading facility..."
     : isAdmin
-    ? "Hệ thống trung tâm"
+    ? "Central System"
     : activeFacility
     ? `${activeFacility.code} — ${activeFacility.name}`
-    : "Toàn bộ hệ thống";
+    : "All Facilities";
 
   const statusBanner = {
     label: isAdmin ? "System Active" : "Manager Console",
-    detail: "TLS 1.3 • Trực tuyến",
+    detail: "TLS 1.3 • Online",
   };
 
-  // Nhóm chức năng Quản trị hệ thống (Dành riêng cho Admin)
+  // Admin System Governance Group
   const adminGroupOperations = {
     id: "admin-operations",
-    label: "Quản trị hệ thống (Admin)",
+    label: "System Administration (Admin)",
     badge: "SYS-ROOT",
     items: [
-      { id: "admin-overview", label: "Dashboard Admin", icon: "dashboard", to: "/admin-overview" },
-      { id: "admin-facilities", label: "Quản lý cơ sở kho", icon: "warehouse", to: "/admin-facilities" },
-      { id: "admin-pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/admin-pricing" },
-      { id: "admin-users", label: "Tài khoản & Phân quyền", icon: "manage_accounts", to: "/admin-users" },
-      { id: "admin-audit-log", label: "Nhật ký kiểm toán", icon: "history", to: "/admin-audit-log" },
-      { id: "admin-login-histories", label: "Lịch sử đăng nhập", icon: "login", to: "/admin-login-histories" },
+      { id: "admin-overview", label: "Admin Dashboard", icon: "dashboard", to: "/admin-overview" },
+      { id: "admin-facilities", label: "Facilities Management", icon: "warehouse", to: "/admin-facilities" },
+      { id: "admin-pricing", label: "Pricing & Policies", icon: "tune", to: "/admin-pricing" },
+      { id: "admin-users", label: "Users & Permissions", icon: "manage_accounts", to: "/admin-users" },
+      { id: "admin-audit-log", label: "Audit Logs", icon: "history", to: "/admin-audit-log" },
+      { id: "admin-login-histories", label: "Login History", icon: "login", to: "/admin-login-histories" },
     ],
   };
 
-  // Nhóm chức năng Vận hành kho (Dành cho Manager và Admin)
+  // Manager Facility Operations Group
   const managerGroupOperations = {
     id: "manager-operations",
-    label: "Vận hành kho (Manager)",
+    label: "Facility Operations (Manager)",
     badge: "FACILITY",
     hideHeader: true,
     items: [
-      { id: "manager-units", label: "Sơ đồ & Ô kho", icon: "grid_view", to: "/manager-units" },
-      { id: "manager-transfer-requests", label: "Yêu cầu chuyển ô", icon: "swap_horiz", to: "/manager-transfer-requests" },
-      { id: "manager-shifts", label: "Phân ca trực kho", icon: "badge", to: "/manager-shifts" },
-      { id: "manager-tickets", label: "Sự cố & Ticket kho", icon: "support_agent", to: "/manager-tickets" },
-      { id: "manager-move-outs", label: "Lịch trả kho & Kiểm tra", icon: "output", to: "/manager-move-outs" },
+      { id: "manager-units", label: "Units & Layout", icon: "grid_view", to: "/manager-units" },
+      { id: "manager-transfer-requests", label: "Unit Transfer Requests", icon: "swap_horiz", to: "/manager-transfer-requests" },
+      { id: "manager-shifts", label: "Staff Shifts", icon: "badge", to: "/manager-shifts" },
+      { id: "manager-tickets", label: "Facility Issues & Tickets", icon: "support_agent", to: "/manager-tickets" },
+      { id: "manager-move-outs", label: "Move-Out Schedule & Inspection", icon: "output", to: "/manager-move-outs" },
     ],
   };
 
-  // Nhóm chức năng Tài chính & Hợp đồng cơ sở (Dành cho Manager và Admin)
+  // Manager Finance Group
   const managerGroupFinance = {
     id: "manager-finance",
-    label: "Tài chính & Hợp đồng kho",
+    label: "Finance & Contracts",
     badge: "OPERATIONS",
     items: [
-      { id: "manager-charge-proposals", label: "Duyệt phụ phí phát sinh", icon: "receipt_long", to: "/manager-charge-proposals" },
-      { id: "manager-refund-approvals", label: "Duyệt hoàn tiền", icon: "currency_exchange", to: "/manager-refund-approvals" },
-      { id: "manager-agreements", label: "Hợp đồng thuê tại kho", icon: "assignment", to: "/manager-agreements" },
-      { id: "manager-delinquent-cases", label: "Xử lý nợ quá hạn", icon: "report_problem", to: "/manager-delinquent-cases" },
-      { id: "manager-pricing", label: "Bảng giá & Chính sách", icon: "tune", to: "/manager-pricing" },
+      { id: "manager-charge-proposals", label: "Ancillary Fee Approvals", icon: "receipt_long", to: "/manager-charge-proposals" },
+      { id: "manager-refund-approvals", label: "Refund Approvals", icon: "currency_exchange", to: "/manager-refund-approvals" },
+      { id: "manager-agreements", label: "Rental Agreements", icon: "assignment", to: "/manager-agreements" },
+      { id: "manager-delinquent-cases", label: "Overdue & Delinquency", icon: "report_problem", to: "/manager-delinquent-cases" },
+      { id: "manager-pricing", label: "Pricing & Policies", icon: "tune", to: "/manager-pricing" },
     ],
   };
 
-  // Xây dựng danh sách menu theo vai trò người dùng:
-  // - Admin: Nhìn thấy cả chức năng Admin và chức năng Manager (phân nhóm rạch ròi).
-  // - Manager: Chỉ nhìn thấy các chức năng vận hành cơ sở kho.
   let sidebarNav = [];
   if (isAdmin) {
-
     sidebarNav = [adminGroupOperations];
   } else {
     sidebarNav = [managerGroupOperations, managerGroupFinance];
@@ -103,7 +99,7 @@ export function useManagementShell() {
   const sidebarSectionBadge = isAdmin
     ? { label: "Admin Console", tag: "SYS-ROOT" }
     : { label: "Manager Console", tag: "FACILITY" };
-  const sidebarNetworkStatus = { label: "Hệ thống bảo mật", detail: "TLS 1.3 • AES-256" };
+  const sidebarNetworkStatus = { label: "System Security", detail: "TLS 1.3 • AES-256" };
 
   return {
     user,
