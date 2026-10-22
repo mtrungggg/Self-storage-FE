@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { ADMIN_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
 
 const NAV_ITEMS = [
   { key: "rent", label: "Rent a Unit", to: "/home", style: "soft" },
@@ -124,6 +125,40 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                     <div className="truncate text-[12px] font-bold text-[#0b1c30]">{user.fullName || "Account"}</div>
                     <div className="truncate text-[11px] text-[#8996a9]">{user.email}</div>
                   </div>
+
+                  <div className="py-1 border-b border-[#f0f3f8]">
+                    {hasAnyRole(user?.roles || [], ADMIN_ROLES) && (
+                      <Link
+                        to="/admin-overview"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">dashboard</span>
+                        Dashboard Admin
+                      </Link>
+                    )}
+                    {hasAnyRole(user?.roles || [], [...ADMIN_ROLES, ...MANAGER_ROLES]) && (
+                      <Link
+                        to="/manager-dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">space_dashboard</span>
+                        Dashboard Manager
+                      </Link>
+                    )}
+                    {hasAnyRole(user?.roles || [], STAFF_ROLES) && (
+                      <Link
+                        to="/staff-dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
+                        Dashboard Staff
+                      </Link>
+                    )}
+                  </div>
+
                   <button
                     type="button"
                     onClick={handleLogout}
