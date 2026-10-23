@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import pricingService from "../api/pricingService";
 import reservationService from "../api/reservationService";
 import paymentService from "../api/paymentService";
+import facilityService from "../api/facilityService";
+import storageUnitService from "../api/storageUnitService";
+import { getStorageSizeTiers } from "../data/homeRepository";
 
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -37,7 +40,7 @@ export function useStorageDetail() {
   const unitFromState = location.state?.unit;
 
   // Selected unit details or fallback default matching BE seed data
-  const unit = useMemo(() => {
+  const [unit, setUnit] = useState(() => {
     if (unitFromState) return unitFromState;
     return {
       id: 2,
@@ -54,8 +57,8 @@ export function useStorageDetail() {
       areaM2: 3.0,
       typeName: "Standard Unit 3 m²",
       fitNote: "Fits 20-30 boxes, small appliances, motorcycle, files.",
-      rentPrice: 2000,
-      depositPrice: 2000,
+      rentPrice: 2000000,
+      depositPrice: 2000000,
       policies: [
         "Free cancellation within 24h",
         "Keyless 24/7 digital access",
@@ -64,7 +67,91 @@ export function useStorageDetail() {
       ],
       image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
     };
-  }, [unitFromState]);
+  });
+
+  // Size tiers and available units in this facility
+  const sizeTiers = useMemo(() => getStorageSizeTiers(), []);
+  const [availableUnits, setAvailableUnits] = useState([]);
+  const [unitTypes, setUnitTypes] = useState([]);
+  const [sizeUpgradeMessage, setSizeUpgradeMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      facilityService.getUnitTypes(),
+      storageUnitService.getAvailableUnits({ facilityId: unit.facilityId }),
+    ]).then(([typesRes, unitsRes]) => {
+      if (!active) return;
+      if (typesRes.status === "fulfilled" && Array.isArray(typesRes.value)) {
+        setUnitTypes(typesRes.value);
+      }
+      if (unitsRes.status === "fulfilled" && Array.isArray(unitsRes.value)) {
+        setAvailableUnits(unitsRes.value);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [unit.facilityId]);
+
+  // Current size ID and larger sizes (for upgrade recommendation)
+  const currentArea = Number(unit?.areaM2 || 3);
+  const currentSizeId = useMemo(() => {
+    if (currentArea <= 1.5) return "mini";
+    if (currentArea <= 4) return "small";
+    if (currentArea <= 8) return "medium";
+    if (currentArea <= 12) return "large";
+    return "xlarge";
+  }, [currentArea]);
+
+  const largerSizes = useMemo(() => {
+    return sizeTiers.filter((tier) => tier.areaM2 > currentArea);
+  }, [sizeTiers, currentArea]);
+
+  // Switch / upgrade unit size
+  const handleSelectSize = (targetSizeId) => {
+    const targetTier = sizeTiers.find((t) => t.id === targetSizeId);
+    if (!targetTier) return;
+
+    // Find available unit in this facility matching target unitTypeId or similar area
+    const matchingUnit = availableUnits.find((u) => {
+      if (u.unitTypeId === targetTier.unitTypeId) return true;
+      const typeObj = unitTypes.find((t) => t.id === u.unitTypeId);
+      return typeObj && Math.abs(Number(typeObj.areaM2 || 0) - targetTier.areaM2) < 1.5;
+    });
+
+    const isUpgrade = targetTier.areaM2 > currentArea;
+    const percentDiff = Math.round(((targetTier.areaM2 - currentArea) / currentArea) * 100);
+
+    setUnit((prev) => {
+      const codePrefix = targetTier.name.charAt(0).toUpperCase();
+      const newUnitCode = matchingUnit?.unitCode || `${codePrefix}-${Math.floor(100 + targetTier.areaM2 * 10)}`;
+      return {
+        ...prev,
+        id: matchingUnit?.id || prev.id,
+        unitCode: newUnitCode,
+        unitTypeId: matchingUnit?.unitTypeId || targetTier.unitTypeId,
+        dimension: targetTier.dimensions,
+        sizeLabel: targetTier.dimensions,
+        areaM2: targetTier.areaM2,
+        volume: targetTier.volume,
+        height: targetTier.height,
+        typeName: `${targetTier.name} (${targetTier.dimensions})`,
+        fitNote: targetTier.fitsDetail,
+        image: targetTier.image,
+      };
+    });
+
+    if (isUpgrade) {
+      setSizeUpgradeMessage(
+        `Đã đổi sang kho lớn hơn: ${targetTier.name} (${targetTier.dimensions}, +${percentDiff}% diện tích). Bảng giá đã được tính lại.`
+      );
+    } else {
+      setSizeUpgradeMessage(
+        `Đã đổi kích thước kho: ${targetTier.name} (${targetTier.dimensions}). Bảng giá đã được tính lại.`
+      );
+    }
+  };
 
   const [moveInOption, setMoveInOption] = useState("today");
   const [durationMonths, setDurationMonths] = useState(1);
@@ -215,6 +302,12 @@ export function useStorageDetail() {
 
   return {
     unit,
+    sizeTiers,
+    currentSizeId,
+    largerSizes,
+    handleSelectSize,
+    sizeUpgradeMessage,
+    setSizeUpgradeMessage,
     moveInOptions,
     moveInOption,
     setMoveInOption,
