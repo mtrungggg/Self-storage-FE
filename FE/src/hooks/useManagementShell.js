@@ -52,7 +52,6 @@ export function useManagementShell() {
     items: [
       { id: "admin-overview", label: "Admin Dashboard", icon: "dashboard", to: "/admin-overview" },
       { id: "admin-facilities", label: "Facilities Management", icon: "warehouse", to: "/admin-facilities" },
-      { id: "admin-pricing", label: "Pricing & Policies", icon: "tune", to: "/admin-pricing" },
       { id: "admin-users", label: "Users & Permissions", icon: "manage_accounts", to: "/admin-users" },
       { id: "admin-audit-log", label: "Audit Logs", icon: "history", to: "/admin-audit-log" },
       { id: "admin-login-histories", label: "Login History", icon: "login", to: "/admin-login-histories" },
