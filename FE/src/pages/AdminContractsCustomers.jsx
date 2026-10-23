@@ -1,275 +1,179 @@
-import { useContracts } from "../hooks/useContracts";
+import { useEffect, useState } from "react";
+import managerService from "../api/managerService";
+import facilityService from "../api/facilityService";
 
-function Dropdown({ value, onChange, options }) {
+const statusOptions = [
+  ["active", "Đang hiệu lực"],
+  ["overdue", "Quá hạn"],
+  ["defaulted", "Vỡ nợ"],
+  ["terminated", "Đã chấm dứt"],
+  ["completed", "Đã hoàn tất"],
+];
+const inputClass = "w-full rounded-xl border border-[#dfe7f5] bg-white px-3 py-2.5 text-sm";
+const buttonClass = "rounded-xl bg-[#1d5fe5] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50";
+const labelFor = (value) => statusOptions.find(([key]) => key === value)?.[1] || value || "—";
+const formatVnd = (value) => `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
+
+export default function AdminContractsCustomers() {
+  const [facilities, setFacilities] = useState([]);
+  const [facilityId, setFacilityId] = useState("");
+  const [filters, setFilters] = useState({ status: "", search: "" });
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  useEffect(() => {
+    facilityService.getFacilities().then((list) => {
+      setFacilities(list);
+      if (list.length > 0) setFacilityId(String(list[0].id));
+    }).catch(() => setFacilities([]));
+  }, []);
+
+  function reload() {
+    if (!facilityId) return;
+    setLoading(true);
+    setError("");
+    managerService.getAgreements(facilityId, { ...filters, pageSize: 50 }).then(
+      (data) => { setResult(data); setLoading(false); },
+      (err) => { setError(err.message || "Không thể tải danh sách hợp đồng."); setLoading(false); },
+    );
+  }
+
+  useEffect(reload, [facilityId]);
+
+  function applyFilters(event) {
+    event.preventDefault();
+    reload();
+  }
+
+  async function viewDetail(agreementId) {
+    setDetail({ id: agreementId });
+    setDetailLoading(true);
+    setDetailError("");
+    try {
+      const data = await managerService.getAgreementDetail(agreementId);
+      setDetail(data);
+    } catch (err) {
+      setDetailError(err.message || "Không thể tải chi tiết hợp đồng.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="rounded-[8px] border border-[#dfe7f5] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#3a475a]"
-    >
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-const VALIDITY_ROW_STYLE = {
-  active: "border-l-transparent",
-  renewal: "border-l-[#f5a524] bg-[#fffaf0]",
-  locked: "border-l-[#e5484d] bg-[#fdf4f4]",
-};
-
-const ACTIVITY_ICON = { success: "check_circle", failed: "cancel" };
-const ACTIVITY_ICON_COLOR = { success: "text-[#0e7b4c]", failed: "text-[#c0362c]" };
-
-function AdminContractsCustomers() {
-  const {
-    statusBanner,
-    header,
-    headerActions,
-    kpis,
-    filterOptions,
-    search,
-    setSearch,
-    filters,
-    updateFilter,
-    contractLegend,
-    totalContracts,
-    filteredContracts,
-    contractFootnote,
-    emergencyActions,
-    iotStatusNote,
-    activityLog,
-    complianceInfo,
-  } = useContracts();
-
-  return (
-    <>
-      <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#1d5fe5]" />
-        {statusBanner.label}
-        <span className="font-semibold normal-case text-[#8996a9]">• {statusBanner.detail}</span>
-      </div>
-
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-3">
-        <h1 className="text-[20px] font-bold">{header.title}</h1>
-        <div className="flex flex-wrap gap-2">
-          {headerActions.map((action) => (
-            <button
-              key={action.id}
-              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
-                action.id === "new_contract" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
+    <div className="mx-auto max-w-[1400px]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#1d5fe5]">Admin Console</p>
+          <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold">
+            <span className="material-symbols-outlined text-[#1d5fe5]">description</span>
+            Hợp đồng &amp; Khách hàng
+          </h1>
         </div>
+        <button type="button" disabled={loading || !facilityId} onClick={reload} className={buttonClass}>Làm mới</button>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {kpis.map((kpi) => (
-          <div
-            key={kpi.id}
-            className={`rounded-[12px] border p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)] ${
-              kpi.alert ? "border-[#e5484d]/40 bg-[#fdf4f4]" : "border-[#dfe7f5] bg-white"
-            }`}
-          >
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-              {kpi.label}
-              <span className={`material-symbols-outlined text-[14px] ${kpi.alert ? "text-[#e5484d]" : "text-[#1d5fe5]"}`}>
-                {kpi.icon}
-              </span>
+      <form onSubmit={applyFilters} className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <label><span className="mb-1 block text-sm font-semibold">Kho *</span>
+            <select required value={facilityId} onChange={(e) => setFacilityId(e.target.value)} className={inputClass}>
+              {facilities.map((f) => <option key={f.id} value={f.id}>{f.name} ({f.code})</option>)}
+            </select>
+          </label>
+          <label><span className="mb-1 block text-sm font-semibold">Trạng thái</span>
+            <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className={inputClass}>
+              <option value="">Tất cả trạng thái</option>
+              {statusOptions.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </label>
+          <label className="sm:col-span-2"><span className="mb-1 block text-sm font-semibold">Tìm kiếm</span>
+            <input value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} placeholder="Mã hợp đồng, tên khách hàng, mã ô kho..." className={inputClass} />
+          </label>
+        </div>
+        <button type="submit" className={`mt-4 ${buttonClass}`}>Áp dụng</button>
+      </form>
+
+      <section aria-busy={loading} className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+        <h2 className="font-bold">Danh sách hợp đồng{result ? ` (${result.totalCount})` : ""}</h2>
+        {loading && <p role="status" className="py-8 text-center text-sm text-[#58657a]">Đang tải danh sách...</p>}
+        {error && <div role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          <p>{error}</p><button type="button" onClick={reload} className="mt-2 font-semibold underline">Thử lại</button>
+        </div>}
+        {result && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[1100px] text-left text-sm">
+              <thead><tr className="border-b text-xs uppercase text-[#58657a]">
+                {["Mã hợp đồng", "Khách hàng", "Ô kho", "Bắt đầu", "Kết thúc", "Giá thuê/tháng", "Công nợ", "Trạng thái", "Thao tác"].map((label) => <th key={label} className="p-3">{label}</th>)}
+              </tr></thead>
+              <tbody>
+                {result.items.map((agreement) => (
+                  <tr key={agreement.id} className="border-b border-[#eef1f8] hover:bg-[#f8faff]">
+                    <td className="p-3 font-semibold">{agreement.agreementNo}</td>
+                    <td className="p-3">{agreement.customerName}<div className="text-xs text-[#8996a9]">{agreement.customerEmail}</div></td>
+                    <td className="p-3">{agreement.unitCode}</td>
+                    <td className="p-3">{agreement.startDate}</td>
+                    <td className="p-3">{agreement.endDate}</td>
+                    <td className="p-3">{formatVnd(agreement.monthlyRent)}</td>
+                    <td className="p-3">{agreement.outstandingBalance > 0 ? <span className="font-semibold text-red-600">{formatVnd(agreement.outstandingBalance)}</span> : "—"}</td>
+                    <td className="p-3">{labelFor(agreement.status)}</td>
+                    <td className="p-3 text-right"><button type="button" onClick={() => viewDetail(agreement.id)} className="rounded-lg bg-[#eef4ff] px-3 py-1.5 font-semibold text-[#1d5fe5]">Chi tiết</button></td>
+                  </tr>
+                ))}
+                {result.items.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-[#58657a]">Không có hợp đồng phù hợp.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={(e) => e.target === e.currentTarget && setDetail(null)}>
+          <div className="max-h-[85vh] w-full max-w-[640px] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">Chi tiết hợp đồng {detail.agreementNo || ""}</h3>
+              <button type="button" onClick={() => setDetail(null)} className="text-[#58657a]">✕</button>
             </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className={`text-[19px] font-bold ${kpi.alert ? "text-[#c0362c]" : ""}`}>{kpi.value}</span>
-              {kpi.trend && <span className="text-[10px] font-semibold text-[#0e7b4c]">{kpi.trend}</span>}
-            </div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[12px] border border-[#dfe7f5] bg-white p-3">
-        <div className="flex min-w-[220px] flex-1 items-center gap-1.5 rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5">
-          <span className="material-symbols-outlined text-[15px] text-[#8996a9]">search</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by Contract ID, Customer Name..."
-            className="w-full bg-transparent text-[11px] outline-none placeholder:text-[#8996a9]"
-          />
-        </div>
-        <Dropdown value={filters.audience} onChange={(v) => updateFilter("audience", v)} options={filterOptions.audiences} />
-        <Dropdown value={filters.cycle} onChange={(v) => updateFilter("cycle", v)} options={filterOptions.cycles} />
-        <Dropdown value={filters.validity} onChange={(v) => updateFilter("validity", v)} options={filterOptions.validity} />
-        <span className="material-symbols-outlined text-[16px] text-[#8996a9]">refresh</span>
-      </div>
-
-      <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-bold">Managed Storage Lease Contracts</span>
-            <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">{filteredContracts.length} records</span>
-          </div>
-          <div className="flex items-center gap-3 text-[10px] font-semibold text-[#58657a]">
-            {contractLegend.map((item) => (
-              <span key={item.id} className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                {item.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[880px] text-left text-[11px]">
-            <thead>
-              <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Contract ID</th>
-                <th className="py-2 pr-2">Customer &amp; Entity</th>
-                <th className="py-2 pr-2">Unit &amp; Hub</th>
-                <th className="py-2 pr-2">Term &amp; Alerts</th>
-                <th className="py-2 pr-2">Value &amp; Billing Cycle</th>
-                <th className="py-2 pr-2">Security Deposit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredContracts.map((contract) => (
-                <tr key={contract.id} className={`border-b border-l-2 border-[#f2f5fb] ${VALIDITY_ROW_STYLE[contract.validity]}`}>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="font-bold text-[#1d5fe5]">{contract.id}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.signMethod}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                      {contract.customer}
-                      <span className="rounded-full bg-[#eef4ff] px-1.5 py-0.5 text-[8px] font-bold text-[#1d5fe5]">
-                        {contract.audience === "b2b" ? "B2B" : "Individual B2C"}
-                      </span>
-                    </div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.contact}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.taxOrEmail}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="font-semibold">{contract.unit}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.unitNote}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="text-[#3a475a]">{contract.term}</div>
-                    <div className="font-bold text-[#1d5fe5]">{contract.daysLeft}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.alertNote}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="font-bold">{contract.value}</div>
-                    <div className="text-[9px] text-[#8996a9]">Total: {contract.totalValue}</div>
-                    <div className="text-[9px] text-[#8996a9]">{contract.cycleNote}</div>
-                  </td>
-                  <td className="py-2.5 pr-2 align-top">
-                    <span className="flex items-center gap-1 text-[9px] font-bold text-[#0e7b4c]">
-                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                      {contract.depositStatus}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {filteredContracts.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-[11px] text-[#8996a9]">
-                    No matching contracts found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#8996a9]">
-          <span>
-            Showing 1-{filteredContracts.length} of {totalContracts} contracts • {contractFootnote.totalDeposit}
-          </span>
-          <div className="flex items-center gap-1 font-semibold">
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Previous</button>
-            <span className="rounded-[6px] bg-[#0b1c30] px-2 py-1 text-white">1</span>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">2</button>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">3</button>
-            <button className="rounded-[6px] border border-[#dfe7f5] px-2 py-1">Next</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-          <div className="flex items-center gap-1.5 text-[13px] font-bold">
-            <span className="material-symbols-outlined text-[16px] text-[#f5a524]">bolt</span>
-            Automated &amp; Emergency Tasks
-          </div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">Debt enforcement and lock override via VaultSpace IoT Latch protocol.</p>
-
-          <div className="mt-3 space-y-2">
-            {emergencyActions.map((action) => (
-              <button
-                key={action.id}
-                className="flex w-full items-center justify-between rounded-[8px] border border-[#dfe7f5] px-3 py-2 text-[10px] font-semibold text-[#3a475a]"
-              >
-                <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">{action.icon}</span>
-                  {action.label}
-                </span>
-                <span className="material-symbols-outlined text-[14px] text-[#8996a9]">chevron_right</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3 flex items-center justify-between border-t border-[#eef1f8] pt-2 text-[9px] text-[#8996a9]">
-            <span>Connection Protocol: {iotStatusNote}</span>
-          </div>
-        </div>
-
-        <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-          <div className="flex items-center gap-1.5 text-[13px] font-bold">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#2dd4a0]" />
-            Recent Lease Activity Log
-          </div>
-
-          <div className="mt-3 space-y-2.5">
-            {activityLog.map((log) => (
-              <div key={log.id} className="flex items-start gap-1.5 rounded-[8px] bg-[#f8faff] p-2.5 text-[10px]">
-                <span className={`material-symbols-outlined mt-0.5 text-[14px] ${ACTIVITY_ICON_COLOR[log.type]}`}>{ACTIVITY_ICON[log.type]}</span>
+            {detailLoading && <p className="mt-4 text-sm text-[#58657a]">Đang tải...</p>}
+            {detailError && <p role="alert" className="mt-4 text-sm text-red-600">{detailError}</p>}
+            {!detailLoading && !detailError && detail.customerName && (
+              <div className="mt-4 space-y-4 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><div className="text-xs text-[#8996a9]">Khách hàng</div><div className="font-semibold">{detail.customerName}</div></div>
+                  <div><div className="text-xs text-[#8996a9]">Email / SĐT</div><div className="font-semibold">{detail.customerEmail} {detail.customerPhone ? `· ${detail.customerPhone}` : ""}</div></div>
+                  <div><div className="text-xs text-[#8996a9]">Ô kho</div><div className="font-semibold">{detail.unitCode}</div></div>
+                  <div><div className="text-xs text-[#8996a9]">Trạng thái</div><div className="font-semibold">{labelFor(detail.status)}</div></div>
+                  <div><div className="text-xs text-[#8996a9]">Giá thuê/tháng</div><div className="font-semibold">{formatVnd(detail.monthlyRent)}</div></div>
+                  <div><div className="text-xs text-[#8996a9]">Tổng công nợ</div><div className="font-semibold text-red-600">{formatVnd(detail.totalDebt)}</div></div>
+                </div>
                 <div>
-                  <div className="font-semibold">{log.title}</div>
-                  <div className="text-[9px] text-[#8996a9]">{log.detail}</div>
-                  <div className="text-[9px] text-[#8996a9]">{log.time} • {log.actor}</div>
+                  <h4 className="font-bold">Hóa đơn ({detail.invoices?.length || 0})</h4>
+                  <ul className="mt-2 space-y-1.5">
+                    {(detail.invoices || []).map((inv) => (
+                      <li key={inv.id} className="flex justify-between rounded-lg border border-[#eef1f8] p-2">
+                        <span>{inv.invoiceNo} · hạn {inv.dueDate}</span>
+                        <span className="font-semibold">{formatVnd(inv.paidAmount)}/{formatVnd(inv.totalAmount)} · {inv.status}</span>
+                      </li>
+                    ))}
+                    {(!detail.invoices || detail.invoices.length === 0) && <li className="text-[#8996a9]">Không có hóa đơn.</li>}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-bold">Đồ lưu trữ ({detail.storedItems?.length || 0})</h4>
+                  <ul className="mt-2 space-y-1.5">
+                    {(detail.storedItems || []).map((item) => (
+                      <li key={item.id} className="rounded-lg border border-[#eef1f8] p-2">{item.description || item.name || "Mục đồ"}</li>
+                    ))}
+                    {(!detail.storedItems || detail.storedItems.length === 0) && <li className="text-[#8996a9]">Chưa khai báo đồ lưu trữ.</li>}
+                  </ul>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-
-          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">View all 148 activities today</div>
         </div>
-
-        <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-          <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[9px] font-bold text-[#1d5fe5]">{complianceInfo.badge}</span>
-          <div className="mt-1.5 text-[13px] font-bold">{complianceInfo.title}</div>
-          <p className="mt-1 text-[10px] text-[#8996a9]">{complianceInfo.note}</p>
-
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {complianceInfo.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-[#0b1c30] px-2 py-0.5 text-[9px] font-bold text-white">
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-3 border-t border-[#eef1f8] pt-2 text-[10px] font-bold text-[#1d5fe5] cursor-pointer hover:underline">Download Contract Template</div>
-        </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
-
-export default AdminContractsCustomers;
