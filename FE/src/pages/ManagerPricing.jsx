@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Save, Plus, X, Tag, Receipt, Warehouse, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { RefreshCw, Save, Plus, X, Tag, Warehouse, AlertTriangle, CheckCircle2 } from "lucide-react";
 import operationsService from "../api/operationsService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
@@ -218,8 +218,8 @@ function ManagerPricing() {
         </div>
       )}
 
-      {/* 3 Metric Cards matching Dashboard */}
-      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+      {/* 2 Metric Cards */}
+      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div className="reference-card p-5">
           <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
             <span>Unit Types &amp; Rates</span>
@@ -231,17 +231,6 @@ function ManagerPricing() {
           <div className="mt-1">
             <span className="reference-badge lime">Active In Network</span>
           </div>
-        </div>
-
-        <div className="reference-card p-5">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
-            <span>Ancillary Fee Policies</span>
-            <Receipt size={18} className="text-[#14121b]" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-[#14121b]">
-            {loading ? "..." : `${fees.length} fee rules`}
-          </div>
-          <div className="mt-1 text-xs text-[#767679]">Overdue penalty, key loss, cleaning fees</div>
         </div>
 
         <div className="reference-card p-5">
