@@ -21,7 +21,7 @@ export function usePaymentCheckout() {
   );
   const [error, setError] = useState("");
 
-  // Status: "pending" | "success" | "expired" | "failed"
+  // Status: "pending" | "success" | "expired" | "cancelled" | "failed"
   const [status, setStatus] = useState("pending");
 
   // Custom modal for confirming cancellation
@@ -178,7 +178,7 @@ export function usePaymentCheckout() {
               return;
             }
             if (detailStatus === "cancelled") {
-              setStatus("failed");
+              setStatus("cancelled");
               return;
             }
           }
@@ -199,7 +199,11 @@ export function usePaymentCheckout() {
               setStatus("success");
               return;
             }
-            if (pStatus === "failed" || pStatus === "cancelled") {
+            if (pStatus === "cancelled") {
+              setStatus("cancelled");
+              return;
+            }
+            if (pStatus === "failed") {
               setStatus("failed");
               return;
             }
@@ -248,7 +252,7 @@ export function usePaymentCheckout() {
     try {
       await reservationService.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
       setCancelModalOpen(false);
-      setStatus("failed");
+      setStatus("cancelled");
     } catch (err) {
       setCancelError(err?.message || "Hủy đơn đặt chỗ thất bại. Vui lòng thử lại.");
     } finally {
