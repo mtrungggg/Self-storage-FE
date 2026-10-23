@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useHome } from "../hooks/useHome";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import { CoverflowCarousel } from "../components/ui/coverflow-carousel";
 import { formatVnd } from "../lib/utils";
+import { getStorageSizeTiers } from "../data/homeRepository";
 
 function Home() {
   const {
@@ -15,8 +15,6 @@ function Home() {
     setSelectedType,
     selectedSize,
     setSelectedSize,
-    selectedTerm,
-    setSelectedTerm,
     searchKeyword,
     setSearchKeyword,
     resetFilters,
@@ -27,7 +25,6 @@ function Home() {
     locations,
     storageTypes,
     sizeFilters,
-    rentalTerms,
     filteredUnits,
 
     loading,
@@ -65,6 +62,7 @@ function Home() {
   const selectedLocationObj = locations.find((l) => l.id === selectedLocation) || locations[0];
   const selectedTypeObj = storageTypes.find((t) => t.id === selectedType) || storageTypes[0];
   const selectedSizeObj = sizeFilters.find((s) => s.id === selectedSize) || sizeFilters[0];
+  const sizeTiers = useMemo(() => getStorageSizeTiers(), []);
 
   // Convert filteredUnits into CoverflowSlides
   const slides = useMemo(() => {
@@ -439,6 +437,49 @@ function Home() {
               </div>
             </div>
 
+            {/* Quick Upgrade Recommendation if filtering small sizes */}
+            {(selectedSize === "mini" || selectedSize === "small") && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[#fed7aa] bg-[#fffaf5] p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[24px] text-[#ea580c]">tips_and_updates</span>
+                  <div>
+                    <div className="text-[13px] font-bold text-[#9a3412]">
+                      Kho {selectedSize === "mini" ? "Mini (1 m²)" : "Small (3 m²)"} có vẻ nhỏ so với đồ đạc của bạn?
+                    </div>
+                    <div className="text-[12px] text-[#7c2d12]">
+                      Bạn có thể chuyển nhanh sang xem các kích thước kho lớn hơn:
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSize("medium")}
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#f97316] bg-white px-3 py-1.5 text-[12px] font-bold text-[#ea580c] shadow-sm hover:bg-[#fff7ed] transition"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
+                    Medium (6 m² • Căn hộ 1–2 PN)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSize("large")}
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#f97316] bg-white px-3 py-1.5 text-[12px] font-bold text-[#ea580c] shadow-sm hover:bg-[#fff7ed] transition"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
+                    Large (10 m² • Nhà phố)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSize("xlarge")}
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-[#f97316] bg-white px-3 py-1.5 text-[12px] font-bold text-[#ea580c] shadow-sm hover:bg-[#fff7ed] transition"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
+                    Extra Large (16 m²)
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 3D Coverflow Carousel Section */}
             <div className="mt-6">
               {slides.length === 0 ? (
@@ -472,6 +513,85 @@ function Home() {
                   />
                 </div>
               )}
+            </div>
+
+            {/* Storage Size Guide & Upgrade Comparison */}
+            <div id="size-guide" className="mt-12 rounded-[24px] border border-[#dfe7f5] bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-[18px] sm:text-[20px] font-bold text-[#0b1c30]">
+                    Hướng Dẫn Kích Thước Kho &amp; Đổi Size Lớn Hơn
+                  </h2>
+                  <p className="mt-1 text-[13px] text-[#58657a]">
+                    Chưa rõ lượng đồ của mình vừa với kho nào? Tham khảo sức chứa thực tế hoặc bấm đổi sang kích thước lớn hơn:
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[11px] font-bold text-[#475569]">
+                    5 Kích Thước Tiêu Chuẩn
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {sizeTiers.map((tier) => {
+                  const isFilterActive = selectedSize === tier.id;
+                  return (
+                    <div
+                      key={tier.id}
+                      className={`flex flex-col justify-between rounded-[16px] border p-4 transition-all ${
+                        isFilterActive
+                          ? "border-[#1d5fe5] bg-[#f0f6ff] shadow-md ring-2 ring-[#1d5fe5]/20"
+                          : "border-[#e2e8f0] bg-white hover:border-[#1d5fe5]/60 hover:shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">
+                            {tier.badge}
+                          </span>
+                          <span className="text-[12px] font-extrabold text-[#0b1c30]">{tier.areaM2} m²</span>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="text-[15px] font-bold text-[#0b1c30]">{tier.name}</div>
+                          <div className="text-[11px] text-[#64748b]">{tier.dimensions} • Cao {tier.height}</div>
+                          <div className="text-[11px] font-semibold text-[#1d5fe5] mt-0.5">{tier.volume}</div>
+                        </div>
+
+                        <div className="mt-3 rounded-[10px] bg-slate-50 p-2.5 text-[11px] text-[#475569] leading-relaxed">
+                          <div className="font-bold text-[#0b1c30] mb-1">{tier.capacityLabel}</div>
+                          {tier.fitsSummary}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-[#edf2f7]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSize(tier.id);
+                            window.scrollTo({ top: 350, behavior: "smooth" });
+                          }}
+                          className={`w-full rounded-[10px] py-2 text-[12px] font-bold transition flex items-center justify-center gap-1 ${
+                            isFilterActive
+                              ? "bg-[#1d5fe5] text-white"
+                              : "border border-[#dfe7f5] bg-white text-[#1d5fe5] hover:bg-[#eef4ff]"
+                          }`}
+                        >
+                          {isFilterActive ? (
+                            <>
+                              <span className="material-symbols-outlined text-[15px]">check</span>
+                              Đang lọc size này
+                            </>
+                          ) : (
+                            <>Xem kho {tier.name}</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
