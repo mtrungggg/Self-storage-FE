@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Save, Plus, X, Tag, Receipt, Warehouse, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { RefreshCw, Save, Plus, X, Tag, Warehouse, AlertTriangle, CheckCircle2 } from "lucide-react";
 import operationsService from "../api/operationsService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
@@ -8,12 +8,6 @@ function formatCurrency(val) {
   return `${Number(val).toLocaleString("en-US")} ₫`;
 }
 
-function formatFeeValue(fee) {
-  if (fee.calculationMethod === "percentage") {
-    return `${fee.ratePercent || 0}% / day`;
-  }
-  return formatCurrency(fee.amount);
-}
 
 function ManagerPricing() {
   const { facilityId, activeFacility } = useManagerFacility();
@@ -21,8 +15,6 @@ function ManagerPricing() {
   const [rates, setRates] = useState([]);
   const [editedRates, setEditedRates] = useState({});
   const [dirtyIds, setDirtyIds] = useState(new Set());
-
-  const [fees, setFees] = useState([]);
   const [promotions, setPromotions] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -46,12 +38,8 @@ function ManagerPricing() {
     setLoading(true);
     setError("");
     try {
-      const [ratesRes, feesRes, promosRes] = await Promise.all([
+      const [ratesRes, promosRes] = await Promise.all([
         operationsService.getPricingRates({
-          facilityId: facilityId || undefined,
-          pageSize: 50,
-        }),
-        operationsService.getPricingFees({
           facilityId: facilityId || undefined,
           pageSize: 50,
         }),
@@ -62,8 +50,6 @@ function ManagerPricing() {
       setRates(items);
       setEditedRates({});
       setDirtyIds(new Set());
-
-      setFees(feesRes?.items ?? []);
       setPromotions(promosRes?.items ?? []);
     } catch (err) {
       setError(err?.message || "Failed to load pricing configurations from server.");
@@ -232,8 +218,8 @@ function ManagerPricing() {
         </div>
       )}
 
-      {/* 3 Metric Cards matching Dashboard */}
-      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+      {/* 2 Metric Cards */}
+      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div className="reference-card p-5">
           <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
             <span>Unit Types &amp; Rates</span>
@@ -245,17 +231,6 @@ function ManagerPricing() {
           <div className="mt-1">
             <span className="reference-badge lime">Active In Network</span>
           </div>
-        </div>
-
-        <div className="reference-card p-5">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#767679]">
-            <span>Ancillary Fee Policies</span>
-            <Receipt size={18} className="text-[#14121b]" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-[#14121b]">
-            {loading ? "..." : `${fees.length} fee rules`}
-          </div>
-          <div className="mt-1 text-xs text-[#767679]">Overdue penalty, key loss, cleaning fees</div>
         </div>
 
         <div className="reference-card p-5">
@@ -369,54 +344,7 @@ function ManagerPricing() {
         </div>
       </section>
 
-      {/* Two Columns: Ancillary Fees & Promotions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Ancillary Fees */}
-        <section className="reference-card p-5">
-          <div className="reference-card-heading mb-3">
-            <div>
-              <h2>Ancillary Fees &amp; Penalty Surcharges</h2>
-              <p className="reference-muted">Automated fee items calculated into invoices when incurred</p>
-            </div>
-            <span className="reference-pill">{fees.length} fee rules</span>
-          </div>
-
-          <div className="space-y-2.5">
-            {loading ? (
-              <p className="py-6 text-center text-xs text-[#767679]">Loading ancillary fees...</p>
-            ) : fees.length === 0 ? (
-              <p className="py-6 text-center text-xs text-[#767679]">No ancillary fee rules configured.</p>
-            ) : (
-              fees.map((fee) => (
-                <div
-                  key={fee.id}
-                  className="flex items-center justify-between rounded-2xl border border-[#ededed] bg-white p-3.5 transition hover:shadow-2xs"
-                >
-                  <div>
-                    <div className="font-bold text-[#14121b]">{fee.code}</div>
-                    <div className="text-[10px] text-[#767679] mt-0.5">
-                      Type: {fee.feeType} {fee.facilityName ? `• ${fee.facilityName}` : "• Network Wide"}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-[#b54708]">
-                      {formatFeeValue(fee)}
-                    </div>
-                    <span
-                      className={`reference-status !text-[8px] !py-0.5 !px-2 mt-1 ${
-                        fee.isActive ? "active" : "inactive"
-                      }`}
-                    >
-                      {fee.isActive ? "Active" : "Suspended"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Promotions */}
+      {/* Promotions */}
         <section className="reference-card p-5">
           <div className="reference-card-heading mb-3">
             <div>
@@ -479,7 +407,6 @@ function ManagerPricing() {
             )}
           </div>
         </section>
-      </div>
 
       {/* Modal: Create Promotion */}
       {showPromoModal && (
