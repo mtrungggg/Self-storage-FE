@@ -7,8 +7,8 @@ import { DUTY_ROLES } from "../constants/managerConstants";
 const SHIFT_PRESETS = [
   {
     type: "morning",
-    name: "Ca Sáng",
-    code: "CS",
+    name: "Morning Shift",
+    code: "MS",
     time: "06:00 - 14:00",
     startHour: 6,
     endHour: 14,
@@ -16,12 +16,12 @@ const SHIFT_PRESETS = [
     icon: "wb_sunny",
     containerClass: "border-[#a6f4c5] bg-[#eefdf5] text-[#027a48]",
     codeClass: "bg-[#d1fadf] text-[#027a48]",
-    defaultLocation: "Khu Kho Vận A",
+    defaultLocation: "Warehouse Zone A",
   },
   {
     type: "afternoon",
-    name: "Ca Chiều",
-    code: "CC",
+    name: "Afternoon Shift",
+    code: "AS",
     time: "14:00 - 22:00",
     startHour: 14,
     endHour: 22,
@@ -29,12 +29,12 @@ const SHIFT_PRESETS = [
     icon: "light_mode",
     containerClass: "border-[#fedf89] bg-[#fef9ee] text-[#b54708]",
     codeClass: "bg-[#fef0c7] text-[#b54708]",
-    defaultLocation: "Khu Tiếp Nhận",
+    defaultLocation: "Receiving Dock",
   },
   {
     type: "night",
-    name: "Ca Đêm",
-    code: "CĐ",
+    name: "Night Shift",
+    code: "NS",
     time: "22:00 - 06:00",
     startHour: 22,
     endHour: 30, // cross to next day
@@ -42,11 +42,11 @@ const SHIFT_PRESETS = [
     icon: "bedtime",
     containerClass: "border-[#c7d7fe] bg-[#f5f6ff] text-[#3538cd]",
     codeClass: "bg-[#e0eaff] text-[#3538cd]",
-    defaultLocation: "Trực Đêm Khu B",
+    defaultLocation: "Night Watch Zone B",
   },
   {
     type: "duty24h",
-    name: "Trực 24h",
+    name: "24h Shift",
     code: "24H",
     time: "08:00 - 08:00",
     startHour: 8,
@@ -55,29 +55,7 @@ const SHIFT_PRESETS = [
     icon: "timelapse",
     containerClass: "border-[#99f6e4] bg-[#f0fdf9] text-[#0f766e]",
     codeClass: "bg-[#ccfbf1] text-[#0f766e]",
-    defaultLocation: "Toàn diện Cấp cứu & Kho",
-  },
-  {
-    type: "leave",
-    name: "Nghỉ phép P",
-    code: "P",
-    time: "Cả ngày",
-    hours: 0,
-    icon: "event_busy",
-    containerClass: "border-[#e9d7fe] bg-[#faf5ff] text-[#6941c6]",
-    codeClass: "bg-[#f4ebff] text-[#6941c6]",
-    defaultLocation: "Phép năm (Có phép)",
-  },
-  {
-    type: "rest",
-    name: "Nghỉ bù ca",
-    code: "REST",
-    time: "Cả ngày",
-    hours: 0,
-    icon: "snooze",
-    containerClass: "border-[#e4e7ec] bg-[#f8f9fc] text-[#475467]",
-    codeClass: "bg-[#f2f4f7] text-[#475467]",
-    defaultLocation: "Nghỉ bù hồi phục",
+    defaultLocation: "Facility Security",
   },
 ];
 
@@ -107,13 +85,7 @@ const computeWeekDays = (baseDate) => {
 
   const days = [];
   const dayNames = [
-    "Thứ Hai",
-    "Thứ Ba",
-    "Thứ Tư",
-    "Thứ Năm",
-    "Thứ Sáu",
-    "Thứ Bảy",
-    "Chủ Nhật",
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
   ];
 
   for (let i = 0; i < 7; i++) {
@@ -151,13 +123,13 @@ function ShiftCard({ shift, onDelete }) {
         onDelete?.();
       }}
       className="absolute -top-1.5 -right-1.5 z-10 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#d92d20] shadow-sm border border-[#fda29b] hover:bg-[#fee4e2] transition"
-      title="Xóa ca trực này"
+      title="Remove this shift"
     >
       <span className="material-symbols-outlined text-[13px]">close</span>
     </button>
   );
 
-  // 1. Ca Sáng (CS)
+  // 1. Morning Shift (MS)
   if (shift.type === "morning") {
     return (
       <div className="group relative rounded-[12px] border border-[#a6f4c5] bg-[#eefdf5] p-2 transition hover:shadow-xs">
@@ -168,7 +140,7 @@ function ShiftCard({ shift, onDelete }) {
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#d1fadf] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#027a48]">
-            {shift.code || "CS"}
+            {shift.code || "MS"}
           </span>
         </div>
         <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#054f31]">{shift.time}</div>
@@ -177,7 +149,7 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
-  // 2. Ca Chiều (CC)
+  // 2. Afternoon Shift (AS)
   if (shift.type === "afternoon") {
     return (
       <div className="group relative rounded-[12px] border border-[#fedf89] bg-[#fef9ee] p-2 transition hover:shadow-xs">
@@ -188,7 +160,7 @@ function ShiftCard({ shift, onDelete }) {
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#fef0c7] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#b54708]">
-            {shift.code || "CC"}
+            {shift.code || "AS"}
           </span>
         </div>
         <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#7a2e05]">{shift.time}</div>
@@ -197,7 +169,7 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
-  // 3. Ca Đêm (CĐ)
+  // 3. Night Shift (NS)
   if (shift.type === "night") {
     return (
       <div className="group relative rounded-[12px] border border-[#c7d7fe] bg-[#f5f6ff] p-2 transition hover:shadow-xs">
@@ -208,7 +180,7 @@ function ShiftCard({ shift, onDelete }) {
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#e0eaff] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#3538cd]">
-            {shift.code || "CĐ"}
+            {shift.code || "NS"}
           </span>
         </div>
         <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#282d97]">{shift.time}</div>
@@ -217,7 +189,7 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
-  // 4. Ca Đêm - Trùng ca / Cảnh báo
+  // 4. Night Shift - Conflict / Warning
   if (shift.type === "night_conflict" || shift.warning) {
     return (
       <div className="group relative rounded-[12px] border border-[#fecdca] bg-[#fff1f3] p-2 transition hover:shadow-xs">
@@ -229,7 +201,7 @@ function ShiftCard({ shift, onDelete }) {
           </div>
           <span className="inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1.5 py-0.5 text-[9px] font-extrabold text-[#d92d20]">
             <span className="material-symbols-outlined text-[11px]">warning</span>
-            <span>{shift.warning || "Trùng ca"}</span>
+            <span>{shift.warning || "Conflict"}</span>
           </span>
         </div>
         <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#912018]">{shift.time}</div>
@@ -238,7 +210,7 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
-  // 5. Nghỉ phép P
+  // 5. Leave
   if (shift.type === "leave") {
     return (
       <div className="group relative flex min-h-[70px] flex-col items-center justify-center rounded-[12px] border border-[#e9d7fe] bg-[#faf5ff] p-2 text-center transition hover:shadow-xs">
@@ -248,13 +220,13 @@ function ShiftCard({ shift, onDelete }) {
           <span>{shift.name}</span>
         </div>
         <div className="mt-0.5 text-[10px] font-medium text-[#7f56d9]">
-          {shift.location || "Phép năm (Có phép)"}
+          {shift.location || "Annual Leave"}
         </div>
       </div>
     );
   }
 
-  // 6. Nghỉ bù ca / REST
+  // 6. Rest Day / REST
   if (shift.type === "rest") {
     return (
       <div className="group relative flex min-h-[70px] flex-col items-center justify-center rounded-[12px] border border-[#e4e7ec] bg-[#f8f9fc] p-2 text-center transition hover:shadow-xs">
@@ -269,7 +241,7 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
-  // 7. Trực 24h
+  // 7. 24h Shift
   if (shift.type === "duty24h") {
     return (
       <div className="group relative rounded-[12px] border border-[#99f6e4] bg-[#f0fdf9] p-2 transition hover:shadow-xs">
@@ -357,7 +329,7 @@ function ManagerShifts() {
           initialStaff = staffRes.value.map((s) => ({
             id: s.employeeId || s.userId,
             name: s.fullName,
-            title: s.assignmentRole === "facility_manager" ? "Quản lý điểm kho" : "Nhân viên vận hành",
+            title: s.assignmentRole === "facility_manager" ? "Facility Manager" : "Operations Staff",
             code: s.employeeCode,
             avatar: getStaffAvatar(s.employeeId || s.userId),
             standardHours: 40,
@@ -374,9 +346,9 @@ function ManagerShifts() {
             if (!initialStaff.some((s) => s.id === item.employeeId)) {
               initialStaff.push({
                 id: item.employeeId,
-                name: item.employeeName || `Nhân sự ${item.employeeCode}`,
-                title: item.dutyRole === "shift_lead" ? "Trưởng ca" : "Nhân viên trực",
-                code: item.employeeCode || `NV-${item.employeeId}`,
+                name: item.employeeName || `Staff ${item.employeeCode}`,
+                title: item.dutyRole === "shift_lead" ? "Shift Lead" : "Duty Staff",
+                code: item.employeeCode || `EMP-${item.employeeId}`,
                 avatar: getStaffAvatar(item.employeeId),
                 standardHours: 40,
                 shifts: {},
@@ -393,14 +365,14 @@ function ManagerShifts() {
             const nameLower = (item.shiftName || "").toLowerCase();
 
             let type = "morning";
-            let code = "CS";
+            let code = "MS";
             let hours = 8;
             if (nameLower.includes("chiều") || nameLower.includes("afternoon")) {
               type = "afternoon";
-              code = "CC";
+              code = "AS";
             } else if (nameLower.includes("đêm") || nameLower.includes("night")) {
               type = "night";
-              code = "CĐ";
+              code = "NS";
             } else if (nameLower.includes("24h") || nameLower.includes("24")) {
               type = "duty24h";
               code = "24H";
@@ -434,7 +406,7 @@ function ManagerShifts() {
               name: item.shiftName,
               code,
               time: `${startTime} - ${endTime}`,
-              location: item.dutyRole ? `Vai trò: ${item.dutyRole}` : "Khu Vận Hành",
+              location: item.dutyRole ? `Role: ${item.dutyRole}` : "Operations Area",
               hours,
             });
           });
@@ -444,7 +416,7 @@ function ManagerShifts() {
       })
       .catch((err) => {
         if (!active) return;
-        setError(err?.message || "Không thể tải dữ liệu ca trực từ máy chủ.");
+        setError(err?.message || "Failed to load shift roster from server.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -472,7 +444,7 @@ function ManagerShifts() {
 
       if (actualHours > 40) {
         hoursStatus = "overtime";
-        hoursLabel = `${actualHours}h / 40h (Vượt ${actualHours - 40}h)`;
+        hoursLabel = `${actualHours}h / 40h (+${actualHours - 40}h OT)`;
       } else if (actualHours < 40) {
         hoursStatus = "under";
         hoursLabel = `${actualHours}h / 40h`;
@@ -506,9 +478,9 @@ function ManagerShifts() {
 
       const isShortage = night === 0 && (morning > 0 || afternoon > 0);
       summary[day.key] = {
-        morning: `${morning} NV`,
-        afternoon: `${afternoon} NV`,
-        night: night > 0 ? `${night} NV` : "Thiếu ca Đêm",
+        morning: `${morning} Staff`,
+        afternoon: `${afternoon} Staff`,
+        night: night > 0 ? `${night} Staff` : "Night Shortage",
         isShortage,
       };
     });
@@ -607,7 +579,7 @@ function ManagerShifts() {
       name: preset.name,
       code: preset.code,
       time: preset.time,
-      location: preset.defaultLocation || "Khu Vận Hành",
+      location: preset.defaultLocation || "Operations Area",
       hours: preset.hours || 0,
     };
 
@@ -629,7 +601,7 @@ function ManagerShifts() {
       })
     );
 
-    setNotice(`Đã thêm ${preset.name} (${preset.time}) cho ${staff.name} ngày ${dayKey}!`);
+    setNotice(`Assigned ${preset.name} (${preset.time}) to ${staff.name} on ${dayKey}!`);
     setTimeout(() => setNotice(""), 3000);
 
     // Call backend API in background
@@ -686,7 +658,7 @@ function ManagerShifts() {
       })
     );
 
-    setNotice(`Đã xóa ca trực của ${staff.name}.`);
+    setNotice(`Removed shift for ${staff.name}.`);
     setTimeout(() => setNotice(""), 2500);
 
     if (facilityId && shiftItem?.shiftId) {
@@ -717,10 +689,10 @@ function ManagerShifts() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-black tracking-tight text-[#0b1c30]">
-            Bảng Phân Công Ca Trực
+            Staff Shift Roster
           </h1>
           <p className="mt-0.5 text-xs text-[#58657a]">
-            Kéo thả phân ca trực nhanh, tự động đồng bộ định biên và hỗ trợ phân nhiều ca trong một ngày.
+            Quick drag-and-drop shift scheduling, dynamic quota tracking, and multi-shift support per day.
           </p>
         </div>
 
@@ -731,7 +703,7 @@ function ManagerShifts() {
               type="button"
               onClick={handlePrevWeek}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[#58657a] hover:bg-[#f8faff] hover:text-[#0b1c30] transition"
-              title="Tuần trước"
+              title="Previous week"
             >
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
@@ -740,7 +712,7 @@ function ManagerShifts() {
               type="button"
               onClick={handleCurrentWeek}
               className="px-3 text-xs font-bold text-[#0b1c30] hover:text-[#1d5fe5] transition"
-              title="Về tuần hiện tại"
+              title="Jump to current week"
             >
               {weekLabel}
             </button>
@@ -749,7 +721,7 @@ function ManagerShifts() {
               type="button"
               onClick={handleNextWeek}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[#58657a] hover:bg-[#f8faff] hover:text-[#0b1c30] transition"
-              title="Tuần tiếp theo"
+              title="Next week"
             >
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
@@ -762,7 +734,7 @@ function ManagerShifts() {
             </span>
             <input
               type="text"
-              placeholder="Tìm nhân sự, mã NV..."
+              placeholder="Search staff name, code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-9 w-48 rounded-xl border border-[#dfe7f5] bg-white pl-8 pr-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-60 focus:border-[#1d5fe5]"
@@ -783,7 +755,7 @@ function ManagerShifts() {
                 onDragStart={(e) => handleDragStart(e, preset)}
                 onDragEnd={handleDragEnd}
                 onClick={() => handlePresetClick(preset)}
-                title="Kéo thả vào ô ngày hoặc nhấp chọn để gán liên tục"
+                title="Drag and drop onto a date cell or click to select brush"
                 className={`group relative flex cursor-grab items-center gap-1.5 rounded-xl border px-3 py-1.5 transition select-none active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 ${
                   preset.containerClass
                 } ${
@@ -818,7 +790,7 @@ function ManagerShifts() {
             className="inline-flex items-center gap-1 rounded-xl border border-[#fda29b] bg-[#fffbfa] px-2.5 py-1 text-[11px] font-bold text-[#b42318] hover:bg-[#fee4e2] transition shadow-2xs"
           >
             <span className="material-symbols-outlined text-[14px]">close</span>
-            Hủy chọn ({selectedBrush.name})
+            Cancel ({selectedBrush.name})
           </button>
         )}
       </div>
@@ -848,10 +820,10 @@ function ManagerShifts() {
                 <th className="w-[280px] min-w-[280px] p-3.5 align-middle border-r border-[#eaecf0] bg-white">
                   <div className="flex items-center justify-between">
                     <span className="font-black uppercase tracking-wider text-[#0b1c30]">
-                      NHÂN SỰ TRỰC ({filteredStaff.length})
+                      ON-DUTY STAFF ({filteredStaff.length})
                     </span>
                     <span className="rounded-full bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-bold text-[#475467]">
-                      Giờ chuẩn: 40h
+                      Standard: 40h
                     </span>
                   </div>
                 </th>
@@ -866,7 +838,7 @@ function ManagerShifts() {
                   >
                     {day.isToday && (
                       <div className="inline-block rounded-full bg-[#1d5fe5] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white mb-1 shadow-2xs">
-                        HÔM NAY
+                        TODAY
                       </div>
                     )}
                     <div className={`text-[12px] font-medium ${day.isToday ? "text-[#1d5fe5] font-extrabold" : "text-[#475467]"}`}>
@@ -886,13 +858,13 @@ function ManagerShifts() {
                 <tr>
                   <td colSpan={weekDays.length + 1} className="py-12 text-center text-xs font-bold text-[#8996a9]">
                     <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#1d5fe5] border-t-transparent mb-2" />
-                    <div>Đang đồng bộ dữ liệu nhân sự & ca trực từ máy chủ...</div>
+                    <div>Syncing staff and shift roster from server...</div>
                   </td>
                 </tr>
               ) : filteredStaff.length === 0 ? (
                 <tr>
                   <td colSpan={weekDays.length + 1} className="py-10 text-center text-xs font-semibold text-[#8996a9]">
-                    Không tìm thấy nhân viên nào phụ trách cơ sở kho này.
+                    No staff members found for this facility.
                   </td>
                 </tr>
               ) : (
@@ -983,8 +955,8 @@ function ManagerShifts() {
                               }`}
                               title={
                                 selectedBrush
-                                  ? `Nhấp để gán ${selectedBrush.name}`
-                                  : "Kéo thả ca trực vào đây"
+                                  ? `Click to assign ${selectedBrush.name}`
+                                  : "Drag and drop shift here"
                               }
                             >
                               <span className="material-symbols-outlined text-[26px] font-bold text-[#2062eb] group-hover:scale-125 transition">
@@ -1000,15 +972,15 @@ function ManagerShifts() {
               )}
             </tbody>
 
-            {/* Bottom Summary Row: TỔNG HỢP CA TRỰC */}
+            {/* Bottom Summary Row: SHIFT ROSTER SUMMARY */}
             <tfoot>
               <tr className="border-t-2 border-[#eaecf0] bg-[#f8f9fc] text-xs">
                 <td className="w-[280px] min-w-[280px] p-3.5 align-middle border-r border-[#eaecf0]">
                   <div className="font-black uppercase tracking-wider text-[#0b1c30]">
-                    TỔNG HỢP CA TRỰC
+                    SHIFT ROSTER SUMMARY
                   </div>
                   <div className="mt-0.5 text-[10px] font-medium text-[#475467]">
-                    Đáp ứng định biên / tải nhân sự
+                    Staffing coverage & workload
                   </div>
                 </td>
 
@@ -1030,11 +1002,11 @@ function ManagerShifts() {
                       <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
                           <span className="material-symbols-outlined text-[13px]">wb_sunny</span>
-                          <span>Sáng: {summary.morning}</span>
+                          <span>Morning: {summary.morning}</span>
                         </div>
                         <div className="flex items-center gap-1 text-[11px] font-bold text-[#b54708]">
                           <span className="material-symbols-outlined text-[13px]">light_mode</span>
-                          <span>Chiều: {summary.afternoon}</span>
+                          <span>Afternoon: {summary.afternoon}</span>
                         </div>
                         <div
                           className={`flex items-center gap-1 text-[11px] font-black ${
@@ -1042,7 +1014,7 @@ function ManagerShifts() {
                           }`}
                         >
                           <span className="material-symbols-outlined text-[13px]">bedtime</span>
-                          <span>Đêm: {summary.night}</span>
+                          <span>Night: {summary.night}</span>
                         </div>
                       </div>
                     </td>
