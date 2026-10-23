@@ -16,6 +16,13 @@ function Billing() {
     filteredInvoices,
     loading,
     error,
+    cancelModalOpen,
+    cancellingInvoice,
+    cancelling,
+    cancelError,
+    handleOpenCancelModal,
+    handleCloseCancelModal,
+    handleConfirmCancelReservation,
   } = useBilling();
 
   return (
@@ -196,25 +203,40 @@ function Billing() {
                       <td className="py-3.5 pr-3 text-right">
                         <div className="inline-flex items-center justify-end gap-2">
                           {inv.status === "upcoming" && (
-                            <button
-                              onClick={() =>
-                                navigate("/checkout", {
-                                  state: {
-                                    reservationId: inv.reservationId,
-                                    reservationCode: inv.reservationCode,
-                                    renewalId: inv.renewalId,
-                                    agreementNo: inv.agreementNo,
-                                    amount: inv.rawAmount,
-                                  },
-                                })
-                              }
-                              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 text-[12px] font-semibold text-white shadow-xs transition hover:bg-[#154ec1] active:scale-[0.98]"
-                            >
-                              <span className="material-symbols-outlined text-[15px]">
-                                credit_card
-                              </span>
-                              Pay Now
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  navigate("/checkout", {
+                                    state: {
+                                      reservationId: inv.reservationId,
+                                      reservationCode: inv.reservationCode,
+                                      renewalId: inv.renewalId,
+                                      agreementNo: inv.agreementNo,
+                                      amount: inv.rawAmount,
+                                    },
+                                  })
+                                }
+                                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 text-[12px] font-semibold text-white shadow-xs transition hover:bg-[#154ec1] active:scale-[0.98]"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">
+                                  credit_card
+                                </span>
+                                Pay Now
+                              </button>
+                              {inv.reservationId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCancelModal(inv)}
+                                  className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#fecdca] bg-white px-2.5 text-[12px] font-semibold text-[#b42318] shadow-xs transition hover:bg-[#fff5f5] active:scale-[0.98]"
+                                  title="Hủy đơn đặt chỗ này"
+                                >
+                                  <span className="material-symbols-outlined text-[14px]">
+                                    close
+                                  </span>
+                                  Hủy đơn
+                                </button>
+                              )}
+                            </>
                           )}
                           {inv.reservationId && (
                             <button
@@ -261,6 +283,57 @@ function Billing() {
       </main>
 
       <Footer />
+
+      {/* CONFIRM CANCEL RESERVATION MODAL */}
+      {cancelModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && handleCloseCancelModal()}
+        >
+          <div className="w-full max-w-[420px] rounded-[22px] border border-[#dfe7f5] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fee4e2] text-[#d92d20]">
+                <span className="material-symbols-outlined text-[22px]">warning</span>
+              </div>
+              <div>
+                <h3 className="text-[16px] font-bold text-[#0b1c30]">Xác nhận hủy đơn đặt chỗ</h3>
+                <p className="text-[12px] text-[#64748b]">
+                  {cancellingInvoice?.reservationCode || cancellingInvoice?.desc}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-[13px] leading-relaxed text-[#58657a]">
+              Bạn có chắc chắn muốn hủy đơn đặt chỗ này không? Ô kho sẽ được giải phóng ngay lập tức trên hệ thống cho khách hàng khác thuê.
+            </p>
+
+            {cancelError && (
+              <div className="mt-3 rounded-[10px] bg-[#fff1f1] border border-[#fecdca] p-2.5 text-[12px] font-semibold text-[#b3261e]">
+                {cancelError}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={handleCloseCancelModal}
+                disabled={cancelling}
+                className="rounded-[10px] border border-[#dfe7f5] bg-white px-4 py-2 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff] transition disabled:opacity-50"
+              >
+                Không, giữ đơn
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelReservation}
+                disabled={cancelling}
+                className="rounded-[10px] bg-[#d92d20] px-4 py-2 text-[13px] font-bold text-white shadow transition hover:bg-[#b42318] disabled:opacity-50"
+              >
+                {cancelling ? "Đang hủy..." : "Xác nhận hủy đơn"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
