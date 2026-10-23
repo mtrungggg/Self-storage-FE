@@ -60,7 +60,6 @@ export default function QrCameraScanner({ onScan, onClose }) {
       }
     }
 
-    // Delay slightly to ensure element is rendered in DOM
     const timer = setTimeout(init, 100);
 
     return () => {
@@ -87,63 +86,46 @@ export default function QrCameraScanner({ onScan, onClose }) {
   }, [onScan]);
 
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-[#dfe7f5] bg-[#0b1c30] p-4 text-white shadow-xl">
-      <div className="flex items-center justify-between pb-3">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[20px] text-[#2dd4a0]">photo_camera</span>
-          <span className="text-[13px] font-bold">Scan Check-in QR Code</span>
-        </div>
+    <div className="relative overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-4 text-white shadow-xl">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          Camera Scanner
+        </span>
         <button
           type="button"
           onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+          className="text-xs font-semibold px-2 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition"
         >
-          <span className="material-symbols-outlined text-[18px]">close</span>
+          Close
         </button>
       </div>
 
       {starting && (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs text-[#8996a9]">
-          <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5]">progress_activity</span>
-          <span>Starting camera...</span>
+        <div className="flex h-56 flex-col items-center justify-center gap-2 text-xs text-slate-400">
+          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Activating camera...</span>
         </div>
       )}
 
       {error ? (
-        <div className="rounded-[10px] bg-red-950/80 p-4 text-center text-xs text-red-200">
-          <span className="material-symbols-outlined text-3xl text-red-400">videocam_off</span>
-          <p className="mt-2 font-medium">{error}</p>
+        <div className="rounded-lg bg-red-950/80 p-4 text-center text-xs text-red-200">
+          <p className="font-medium">{error}</p>
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 rounded-[8px] bg-white/20 px-4 py-1.5 font-bold text-white hover:bg-white/30"
+            className="mt-3 rounded bg-white/20 px-3 py-1 text-xs font-bold text-white hover:bg-white/30"
           >
-            Close camera
+            Close Scanner
           </button>
         </div>
       ) : (
-        <div className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[10px] bg-black">
-          {/* Container for html5-qrcode video */}
+        <div className="relative mx-auto w-full max-w-[320px] overflow-hidden rounded-lg bg-black">
           <div id={elementId.current} className="w-full" />
-
-          {/* Aiming border overlay */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="relative h-48 w-48 rounded-xl border-2 border-dashed border-[#2dd4a0]/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]">
-              {/* Corner accents */}
-              <div className="absolute -left-1 -top-1 h-4 w-4 border-l-4 border-t-4 border-[#2dd4a0]" />
-              <div className="absolute -right-1 -top-1 h-4 w-4 border-r-4 border-t-4 border-[#2dd4a0]" />
-              <div className="absolute -bottom-1 -left-1 h-4 w-4 border-b-4 border-l-4 border-[#2dd4a0]" />
-              <div className="absolute -bottom-1 -right-1 h-4 w-4 border-b-4 border-r-4 border-[#2dd4a0]" />
-
-              {/* Scanning laser line animation */}
-              <div className="absolute inset-x-0 h-0.5 animate-pulse bg-gradient-to-r from-transparent via-[#2dd4a0] to-transparent top-1/2" />
-            </div>
-          </div>
         </div>
       )}
 
-      <p className="mt-3 text-center text-[11px] text-[#8996a9]">
-        Point the camera at the customer's QR code to scan and look up their check-in.
+      <p className="mt-3 text-center text-[11px] text-slate-400">
+        Point camera at the customer's QR code on their phone screen.
       </p>
     </div>
   );

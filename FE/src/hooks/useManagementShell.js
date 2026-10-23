@@ -68,8 +68,6 @@ export function useManagementShell() {
     items: [
       { id: "manager-units", label: "Units & Layout", icon: "grid_view", to: "/manager-units" },
       { id: "manager-transfer-requests", label: "Unit Transfer Requests", icon: "swap_horiz", to: "/manager-transfer-requests" },
-      { id: "manager-shifts", label: "Staff Shifts", icon: "badge", to: "/manager-shifts" },
-      { id: "manager-tickets", label: "Facility Issues & Tickets", icon: "support_agent", to: "/manager-tickets" },
       { id: "manager-move-outs", label: "Move-Out Schedule & Inspection", icon: "output", to: "/manager-move-outs" },
     ],
   };

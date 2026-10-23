@@ -1,8 +1,18 @@
 import apiClient from "./apiClient";
 
 const staffFacilityService = {
-  async getUnits(facilityId) {
-    const response = await apiClient.get(`/staff/facilities/${encodeURIComponent(facilityId)}/units`);
+  async getMyFacility() {
+    const response = await apiClient.get("/staff/my-facility");
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Unable to load assigned facility.");
+    }
+    return response.data;
+  },
+
+  async getUnits(facilityId, filters = {}) {
+    const params = { ...filters };
+    if (facilityId != null && facilityId !== "") params.facilityId = facilityId;
+    const response = await apiClient.get("/staff/units", { params });
     if (response?.success !== true) {
       throw new Error(response?.message || "Unable to load facility units.");
     }
@@ -13,20 +23,11 @@ const staffFacilityService = {
     return response.data;
   },
 
-  async updateUnitStatus(unitId, status) {
-    const response = await apiClient.put(`/staff/units/${encodeURIComponent(unitId)}/status`, { status });
+  async getUnitDetail(unitId) {
+    const response = await apiClient.get(`/staff/units/${encodeURIComponent(unitId)}`);
     if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to update the unit status.");
+      throw new Error(response?.message || "Unable to load unit detail.");
     }
-    return response.data;
-  },
-
-  async createMaintenanceOrder(unitId, payload) {
-    const response = await apiClient.post(`/staff/units/${encodeURIComponent(unitId)}/maintenance-orders`, payload);
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to create the maintenance order.");
-    }
-    if (!response.data) throw new Error("The server did not return the maintenance order.");
     return response.data;
   },
 };
