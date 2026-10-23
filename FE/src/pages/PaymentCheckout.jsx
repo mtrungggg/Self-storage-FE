@@ -109,7 +109,18 @@ function PaymentCheckout() {
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && <button onClick={() => navigate(`/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`)} className="rounded-xl bg-[#1d5fe5] px-5 py-3 text-sm font-bold text-white">View reservation details</button>}
+              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && (
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`
+                    )
+                  }
+                  className="rounded-xl bg-[#1d5fe5] px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#154ec1] transition"
+                >
+                  View reservation details
+                </button>
+              )}
               <button
                 onClick={() => navigate("/access-control")}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-[12px] bg-[#12b76a] px-6 py-3 text-[14px] font-bold text-white shadow-md transition hover:bg-[#0e9f5d]"
@@ -147,25 +158,31 @@ function PaymentCheckout() {
               </button>
             </div>
           </div>
-        ) : status === "failed" ? (
+        ) : status === "cancelled" || status === "failed" ? (
           /* STATUS: CANCELLED */
           <div className="mx-auto mt-8 max-w-[520px] rounded-[22px] border border-[#fecdca] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#fffbfa] text-[#d92d20]">
               <span className="material-symbols-outlined text-[48px]">cancel</span>
             </div>
             <h1 className="mt-5 text-[22px] font-extrabold text-[#b42318]">
-              Reservation Cancelled
+              Đơn đặt chỗ đã được hủy / Reservation Cancelled
             </h1>
             <p className="mt-2 text-[14px] leading-relaxed text-[#475467]">
-              You have cancelled this checkout session. The storage unit has been released back to available.
+              Bạn đã hủy phiên thanh toán này. Ô kho lưu trữ đã được giải phóng để sẵn sàng cho các khách hàng khác thuê.
             </p>
-            <div className="mt-6 flex justify-center gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button
                 onClick={() => navigate("/home")}
                 className="inline-flex items-center gap-2 rounded-[12px] bg-[#1d5fe5] px-6 py-3 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
               >
                 <span className="material-symbols-outlined text-[20px]">search</span>
-                Find Another Unit
+                Tìm ô kho khác (Find Another Unit)
+              </button>
+              <button
+                onClick={() => navigate("/billing")}
+                className="inline-flex items-center gap-2 rounded-[12px] border border-[#dfe7f5] bg-white px-5 py-3 text-[14px] font-semibold text-[#3a475a] transition hover:bg-[#f8faff]"
+              >
+                Lịch sử hóa đơn
               </button>
             </div>
           </div>
@@ -265,14 +282,18 @@ function PaymentCheckout() {
               )}
 
               {/* Cancel Button */}
-              <div className="mt-6 border-t border-[#f2f4fa] pt-4">
+              <div className="mt-6 border-t border-[#f2f4fa] pt-4 flex flex-col items-center">
                 <button
                   type="button"
                   onClick={handleOpenCancelModal}
-                  className="rounded-[10px] border border-[#fecdca] bg-white px-4 py-2 text-[12px] font-bold text-[#b42318] hover:bg-[#fffbfa] transition"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#fecdca] bg-white px-4 py-2 text-[12px] font-bold text-[#b42318] hover:bg-[#fffbfa] transition"
                 >
-                  Cancel this reservation
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                  Hủy đơn đặt chỗ này (Cancel reservation)
                 </button>
+                <p className="mt-1.5 text-[11px] text-[#8996a9]">
+                  Nếu bạn không muốn tiếp tục, bạn có thể hủy đơn để nhường ô kho cho người khác.
+                </p>
               </div>
             </div>
           </div>
@@ -287,19 +308,19 @@ function PaymentCheckout() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && handleCloseCancelModal()}
         >
-          <div className="w-full max-w-[400px] rounded-[22px] border border-[#dfe7f5] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+          <div className="w-full max-w-[420px] rounded-[22px] border border-[#dfe7f5] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fee4e2] text-[#d92d20]">
                 <span className="material-symbols-outlined text-[22px]">warning</span>
               </div>
               <div>
-                <h3 className="text-[16px] font-bold text-[#0b1c30]">Cancel Reservation</h3>
-                <p className="text-[12px] text-[#64748b]">This action will release the unit</p>
+                <h3 className="text-[16px] font-bold text-[#0b1c30]">Xác nhận hủy đơn đặt chỗ</h3>
+                <p className="text-[12px] text-[#64748b]">Cancel Storage Reservation</p>
               </div>
             </div>
 
             <p className="mt-4 text-[13px] leading-relaxed text-[#58657a]">
-              Are you sure you want to cancel this reservation? The storage unit will be immediately released back into the system.
+              Bạn có chắc chắn muốn hủy đơn đặt chỗ này không? Ô kho sẽ được giải phóng ngay lập tức trên hệ thống cho khách hàng khác thuê.
             </p>
 
             {cancelError && (
@@ -315,7 +336,7 @@ function PaymentCheckout() {
                 disabled={cancelling}
                 className="rounded-[10px] border border-[#dfe7f5] bg-white px-4 py-2 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff] transition disabled:opacity-50"
               >
-                No, Keep Reservation
+                Không, tiếp tục thanh toán
               </button>
               <button
                 type="button"
@@ -323,7 +344,7 @@ function PaymentCheckout() {
                 disabled={cancelling}
                 className="rounded-[10px] bg-[#d92d20] px-4 py-2 text-[13px] font-bold text-white shadow transition hover:bg-[#b42318] disabled:opacity-50"
               >
-                {cancelling ? "Cancelling..." : "Confirm Cancellation"}
+                {cancelling ? "Đang hủy..." : "Xác nhận hủy đơn"}
               </button>
             </div>
           </div>
