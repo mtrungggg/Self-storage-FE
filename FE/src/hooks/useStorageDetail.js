@@ -162,6 +162,22 @@ export function useStorageDetail() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
 
+  // Cancel booking modal state
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+
+  const handleOpenCancelModal = () => {
+    setCancelModalOpen(true);
+  };
+
+  const handleCloseCancelModal = () => {
+    setCancelModalOpen(false);
+  };
+
+  const handleConfirmCancel = () => {
+    setCancelModalOpen(false);
+    navigate("/home");
+  };
+
   const canSubmit = agreeTerms && agreeLock && !pricingLoading && !bookingLoading && !isCustomDateInvalid;
 
   const submitBooking = async () => {
@@ -228,5 +244,9 @@ export function useStorageDetail() {
     bookingLoading,
     bookingError,
     submitBooking,
+    cancelModalOpen,
+    handleOpenCancelModal,
+    handleCloseCancelModal,
+    handleConfirmCancel,
   };
 }
