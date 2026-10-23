@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useStorageDetail } from "../hooks/useStorageDetail";
 import { useAuth } from "../hooks/useAuth";
 import Header from "../components/Header";
@@ -16,6 +16,12 @@ const DURATION_OPTIONS = [
 function StorageDetail() {
   const {
     unit,
+    sizeTiers,
+    currentSizeId,
+    largerSizes,
+    handleSelectSize,
+    sizeUpgradeMessage,
+    setSizeUpgradeMessage,
     moveInOptions,
     moveInOption,
     setMoveInOption,
@@ -54,7 +60,6 @@ function StorageDetail() {
   const location = useLocation();
   const { user } = useAuth();
   const totalToday = pricing?.totalAmount ?? 0;
-  const monthlyRent = pricing?.baseMonthlyRate ?? unit.rentPrice ?? 0;
 
   const handleConfirmClick = () => {
     if (!user) {
@@ -97,15 +102,74 @@ function StorageDetail() {
           <div className="space-y-6">
             {/* Unit Info Box */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <h1 className="text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
-                Unit {unit.unitCode}
-              </h1>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-[22px] sm:text-[24px] font-bold leading-snug tracking-[-0.02em] text-[#0b1c30]">
+                    Unit {unit.unitCode}
+                  </h1>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-3 py-1 text-[12px] font-bold text-[#1d5fe5]">
+                    <span className="material-symbols-outlined text-[15px]">straighten</span>
+                    {unit.sizeLabel || unit.dimension} • {unit.areaM2 || 3} m²
+                  </span>
+                </div>
+                <div className="text-[12px] font-semibold text-[#64748b]">
+                  {unit.typeName || "Self Storage Unit"}
+                </div>
+              </div>
+
+              {/* Size change / upgrade success alert */}
+              {sizeUpgradeMessage && (
+                <div className="mt-3.5 flex items-center justify-between rounded-[12px] border border-[#b7eb8f] bg-[#f6ffed] p-3 text-[13px] font-semibold text-[#237804]">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-[#52c41a]">check_circle</span>
+                    <span>{sizeUpgradeMessage}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSizeUpgradeMessage("")}
+                    className="text-[#8c8c8c] hover:text-[#262626] transition"
+                    title="Đóng thông báo"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Quick Upgrade Callout if current unit has larger options */}
+              {largerSizes.length > 0 && (
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#fed7aa] bg-[#fffaf5] p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="material-symbols-outlined mt-0.5 text-[20px] text-[#ea580c]">upgrade</span>
+                    <div>
+                      <div className="text-[13px] font-bold text-[#9a3412]">
+                        Kho này có vẻ hơi nhỏ cho đồ đạc của bạn?
+                      </div>
+                      <div className="text-[12px] text-[#7c2d12]">
+                        Bạn có thể nâng cấp ngay sang kho lớn hơn để có thêm không gian rộng rãi:
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {largerSizes.slice(0, 2).map((tier) => (
+                      <button
+                        key={tier.id}
+                        type="button"
+                        onClick={() => handleSelectSize(tier.id)}
+                        className="inline-flex items-center gap-1 rounded-[8px] border border-[#f97316] bg-white px-2.5 py-1 text-[12px] font-bold text-[#ea580c] shadow-sm hover:bg-[#fff7ed] transition"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
+                        Đổi sang {tier.name} ({tier.dimensions} - {tier.areaM2}m²)
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
                   <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Dimensions</div>
-                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">{unit.sizeLabel || "5' x 10'"} x {unit.height || "2.7m"}</div>
-                  <div className="mt-0.5 text-[11px] text-[#8996a9]">{unit.volume || "12.7 m³"}</div>
+                  <div className="mt-1 text-[13px] font-bold text-[#0b1c30]">{unit.sizeLabel || unit.dimension || "5' x 10'"} x {unit.height || "2.8m"}</div>
+                  <div className="mt-0.5 text-[11px] text-[#8996a9]">{unit.volume || "12.7 m³"} ({unit.areaM2 || 3} m²)</div>
                 </div>
                 <div className="rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3">
                   <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8996a9]">Climate</div>
@@ -137,7 +201,7 @@ function StorageDetail() {
                         className="h-44 w-full object-cover transition duration-300 hover:scale-105"
                       />
                       <div className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
-                        Interior view of unit {unit.unitCode}
+                        Interior view: {unit.unitCode} ({unit.sizeLabel || unit.dimension})
                       </div>
                     </div>
 
@@ -156,11 +220,149 @@ function StorageDetail() {
               </div>
             </div>
 
-            {/* Step 1: Move-in Date */}
+            {/* Step 1: Chọn Kích Thước Kho & Đổi Size Lớn Hơn */}
+            <div id="storage-size-selection" className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+                <div>
+                  <div className="text-[14px] font-bold text-[#0b1c30]">
+                    1. Kích thước kho &amp; Tùy chọn đổi size (Storage Unit Size)
+                  </div>
+                  <div className="text-[12px] text-[#58657a]">
+                    Kho hiện tại quá nhỏ? Bạn có thể chọn kích cỡ lớn hơn ngay tại đây, giá thuê sẽ tự động cập nhật:
+                  </div>
+                </div>
+                <span className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[11px] font-semibold text-[#475569]">
+                  {sizeTiers.length} kích thước có sẵn
+                </span>
+              </div>
+
+              {/* Size cards grid */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {sizeTiers.map((tier) => {
+                  const isCurrent = tier.id === currentSizeId;
+                  const isLarger = tier.areaM2 > (unit.areaM2 || 3);
+                  const percentDifference = Math.round(
+                    ((tier.areaM2 - (unit.areaM2 || 3)) / (unit.areaM2 || 3)) * 100
+                  );
+
+                  return (
+                    <div
+                      key={tier.id}
+                      onClick={() => handleSelectSize(tier.id)}
+                      className={`group relative flex flex-col justify-between rounded-[14px] border p-4 cursor-pointer transition-all ${
+                        isCurrent
+                          ? "border-[#1d5fe5] bg-[#f0f6ff] shadow-md ring-2 ring-[#1d5fe5]/20"
+                          : "border-[#e2e8f0] bg-white hover:border-[#1d5fe5]/60 hover:bg-[#fafcff] hover:shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        {/* Header of card: Icon + Name + Badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`flex h-8 w-8 items-center justify-center rounded-[8px] ${
+                                isCurrent
+                                  ? "bg-[#1d5fe5] text-white"
+                                  : "bg-[#eef4ff] text-[#1d5fe5]"
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                {tier.icon || "warehouse"}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="text-[14px] font-bold text-[#0b1c30]">{tier.name}</div>
+                              <div className="text-[11px] font-semibold text-[#64748b]">
+                                {tier.dimensions} • {tier.height} cao
+                              </div>
+                            </div>
+                          </div>
+
+                          {isCurrent ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#1d5fe5] px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide text-white">
+                              ĐANG CHỌN
+                            </span>
+                          ) : isLarger ? (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-[#ffedd5] px-2 py-0.5 text-[10px] font-extrabold text-[#c2410c]">
+                              +{percentDifference}% rộng hơn
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-semibold text-[#64748b]">
+                              {tier.areaM2} m²
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Capacity and specs */}
+                        <div className="mt-3 space-y-1.5 border-t border-[#edf2f7] pt-2.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-medium text-[#64748b]">Diện tích &amp; Thể tích:</span>
+                            <span className="font-bold text-[#0b1c30]">
+                              {tier.areaM2} m² ({tier.volume})
+                            </span>
+                          </div>
+                          <div className="flex items-start justify-between gap-2 text-[11px]">
+                            <span className="shrink-0 font-medium text-[#64748b]">Sức chứa:</span>
+                            <span className="text-right font-semibold text-[#1e293b]">
+                              {tier.capacityLabel}
+                            </span>
+                          </div>
+                          <div className="rounded-[8px] bg-slate-50 p-2 text-[11px] text-[#475569] leading-relaxed">
+                            {tier.fitsSummary}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer button */}
+                      <div className="mt-3.5 pt-2 border-t border-[#edf2f7]">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectSize(tier.id);
+                          }}
+                          className={`w-full rounded-[8px] py-1.5 text-[12px] font-bold transition flex items-center justify-center gap-1 ${
+                            isCurrent
+                              ? "bg-[#1d5fe5] text-white cursor-default"
+                              : isLarger
+                              ? "bg-[#ea580c] text-white hover:bg-[#c2410c]"
+                              : "border border-[#cbd5e1] bg-white text-[#334155] hover:bg-[#f8fafc]"
+                          }`}
+                        >
+                          {isCurrent ? (
+                            <>
+                              <span className="material-symbols-outlined text-[16px]">check</span>
+                              Kho đang được chọn
+                            </>
+                          ) : isLarger ? (
+                            <>
+                              <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+                              Đổi sang kho lớn hơn này
+                            </>
+                          ) : (
+                            <>Đổi sang kích thước này</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Helpful storage advice note */}
+              <div className="mt-3.5 flex items-center gap-3 rounded-[10px] bg-[#f8faff] p-3 text-[12px] text-[#475569]">
+                <span className="material-symbols-outlined text-[20px] text-[#1d5fe5] shrink-0">info</span>
+                <span>
+                  <strong>Mẹo chọn kho:</strong> Nếu bạn đang phân vân giữa 2 kích cỡ, việc chọn kho lớn hơn một bậc (ví dụ từ Small lên Medium) sẽ giúp bạn dễ dàng sắp xếp lối đi bên trong kho để lấy đồ đạc mà không bị chật chội.
+                </span>
+              </div>
+            </div>
+
+            {/* Step 2: Move-in Date */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="mb-3">
                 <div className="text-[14px] font-bold text-[#0b1c30]">
-                  1. Move-in &amp; Keyless Access Date
+                  2. Move-in &amp; Keyless Access Date (Ngày nhận kho)
                 </div>
               </div>
 
@@ -213,11 +415,11 @@ function StorageDetail() {
               </div>
             </div>
 
-            {/* Step 2: Rental Duration & Promo Code */}
+            {/* Step 3: Rental Duration & Promo Code */}
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="mb-3">
                 <div className="text-[14px] font-bold text-[#0b1c30]">
-                  2. Rental Term &amp; Discount Voucher
+                  3. Rental Term &amp; Discount Voucher (Thời hạn thuê &amp; Khuyến mãi)
                 </div>
               </div>
 
@@ -281,6 +483,27 @@ function StorageDetail() {
           {/* Sidebar */}
           <aside className="h-fit rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.04)] lg:sticky lg:top-4">
             <div className="text-[15px] font-bold text-[#0b1c30]">Order Summary</div>
+
+            {/* Selected Storage Unit Size Summary */}
+            <div className="mt-3 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-3 text-[12px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#64748b]">Kho đang chọn:</span>
+                <span className="font-bold text-[#0b1c30]">Unit {unit.unitCode}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between font-semibold">
+                <span className="text-[#1d5fe5]">{unit.sizeLabel || unit.dimension}</span>
+                <span className="text-[#475569]">{unit.areaM2 || 3} m² • {unit.volume || "8.4 m³"}</span>
+              </div>
+              {largerSizes.length > 0 && (
+                <a
+                  href="#storage-size-selection"
+                  className="mt-2.5 flex items-center justify-center gap-1 rounded-[8px] border border-[#fed7aa] bg-[#fffaf5] py-1 text-[11px] font-bold text-[#ea580c] hover:bg-[#ffedd5] transition"
+                >
+                  <span className="material-symbols-outlined text-[14px]">upgrade</span>
+                  Kho quá nhỏ? Bấm đổi kho lớn hơn
+                </a>
+              )}
+            </div>
 
             {/* Rental Duration Tabs */}
             <div className="mt-3 grid grid-cols-4 gap-1.5">
