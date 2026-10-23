@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/paymentService";
+import reservationService from "../api/reservationService";
 
 // Maps BE payment status strings → FE tab keys
 // BE PaymentConstants: pending | succeeded | failed | cancelled | partially_refunded | refunded
@@ -62,6 +63,49 @@ export function useBilling() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Cancel reservation modal state
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancellingInvoice, setCancellingInvoice] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+
+  const handleOpenCancelModal = (inv) => {
+    setCancellingInvoice(inv);
+    setCancelError("");
+    setCancelModalOpen(true);
+  };
+
+  const handleCloseCancelModal = () => {
+    if (cancelling) return;
+    setCancelModalOpen(false);
+    setCancellingInvoice(null);
+    setCancelError("");
+  };
+
+  const handleConfirmCancelReservation = async () => {
+    if (!cancellingInvoice?.reservationId) {
+      handleCloseCancelModal();
+      return;
+    }
+    setCancelling(true);
+    setCancelError("");
+    try {
+      await reservationService.cancelReservation(
+        cancellingInvoice.reservationId,
+        "Khách hàng tự hủy đơn từ danh sách hóa đơn"
+      );
+      // Refresh payments list
+      const data = await paymentService.getPaymentHistory();
+      setPayments(Array.isArray(data) ? data : []);
+      setCancelModalOpen(false);
+      setCancellingInvoice(null);
+    } catch (err) {
+      setCancelError(err?.message || "Không thể hủy đơn đặt chỗ. Vui lòng thử lại.");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -173,6 +217,12 @@ export function useBilling() {
     filteredInvoices,
     loading,
     error,
+    cancelModalOpen,
+    cancellingInvoice,
+    cancelling,
+    cancelError,
+    handleOpenCancelModal,
+    handleCloseCancelModal,
+    handleConfirmCancelReservation,
   };
 }
-
