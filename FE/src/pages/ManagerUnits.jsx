@@ -50,7 +50,7 @@ function ManagerUnits() {
       const page = await managerService.getUnits(facilityId, { status: statusFilter || undefined, search: search || undefined, pageSize: 100 });
       setUnits(page?.items ?? []);
     } catch (err) {
-      setError(err?.message || "Không thể tải danh sách ô kho.");
+      setError(err?.message || "Failed to load units list.");
     } finally {
       setLoadingUnits(false);
     }
@@ -63,7 +63,7 @@ function ManagerUnits() {
     try {
       setLayout(await managerService.getMapLayout(facilityId));
     } catch (err) {
-      setError(err?.message || "Không thể tải sơ đồ mặt bằng.");
+      setError(err?.message || "Failed to load floor plan layout.");
     } finally {
       setLoadingLayout(false);
     }
@@ -115,11 +115,11 @@ function ManagerUnits() {
       };
       if (editingUnitId) await managerService.updateUnit(editingUnitId, payload);
       else await managerService.createUnit(facilityId, payload);
-      setNotice(editingUnitId ? "Đã cập nhật ô kho." : "Đã thêm ô kho mới.");
+      setNotice(editingUnitId ? "Unit updated successfully." : "New unit added successfully.");
       setShowUnitForm(false);
       await loadUnits();
     } catch (err) {
-      setError(err?.message || "Không thể lưu ô kho.");
+      setError(err?.message || "Failed to save unit.");
     } finally {
       setSavingUnit(false);
     }
@@ -143,10 +143,10 @@ function ManagerUnits() {
     setError("");
     try {
       await managerService.updateMapLayout(facilityId, layout.unitPositions);
-      setNotice("Đã lưu sơ đồ mặt bằng.");
+      setNotice("Floor plan layout saved successfully.");
       await loadLayout();
     } catch (err) {
-      setError(err?.message || "Không thể lưu sơ đồ mặt bằng.");
+      setError(err?.message || "Failed to save floor plan layout.");
     } finally {
       setSavingLayout(false);
     }
@@ -171,10 +171,10 @@ function ManagerUnits() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[20px] font-bold">Ô kho &amp; Sơ đồ mặt bằng</h1>
+        <h1 className="text-[20px] font-bold">Units &amp; Floor Plan</h1>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setTab("units")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "units" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Danh sách ô kho</button>
-          <button type="button" onClick={() => setTab("layout")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "layout" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Sơ đồ mặt bằng</button>
+          <button type="button" onClick={() => setTab("units")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "units" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Unit List</button>
+          <button type="button" onClick={() => setTab("layout")} className={`rounded-[8px] px-3 py-1.5 text-[11px] font-bold ${tab === "layout" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"}`}>Floor Plan</button>
         </div>
       </div>
 
@@ -185,15 +185,15 @@ function ManagerUnits() {
         <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap gap-2">
-              <input value={search} onChange={(e) => setSearch(e.target.value)} onBlur={loadUnits} placeholder="Tìm mã ô kho..." className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px]" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} onBlur={loadUnits} placeholder="Search unit code..." className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px]" />
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[11px]">
-                <option value="">Tất cả trạng thái</option>
+                <option value="">All Statuses</option>
                 {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </div>
             <button type="button" onClick={openCreateUnit} className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white">
               <span className="material-symbols-outlined text-[14px]">add</span>
-              Thêm ô kho
+              Add Unit
             </button>
           </div>
 
@@ -201,19 +201,19 @@ function ManagerUnits() {
             <table className="w-full min-w-[720px] text-left text-[11px]">
               <thead>
                 <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                  <th className="py-2 pr-2">Mã ô kho</th>
-                  <th className="py-2 pr-2">Loại</th>
-                  <th className="py-2 pr-2">Khu vực / Tầng</th>
-                  <th className="py-2 pr-2">Trạng thái</th>
-                  <th className="py-2 pr-2">Hiển thị</th>
-                  <th className="py-2 pr-2 text-right">Thao tác</th>
+                  <th className="py-2 pr-2">Unit Code</th>
+                  <th className="py-2 pr-2">Type</th>
+                  <th className="py-2 pr-2">Zone / Floor</th>
+                  <th className="py-2 pr-2">Status</th>
+                  <th className="py-2 pr-2">Listed</th>
+                  <th className="py-2 pr-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingUnits ? (
-                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Đang tải...</td></tr>
+                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Loading units...</td></tr>
                 ) : units.length === 0 ? (
-                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Chưa có ô kho nào.</td></tr>
+                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">No units found.</td></tr>
                 ) : (
                   units.map((unit) => (
                     <tr key={unit.id} className="border-b border-[#f2f5fb]">
@@ -221,9 +221,9 @@ function ManagerUnits() {
                       <td className="py-2.5 pr-2 text-[#58657a]">{unit.unitTypeName}</td>
                       <td className="py-2.5 pr-2 text-[#58657a]">{unit.zoneLabel || "—"} / {unit.floorLabel || "—"}</td>
                       <td className="py-2.5 pr-2">{STATUS_OPTIONS.find(([value]) => value === unit.physicalStatus)?.[1] || unit.physicalStatus}</td>
-                      <td className="py-2.5 pr-2">{unit.isListed ? "Có" : "Không"}</td>
+                      <td className="py-2.5 pr-2">{unit.isListed ? "Yes" : "No"}</td>
                       <td className="py-2.5 pr-2 text-right">
-                        <button type="button" onClick={() => openEditUnit(unit)} className="rounded-[6px] bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#1d5fe5]">Sửa</button>
+                        <button type="button" onClick={() => openEditUnit(unit)} className="rounded-[6px] bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#1d5fe5]">Edit</button>
                       </td>
                     </tr>
                   ))
@@ -237,15 +237,15 @@ function ManagerUnits() {
       {tab === "layout" && (
         <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[10px] text-[#8996a9]">Chọn một ô kho trên sơ đồ để xem vị trí; dữ liệu toạ độ bên dưới vẫn có thể chỉnh sửa.</p>
+            <p className="text-[10px] text-[#8996a9]">Select a unit on the map to inspect coordinates; values below can be adjusted manually.</p>
             <button type="button" disabled={savingLayout || !layout} onClick={saveLayout} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60">
-              {savingLayout ? "Đang lưu..." : "Lưu sơ đồ"}
+              {savingLayout ? "Saving..." : "Save Layout"}
             </button>
           </div>
           {loadingLayout ? (
-            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Đang dựng sơ đồ...</div>
+            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Rendering floor plan...</div>
           ) : mapPositions.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Chưa có vị trí nào để hiển thị trên sơ đồ.</div>
+            <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">No unit positions configured for this floor plan.</div>
           ) : (
             <>
               <div className="mt-4 overflow-x-auto rounded-2xl border border-[#c9d9ef] bg-[radial-gradient(circle_at_20%_10%,#eff7ff,transparent_38%),linear-gradient(145deg,#cbdcf0,#eaf2fb_45%,#d7e4f3)] p-4 shadow-inner">
@@ -263,27 +263,27 @@ function ManagerUnits() {
                   })}
                 </div>
               </div>
-              {selectedMapUnitId && <p className="mt-2 text-[10px] font-semibold text-[#1d5fe5]">Đang chọn: {mapPositions.find((position) => position.unitId === selectedMapUnitId)?.unitCode}</p>}
+              {selectedMapUnitId && <p className="mt-2 text-[10px] font-semibold text-[#1d5fe5]">Selected: {mapPositions.find((position) => position.unitId === selectedMapUnitId)?.unitCode}</p>}
             </>
           )}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-[11px]">
               <thead>
                 <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                  <th className="py-2 pr-2">Mã ô kho</th>
-                  <th className="py-2 pr-2">Khu vực</th>
+                  <th className="py-2 pr-2">Unit Code</th>
+                  <th className="py-2 pr-2">Zone</th>
                   <th className="py-2 pr-2 text-right">X</th>
                   <th className="py-2 pr-2 text-right">Y</th>
-                  <th className="py-2 pr-2 text-right">Rộng</th>
-                  <th className="py-2 pr-2 text-right">Cao</th>
-                  <th className="py-2 pr-2 text-right">Góc xoay</th>
+                  <th className="py-2 pr-2 text-right">Width</th>
+                  <th className="py-2 pr-2 text-right">Height</th>
+                  <th className="py-2 pr-2 text-right">Rotation</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingLayout ? (
-                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Đang tải...</td></tr>
+                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Loading layout...</td></tr>
                 ) : !layout?.unitPositions?.length ? (
-                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Chưa có vị trí nào được thiết lập.</td></tr>
+                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">No positions established yet.</td></tr>
                 ) : (
                   layout.unitPositions.map((pos) => (
                     <tr key={pos.unitId} className="border-b border-[#f2f5fb]">
@@ -312,46 +312,46 @@ function ManagerUnits() {
         <dialog open className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-xl backdrop:bg-black/40">
           <form onSubmit={submitUnit}>
             <div className="flex items-center justify-between">
-              <h2 className="text-[14px] font-bold">{editingUnitId ? "Chỉnh sửa ô kho" : "Thêm ô kho mới"}</h2>
-              <button type="button" onClick={() => setShowUnitForm(false)} className="text-[11px] font-semibold text-[#58657a] underline">Đóng</button>
+              <h2 className="text-[14px] font-bold">{editingUnitId ? "Edit Storage Unit" : "Add New Storage Unit"}</h2>
+              <button type="button" onClick={() => setShowUnitForm(false)} className="text-[11px] font-semibold text-[#58657a] underline">Close</button>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
-                Mã ô kho *
+                Unit Code *
                 <input required value={unitForm.unitCode} onChange={(e) => setUnitForm((p) => ({ ...p, unitCode: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
-                Loại ô kho *
+                Unit Type *
                 <select required value={unitForm.unitTypeId} onChange={(e) => setUnitForm((p) => ({ ...p, unitTypeId: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
-                  <option value="" disabled>Chọn loại ô kho</option>
+                  <option value="" disabled>Select unit type</option>
                   {unitTypes.map((type) => <option key={type.id} value={type.id}>{type.code} — {type.name}</option>)}
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
-                Tầng
+                Floor
                 <input value={unitForm.floorLabel} onChange={(e) => setUnitForm((p) => ({ ...p, floorLabel: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
-                Khu vực
+                Zone
                 <input value={unitForm.zoneLabel} onChange={(e) => setUnitForm((p) => ({ ...p, zoneLabel: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a]">
-                Trạng thái
+                Status
                 <select value={unitForm.physicalStatus} onChange={(e) => setUnitForm((p) => ({ ...p, physicalStatus: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]">
                   {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-2 text-[10px] font-semibold text-[#3a475a]">
                 <input type="checkbox" checked={unitForm.isListed} onChange={(e) => setUnitForm((p) => ({ ...p, isListed: e.target.checked }))} className="h-3.5 w-3.5 accent-[#1d5fe5]" />
-                Hiển thị cho khách hàng thuê
+                List publicly for customer booking
               </label>
               <label className="flex flex-col gap-1 text-[10px] font-semibold text-[#3a475a] sm:col-span-2">
-                Ghi chú
+                Notes
                 <input value={unitForm.notes} onChange={(e) => setUnitForm((p) => ({ ...p, notes: e.target.value }))} className="rounded-[6px] border border-[#dfe7f5] px-2 py-1.5 text-[11px]" />
               </label>
             </div>
             <button type="submit" disabled={savingUnit} className="mt-4 w-full rounded-[8px] bg-[#1d5fe5] py-2 text-[11px] font-bold text-white disabled:opacity-60">
-              {savingUnit ? "Đang lưu..." : "Lưu ô kho"}
+              {savingUnit ? "Saving..." : "Save Unit"}
             </button>
           </form>
         </dialog>
