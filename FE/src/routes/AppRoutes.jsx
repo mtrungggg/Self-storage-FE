@@ -21,6 +21,8 @@ import AdminSecurityCenter from "../pages/AdminSecurityCenter";
 import AdminAuditLog from "../pages/AdminAuditLog";
 import AdminLoginHistories from "../pages/AdminLoginHistories";
 import AdminCrudPage from "../pages/AdminCrudPage";
+import AdminFacilities from "../pages/AdminFacilities";
+import AdminTickets from "../pages/AdminTickets";
 import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
@@ -67,7 +69,7 @@ function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route element={<AdminLayouts />}>
             <Route path="/admin-overview" element={<AdminDashboard />} />
-            <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
+            <Route path="/admin-facilities" element={<AdminFacilities />} />
             <Route path="/admin-contracts" element={<AdminContractsCustomers />} />
             <Route path="/admin-staffing" element={<AdminStaffScheduling />} />
             <Route path="/admin-pricing" element={<AdminPricingPolicy />} />
@@ -76,7 +78,7 @@ function AppRoutes() {
             <Route path="/admin-login-histories" element={<AdminLoginHistories />} />
             <Route path="/admin-users" element={<AdminUsers />} />
             <Route path="/admin-users/:id" element={<AdminUserDetail />} />
-            <Route path="/admin-tickets" element={<AdminCrudPage key="tickets" resource="tickets" />} />
+            <Route path="/admin-tickets" element={<AdminTickets />} />
             <Route path="/admin-notifications" element={<AdminCrudPage key="notifications" resource="notifications" />} />
           </Route>
         </Route>

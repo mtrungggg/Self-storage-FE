@@ -1,31 +1,10 @@
 import { useMemo, useState } from "react";
 import { createAdminRecord, deleteAdminRecord, listAdminRecords, updateAdminRecord } from "../data/adminCrudRepository";
 
+// NOTE: facilities and tickets resources moved to dedicated API-backed pages
+// (AdminFacilities.jsx, AdminTickets.jsx). Notifications stays on local mock
+// storage until a real backend notifications feature exists.
 const configurations = {
-  facilities: {
-    title: "Quản lý kho", singular: "kho", icon: "warehouse",
-    fields: [
-      ["code", "Mã kho", "text", true], ["name", "Tên kho", "text", true], ["address", "Địa chỉ", "text", true],
-      ["status", "Trạng thái", "select", true, [["active", "Đang hoạt động"], ["maintenance", "Bảo trì"], ["inactive", "Ngừng hoạt động"]]],
-    ],
-  },
-  users: {
-    title: "Quản lý manager & staff", singular: "người dùng", icon: "manage_accounts",
-    fields: [
-      ["fullName", "Họ và tên", "text", true], ["email", "Email", "email", true], ["phone", "Số điện thoại", "tel", false],
-      ["role", "Vai trò", "select", true, [["manager", "Manager"], ["staff", "Staff"]]],
-      ["facility", "Mã kho phụ trách", "text", true], ["status", "Trạng thái", "select", true, [["active", "Hoạt động"], ["locked", "Đã khóa"]]],
-    ],
-  },
-  tickets: {
-    title: "Quản lý ticket", singular: "ticket", icon: "support_agent",
-    fields: [
-      ["code", "Mã ticket", "text", true], ["subject", "Tiêu đề", "text", true], ["customer", "Khách hàng", "text", true],
-      ["facility", "Mã kho", "text", true], ["priority", "Ưu tiên", "select", true, [["low", "Thấp"], ["normal", "Bình thường"], ["high", "Cao"], ["urgent", "Khẩn cấp"]]],
-      ["status", "Trạng thái", "select", true, [["open", "Mới mở"], ["in_progress", "Đang xử lý"], ["resolved", "Đã giải quyết"], ["closed", "Đã đóng"]]],
-      ["description", "Mô tả", "textarea", false],
-    ],
-  },
   notifications: {
     title: "Gửi thông báo", singular: "thông báo", icon: "notifications_active", submitLabel: "Gửi thông báo",
     fields: [
