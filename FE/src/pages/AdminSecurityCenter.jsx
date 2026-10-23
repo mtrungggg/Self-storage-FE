@@ -1,191 +1,159 @@
-import { useSecurityCenter } from "../hooks/useSecurityCenter";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import adminDashboardService from "../api/adminDashboardService";
+import adminLoginHistoryService from "../api/adminLoginHistoryService";
+import adminAuditLogService from "../api/adminAuditLogService";
+import adminUserService from "../api/adminUserService";
 
-function AdminSecurityCenter() {
-  const {
-    securityBanner,
-    header,
-    headerActions,
-    kpis,
-    permissionRoles,
-    permissionModules,
-    otpTtlOptions,
-    guestPinPolicy,
-    updateGuestPinPolicy,
-    intrusionPolicy,
-    updateIntrusionPolicy,
-  } = useSecurityCenter();
+const roleLabels = {
+  storage_customer: "Khách hàng",
+  facility_staff: "Nhân viên kho",
+  facility_manager: "Quản lý kho",
+  business_operations_manager: "Quản lý vận hành",
+  system_administrator: "Quản trị viên",
+};
+const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" });
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : dateFormat.format(date);
+};
 
+function KpiCard({ icon, label, value, sub }) {
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#1d5fe5]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#1d5fe5]" />
-        {securityBanner.label}
-        <span className="font-semibold normal-case text-[#8996a9]">• {securityBanner.version}</span>
-      </div>
-
-      <div className="mt-1.5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold">{header.title}</h1>
-          <p className="mt-1 max-w-[540px] text-[11px] text-[#8996a9]">{header.subtitle}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {headerActions.map((action) => (
-            <button
-              key={action.id}
-              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-2 text-[11px] font-bold ${
-                action.id === "new_user" ? "bg-[#1d5fe5] text-white" : "border border-[#dfe7f5] text-[#3a475a]"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {kpis.map((kpi) => (
-          <div key={kpi.id} className="rounded-[12px] border border-[#dfe7f5] bg-white p-3.5 shadow-[0_6px_16px_rgba(15,23,42,0.03)]">
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-              {kpi.label}
-              <span className="material-symbols-outlined text-[14px] text-[#1d5fe5]">{kpi.icon}</span>
-            </div>
-            <div className="mt-1 text-[17px] font-bold">{kpi.value}</div>
-            <div className="mt-0.5 truncate text-[10px] text-[#8996a9]">{kpi.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-[13px] font-bold">
-            <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">1</span>
-            Role-Based Access Control Matrix (RBAC)
-          </div>
-          <span className="text-[10px] font-bold text-[#1d5fe5]">RBAC Policy Lock Active</span>
-        </div>
-
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-[10px]">
-            <thead>
-              <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                <th className="py-2 pr-2">Functional Module</th>
-                {permissionRoles.map((role) => (
-                  <th key={role.id} className="py-2 px-2 text-center">
-                    {role.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {permissionModules.map((module) => (
-                <tr key={module.id} className="border-b border-[#f2f5fb]">
-                  <td className="py-2.5 pr-2 align-top">
-                    <div className="font-semibold">{module.label}</div>
-                    <div className="text-[9px] text-[#8996a9]">{module.note}</div>
-                  </td>
-                  {permissionRoles.map((role) => (
-                    <td key={role.id} className="py-2.5 px-2 text-center align-top">
-                      {module.access[role.id] ? (
-                        <span className="inline-block rounded-[6px] bg-[#eef4ff] px-2 py-1 text-[9px] font-semibold text-[#1d5fe5]">
-                          {module.access[role.id]}
-                        </span>
-                      ) : (
-                        <span className="text-[#c7d1e6]">-</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-        <div className="flex items-center gap-1.5 text-[13px] font-bold">
-          <span className="rounded-full bg-[#1d5fe5] px-1.5 py-0.5 text-[9px] font-bold text-white">2</span>
-          IoT Smart Lock &amp; Access Gate Security
-        </div>
-        <p className="mt-1 text-[10px] text-[#8996a9]">Configure temporary guest PIN credentials, automated revocations, and perimeter intrusion deterrence.</p>
-
-        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Temporary Guest PIN / OTP Dispatch</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automatically dispatched via SMS/App upon active contract commencement</p>
-
-            <div className="mt-2 text-[9px] font-bold uppercase text-[#8996a9]">OTP Time-To-Live (TTL)</div>
-            <div className="mt-1 inline-flex rounded-[8px] bg-[#f0f3fa] p-0.5">
-              {otpTtlOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => updateGuestPinPolicy("otpTtl", option.id)}
-                  className={`rounded-[6px] px-2.5 py-1 text-[10px] font-semibold transition ${
-                    guestPinPolicy.otpTtl === option.id ? "bg-[#1d5fe5] text-white" : "text-[#58657a]"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
-              <input
-                type="checkbox"
-                checked={guestPinPolicy.autoRevokeOnCheckout}
-                onChange={(event) => updateGuestPinPolicy("autoRevokeOnCheckout", event.target.checked)}
-                className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
-              />
-              Automatically revoke PIN credentials upon contract check-out
-            </label>
-            <label className="mt-1.5 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
-              <input
-                type="checkbox"
-                checked={guestPinPolicy.limitUnlocksPerShift}
-                onChange={(event) => updateGuestPinPolicy("limitUnlocksPerShift", event.target.checked)}
-                className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
-              />
-              Limit door unlock frequency per shift (alert if &gt; 8 times in 2 hours)
-            </label>
-          </div>
-
-          <div className="rounded-[10px] border border-[#eef1f8] p-3">
-            <div className="text-[11px] font-bold">Intrusion Detection &amp; Siren Deterrence</div>
-            <p className="mt-0.5 text-[9px] text-[#8996a9]">Automated response when abnormal door tampering or force is detected</p>
-
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="text-[9px] text-[#8996a9]">Lockout keypad after failed PIN attempts:</span>
-              <input
-                value={intrusionPolicy.maxFailedPinAttempts}
-                onChange={(event) => updateIntrusionPolicy("maxFailedPinAttempts", event.target.value)}
-                className="w-12 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-center text-[11px] font-semibold"
-              />
-              <span className="text-[9px] text-[#8996a9]">times</span>
-            </div>
-
-            <label className="mt-2 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
-              <input
-                type="checkbox"
-                checked={intrusionPolicy.sirenEnabled}
-                onChange={(event) => updateIntrusionPolicy("sirenEnabled", event.target.checked)}
-                className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
-              />
-              Trigger facility perimeter siren (110dB Siren)
-            </label>
-            <label className="mt-1.5 flex items-start gap-1.5 text-[9px] text-[#3a475a]">
-              <input
-                type="checkbox"
-                checked={intrusionPolicy.notifyAuthoritiesEnabled}
-                onChange={(event) => updateIntrusionPolicy("notifyAuthoritiesEnabled", event.target.checked)}
-                className="mt-0.5 h-3 w-3 accent-[#1d5fe5]"
-              />
-              Dispatch instant alert to Facility Guard &amp; Authorities with CCTV snapshots
-            </label>
-          </div>
-        </div>
-      </div>
-    </>
+    <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-2 text-[#1d5fe5]"><span className="material-symbols-outlined text-[22px]">{icon}</span><span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#58657a]">{label}</span></div>
+      <div className="mt-2 text-[22px] font-bold">{value}</div>
+      {sub && <p className="mt-0.5 text-[11px] text-[#8996a9]">{sub}</p>}
+    </div>
   );
 }
 
-export default AdminSecurityCenter;
+export default function AdminSecurityCenter() {
+  const [overview, setOverview] = useState(null);
+  const [loginData, setLoginData] = useState(null);
+  const [auditLogs, setAuditLogs] = useState(null);
+  const [roleCounts, setRoleCounts] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    Promise.allSettled([
+      adminDashboardService.getOverview(),
+      adminLoginHistoryService.getHistories({ PageNumber: 1, PageSize: 10 }),
+      adminAuditLogService.getLogs({ PageNumber: 1, PageSize: 10 }),
+      adminUserService.getUsers({ PageNumber: 1, PageSize: 200 }),
+    ]).then(([overviewRes, loginRes, auditRes, usersRes]) => {
+      if (overviewRes.status === "fulfilled") setOverview(overviewRes.value);
+      if (loginRes.status === "fulfilled") setLoginData(loginRes.value);
+      if (auditRes.status === "fulfilled") setAuditLogs(auditRes.value);
+      if (usersRes.status === "fulfilled") {
+        const counts = {};
+        for (const user of usersRes.value.items) {
+          for (const role of user.roles || []) counts[role] = (counts[role] || 0) + 1;
+        }
+        setRoleCounts(counts);
+      }
+      const failures = [overviewRes, loginRes, auditRes, usersRes].filter((r) => r.status === "rejected");
+      if (failures.length > 0) setError(failures.map((f) => f.reason?.message).filter(Boolean).join(" · "));
+      setLoading(false);
+    });
+  }, []);
+
+  const suspiciousAttempts = (loginData?.histories?.items || []).filter(
+    (h) => h.isSuspicious || h.result !== "succeeded"
+  );
+
+  return (
+    <div className="mx-auto max-w-[1400px]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#1d5fe5]">Admin Console</p>
+          <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold">
+            <span className="material-symbols-outlined text-[#1d5fe5]">shield_lock</span>
+            Trung tâm bảo mật &amp; phân quyền
+          </h1>
+          <p className="mt-1 max-w-[640px] text-[13px] text-[#8996a9]">
+            Tổng quan tài khoản, phân quyền theo vai trò, và các lượt đăng nhập đáng chú ý — dữ liệu lấy trực tiếp từ hệ thống.
+          </p>
+        </div>
+      </div>
+
+      {loading && <p role="status" className="mt-6 text-center text-sm text-[#58657a]">Đang tải dữ liệu...</p>}
+      {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
+      {!loading && (
+        <>
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard icon="badge" label="Tổng tài khoản" value={overview?.userKpi?.totalUsers ?? "—"} sub={`${overview?.userKpi?.totalCustomers ?? 0} khách hàng · ${overview?.userKpi?.totalStaff ?? 0} nhân sự`} />
+            <KpiCard icon="login" label="Lượt đăng nhập gần đây" value={loginData?.summary?.totalAttempts ?? "—"} sub={`${loginData?.summary?.succeededAttempts ?? 0} thành công`} />
+            <KpiCard icon="gpp_maybe" label="Lượt đáng ngờ / thất bại" value={(loginData?.summary?.suspiciousAttemptsCount ?? 0) + (loginData?.summary?.failedAttempts ?? 0)} sub={`${loginData?.summary?.lockedAttempts ?? 0} bị khóa · ${loginData?.summary?.blockedAttempts ?? 0} bị chặn`} />
+            <KpiCard icon="history" label="Nhật ký quản trị" value={auditLogs?.totalCount ?? "—"} sub="Xem toàn bộ tại Audit Log" />
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <section className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-sm">
+              <h2 className="font-bold">Phân bổ vai trò (RBAC)</h2>
+              <div className="mt-3 space-y-2">
+                {Object.entries(roleLabels).map(([role, label]) => {
+                  const count = roleCounts?.[role] || 0;
+                  const total = overview?.userKpi?.totalUsers || 1;
+                  const pct = Math.round((count / total) * 100);
+                  return (
+                    <div key={role}>
+                      <div className="flex justify-between text-[12px]"><span className="font-semibold">{label}</span><span>{count} tài khoản ({pct}%)</span></div>
+                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#eef1f8]"><div className="h-full rounded-full bg-[#1d5fe5]" style={{ width: `${pct}%` }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+              <Link to="/admin-users" className="mt-4 inline-block text-[12px] font-bold text-[#1d5fe5] hover:underline">Quản lý người dùng & vai trò →</Link>
+            </section>
+
+            <section className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-sm">
+              <h2 className="font-bold">Lượt đăng nhập đáng chú ý</h2>
+              <div className="mt-3 space-y-2">
+                {suspiciousAttempts.length === 0 && <p className="text-[12px] text-[#8996a9]">Không có lượt đăng nhập bất thường gần đây.</p>}
+                {suspiciousAttempts.map((h) => (
+                  <div key={h.id} className="flex items-center justify-between rounded-lg border border-[#fecdca] bg-[#fffbfa] p-2.5 text-[12px]">
+                    <div>
+                      <div className="font-semibold">{h.attemptedEmail}</div>
+                      <div className="text-[#8996a9]">{h.ipAddress} · {formatDate(h.occurredAt)}</div>
+                    </div>
+                    <span className="rounded-full bg-[#fee4e2] px-2 py-0.5 font-bold text-[#d92d20]">{h.result}</span>
+                  </div>
+                ))}
+              </div>
+              <Link to="/admin-login-histories" className="mt-4 inline-block text-[12px] font-bold text-[#1d5fe5] hover:underline">Xem toàn bộ lịch sử đăng nhập →</Link>
+            </section>
+          </div>
+
+          <section className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-sm">
+            <h2 className="font-bold">Nhật ký hoạt động quản trị gần đây</h2>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead><tr className="border-b text-xs uppercase text-[#58657a]">
+                  {["Thời gian", "Hành động", "Đối tượng", "Người thực hiện"].map((label) => <th key={label} className="p-3">{label}</th>)}
+                </tr></thead>
+                <tbody>
+                  {(auditLogs?.items || []).map((log) => (
+                    <tr key={log.id} className="border-b border-[#eef1f8]">
+                      <td className="whitespace-nowrap p-3">{formatDate(log.occurredAt)}</td>
+                      <td className="p-3">{log.action}</td>
+                      <td className="p-3">{log.entityType} #{log.entityId}</td>
+                      <td className="p-3">{log.actorEmail || log.actorUserId || "—"}</td>
+                    </tr>
+                  ))}
+                  {(!auditLogs?.items || auditLogs.items.length === 0) && <tr><td colSpan={4} className="p-8 text-center text-[#58657a]">Chưa có nhật ký nào.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <Link to="/admin-audit-log" className="mt-4 inline-block text-[12px] font-bold text-[#1d5fe5] hover:underline">Xem toàn bộ nhật ký quản trị →</Link>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
