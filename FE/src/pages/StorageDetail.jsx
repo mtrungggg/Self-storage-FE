@@ -44,6 +44,10 @@ function StorageDetail() {
     bookingLoading,
     bookingError,
     submitBooking,
+    cancelModalOpen,
+    handleOpenCancelModal,
+    handleCloseCancelModal,
+    handleConfirmCancel,
   } = useStorageDetail();
 
   const navigate = useNavigate();
@@ -68,7 +72,19 @@ function StorageDetail() {
       {/* Facility Header */}
       <div className="border-b border-[#e6ebf5] bg-white">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-2.5 lg:px-6">
-          <div className="text-[14px] font-bold text-[#0b1c30]">{unit.facilityName}</div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleOpenCancelModal}
+              className="inline-flex items-center gap-1 rounded-[8px] border border-[#dfe7f5] bg-[#f8faff] px-2.5 py-1 text-[12px] font-semibold text-[#58657a] hover:bg-white hover:text-[#b42318] hover:border-[#fecdca] transition"
+              title="Hủy đặt kho và quay lại trang chủ"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Hủy &amp; Quay lại</span>
+            </button>
+            <span className="text-[#dfe7f5]">|</span>
+            <div className="text-[14px] font-bold text-[#0b1c30]">{unit.facilityName}</div>
+          </div>
           <div className="flex items-center gap-1.5 rounded-full bg-[#fff1e6] px-3.5 py-1 text-[12px] font-bold text-[#b45309]">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[#f59e0b]" />
             Hold Time Remaining: {holdCountdownStr}
@@ -77,7 +93,6 @@ function StorageDetail() {
       </div>
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-6">
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">
             {/* Unit Info Box */}
@@ -362,11 +377,61 @@ function StorageDetail() {
             >
               {bookingLoading ? "Processing..." : "Confirm Reservation & Pay"}
             </button>
+
+            <button
+              type="button"
+              onClick={handleOpenCancelModal}
+              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#dfe7f5] bg-white py-2.5 text-[13px] font-semibold text-[#58657a] hover:border-[#fecdca] hover:bg-[#fffbfa] hover:text-[#b42318] transition"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+              Hủy đặt kho (Cancel)
+            </button>
           </aside>
         </div>
       </main>
 
       <Footer />
+
+      {/* CONFIRM CANCEL MODAL */}
+      {cancelModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && handleCloseCancelModal()}
+        >
+          <div className="w-full max-w-[420px] rounded-[22px] border border-[#dfe7f5] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fee4e2] text-[#d92d20]">
+                <span className="material-symbols-outlined text-[22px]">warning</span>
+              </div>
+              <div>
+                <h3 className="text-[16px] font-bold text-[#0b1c30]">Xác nhận hủy đặt kho</h3>
+                <p className="text-[12px] text-[#64748b]">Cancel Storage Reservation</p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-[13px] leading-relaxed text-[#58657a]">
+              Bạn có chắc chắn muốn hủy quá trình đặt ô kho này không? Các tùy chọn bạn đã chọn sẽ không được lưu và bạn sẽ quay về danh sách tìm kiếm kho.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={handleCloseCancelModal}
+                className="rounded-[10px] border border-[#dfe7f5] bg-white px-4 py-2 text-[13px] font-semibold text-[#3a475a] hover:bg-[#f8faff] transition"
+              >
+                Tiếp tục đặt kho
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                className="rounded-[10px] bg-[#d92d20] px-4 py-2 text-[13px] font-bold text-white shadow transition hover:bg-[#b42318]"
+              >
+                Xác nhận hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
