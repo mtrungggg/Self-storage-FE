@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Box, X, ShieldCheck } from "lucide-react";
+import { Box, X, ShieldCheck } from "lucide-react";
 
 export default function AdminSidebar({ navGroups = [], activeId, isOpen = false, onClose }) {
   const drawerRef = useRef(null);
@@ -39,7 +39,6 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
         </Link>)}
       </div>)}
     </nav>
-    <div className="admin-sidebar-footer"><span>G1 SELFSTORAGE</span><p>All operations. One workspace.</p><Link to="/home" onClick={onClose}>Customer Portal <ArrowUpRight size={16} /></Link></div>
   </aside>;
   return <>
     <a className="admin-skip-link" href="#admin-content">Skip to main content</a>
