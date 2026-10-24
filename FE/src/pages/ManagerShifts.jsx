@@ -74,6 +74,105 @@ const getStaffAvatar = (id) => {
   return AVATAR_LIST[Math.abs(num) % AVATAR_LIST.length];
 };
 
+const startOfLocalDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const isPastDayKey = (dayKey) => {
+  const [year, month, day] = dayKey.split("-").map(Number);
+  return startOfLocalDay(new Date(year, month - 1, day)) < startOfLocalDay(new Date());
+};
+
+const parseClockHour = (value) => {
+  if (typeof value !== "string") return NaN;
+  const [h, m] = value.trim().split(":");
+  const hour = Number(h);
+  const minute = Number(m) || 0;
+  if (!Number.isFinite(hour)) return NaN;
+  return hour + minute / 60;
+};
+
+const getShiftRange = (shift) => {
+  if (!shift) return null;
+  if (Number.isFinite(shift.startHour) && Number.isFinite(shift.endHour)) {
+    const start = shift.startHour;
+    let end = shift.endHour;
+    if (end <= start) end += 24;
+    return { start, end };
+  }
+  const parts = String(shift.time || "").split(/\s*-\s*/);
+  if (parts.length !== 2) return null;
+  const start = parseClockHour(parts[0]);
+  let end = parseClockHour(parts[1]);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  if (end <= start) end += 24;
+  return { start, end };
+};
+
+const rangesOverlap = (a, b) => Boolean(a && b && a.start < b.end && b.start < a.end);
+
+const findOverlappingShift = (existingShifts, candidate) => {
+  const candidateRange = getShiftRange(candidate);
+  if (!candidateRange) return null;
+  return (existingShifts || []).find((sh) => rangesOverlap(getShiftRange(sh), candidateRange)) || null;
+};
+
+const markOverlappingShifts = (dayShifts) => {
+  const list = Array.isArray(dayShifts) ? dayShifts : [];
+  return list.map((shift, index) => {
+    const range = getShiftRange(shift);
+    const overlaps = list.some(
+      (other, otherIndex) => otherIndex !== index && rangesOverlap(range, getShiftRange(other))
+    );
+    if (!overlaps) {
+      if (!shift.warning) return shift;
+      const next = { ...shift };
+      delete next.warning;
+      return next;
+    }
+    return { ...shift, warning: "Overlap" };
+  });
+};
+
+const cloneRoster = (list) => JSON.parse(JSON.stringify(list || []));
+
+const serializeRoster = (list) =>
+  JSON.stringify(
+    (list || []).map((staff) => ({
+      id: staff.id,
+      shifts: Object.fromEntries(
+        Object.entries(staff.shifts || {}).map(([dayKey, items]) => [
+          dayKey,
+          (items || []).map((sh) => `${sh.shiftId ?? ""}|${sh.type}|${sh.time}|${sh.name}`).sort(),
+        ])
+      ),
+    }))
+  );
+
+const toLocalDateKey = (dateInput) => {
+  if (!dateInput) return "";
+  const dt = new Date(dateInput);
+  if (Number.isNaN(dt.getTime())) return "";
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const d = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const buildShiftTimes = (dayKey, preset) => {
+  const [year, month, day] = dayKey.split("-").map(Number);
+  const startHour = preset.startHour || 6;
+  const endHour = preset.endHour || 14;
+  const startDate = new Date(year, month - 1, day, Math.floor(startHour), Math.floor((startHour % 1) * 60), 0);
+  const endDate = new Date(year, month - 1, day, Math.floor(endHour % 24), Math.floor((endHour % 1) * 60), 0);
+  if (endHour >= 24) {
+    endDate.setDate(endDate.getDate() + 1);
+  }
+  return { startDate, endDate, startHour, endHour };
+};
+
 // Compute 7 dynamic week days (Monday - Sunday)
 const computeWeekDays = (baseDate) => {
   const d = new Date(baseDate);
@@ -107,6 +206,7 @@ const computeWeekDays = (baseDate) => {
       dayName: dayNames[i],
       dateFormatted: `${dd}/${mm}`,
       isToday,
+      isPast: startOfLocalDay(cur) < startOfLocalDay(today),
       isWeekend: i >= 5,
     });
   }
@@ -128,6 +228,27 @@ function ShiftCard({ shift, onDelete }) {
       <span className="material-symbols-outlined text-[13px]">close</span>
     </button>
   );
+
+  // Overlap / conflict warning takes visual priority
+  if (shift.type === "night_conflict" || shift.warning) {
+    return (
+      <div className="group relative rounded-[12px] border border-[#fecdca] bg-[#fff1f3] p-2 transition hover:shadow-xs">
+        <DeleteButton />
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-[#b42318]">
+            <span className="material-symbols-outlined text-[14px]">warning</span>
+            <span>{shift.name}</span>
+          </div>
+          <span className="inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1.5 py-0.5 text-[9px] font-extrabold text-[#d92d20]">
+            <span className="material-symbols-outlined text-[11px]">error</span>
+            <span>{shift.warning || "Conflict"}</span>
+          </span>
+        </div>
+        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#912018]">{shift.time}</div>
+        <div className="mt-0.5 truncate text-[10px] font-semibold text-[#b42318]">{shift.location}</div>
+      </div>
+    );
+  }
 
   // 1. Morning Shift (MS)
   if (shift.type === "morning") {
@@ -185,27 +306,6 @@ function ShiftCard({ shift, onDelete }) {
         </div>
         <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#282d97]">{shift.time}</div>
         <div className="mt-0.5 truncate text-[10px] font-medium text-[#444ce7]">{shift.location}</div>
-      </div>
-    );
-  }
-
-  // 4. Night Shift - Conflict / Warning
-  if (shift.type === "night_conflict" || shift.warning) {
-    return (
-      <div className="group relative rounded-[12px] border border-[#fecdca] bg-[#fff1f3] p-2 transition hover:shadow-xs">
-        <DeleteButton />
-        <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#b42318]">
-            <span className="material-symbols-outlined text-[14px]">bedtime</span>
-            <span>{shift.name}</span>
-          </div>
-          <span className="inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1.5 py-0.5 text-[9px] font-extrabold text-[#d92d20]">
-            <span className="material-symbols-outlined text-[11px]">warning</span>
-            <span>{shift.warning || "Conflict"}</span>
-          </span>
-        </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#912018]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-semibold text-[#b42318]">{shift.location}</div>
       </div>
     );
   }
@@ -277,15 +377,19 @@ function ManagerShifts() {
 
   // Backend state (zero hardcoded mock data)
   const [staffList, setStaffList] = useState([]);
+  const [baselineStaffList, setBaselineStaffList] = useState([]);
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [pastWarning, setPastWarning] = useState(null); // { staffId, staffName, dayKey, preset }
 
   // Drag-and-drop & brush tool states
   const [draggingPreset, setDraggingPreset] = useState(null);
-  const [dragOverCell, setDragOverCell] = useState(null); // { employeeId, dayKey }
+  const [dragOverCell, setDragOverCell] = useState(null); // { employeeId, dayKey, conflict }
   const [selectedBrush, setSelectedBrush] = useState(null);
 
   // Formatted week title
@@ -361,7 +465,7 @@ function ManagerShifts() {
             const target = initialStaff.find((s) => s.id === item.employeeId);
             if (!target) return;
 
-            const d = new Date(item.startsAt).toISOString().slice(0, 10);
+            const d = toLocalDateKey(item.startsAt);
             const nameLower = (item.shiftName || "").toLowerCase();
 
             let type = "morning";
@@ -400,6 +504,10 @@ function ManagerShifts() {
               target.shifts[d] = [];
             }
 
+            const startHour = new Date(item.startsAt).getHours() + new Date(item.startsAt).getMinutes() / 60;
+            let endHour = new Date(item.endsAt).getHours() + new Date(item.endsAt).getMinutes() / 60;
+            if (endHour <= startHour) endHour += 24;
+
             target.shifts[d].push({
               shiftId: item.shiftId,
               type,
@@ -408,11 +516,15 @@ function ManagerShifts() {
               time: `${startTime} - ${endTime}`,
               location: item.dutyRole ? `Role: ${item.dutyRole}` : "Operations Area",
               hours,
+              startHour,
+              endHour,
+              isDraft: false,
             });
           });
         }
 
         setStaffList(initialStaff);
+        setBaselineStaffList(cloneRoster(initialStaff));
       })
       .catch((err) => {
         if (!active) return;
@@ -425,7 +537,7 @@ function ManagerShifts() {
     return () => {
       active = false;
     };
-  }, [facilityId, baseDate]);
+  }, [facilityId, baseDate, reloadToken]);
 
   // Compute calculated staff roster with accurate hours & overtime
   const staffRosterWithHours = useMemo(() => {
@@ -499,6 +611,67 @@ function ManagerShifts() {
     );
   }, [staffRosterWithHours, searchQuery]);
 
+  const isDirty = useMemo(
+    () => serializeRoster(staffList) !== serializeRoster(baselineStaffList),
+    [staffList, baselineStaffList]
+  );
+
+  const applyDraftAssignment = (staff, dayKey, preset) => {
+    const { startHour, endHour } = buildShiftTimes(dayKey, preset);
+    const newShiftItem = {
+      shiftId: `draft-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: preset.type,
+      name: preset.name,
+      code: preset.code,
+      time: preset.time,
+      location: preset.defaultLocation || "Operations Area",
+      hours: preset.hours || 0,
+      startHour,
+      endHour,
+      isDraft: true,
+      allowPast: isPastDayKey(dayKey),
+    };
+
+    setStaffList((prev) =>
+      prev.map((s) => {
+        if (s.id !== staff.id) return s;
+        const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
+        return {
+          ...s,
+          shifts: {
+            ...s.shifts,
+            [dayKey]: [...currentShifts, newShiftItem],
+          },
+        };
+      })
+    );
+
+    setNotice(`Đã đưa ${preset.name} vào danh sách nháp cho ${staff.name} (${dayKey}). Nhấn "Lưu thay đổi" để áp dụng.`);
+    setTimeout(() => setNotice(""), 3500);
+  };
+
+  const requestAssignPreset = (staff, dayKey, preset, { skipPastWarning = false } = {}) => {
+    setError("");
+    const existing = Array.isArray(staff.shifts?.[dayKey]) ? staff.shifts[dayKey] : [];
+    const overlap = findOverlappingShift(existing, preset);
+    if (overlap) {
+      setError(`Trùng khung giờ trực! Nhân viên ${staff.name} đã có ca "${overlap.name}" (${overlap.time}) trên cùng ngày ${dayKey}. Không thể xếp ca trùng.`);
+      return;
+    }
+
+    if (!skipPastWarning && isPastDayKey(dayKey)) {
+      setPastWarning({
+        staffId: staff.id,
+        staffName: staff.name,
+        dayKey,
+        preset,
+      });
+      return;
+    }
+
+    applyDraftAssignment(staff, dayKey, preset);
+  };
+
   // --- Drag and Drop Handlers ---
   const handleDragStart = (e, preset) => {
     setDraggingPreset(preset);
@@ -511,11 +684,17 @@ function ManagerShifts() {
     setDragOverCell(null);
   };
 
-  const handleDragOver = (e, employeeId, dayKey) => {
+  const handleDragOver = (e, staff, dayKey) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    if (dragOverCell?.employeeId !== employeeId || dragOverCell?.dayKey !== dayKey) {
-      setDragOverCell({ employeeId, dayKey });
+    const existing = Array.isArray(staff.shifts?.[dayKey]) ? staff.shifts[dayKey] : [];
+    const conflict = Boolean(draggingPreset && findOverlappingShift(existing, draggingPreset));
+    e.dataTransfer.dropEffect = conflict ? "none" : "copy";
+    if (
+      dragOverCell?.employeeId !== staff.id ||
+      dragOverCell?.dayKey !== dayKey ||
+      dragOverCell?.conflict !== conflict
+    ) {
+      setDragOverCell({ employeeId: staff.id, dayKey, conflict });
     }
   };
 
@@ -523,7 +702,7 @@ function ManagerShifts() {
     setDragOverCell(null);
   };
 
-  const handleDrop = async (e, staff, dayKey) => {
+  const handleDrop = (e, staff, dayKey) => {
     e.preventDefault();
     setDragOverCell(null);
 
@@ -538,10 +717,9 @@ function ManagerShifts() {
     }
 
     if (!preset) return;
-    await assignPresetToCell(staff, dayKey, preset);
+    requestAssignPreset(staff, dayKey, preset);
   };
 
-  // Click brush tool / direct cell click
   const handlePresetClick = (preset) => {
     if (selectedBrush?.type === preset.type) {
       setSelectedBrush(null);
@@ -550,75 +728,135 @@ function ManagerShifts() {
     }
   };
 
-  const handleCellClick = async (staff, dayKey) => {
+  const handleCellClick = (staff, dayKey) => {
     if (selectedBrush) {
-      // If brush tool active, assign selected brush directly to this cell
-      await assignPresetToCell(staff, dayKey, selectedBrush);
+      requestAssignPreset(staff, dayKey, selectedBrush);
     }
   };
 
-  // Core assignment function: Appends shift so 1 employee can work multiple shifts in 1 day!
-  const assignPresetToCell = async (staff, dayKey, preset) => {
-    setError("");
-
-    // Build startsAt and endsAt ISO dates
-    const [year, month, day] = dayKey.split("-").map(Number);
-    const startHour = preset.startHour || 6;
-    const endHour = preset.endHour || 14;
-
-    const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
-    const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
-    if (endHour >= 24) {
-      endDate.setUTCDate(endDate.getUTCDate() + 1);
-    }
-
-    const tempShiftId = Date.now() + Math.floor(Math.random() * 1000);
-    const newShiftItem = {
-      shiftId: tempShiftId,
-      type: preset.type,
-      name: preset.name,
-      code: preset.code,
-      time: preset.time,
-      location: preset.defaultLocation || "Operations Area",
-      hours: preset.hours || 0,
-    };
-
-    // Optimistically APPEND shift into array for this day
+  const handleDeleteShift = (staff, dayKey, shiftIndex) => {
     setStaffList((prev) =>
       prev.map((s) => {
-        if (s.id === staff.id) {
-          const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
-          currentShifts.push(newShiftItem);
-          return {
-            ...s,
-            shifts: {
-              ...s.shifts,
-              [dayKey]: currentShifts,
-            },
-          };
-        }
-        return s;
+        if (s.id !== staff.id) return s;
+        const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
+        currentShifts.splice(shiftIndex, 1);
+        return {
+          ...s,
+          shifts: {
+            ...s.shifts,
+            [dayKey]: currentShifts,
+          },
+        };
       })
     );
 
-    setNotice(`Assigned ${preset.name} (${preset.time}) to ${staff.name} on ${dayKey}!`);
-    setTimeout(() => setNotice(""), 3000);
+    setNotice(`Đã gỡ ca khỏi danh sách nháp của ${staff.name}. Nhấn Save để áp dụng.`);
+    setTimeout(() => setNotice(""), 2500);
+  };
 
-    // Call backend API in background
-    if (facilityId) {
-      try {
+  const confirmLeaveDraft = () => {
+    if (!isDirty) return true;
+    return window.confirm("Bạn đang có thay đổi nháp chưa lưu. Đổi tuần sẽ hủy các thay đổi này?");
+  };
+
+  const handlePrevWeek = () => {
+    if (!confirmLeaveDraft()) return;
+    setBaseDate((prev) => new Date(prev.getTime() - 7 * 86400000));
+  };
+
+  const handleNextWeek = () => {
+    if (!confirmLeaveDraft()) return;
+    setBaseDate((prev) => new Date(prev.getTime() + 7 * 86400000));
+  };
+
+  const handleCurrentWeek = () => {
+    if (!confirmLeaveDraft()) return;
+    setBaseDate(new Date());
+  };
+
+  const handleRevert = () => {
+    setStaffList(cloneRoster(baselineStaffList));
+    setPastWarning(null);
+    setError("");
+    setNotice("Đã hủy thay đổi nháp.");
+    setTimeout(() => setNotice(""), 2500);
+  };
+
+  const handleConfirmPastAssign = () => {
+    if (!pastWarning) return;
+    const staff = staffList.find((s) => s.id === pastWarning.staffId);
+    const preset = pastWarning.preset;
+    const dayKey = pastWarning.dayKey;
+    setPastWarning(null);
+    if (staff && preset) {
+      requestAssignPreset(staff, dayKey, preset, { skipPastWarning: true });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!facilityId || !isDirty || saving) return;
+    setSaving(true);
+    setError("");
+
+    try {
+      const ops = [];
+      for (const staff of staffList) {
+        const base = baselineStaffList.find((s) => s.id === staff.id);
+        const dayKeys = new Set([
+          ...Object.keys(base?.shifts || {}),
+          ...Object.keys(staff.shifts || {}),
+        ]);
+        dayKeys.forEach((dayKey) => {
+          const baseShifts = base?.shifts?.[dayKey] || [];
+          const curShifts = staff.shifts?.[dayKey] || [];
+          const baseIds = new Set(baseShifts.map((s) => s.shiftId));
+          const curIds = new Set(curShifts.map((s) => s.shiftId));
+          curShifts.forEach((sh) => {
+            if (!baseIds.has(sh.shiftId)) ops.push({ type: "add", staff, dayKey, shift: sh });
+          });
+          baseShifts.forEach((sh) => {
+            if (!curIds.has(sh.shiftId) && sh.shiftId) {
+              ops.push({ type: "remove", staff, shift: sh });
+            }
+          });
+        });
+      }
+
+      // Group into assignmentsToDelete
+      const assignmentsToDelete = [];
+      for (const op of ops) {
+        if (op.type === "remove") {
+          const sid = Number(op.shift.shiftId);
+          if (Number.isFinite(sid) && sid > 0) {
+            assignmentsToDelete.push({
+              shiftId: sid,
+              employeeId: Number(op.staff.id),
+            });
+          }
+        }
+      }
+
+      // Group into assignmentsToAdd
+      const adds = ops.filter((op) => op.type === "add");
+      const assignmentsToAdd = [];
+
+      for (const op of adds) {
+        const { startDate, endDate } = buildShiftTimes(op.dayKey, op.shift);
+        const isPast = isPastDayKey(op.dayKey);
+
         let matchingShift = shifts.find(
           (sh) =>
-            sh.shiftName?.toLowerCase() === preset.name.toLowerCase() &&
-            new Date(sh.startsAt).toISOString().slice(0, 10) === dayKey
+            sh.shiftName?.toLowerCase() === op.shift.name.toLowerCase() &&
+            toLocalDateKey(sh.startsAt) === op.dayKey
         );
 
         if (!matchingShift) {
           const created = await managerService.createShift(facilityId, {
-            shiftName: preset.name,
+            shiftName: op.shift.name,
             startsAt: startDate.toISOString(),
             endsAt: endDate.toISOString(),
-            status: "open",
+            status: "planned",
+            allowPast: isPast || Boolean(op.shift.allowPast),
           });
           matchingShift = created;
           if (created) {
@@ -627,60 +865,36 @@ function ManagerShifts() {
         }
 
         if (matchingShift?.id) {
-          await managerService.createShiftAssignment(facilityId, {
-            shiftId: matchingShift.id,
-            employeeId: staff.id,
-            dutyRole: DUTY_ROLES[0].value,
+          assignmentsToAdd.push({
+            shiftId: Number(matchingShift.id),
+            employeeId: Number(op.staff.id),
+            dutyRole: DUTY_ROLES[0]?.value || "staff",
+            status: "scheduled",
+            allowPast: isPast || Boolean(op.shift.allowPast),
           });
         }
-      } catch {
-        // Optimistic state keeps UI fast and interactive
       }
-    }
-  };
 
-  // Delete individual shift from array
-  const handleDeleteShift = async (staff, dayKey, shiftIndex, shiftItem) => {
-    setStaffList((prev) =>
-      prev.map((s) => {
-        if (s.id === staff.id) {
-          const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
-          currentShifts.splice(shiftIndex, 1);
-          return {
-            ...s,
-            shifts: {
-              ...s.shifts,
-              [dayKey]: currentShifts,
-            },
-          };
-        }
-        return s;
-      })
-    );
+      if (assignmentsToAdd.length > 0 || assignmentsToDelete.length > 0) {
+        const batchResult = await managerService.batchSaveShiftAssignments(facilityId, {
+          assignmentsToAdd,
+          assignmentsToDelete,
+        });
 
-    setNotice(`Removed shift for ${staff.name}.`);
-    setTimeout(() => setNotice(""), 2500);
-
-    if (facilityId && shiftItem?.shiftId) {
-      try {
-        await managerService.deleteShiftAssignment(facilityId, shiftItem.shiftId, staff.id);
-      } catch {
-        // ignore delete failure
+        const addedCount = batchResult?.addedCount ?? assignmentsToAdd.length;
+        const deletedCount = batchResult?.deletedCount ?? assignmentsToDelete.length;
+        setNotice(`Đã lưu thành công lịch trực: +${addedCount} ca mới, -${deletedCount} ca đã gỡ.`);
+      } else {
+        setNotice("Không có thay đổi cần lưu.");
       }
+
+      setTimeout(() => setNotice(""), 3500);
+      setReloadToken((token) => token + 1);
+    } catch (err) {
+      setError(err?.message || "Không lưu được thay đổi lịch ca.");
+    } finally {
+      setSaving(false);
     }
-  };
-
-  // Navigation handlers
-  const handlePrevWeek = () => {
-    setBaseDate((prev) => new Date(prev.getTime() - 7 * 86400000));
-  };
-
-  const handleNextWeek = () => {
-    setBaseDate((prev) => new Date(prev.getTime() + 7 * 86400000));
-  };
-
-  const handleCurrentWeek = () => {
-    setBaseDate(new Date());
   };
 
   return (
@@ -740,6 +954,25 @@ function ManagerShifts() {
               className="h-9 w-48 rounded-xl border border-[#dfe7f5] bg-white pl-8 pr-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-60 focus:border-[#1d5fe5]"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={handleRevert}
+            disabled={!isDirty || saving}
+            className="inline-flex h-9 items-center gap-1 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-bold text-[#475467] transition hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[16px]">undo</span>
+            Huỷ (Revert)
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!isDirty || saving}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#1d5fe5] px-3.5 text-xs font-bold text-white transition hover:bg-[#1554d1] shadow-2xs disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[16px]">save</span>
+            {saving ? "Đang lưu..." : "Lưu thay đổi (Save)"}
+          </button>
         </div>
       </div>
 
@@ -795,6 +1028,13 @@ function ManagerShifts() {
         )}
       </div>
 
+      {isDirty && (
+        <div className="flex items-center gap-2 rounded-xl border border-[#fedf89] bg-[#fffcf5] px-4 py-2.5 text-xs font-bold text-[#b54708]">
+          <span className="material-symbols-outlined text-[18px]">edit_note</span>
+          <span>Đang có thay đổi nháp. Nhấn Save để lưu hoặc Huỷ (Revert) để hoàn tác.</span>
+        </div>
+      )}
+
       {notice && (
         <div role="status" className="flex items-center gap-2 rounded-xl bg-[#ecfdf3] px-4 py-2.5 text-xs font-bold text-[#027a48] border border-[#a6f4c5]">
           <span className="material-symbols-outlined text-[18px]">check_circle</span>
@@ -833,7 +1073,11 @@ function ManagerShifts() {
                   <th
                     key={day.key}
                     className={`min-w-[175px] p-3 text-center align-middle border-r border-[#eaecf0] transition ${
-                      day.isToday ? "bg-[#f8faff] border-t-4 border-t-[#1d5fe5]" : "bg-white"
+                      day.isToday
+                        ? "bg-[#f8faff] border-t-4 border-t-[#1d5fe5]"
+                        : day.isPast
+                        ? "bg-[#fffbfa] border-t-4 border-t-[#fda29b]"
+                        : "bg-white"
                     }`}
                   >
                     {day.isToday && (
@@ -841,10 +1085,15 @@ function ManagerShifts() {
                         TODAY
                       </div>
                     )}
-                    <div className={`text-[12px] font-medium ${day.isToday ? "text-[#1d5fe5] font-extrabold" : "text-[#475467]"}`}>
+                    {day.isPast && (
+                      <div className="inline-block rounded-full bg-[#fee4e2] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#b42318] mb-1">
+                        PAST
+                      </div>
+                    )}
+                    <div className={`text-[12px] font-medium ${day.isToday ? "text-[#1d5fe5] font-extrabold" : day.isPast ? "text-[#b42318]" : "text-[#475467]"}`}>
                       {day.dayName}
                     </div>
-                    <div className={`mt-0.5 text-base font-black ${day.isToday ? "text-[#1d5fe5]" : "text-[#0b1c30]"}`}>
+                    <div className={`mt-0.5 text-base font-black ${day.isToday ? "text-[#1d5fe5]" : day.isPast ? "text-[#912018]" : "text-[#0b1c30]"}`}>
                       {day.dateFormatted}
                     </div>
                   </th>
@@ -912,24 +1161,26 @@ function ManagerShifts() {
 
                     {/* Day Cells: Supports multiple shifts per day + minimalist '+' drop target */}
                     {weekDays.map((day) => {
-                      const dayShifts = Array.isArray(staff.shifts?.[day.key])
+                      const rawShifts = Array.isArray(staff.shifts?.[day.key])
                         ? staff.shifts[day.key]
                         : staff.shifts?.[day.key]
                         ? [staff.shifts[day.key]]
                         : [];
+                      const dayShifts = markOverlappingShifts(rawShifts);
 
                       const isDropTarget =
                         dragOverCell?.employeeId === staff.id && dragOverCell?.dayKey === day.key;
+                      const isConflictDrop = isDropTarget && dragOverCell?.conflict;
 
                       return (
                         <td
                           key={day.key}
-                          onDragOver={(e) => handleDragOver(e, staff.id, day.key)}
+                          onDragOver={(e) => handleDragOver(e, staff, day.key)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, staff, day.key)}
                           className={`min-w-[175px] p-2 align-top border-r border-[#eaecf0] transition-colors ${
-                            day.isToday ? "bg-[#f8faff]/50" : ""
-                          } ${isDropTarget ? "bg-[#eef4ff]/70" : ""}`}
+                            day.isToday ? "bg-[#f8faff]/50" : day.isPast ? "bg-[#fffbfa]/70" : ""
+                          } ${isConflictDrop ? "bg-[#fff1f3]" : isDropTarget ? "bg-[#eef4ff]/70" : ""}`}
                         >
                           <div className="flex flex-col gap-1.5 min-h-[92px]">
                             {/* Render all shifts assigned for this employee on this day */}
@@ -937,11 +1188,10 @@ function ManagerShifts() {
                               <ShiftCard
                                 key={sh.shiftId || idx}
                                 shift={sh}
-                                onDelete={() => handleDeleteShift(staff, day.key, idx, sh)}
+                                onDelete={() => handleDeleteShift(staff, day.key, idx)}
                               />
                             ))}
 
-                            {/* Minimalist '+' Drop Target / Brush Click (NO popup dialog) */}
                             <div
                               onClick={() => handleCellClick(staff, day.key)}
                               className={`group flex items-center justify-center rounded-[12px] border border-dashed transition cursor-pointer ${
@@ -949,18 +1199,24 @@ function ManagerShifts() {
                                   ? "h-8 hover:border-[#1d5fe5] hover:bg-[#eef4ff]/40"
                                   : "flex-1 min-h-[92px]"
                               } ${
-                                isDropTarget
+                                isConflictDrop
+                                  ? "border-2 border-[#d92d20] bg-[#fee4e2] shadow-inner"
+                                  : isDropTarget
                                   ? "border-2 border-[#1d5fe5] bg-[#eef4ff] shadow-inner scale-[1.01]"
                                   : "border-[#2b64e3] border-[1.5px] bg-[#fafcff] hover:bg-[#eef4ff]/40"
                               }`}
                               title={
-                                selectedBrush
+                                isConflictDrop
+                                  ? "Khung giờ trùng — không thể thả ca này"
+                                  : selectedBrush
                                   ? `Click to assign ${selectedBrush.name}`
                                   : "Drag and drop shift here"
                               }
                             >
-                              <span className="material-symbols-outlined text-[26px] font-bold text-[#2062eb] group-hover:scale-125 transition">
-                                add
+                              <span className={`material-symbols-outlined text-[26px] font-bold group-hover:scale-125 transition ${
+                                isConflictDrop ? "text-[#d92d20]" : "text-[#2062eb]"
+                              }`}>
+                                {isConflictDrop ? "block" : "add"}
                               </span>
                             </div>
                           </div>
@@ -1025,6 +1281,46 @@ function ManagerShifts() {
           </table>
         </div>
       </div>
+
+      {pastWarning && (
+        <dialog
+          open
+          aria-labelledby="past-shift-warning-title"
+          className="fixed inset-0 z-50 m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[#fedf89] bg-white p-5 text-[#0b1c30] shadow-xl backdrop:bg-black/40"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fef0c7] text-[#b54708]">
+              <span className="material-symbols-outlined text-[22px]">warning</span>
+            </span>
+            <div>
+              <h2 id="past-shift-warning-title" className="text-sm font-black text-[#b54708]">
+                Cảnh báo xếp lịch trong quá khứ
+              </h2>
+              <p className="mt-1.5 text-xs font-medium leading-5 text-[#475467]">
+                Ngày <span className="font-bold text-[#0b1c30]">{pastWarning.dayKey}</span> là ngày trong quá khứ.
+                Bạn có chắc chắn muốn xếp ca <span className="font-bold text-[#0b1c30]">{pastWarning.preset?.name}</span>{" "}
+                ({pastWarning.preset?.time}) cho nhân viên <span className="font-bold text-[#0b1c30]">{pastWarning.staffName}</span>?
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPastWarning(null)}
+              className="h-9 rounded-xl border border-[#dfe7f5] px-3 text-xs font-bold text-[#475467] hover:bg-[#f8faff]"
+            >
+              Huỷ bỏ
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmPastAssign}
+              className="h-9 rounded-xl bg-[#b54708] px-3 text-xs font-bold text-white hover:bg-[#93370d]"
+            >
+              Xác nhận xếp lịch quá khứ
+            </button>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }

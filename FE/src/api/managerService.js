@@ -61,6 +61,12 @@ export const managerService = {
     const res = await apiClient.delete(`/manager/facilities/${facilityId}/shift-assignments/${shiftId}/${employeeId}`);
     return res?.data ?? null;
   },
+
+  /** @param {{ assignmentsToAdd?: Array<{ shiftId: number, employeeId: number, dutyRole: string, status?: string, allowPast?: boolean }>, assignmentsToDelete?: Array<{ shiftId: number, employeeId: number }> }} payload */
+  async batchSaveShiftAssignments(facilityId, payload) {
+    const res = await apiClient.post(`/manager/facilities/${facilityId}/shift-assignments/batch-save`, payload);
+    return res?.data ?? null;
+  },
   async getFacilityStaff(facilityId) {
     const res = await apiClient.get(`/manager/facilities/${facilityId}/staff`);
     return res?.data ?? [];
