@@ -13,6 +13,12 @@ import {
   ShieldAlert,
   Users,
   Percent,
+  CalendarCheck,
+  LogIn,
+  LogOut,
+  ClipboardCheck,
+  LifeBuoy,
+  AlertTriangle,
 } from "lucide-react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
@@ -42,22 +48,25 @@ export default function ManagerDashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
-  // Normalize stats from flat or nested responses
+  // Extract properties matching backend ManagerFacilityDashboardDto exactly
   const stats = {
-    totalUnits: data?.totalUnits ?? data?.occupancy?.totalUnits ?? 0,
-    occupiedUnits: data?.occupiedUnits ?? data?.occupancy?.occupiedUnits ?? 0,
-    availableUnits: data?.availableUnits ?? data?.occupancy?.availableUnits ?? 0,
-    reservedUnits: data?.reservedUnits ?? data?.occupancy?.reservedUnits ?? 0,
-    maintenanceUnits: data?.maintenanceUnits ?? data?.occupancy?.maintenanceUnits ?? 0,
-    occupancyRate: data?.occupancyRate ?? data?.occupancy?.occupancyRate ?? (
+    totalUnits: data?.totalUnits ?? 0,
+    occupiedUnits: data?.occupiedUnits ?? 0,
+    availableUnits: data?.availableUnits ?? 0,
+    reservedUnits: data?.reservedUnits ?? 0,
+    maintenanceUnits: data?.maintenanceUnits ?? 0,
+    occupancyRate: data?.occupancyRate ?? (
       data?.totalUnits ? Math.round(((data?.occupiedUnits || 0) / data.totalUnits) * 100) : 0
     ),
-    totalRevenue: data?.totalRevenue ?? data?.revenue?.totalRevenue ?? 0,
-    monthlyRevenue: data?.monthlyRevenue ?? data?.thisMonthRevenue ?? data?.revenue?.monthlyRevenue ?? 0,
-    outstandingBalance: data?.outstandingBalance ?? data?.revenue?.outstandingBalance ?? 0,
-    activeAgreements: data?.activeAgreements ?? data?.agreementsCount ?? 0,
-    pendingTasks: data?.pendingTasks ?? data?.tasksCount ?? 0,
-    pendingRefunds: data?.pendingRefunds ?? data?.refundsCount ?? 0,
+    thisMonthRevenue: data?.thisMonthRevenue ?? 0,
+    totalOutstandingDebt: data?.totalOutstandingDebt ?? 0,
+    openTicketsCount: data?.openTicketsCount ?? 0,
+    urgentTicketsCount: data?.urgentTicketsCount ?? 0,
+    dailySchedule: {
+      todayCheckInsCount: data?.dailySchedule?.todayCheckInsCount ?? 0,
+      todayCheckOutsCount: data?.dailySchedule?.todayCheckOutsCount ?? 0,
+      todayInspectionsCount: data?.dailySchedule?.todayInspectionsCount ?? 0,
+    },
   };
 
   return (
@@ -67,7 +76,7 @@ export default function ManagerDashboard() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1d5fe5]">
             <Warehouse className="h-4 w-4" />
-            <span>Facility Management</span>
+            <span>Facility Management Console</span>
           </div>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-black tracking-tight text-[#0b1c30]">
             <LayoutDashboard className="h-7 w-7 text-[#1d5fe5]" />
@@ -75,8 +84,8 @@ export default function ManagerDashboard() {
           </h1>
           <p className="mt-1 text-sm text-[#58657a]">
             {activeFacility
-              ? `Thống kê tỷ lệ lấp đầy, doanh thu & vận hành kho: ${activeFacility.name} (${activeFacility.code || activeFacility.id})`
-              : "Thống kê thời gian thực theo cơ sở được chọn"}
+              ? `Thống kê tỷ lệ lấp đầy, doanh thu & lịch vận hành: ${activeFacility.name} (${activeFacility.code || `Hub #${activeFacility.id}`})`
+              : "Thống kê thời gian thực theo cơ sở kho được chọn"}
           </p>
         </div>
 
@@ -115,10 +124,10 @@ export default function ManagerDashboard() {
       {/* Main Content */}
       {(!loading || data) && (
         <>
-          {/* Top KPI Cards */}
+          {/* Top 4 Key KPI Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Occupancy Rate */}
-            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">Tỷ lệ lấp đầy</span>
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#1d5fe5]">
@@ -128,8 +137,11 @@ export default function ManagerDashboard() {
               <div className="mt-3 text-3xl font-black text-[#0b1c30]">
                 {Number(stats.occupancyRate || 0).toFixed(1)}%
               </div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-[#58657a]">
-                <span className="font-semibold text-emerald-600">{stats.occupiedUnits}</span> / {stats.totalUnits} ô đã thuê
+              <div className="mt-2 flex items-center justify-between text-xs text-[#58657a]">
+                <span>
+                  Đã thuê: <strong className="text-blue-600">{stats.occupiedUnits}</strong> / {stats.totalUnits} ô
+                </span>
+                <span className="font-semibold text-emerald-600">Trống {stats.availableUnits}</span>
               </div>
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
@@ -139,8 +151,8 @@ export default function ManagerDashboard() {
               </div>
             </div>
 
-            {/* Monthly Revenue */}
-            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+            {/* This Month Revenue */}
+            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">Doanh thu tháng này</span>
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -148,34 +160,15 @@ export default function ManagerDashboard() {
                 </span>
               </div>
               <div className="mt-3 text-3xl font-black text-[#0b1c30]">
-                {formatVnd(stats.monthlyRevenue)}
+                {formatVnd(stats.thisMonthRevenue)}
               </div>
               <div className="mt-2 text-xs text-[#58657a]">
-                Tổng thu: <span className="font-semibold text-slate-800">{formatVnd(stats.totalRevenue)}</span>
+                Cơ sở: <span className="font-semibold text-slate-800">{activeFacility?.name || "Cơ sở kho"}</span>
               </div>
             </div>
 
-            {/* Active Agreements */}
-            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">Hợp đồng hiệu lực</span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                  <FileCheck2 className="h-5 w-5" />
-                </span>
-              </div>
-              <div className="mt-3 text-3xl font-black text-[#0b1c30]">
-                {stats.activeAgreements}
-              </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-[#58657a]">
-                <span>Đang hoạt động tại kho</span>
-                <Link to="/manager-agreements" className="font-bold text-[#1d5fe5] hover:underline">
-                  Xem &rarr;
-                </Link>
-              </div>
-            </div>
-
-            {/* Outstanding Balance */}
-            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm">
+            {/* Outstanding Debt */}
+            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">Công nợ quá hạn</span>
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -183,135 +176,190 @@ export default function ManagerDashboard() {
                 </span>
               </div>
               <div className="mt-3 text-3xl font-black text-rose-600">
-                {formatVnd(stats.outstandingBalance)}
+                {formatVnd(stats.totalOutstandingDebt)}
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-[#58657a]">
-                <span>Cần xử lý nhắc nợ</span>
+                <span>Cần nhắc nợ</span>
                 <Link to="/manager-delinquent-cases" className="font-bold text-rose-600 hover:underline">
-                  Xử lý &rarr;
+                  Xử lý nợ &rarr;
+                </Link>
+              </div>
+            </div>
+
+            {/* Open / Urgent Tickets */}
+            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#58657a]">Ticket &amp; Hỗ trợ</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                  <LifeBuoy className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-[#0b1c30]">{stats.openTicketsCount}</span>
+                {stats.urgentTicketsCount > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600 border border-rose-200">
+                    <AlertTriangle className="h-3 w-3" />
+                    {stats.urgentTicketsCount} khẩn cấp
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-[#58657a]">
+                <span>Cần xử lý tại kho</span>
+                <Link to="/manager-tickets" className="font-bold text-[#1d5fe5] hover:underline">
+                  Xem tickets &rarr;
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Unit Inventory Status */}
+          {/* Row 2: Today's Daily Schedule & Inventory Overview */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Today's Operational Schedule */}
+            <div className="rounded-2xl border border-[#dfe7f5] bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-base font-bold text-[#0b1c30]">
+                  <CalendarCheck className="h-5 w-5 text-[#1d5fe5]" />
+                  Lịch vận hành hôm nay
+                </h2>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#1d5fe5]">
+                  Real-time
+                </span>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-[#f8faff] p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                      <LogIn className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-[#0b1c30]">Check-in dự kiến</div>
+                      <div className="text-xs text-[#58657a]">Khách nhận ô kho mới</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black text-[#0b1c30]">
+                    {stats.dailySchedule.todayCheckInsCount}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-[#f8faff] p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                      <LogOut className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-[#0b1c30]">Check-out / Trả kho</div>
+                      <div className="text-xs text-[#58657a]">Hết hạn hoặc chấm dứt hợp đồng</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black text-[#0b1c30]">
+                    {stats.dailySchedule.todayCheckOutsCount}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-[#f8faff] p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                      <ClipboardCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-[#0b1c30]">Nghiệm thu ô kho</div>
+                      <div className="text-xs text-[#58657a]">Khảo sát &amp; biên bản hư hại</div>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black text-[#0b1c30]">
+                    {stats.dailySchedule.todayInspectionsCount}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 border-t border-slate-100 pt-4">
+                <Link
+                  to="/manager-move-outs"
+                  className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1d5fe5] hover:underline"
+                >
+                  Xem lịch hẹn di dời &amp; nghiệm thu chi tiết
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Inventory Distribution */}
             <div className="rounded-2xl border border-[#dfe7f5] bg-white p-6 shadow-sm lg:col-span-2">
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-base font-bold text-[#0b1c30]">
                   <Boxes className="h-5 w-5 text-[#1d5fe5]" />
-                  Tình trạng ô kho cơ sở
+                  Chi tiết tình trạng ô kho
                 </h2>
                 <Link to="/manager-units" className="text-xs font-bold text-[#1d5fe5] hover:underline">
-                  Quản lý ô kho &amp; sơ đồ &rarr;
+                  Quản lý ô kho &amp; bản đồ sơ đồ &rarr;
                 </Link>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs font-semibold text-[#58657a]">Tổng ô kho</div>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                  <div className="text-xs font-semibold text-[#58657a]">Tổng số ô</div>
                   <div className="mt-1 text-2xl font-black text-[#0b1c30]">{stats.totalUnits}</div>
+                  <div className="mt-1 text-[10px] text-slate-500">Toàn cơ sở</div>
                 </div>
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
                   <div className="text-xs font-semibold text-blue-700">Đang thuê</div>
                   <div className="mt-1 text-2xl font-black text-blue-900">{stats.occupiedUnits}</div>
+                  <div className="mt-1 text-[10px] text-blue-600">Đang hoạt động</div>
                 </div>
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
                   <div className="text-xs font-semibold text-emerald-700">Còn trống</div>
                   <div className="mt-1 text-2xl font-black text-emerald-900">{stats.availableUnits}</div>
+                  <div className="mt-1 text-[10px] text-emerald-600">Sẵn sàng thuê</div>
                 </div>
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <div className="text-xs font-semibold text-amber-700">Đặt trước / Bảo trì</div>
-                  <div className="mt-1 text-2xl font-black text-amber-900">
-                    {stats.reservedUnits + stats.maintenanceUnits}
-                  </div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+                  <div className="text-xs font-semibold text-amber-700">Đã đặt trước</div>
+                  <div className="mt-1 text-2xl font-black text-amber-900">{stats.reservedUnits}</div>
+                  <div className="mt-1 text-[10px] text-amber-600">Chờ nhận kho</div>
+                </div>
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center">
+                  <div className="text-xs font-semibold text-rose-700">Bảo trì / Khóa</div>
+                  <div className="mt-1 text-2xl font-black text-rose-900">{stats.maintenanceUnits}</div>
+                  <div className="mt-1 text-[10px] text-rose-600">Cần sửa chữa</div>
                 </div>
               </div>
 
+              {/* Quick Actions Shortcuts */}
               <div className="mt-6 border-t border-slate-100 pt-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#58657a]">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3 w-3 rounded-full bg-blue-500" />
-                      Đang sử dụng: {stats.occupiedUnits}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3 w-3 rounded-full bg-emerald-500" />
-                      Trống: {stats.availableUnits}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3 w-3 rounded-full bg-amber-500" />
-                      Khác: {stats.reservedUnits + stats.maintenanceUnits}
-                    </span>
-                  </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[#58657a] mb-3">
+                  Lối tắt nghiệp vụ quản lý
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <Link
                     to="/manager-units"
-                    className="inline-flex items-center gap-1 font-bold text-[#1d5fe5] hover:underline"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-100 p-3 text-center transition hover:border-[#1d5fe5] hover:bg-blue-50/50"
                   >
-                    Xem sơ đồ mặt bằng
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <Boxes className="h-5 w-5 text-[#1d5fe5] mb-1.5" />
+                    <span className="text-xs font-bold text-[#0b1c30]">Sơ đồ kho</span>
                   </Link>
-                </div>
-              </div>
-            </div>
 
-            {/* Quick Navigation / Action Hub */}
-            <div className="flex flex-col justify-between rounded-2xl border border-[#dfe7f5] bg-white p-6 shadow-sm">
-              <div>
-                <h2 className="flex items-center gap-2 text-base font-bold text-[#0b1c30]">
-                  <TrendingUp className="h-5 w-5 text-[#1d5fe5]" />
-                  Truy cập nhanh chức năng
-                </h2>
-                <div className="mt-4 space-y-2">
                   <Link
                     to="/manager-shifts"
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-sm font-semibold text-[#0b1c30] transition hover:bg-slate-50"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-100 p-3 text-center transition hover:border-[#1d5fe5] hover:bg-blue-50/50"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Users className="h-4 w-4 text-[#1d5fe5]" />
-                      Lịch trực &amp; phân ca nhân viên
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                    <Users className="h-5 w-5 text-indigo-600 mb-1.5" />
+                    <span className="text-xs font-bold text-[#0b1c30]">Phân ca trực</span>
                   </Link>
-                  <Link
-                    to="/manager-transfer-requests"
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-sm font-semibold text-[#0b1c30] transition hover:bg-slate-50"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Boxes className="h-4 w-4 text-[#1d5fe5]" />
-                      Yêu cầu chuyển kho liên cơ sở
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-slate-400" />
-                  </Link>
+
                   <Link
                     to="/manager-charge-proposals"
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-sm font-semibold text-[#0b1c30] transition hover:bg-slate-50"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-100 p-3 text-center transition hover:border-[#1d5fe5] hover:bg-blue-50/50"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <Coins className="h-4 w-4 text-amber-600" />
-                      Duyệt phụ phí hư hại
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                    <Coins className="h-5 w-5 text-amber-600 mb-1.5" />
+                    <span className="text-xs font-bold text-[#0b1c30]">Duyệt phụ phí</span>
                   </Link>
-                  <Link
-                    to="/manager-refund-approvals"
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-sm font-semibold text-[#0b1c30] transition hover:bg-slate-50"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Coins className="h-4 w-4 text-emerald-600" />
-                      Duyệt hoàn tiền cọc
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-slate-400" />
-                  </Link>
+
                   <Link
                     to="/manager-pricing"
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-sm font-semibold text-[#0b1c30] transition hover:bg-slate-50"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-100 p-3 text-center transition hover:border-[#1d5fe5] hover:bg-blue-50/50"
                   >
-                    <span className="flex items-center gap-2.5">
-                      <ShieldAlert className="h-4 w-4 text-blue-600" />
-                      Biểu giá thuê &amp; khuyến mãi cơ sở
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                    <ShieldAlert className="h-5 w-5 text-emerald-600 mb-1.5" />
+                    <span className="text-xs font-bold text-[#0b1c30]">Biểu giá thuê</span>
                   </Link>
                 </div>
               </div>
