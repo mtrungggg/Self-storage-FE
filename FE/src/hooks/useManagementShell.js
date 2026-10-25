@@ -65,6 +65,7 @@ export function useManagementShell() {
     badge: "FACILITY",
     hideHeader: true,
     items: [
+      { id: "manager-dashboard", label: "Facility Dashboard", icon: "dashboard", to: "/manager-dashboard" },
       { id: "manager-units", label: "Units & Layout", icon: "grid_view", to: "/manager-units" },
       { id: "manager-transfer-requests", label: "Unit Transfer Requests", icon: "swap_horiz", to: "/manager-transfer-requests" },
       { id: "manager-shifts", label: "Staff Shifts", icon: "badge", to: "/manager-shifts" },

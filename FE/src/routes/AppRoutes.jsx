@@ -27,6 +27,7 @@ const StaffMoveOuts = lazy(() => import("../pages/StaffMoveOuts"));
 
 // Lazy-loaded management & operations portal
 const ManagerUnits = lazy(() => import("../pages/ManagerUnits"));
+const ManagerDashboard = lazy(() => import("../pages/ManagerDashboard"));
 const ManagerTransferRequests = lazy(() => import("../pages/ManagerTransferRequests"));
 const ManagerShifts = lazy(() => import("../pages/ManagerShifts"));
 const ManagerChargeProposals = lazy(() => import("../pages/ManagerChargeProposals"));
@@ -102,7 +103,7 @@ function AppRoutes() {
           <Route element={<AdminLayouts />}>
             {/* Manager operations console: accessible to Facility Managers & System Administrators */}
             <Route element={<RequireAuth allowedRoles={[...MANAGER_ROLES, ...ADMIN_ROLES]} />}>
-              <Route path="/manager-dashboard" element={<Navigate to="/manager-units" replace />} />
+              <Route path="/manager-dashboard" element={<ManagerDashboard />} />
               <Route path="/manager-units" element={<ManagerUnits />} />
               <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
               <Route path="/manager-shifts" element={<ManagerShifts />} />

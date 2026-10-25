@@ -20,6 +20,7 @@ import {
 import operationsService from "../api/operationsService";
 import adminPricingService from "../api/adminPricingService";
 import adminFacilityService from "../api/adminFacilityService";
+import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
 function formatCurrency(val) {
@@ -119,16 +120,26 @@ function ManagerPricing() {
       .catch(() => {});
   }, []);
 
-  // Fetch Pricing Fees from /api/admin/pricing/fees
+  // Fetch Pricing Fees from /api/manager/pricing/fees (fallback to /admin/pricing/fees)
   const loadFees = useCallback(async () => {
     setLoadingFees(true);
     try {
-      const res = await adminPricingService.getPricingFees({
-        ...feeQuery,
-        FacilityId: feeQuery.FacilityId || undefined,
-        GlobalOnly: feeQuery.GlobalOnly === "" ? undefined : feeQuery.GlobalOnly === "true",
-        IsActive: feeQuery.IsActive === "" ? undefined : feeQuery.IsActive === "true",
-      });
+      let res;
+      try {
+        res = await managerService.getPricingFees({
+          ...feeQuery,
+          FacilityId: feeQuery.FacilityId || undefined,
+          GlobalOnly: feeQuery.GlobalOnly === "" ? undefined : feeQuery.GlobalOnly === "true",
+          IsActive: feeQuery.IsActive === "" ? undefined : feeQuery.IsActive === "true",
+        });
+      } catch {
+        res = await adminPricingService.getPricingFees({
+          ...feeQuery,
+          FacilityId: feeQuery.FacilityId || undefined,
+          GlobalOnly: feeQuery.GlobalOnly === "" ? undefined : feeQuery.GlobalOnly === "true",
+          IsActive: feeQuery.IsActive === "" ? undefined : feeQuery.IsActive === "true",
+        });
+      }
       setFeeData(res);
     } catch (err) {
       setError(err?.message || "Failed to load pricing fee policies from server.");
@@ -141,23 +152,26 @@ function ManagerPricing() {
     loadFees();
   }, [loadFees]);
 
-  // Fetch Rates & Promotions
+  // Fetch Rates & Promotions via /api/manager/facilities/{facilityId}/pricing/rates & /api/manager/promotions
   const loadRatesAndPromos = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const [ratesRes, promosRes] = await Promise.all([
-        operationsService.getPricingRates({
-          facilityId: facilityId || undefined,
-          pageSize: 50,
-        }),
-        operationsService.getPromotions({ pageSize: 50 }),
+        facilityId
+          ? managerService.getPricingRates(facilityId, { pageSize: 50 }).catch(() =>
+              operationsService.getPricingRates({ facilityId, pageSize: 50 })
+            )
+          : operationsService.getPricingRates({ pageSize: 50 }),
+        managerService.getPromotions({ pageSize: 50 }).catch(() =>
+          operationsService.getPromotions({ pageSize: 50 })
+        ),
       ]);
 
-      setRates(ratesRes?.items ?? []);
+      setRates(ratesRes?.items ?? (Array.isArray(ratesRes) ? ratesRes : []));
       setEditedRates({});
       setDirtyIds(new Set());
-      setPromotions(promosRes?.items ?? []);
+      setPromotions(promosRes?.items ?? (Array.isArray(promosRes) ? promosRes : []));
     } catch (err) {
       setError(err?.message || "Failed to load rates and promotion configurations.");
     } finally {
@@ -301,7 +315,7 @@ function ManagerPricing() {
           const original = rates.find((r) => r.id === id);
           if (!original) return Promise.resolve();
           const edited = editedRates[id] || {};
-          return operationsService.updatePricingRate({
+          const payload = {
             id: original.id,
             facilityId: original.facilityId,
             unitTypeId: original.unitTypeId,
@@ -310,7 +324,11 @@ function ManagerPricing() {
             bookingFee: edited.bookingFee ?? original.bookingFee,
             validFrom: original.validFrom,
             validTo: original.validTo,
-          });
+          };
+          const fId = facilityId || original.facilityId;
+          return managerService.updatePricingRates(fId, payload).catch(() =>
+            operationsService.updatePricingRate(payload)
+          );
         })
       );
       setNotice("Pricing rates updated successfully!");
@@ -331,7 +349,9 @@ function ManagerPricing() {
       prev.map((p) => (p.id === promoId ? { ...p, isActive: next } : p))
     );
     try {
-      await operationsService.updatePromotionStatus(promoId, next);
+      await managerService.updatePromotionStatus(promoId, next).catch(() =>
+        operationsService.updatePromotionStatus(promoId, next)
+      );
     } catch (err) {
       setPromotions((prev) =>
         prev.map((p) => (p.id === promoId ? { ...p, isActive: currentStatus } : p))
@@ -349,13 +369,16 @@ function ManagerPricing() {
     setSavingPromo(true);
     setError("");
     try {
-      await operationsService.createPromotion({
+      const payload = {
         code: promoForm.code.trim().toUpperCase(),
         name: promoForm.name.trim(),
         discountType: promoForm.discountType,
         discountValue: Number(promoForm.discountValue),
         usageLimit: promoForm.usageLimit ? Number(promoForm.usageLimit) : undefined,
-      });
+      };
+      await managerService.createPromotion(payload).catch(() =>
+        operationsService.createPromotion(payload)
+      );
       setShowPromoModal(false);
       setPromoForm({
         code: "",
