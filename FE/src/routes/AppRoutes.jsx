@@ -119,6 +119,7 @@ function AppRoutes() {
             <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
               <Route path="/admin-overview" element={<AdminDashboard />} />
               <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
+              <Route path="/admin-facilities/:id" element={<AdminCrudPage key="facility-detail" resource="facilities" />} />
               <Route path="/admin-pricing" element={<ManagerPricing />} />
               <Route path="/admin-pricing-policy" element={<ManagerPricing />} />
               <Route path="/admin-login-histories" element={<AdminLoginHistories />} />
