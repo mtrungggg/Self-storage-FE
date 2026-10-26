@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, ChevronDown, ChevronRight, LayoutDashboard, LogOut, Store, CalendarDays, Box, Boxes, SlidersHorizontal, Users, History, ShieldCheck } from "lucide-react";
+import { Menu, ChevronDown, ChevronRight, LayoutDashboard, LogOut, Store, CalendarDays, Box, Boxes, Users, History, ShieldCheck } from "lucide-react";
 
 const adminNavigation = {
   "admin-overview": ["Dashboard", LayoutDashboard],
   "admin-facilities": ["Facilities", Boxes],
-  "admin-pricing": ["Pricing & Rates", SlidersHorizontal],
   "admin-users": ["Users & Roles", Users],
   "admin-audit-log": ["Audit Logs", History],
   "admin-login-histories": ["Login Activity", ShieldCheck],

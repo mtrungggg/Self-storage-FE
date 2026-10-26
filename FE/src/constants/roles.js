@@ -45,7 +45,7 @@ export function hasAnyRole(userRoles = [], targetRoles = []) {
 export function getDefaultRouteForUser(user) {
   const roles = (user?.roles || []).map((r) => r.toLowerCase());
   if (hasAnyRole(roles, ADMIN_ROLES)) return "/admin-overview";
-  if (hasAnyRole(roles, MANAGER_ROLES)) return "/manager-units";
+  if (hasAnyRole(roles, MANAGER_ROLES)) return "/manager-dashboard";
   if (hasAnyRole(roles, STAFF_ROLES)) return "/staff-dashboard";
   return "/home";
 }
