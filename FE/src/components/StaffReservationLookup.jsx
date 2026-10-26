@@ -66,8 +66,10 @@ export default function StaffReservationLookup() {
 
   // QR Verify & Action state (STT 7 & STT 8)
   const [qrData, setQrData] = useState(null);
+  const [qrNotes, setQrNotes] = useState("");
   const [qrActionLoading, setQrActionLoading] = useState(false);
   const [qrActionSuccess, setQrActionSuccess] = useState("");
+  const [qrActionResult, setQrActionResult] = useState(null);
 
   const requestId = useRef(0);
 
@@ -170,21 +172,23 @@ export default function StaffReservationLookup() {
     if (!qrData || qrActionLoading) return;
     setQrActionLoading(true);
     setQrActionSuccess("");
+    setQrActionResult(null);
     setError("");
 
     try {
       const payload = {
-        qrCode: query.trim() || undefined,
-        action: actionName,
-        actionType: qrData.actionType,
-        agreementId: qrData.agreement?.agreementId,
-        reservationId: qrData.reservation?.reservationId,
-        unitId: qrData.unit?.unitId,
-        transferRequestId: qrData.transferRequest?.transferRequestId,
+        actionType: actionName || qrData.actionType || "",
+        reservationId: qrData.reservation?.reservationId || 0,
+        agreementId: qrData.agreement?.agreementId || 0,
+        transferRequestId: qrData.transferRequest?.transferRequestId || 0,
+        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || 0,
+        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || 0,
+        notes: qrNotes.trim(),
       };
 
-      await staffQrService.confirmAction(payload);
-      setQrActionSuccess(`Action "${actionName || qrData.actionType || "confirmed"}" processed successfully!`);
+      const result = await staffQrService.confirmAction(payload);
+      setQrActionResult(result);
+      setQrActionSuccess(result?.message || `Action "${payload.actionType}" processed successfully!`);
 
       const unitCode = qrData.unit?.unitCode || qrData.agreement?.unitCode;
       if (unitCode) {
@@ -480,8 +484,22 @@ export default function StaffReservationLookup() {
             )}
           </div>
 
+          {/* Notes input for confirm-action */}
+          <div className="mt-3 border-t border-indigo-100 pt-3">
+            <label className="block text-xs font-semibold text-slate-700">
+              Notes / Ghi chú xử lý (optional):
+              <input
+                type="text"
+                value={qrNotes}
+                onChange={(e) => setQrNotes(e.target.value)}
+                placeholder="e.g. Identity verified, physical lock checked..."
+                className="mt-1 w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-indigo-500"
+              />
+            </label>
+          </div>
+
           {/* Allowed Actions */}
-          <div className="mt-4 border-t border-indigo-100 pt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs text-slate-600">
               Confirm action to process with backend:
             </div>
@@ -513,7 +531,27 @@ export default function StaffReservationLookup() {
             </div>
           </div>
 
-          {qrActionSuccess && (
+          {qrActionResult && (
+            <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
+              <div className="font-bold text-emerald-800 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
+                <span>{qrActionResult.message || qrActionSuccess || "Hành động đã được xử lý thành công!"}</span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-slate-700">
+                {qrActionResult.actionType && (
+                  <span>Action: <strong>{qrActionResult.actionType}</strong></span>
+                )}
+                {qrActionResult.agreementId > 0 && (
+                  <span>Agreement #{qrActionResult.agreementId}: <strong className="text-emerald-700">{qrActionResult.agreementStatus || "updated"}</strong></span>
+                )}
+                {qrActionResult.unitId > 0 && (
+                  <span>Unit #{qrActionResult.unitId}: <strong className="text-emerald-700">{qrActionResult.unitStatus || "updated"}</strong></span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!qrActionResult && qrActionSuccess && (
             <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-bold text-emerald-800 flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
               {qrActionSuccess}
