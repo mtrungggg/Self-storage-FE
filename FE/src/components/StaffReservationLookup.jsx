@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import staffReservationService from "../api/staffReservationService";
 import staffFacilityService from "../api/staffFacilityService";
+import staffQrService from "../api/staffQrService";
 import StaffAssignUnit from "./StaffAssignUnit";
 import QrCameraScanner from "./QrCameraScanner";
 
@@ -62,6 +63,12 @@ export default function StaffReservationLookup() {
   const [cameraActive, setCameraActive] = useState(false);
   const [checkIns, setCheckIns] = useState(() => getStoredFacilityCheckIns());
   const [toastMsg, setToastMsg] = useState("");
+
+  // QR Verify & Action state (STT 7 & STT 8)
+  const [qrData, setQrData] = useState(null);
+  const [qrActionLoading, setQrActionLoading] = useState(false);
+  const [qrActionSuccess, setQrActionSuccess] = useState("");
+
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -116,6 +123,86 @@ export default function StaffReservationLookup() {
     );
   }
 
+  /**
+   * STT 7: Quét / Xác minh mã QR
+   * POST /api/staff/qr/verify
+   */
+  async function verifyQrCode(rawCode) {
+    const code = String(rawCode || query || "").trim();
+    if (!code) {
+      setError("Please enter or scan a QR code.");
+      return;
+    }
+
+    const currentRequest = ++requestId.current;
+    setLoading(true);
+    setError("");
+    setToastMsg("");
+    setQrActionSuccess("");
+    setQrData(null);
+    setSearched(true);
+
+    try {
+      const verified = await staffQrService.verify({ qrCode: code });
+      if (currentRequest !== requestId.current) return;
+      if (verified) {
+        setQrData(verified);
+        setToastMsg(`QR Verified: ${verified.title || verified.actionType || "Valid Code"}`);
+        setResults([]);
+        setMatchedUnits([]);
+        return;
+      }
+    } catch (err) {
+      if (currentRequest !== requestId.current) return;
+      console.warn("QR verify endpoint failed, falling back to lookup:", err.message);
+      // If error or endpoint not yet active, fallback to search lookup
+    }
+
+    // Fallback to standard reservation & unit search
+    await search(code, true, true);
+  }
+
+  /**
+   * STT 8: Xác nhận hành động từ mã QR
+   * POST /api/staff/qr/confirm-action
+   */
+  async function handleConfirmQrAction(actionName) {
+    if (!qrData || qrActionLoading) return;
+    setQrActionLoading(true);
+    setQrActionSuccess("");
+    setError("");
+
+    try {
+      const payload = {
+        qrCode: query.trim() || undefined,
+        action: actionName,
+        actionType: qrData.actionType,
+        agreementId: qrData.agreement?.agreementId,
+        reservationId: qrData.reservation?.reservationId,
+        unitId: qrData.unit?.unitId,
+        transferRequestId: qrData.transferRequest?.transferRequestId,
+      };
+
+      await staffQrService.confirmAction(payload);
+      setQrActionSuccess(`Action "${actionName || qrData.actionType || "confirmed"}" processed successfully!`);
+
+      const unitCode = qrData.unit?.unitCode || qrData.agreement?.unitCode;
+      if (unitCode) {
+        confirmFacilityCheckIn({
+          unitCode,
+          agreementNo: qrData.agreement?.agreementNo,
+          reservationCode: qrData.reservation?.reservationCode,
+          customerName: qrData.customer?.fullName,
+          facilityCode: qrData.unit?.facilityName || qrData.agreement?.facilityName,
+        });
+      }
+    } catch (err) {
+      setError(err.message || "Failed to confirm QR action.");
+    } finally {
+      setQrActionLoading(false);
+    }
+  }
+
   async function search(keyword = query.trim(), clearResults = true, autoCheckInOnScan = false) {
     if (!keyword) {
       setError("Enter a reservation code, phone number, or QR value.");
@@ -127,6 +214,7 @@ export default function StaffReservationLookup() {
     setError("");
     setToastMsg("");
     setSearched(true);
+    setQrData(null);
     if (clearResults) {
       setResults([]);
       setMatchedUnits([]);
@@ -168,7 +256,6 @@ export default function StaffReservationLookup() {
         );
       });
 
-      // If QR payload had info but unit wasn't in facility list, still synthesize a card so Staff can confirm check-in
       const finalUnitMatches =
         unitMatches.length > 0
           ? unitMatches
@@ -226,7 +313,7 @@ export default function StaffReservationLookup() {
   function handleQrScan(scannedCode) {
     setCameraActive(false);
     setQuery(scannedCode);
-    search(scannedCode, true, true);
+    verifyQrCode(scannedCode);
   }
 
   return (
@@ -234,7 +321,10 @@ export default function StaffReservationLookup() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#1d5fe5]">qr_code_scanner</span>
-          <h2 className="text-[14px] font-bold">Facility Check-in (Scan QR / Search)</h2>
+          <div>
+            <h2 className="text-[14px] font-bold text-slate-900">QR Scanner & Facility Check-in</h2>
+            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Ra/Vào</p>
+          </div>
         </div>
         <button
           type="button"
@@ -248,7 +338,7 @@ export default function StaffReservationLookup() {
           <span className="material-symbols-outlined text-[16px]">
             {cameraActive ? "videocam_off" : "photo_camera"}
           </span>
-          <span>{cameraActive ? "Close" : "Scan QR"}</span>
+          <span>{cameraActive ? "Close Camera" : "Scan QR"}</span>
         </button>
       </div>
 
@@ -263,13 +353,12 @@ export default function StaffReservationLookup() {
 
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
         <label className="min-w-[260px] flex-1 text-xs font-semibold text-[#58657a]">
-          Search / Paste QR Code
+          Search or Paste QR Code
           <input
             autoComplete="off"
-            autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search reservation, phone, or unit"
+            placeholder="Search reservation code, phone, or paste QR string"
             className="mt-1 w-full rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
           />
         </label>
@@ -281,12 +370,26 @@ export default function StaffReservationLookup() {
             step="1"
             value={facilityId}
             onChange={(event) => setFacilityId(event.target.value)}
-            className="mt-1 block w-28 rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+            className="mt-1 block w-24 rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
           />
         </label>
-        <button disabled={loading} className="rounded-[9px] bg-[#1d5fe5] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1550c7] disabled:opacity-50">
-          {loading ? "..." : "Search"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-[9px] bg-[#1d5fe5] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1550c7] disabled:opacity-50"
+          >
+            {loading ? "..." : "Search"}
+          </button>
+          <button
+            type="button"
+            disabled={loading || !query.trim()}
+            onClick={() => verifyQrCode(query.trim())}
+            className="rounded-[9px] border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
+          >
+            Verify QR
+          </button>
+        </div>
       </form>
 
       {toastMsg && (
@@ -297,8 +400,130 @@ export default function StaffReservationLookup() {
       )}
 
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {!loading && !error && searched && results.length === 0 && matchedUnits.length === 0 && (
-        <p className="mt-3 rounded-lg border border-dashed border-[#dfe7f5] p-4 text-center text-xs text-[#8996a9]">No results.</p>
+
+      {/* STT 7 & STT 8: Verified QR Action Card */}
+      {qrData && (
+        <div className="mt-4 rounded-2xl border border-indigo-200 bg-linear-to-br from-indigo-50/70 via-white to-blue-50/60 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-indigo-600 text-[22px]">verified_user</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 text-sm">{qrData.title || "QR Verification Result"}</h3>
+                  <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 uppercase tracking-wide">
+                    {qrData.actionType || "Action Required"}
+                  </span>
+                </div>
+                {qrData.description && (
+                  <p className="text-xs text-slate-600 mt-0.5">{qrData.description}</p>
+                )}
+              </div>
+            </div>
+            <span className="text-[11px] font-mono text-slate-500">
+              POST /api/staff/qr/verify
+            </span>
+          </div>
+
+          {/* Details grid: Customer, Unit/Agreement, Transfer */}
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            {/* Customer Info */}
+            {qrData.customer && (
+              <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                  <span className="material-symbols-outlined text-[16px] text-slate-500">person</span>
+                  Customer Information
+                </div>
+                <div className="text-slate-900 font-semibold">{qrData.customer.fullName || "—"}</div>
+                <div className="text-slate-600">📞 {qrData.customer.phoneNumber || "—"}</div>
+                <div className="text-slate-600 truncate">✉️ {qrData.customer.email || "—"}</div>
+              </div>
+            )}
+
+            {/* Unit & Agreement Info */}
+            {(qrData.unit || qrData.agreement) && (
+              <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                  <span className="material-symbols-outlined text-[16px] text-slate-500">warehouse</span>
+                  Storage Unit & Agreement
+                </div>
+                <div className="text-slate-900">
+                  Unit: <strong>{qrData.unit?.unitCode || qrData.agreement?.unitCode || "—"}</strong>
+                  {qrData.unit?.unitTypeName && <span className="text-slate-500"> ({qrData.unit.unitTypeName})</span>}
+                </div>
+                {qrData.agreement?.agreementNo && (
+                  <div className="text-slate-600">Agreement: <span className="font-mono font-semibold">{qrData.agreement.agreementNo}</span></div>
+                )}
+                {qrData.unit?.physicalStatus && (
+                  <div className="text-slate-600">Physical Status: <span className="font-semibold text-emerald-700">{qrData.unit.physicalStatus}</span></div>
+                )}
+                {qrData.agreement?.facilityName && (
+                  <div className="text-slate-500 truncate">Facility: {qrData.agreement.facilityName}</div>
+                )}
+              </div>
+            )}
+
+            {/* Transfer Request Info (if applicable) */}
+            {qrData.transferRequest && (
+              <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                  <span className="material-symbols-outlined text-[16px] text-slate-500">sync_alt</span>
+                  Transfer Request
+                </div>
+                <div className="text-slate-900">
+                  From: <strong>{qrData.transferRequest.fromUnitCode}</strong> ({qrData.transferRequest.fromFacilityName})
+                </div>
+                <div className="text-slate-900">
+                  To: <strong>{qrData.transferRequest.toUnitCode}</strong> ({qrData.transferRequest.toFacilityName})
+                </div>
+                <div className="text-slate-600">Status: <span className="font-semibold text-blue-700">{qrData.transferRequest.status}</span></div>
+              </div>
+            )}
+          </div>
+
+          {/* Allowed Actions */}
+          <div className="mt-4 border-t border-indigo-100 pt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs text-slate-600">
+              Confirm action to process with backend:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(qrData.allowedActions) && qrData.allowedActions.length > 0 ? (
+                qrData.allowedActions.map((actionName) => (
+                  <button
+                    key={actionName}
+                    type="button"
+                    disabled={qrActionLoading}
+                    onClick={() => handleConfirmQrAction(actionName)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>Confirm: {actionName}</span>
+                  </button>
+                ))
+              ) : (
+                <button
+                  type="button"
+                  disabled={qrActionLoading}
+                  onClick={() => handleConfirmQrAction(qrData.actionType || "confirm")}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  <span>Confirm {qrData.actionType || "Action"}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {qrActionSuccess && (
+            <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-bold text-emerald-800 flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
+              {qrActionSuccess}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && searched && !qrData && results.length === 0 && matchedUnits.length === 0 && (
+        <p className="mt-3 rounded-lg border border-dashed border-[#dfe7f5] p-4 text-center text-xs text-[#8996a9]">No results found.</p>
       )}
 
       {/* Matched Active Rental Units / QR Gate Pass Check-in Cards */}
