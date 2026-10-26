@@ -1,5 +1,6 @@
-import { Fragment, useEffect, useState } from "react";
-import { History, Search, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle, ChevronDown, ChevronUp, FileCode } from "lucide-react";
+﻿import { Fragment, useEffect, useState } from "react";
+import { History, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import AuditChangeDetails from "../components/AuditChangeDetails";
 import adminAuditLogService from "../api/adminAuditLogService";
 import { isValidPositiveInteger, isValidDateRange } from "../lib/validators";
 
@@ -17,15 +18,6 @@ const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeSt
 function formatDate(value) {
   const date = new Date(value);
   return !value || Number.isNaN(date.getTime()) ? "—" : dateFormat.format(date);
-}
-
-function formatPayload(value) {
-  if (value == null || value === "") return "No payload changes recorded.";
-  try {
-    return JSON.stringify(typeof value === "string" ? JSON.parse(value) : value, null, 2);
-  } catch {
-    return String(value);
-  }
 }
 
 export default function AdminAuditLog() {
@@ -174,7 +166,7 @@ export default function AdminAuditLog() {
 
         <div className="mt-4 flex items-center justify-between border-t border-[#ededed] pt-3.5">
           <span className="text-xs text-[#767679]">
-            System Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            Display Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
           </span>
           <div className="flex gap-2">
             <button
@@ -237,7 +229,7 @@ export default function AdminAuditLog() {
                 <th scope="col">Entity ID</th>
                 <th scope="col">Action</th>
                 <th scope="col">IP Address</th>
-                <th scope="col" className="text-right pr-6">Payload</th>
+                <th scope="col" className="text-right pr-6">Changes</th>
               </tr>
             </thead>
             <tbody>
@@ -302,6 +294,7 @@ export default function AdminAuditLog() {
                         <button
                           type="button"
                           aria-expanded={expanded === entry.id}
+                          aria-controls={`audit-detail-${entry.id}`}
                           onClick={() => setExpanded(expanded === entry.id ? null : entry.id)}
                           className="reference-button-secondary !py-1 !px-2.5 !text-[11px]"
                         >
@@ -320,32 +313,7 @@ export default function AdminAuditLog() {
                     {expanded === entry.id && (
                       <tr id={`audit-detail-${entry.id}`}>
                         <td colSpan={9} className="bg-[#f2f4f6] p-4 border-b border-[#e5e5e5]">
-                          <div className="rounded-2xl bg-white p-4 border border-[#e5e5e5]">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-mono text-xs text-slate-600">
-                                <strong>Request ID:</strong> {entry.requestId || "—"}
-                              </span>
-                              <span className="reference-pill text-[10px]">JSON Payload Diff</span>
-                            </div>
-                            <div className="grid gap-3 lg:grid-cols-2">
-                              <div>
-                                <h3 className="text-xs font-bold text-[#767679] mb-1.5 flex items-center gap-1.5">
-                                  <FileCode size={13} /> Old Values (Before Mutation)
-                                </h3>
-                                <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[#ededed] bg-[#fafafa] p-3 font-mono text-[11px] text-slate-700">
-                                  {formatPayload(entry.oldValues)}
-                                </pre>
-                              </div>
-                              <div>
-                                <h3 className="text-xs font-bold text-[#767679] mb-1.5 flex items-center gap-1.5">
-                                  <FileCode size={13} /> New Values (After Mutation)
-                                </h3>
-                                <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[#ededed] bg-[#fafafa] p-3 font-mono text-[11px] text-slate-700">
-                                  {formatPayload(entry.newValues)}
-                                </pre>
-                              </div>
-                            </div>
-                          </div>
+                          <AuditChangeDetails key={entry.id} entry={entry} />
                         </td>
                       </tr>
                     )}
@@ -388,3 +356,4 @@ export default function AdminAuditLog() {
     </div>
   );
 }
+

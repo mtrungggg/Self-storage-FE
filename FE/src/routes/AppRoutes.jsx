@@ -27,6 +27,7 @@ const StaffMoveOuts = lazy(() => import("../pages/StaffMoveOuts"));
 
 // Lazy-loaded management & operations portal
 const ManagerUnits = lazy(() => import("../pages/ManagerUnits"));
+const ManagerDashboard = lazy(() => import("../pages/ManagerDashboard"));
 const ManagerTransferRequests = lazy(() => import("../pages/ManagerTransferRequests"));
 const ManagerChargeProposals = lazy(() => import("../pages/ManagerChargeProposals"));
 const ManagerRefundApprovals = lazy(() => import("../pages/ManagerRefundApprovals"));
@@ -101,7 +102,7 @@ function AppRoutes() {
           <Route element={<AdminLayouts />}>
             {/* Manager operations console: accessible to Facility Managers & System Administrators */}
             <Route element={<RequireAuth allowedRoles={[...MANAGER_ROLES, ...ADMIN_ROLES]} />}>
-              <Route path="/manager-dashboard" element={<Navigate to="/manager-units" replace />} />
+              <Route path="/manager-dashboard" element={<ManagerDashboard />} />
               <Route path="/manager-units" element={<ManagerUnits />} />
               <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
               <Route path="/manager-tickets" element={<Navigate to="/manager-units" replace />} />
@@ -117,6 +118,7 @@ function AppRoutes() {
             <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
               <Route path="/admin-overview" element={<AdminDashboard />} />
               <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
+              <Route path="/admin-facilities/:id" element={<AdminCrudPage key="facility-detail" resource="facilities" />} />
               <Route path="/admin-pricing" element={<ManagerPricing />} />
               <Route path="/admin-pricing-policy" element={<ManagerPricing />} />
               <Route path="/admin-login-histories" element={<AdminLoginHistories />} />
