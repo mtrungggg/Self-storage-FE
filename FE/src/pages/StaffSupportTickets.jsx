@@ -31,8 +31,11 @@ export default function StaffSupportTickets() {
   const [assignSuccess, setAssignSuccess] = useState("");
   const [resolveSuccess, setResolveSuccess] = useState("");
 
-  function handleResolved(ticket) {
-    setResolveSuccess(`Ticket ${ticket.ticketNo || ticket.id} resolved successfully.`);
+  function handleResolved(ticket, result) {
+    const unitMsg = result?.unlockedUnitCode
+      ? ` Unit ${result.unlockedUnitCode} has been automatically released back to ${result.unlockedUnitStatus || "available"}.`
+      : "";
+    setResolveSuccess(`Ticket ${ticket.ticketNo || ticket.id} completed successfully.${unitMsg}`);
     requestId.current++;
     setLoading(true);
     setError("");
@@ -360,7 +363,7 @@ export default function StaffSupportTickets() {
                         <StaffTicketCharge ticketId={ticket.id} />
                         <StaffTicketResolve
                           ticketId={ticket.id}
-                          onResolved={() => handleResolved(ticket)}
+                          onResolved={(res) => handleResolved(ticket, res)}
                         />
                       </div>
                     </details>

@@ -41,8 +41,6 @@ export default function StaffTicketCharge({ ticketId }) {
     if (lock.current) return;
     setError("");
     const numericAmount = Number(amount);
-    if (!description.trim() || !amount.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setError("Enter a description and an amount greater than zero.");
     if (!amount.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
       setError("Please enter a valid amount greater than zero.");
       return;
@@ -51,25 +49,23 @@ export default function StaffTicketCharge({ ticketId }) {
       setError("Please enter a reason or description for the proposed charge.");
       return;
     }
-
     lock.current = true;
     setSubmitting(true);
     setCharge(null);
     try {
-      const result = await staffSupportService.proposeCharge(ticketId, { description: description.trim(), amount: numericAmount });
       const result = await staffSupportService.proposeCharge(ticketId, {
         amount: numericAmount,
         reason: reason.trim() || description.trim(),
-        description: description.trim(),
+        description: description.trim() || reason.trim(),
         photoUrl: photoUrl.trim() || undefined,
       });
-      setCharge(result);
+      setCharge(result || { amount: numericAmount, description: description.trim() || reason.trim(), status: "pending" });
       setReason("");
       setDescription("");
       setAmount("");
       setPhotoUrl("");
     } catch (err) {
-      setError(err.message || "Unable to propose this charge. Please try again.");
+      setError(err.message || "Unable to submit charge proposal. Please try again.");
     } finally {
       lock.current = false;
       setSubmitting(false);
@@ -78,7 +74,6 @@ export default function StaffTicketCharge({ ticketId }) {
 
   return (
     <section className="mt-4 border-t border-[#dfe7f5] pt-4 text-sm">
-      <h3 className="font-semibold">Propose charge</h3>
       <h3 className="font-semibold text-slate-900">Propose Incident / Damage Surcharge</h3>
       <p className="text-xs text-[#767679] mt-0.5">
         Submit a charge proposal for customer damages, key loss, or special cleaning.
@@ -121,8 +116,6 @@ export default function StaffTicketCharge({ ticketId }) {
           </div>
 
           <div>
-            <label htmlFor={`${fieldId}-description`} className="mb-1 block">Description *</label>
-            <textarea id={`${fieldId}-description`} rows={2} required value={description} onChange={(event) => setDescription(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3" />
             <label htmlFor={`${fieldId}-description`} className="mb-1 block text-xs font-semibold">
               Detailed Description
             </label>
@@ -137,8 +130,6 @@ export default function StaffTicketCharge({ ticketId }) {
           </div>
 
           <div>
-            <label htmlFor={`${fieldId}-amount`} className="mb-1 block">Amount *</label>
-            <input id={`${fieldId}-amount`} type="number" min="0" step="any" required value={amount} onChange={(event) => setAmount(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2" />
             <label htmlFor={`${fieldId}-photo`} className="mb-1 block text-xs font-semibold">
               Evidence Photo (Photo URL or Upload)
             </label>
@@ -172,8 +163,6 @@ export default function StaffTicketCharge({ ticketId }) {
               </div>
             )}
           </div>
-          {error && <p role="alert" className="text-red-600">{error}</p>}
-          <button type="submit" disabled={!description.trim() || !amount.trim()} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{submitting ? "Submitting..." : "Submit charge proposal"}</button>
 
           {error && <p role="alert" className="text-xs font-semibold text-red-600">{error}</p>}
 
@@ -186,15 +175,6 @@ export default function StaffTicketCharge({ ticketId }) {
           </button>
         </fieldset>
       </form>
-      {charge && <div className="mt-3 rounded-lg bg-green-50 p-3">
-        <p role="status" className="font-semibold text-green-800">Charge proposal submitted.</p>
-        <p className="mt-1 whitespace-pre-wrap break-words">{charge.description}</p>
-        <dl className="mt-2 space-y-1">
-          <div><dt className="inline font-semibold">Amount: </dt><dd className="inline">{charge.amount}</dd></div>
-          <div><dt className="inline font-semibold">Status: </dt><dd className="inline">{charge.status || "—"}</dd></div>
-          <div><dt className="inline font-semibold">Proposed by: </dt><dd className="inline">{charge.proposedByName || charge.proposedBy || "—"}</dd></div>
-        </dl>
-      </div>}
 
       {charge && (
         <div className="mt-3 rounded-xl bg-green-50 p-3.5 border border-green-200 text-xs text-green-900">

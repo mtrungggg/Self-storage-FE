@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+﻿import apiClient from "./apiClient";
 
 export default {
   /**
@@ -6,29 +6,31 @@ export default {
    * STT 6: PUT /api/staff/tickets/{id}/complete
    */
   async completeTicket(id, payload = {}) {
+    const body = {
+      resolution: payload.resolution?.trim() || "Work completed",
+    };
     try {
-      const response = await apiClient.put(`/staff/tickets/${encodeURIComponent(id)}/complete`, payload);
+      const response = await apiClient.put(`/staff/tickets/${encodeURIComponent(id)}/complete`, body);
       if (response?.success === true) return response.data;
     } catch (err) {
       if (err.status !== 404) throw err;
     }
     // Fallback to legacy support-tickets resolve
-    const response = await apiClient.put(`/staff/support-tickets/${encodeURIComponent(id)}/resolve`, payload);
+    const response = await apiClient.put(`/staff/support-tickets/${encodeURIComponent(id)}/resolve`, body);
     if (response?.success !== true) {
       throw new Error(response?.message || response?.errors?.join(", ") || "Unable to complete this ticket.");
     }
     return response.data;
   },
 
-  async resolveTicket(id, { resolution } = {}) {
-    return this.completeTicket(id, { resolution });
+  async resolveTicket(id, payload = {}) {
+    return this.completeTicket(id, payload);
   },
 
   /**
    * Propose incident/damage charge
    * STT 5: POST /api/staff/tickets/{id}/propose-charge
    */
-  async proposeCharge(id, { description, amount }) {
   async proposeCharge(id, { amount, reason, description, photoUrl }) {
     const payload = {
       amount: Number(amount),
@@ -37,19 +39,11 @@ export default {
       photoUrl: photoUrl?.trim() || undefined,
     };
     try {
-      const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/propose-charge`, {
-        description,
-        amount,
-      });
       const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/propose-charge`, payload);
       if (response?.success === true) return response.data;
     } catch (err) {
       if (err.status !== 404) throw err;
     }
-    const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/propose-charge`, {
-      description,
-      amount,
-    });
     const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/propose-charge`, payload);
     if (response?.success !== true) {
       throw new Error(response?.message || response?.errors?.join(", ") || "Unable to propose this charge.");
