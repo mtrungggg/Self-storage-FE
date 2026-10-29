@@ -54,15 +54,10 @@ export default {
 
   /**
    * Send ticket message
+   * POST /api/staff/tickets/{id}/messages
    */
   async sendMessage(id, { body, isInternal }) {
-    try {
-      const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/messages`, { body, isInternal });
-      if (response?.success === true) return response.data;
-    } catch (err) {
-      if (err.status !== 404) throw err;
-    }
-    const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/messages`, {
+    const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/messages`, {
       body,
       isInternal,
     });

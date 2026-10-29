@@ -1,11 +1,12 @@
 import apiClient from "./apiClient";
+import PAGINATION from "../constants/pagination";
 
 export default {
   /**
    * Get paginated facilities for Admin
    * @param {{ Search?: string, Status?: string, City?: string, PageNumber?: number, PageSize?: number }} query
    */
-  async getFacilities({ Search, Status, City, PageNumber = 1, PageSize = 10 } = {}) {
+  async getFacilities({ Search, Status, City, PageNumber = 1, PageSize = PAGINATION.DEFAULT_PAGE_SIZE } = {}) {
     const params = { PageNumber, PageSize };
     for (const [key, value] of Object.entries({ Search, Status, City })) {
       if (value !== "" && value != null) params[key] = value;

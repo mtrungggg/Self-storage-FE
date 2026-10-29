@@ -11,7 +11,7 @@ import {
   getYieldRecommendation,
 } from "../data/pricingPolicyRepository";
 import { calculatePriceMatrix } from "../domain/usecases/calculatePriceMatrix";
-import operationsService from "../api/operationsService";
+import managerService from "../api/managerService";
 
 function formatDateVN(value) {
   if (!value) return "—";
@@ -72,9 +72,9 @@ export function usePricingPolicy() {
     setError("");
     try {
       const [ratesPage, feesPage, promotionsPage] = await Promise.all([
-        operationsService.getPricingRates({ pageSize: 100 }),
-        operationsService.getPricingFees({ pageSize: 100 }),
-        operationsService.getPromotions({ pageSize: 50 }),
+        managerService.getPricingRates(1, { pageSize: 100 }).catch(() => ({ items: [] })),
+        managerService.getPricingFees({ pageSize: 100 }),
+        managerService.getPromotions({ pageSize: 50 }),
       ]);
 
       const rateItems = ratesPage?.items ?? [];
@@ -150,7 +150,7 @@ export function usePricingPolicy() {
       return next;
     });
     try {
-      await operationsService.updatePromotionStatus(id, nextActive);
+      await managerService.updatePromotionStatus(id, nextActive);
       setPromotions((prev) => prev.map((item) => (item.id === id ? { ...item, isActive: nextActive } : item)));
       setNotice(nextActive ? "Đã kích hoạt chương trình khuyến mãi." : "Đã tạm dừng chương trình khuyến mãi.");
     } catch (err) {
@@ -169,7 +169,7 @@ export function usePricingPolicy() {
     setSaving(true);
     setError("");
     try {
-      await operationsService.createPromotion(payload);
+      await managerService.createPromotion(payload);
       setNotice("Đã tạo chương trình khuyến mãi mới.");
       await loadAll();
       return true;
@@ -193,7 +193,7 @@ export function usePricingPolicy() {
         Array.from(dirtyRateIds).map((id) => {
           const rate = rates.find((item) => item.id === id);
           if (!rate) return Promise.resolve();
-          return operationsService.updatePricingRate({
+          return managerService.updatePricingRates(rate.facilityId, {
             id: rate.id,
             facilityId: rate.facilityId,
             unitTypeId: rate.unitTypeId,

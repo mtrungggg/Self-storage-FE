@@ -11,7 +11,7 @@ const defaults = {
   ActorUserId: "",
   FromDate: "",
   ToDate: "",
-  PageSize: 20,
+  PageSize: PAGINATION.TABLE_PAGE_SIZE,
 };
 
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "medium" });

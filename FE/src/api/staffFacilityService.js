@@ -22,19 +22,14 @@ const staffFacilityService = {
    * PUT /api/staff/facilities/{facilityId}/units/{unitId}/physical-status
    */
   async updatePhysicalStatus(facilityId, unitId, payload) {
-    const body = typeof payload === "string" ? { physicalStatus: payload } : payload;
-    if (facilityId) {
-      try {
-        const response = await apiClient.put(
-          `/staff/facilities/${encodeURIComponent(facilityId)}/units/${encodeURIComponent(unitId)}/physical-status`,
-          body
-        );
-        if (response?.success === true) return response.data;
-      } catch (err) {
-        if (err.status !== 404) throw err;
-      }
+    if (!facilityId) {
+      throw new Error("Facility ID is required to update unit physical status.");
     }
-    const response = await apiClient.put(`/staff/units/${encodeURIComponent(unitId)}/status`, body);
+    const body = typeof payload === "string" ? { physicalStatus: payload } : payload;
+    const response = await apiClient.put(
+      `/staff/facilities/${encodeURIComponent(facilityId)}/units/${encodeURIComponent(unitId)}/physical-status`,
+      body
+    );
     if (response?.success !== true) {
       throw new Error(response?.message || response?.errors?.join(", ") || "Unable to update unit physical status.");
     }

@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 export const authService = {
   /**
@@ -8,12 +9,12 @@ export const authService = {
   async login({ email, password }) {
     const res = await apiClient.post("/auth/login", { email, password });
     if (res?.data?.accessToken) {
-      sessionStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("accessToken", res.data.accessToken);
+      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
       if (res.data.user) {
         const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem("currentUser", serialized);
-        localStorage.setItem("currentUser", serialized);
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
       }
     }
     return res;
@@ -34,12 +35,12 @@ export const authService = {
   async verifyOtp({ email, otpCode }) {
     const res = await apiClient.post("/auth/verify-otp", { email, otpCode });
     if (res?.data?.accessToken) {
-      sessionStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("accessToken", res.data.accessToken);
+      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
       if (res.data.user) {
         const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem("currentUser", serialized);
-        localStorage.setItem("currentUser", serialized);
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
       }
     }
     return res;
@@ -67,12 +68,12 @@ export const authService = {
   async googleLogin(idToken) {
     const res = await apiClient.post("/auth/google-login", { idToken });
     if (res?.data?.accessToken) {
-      sessionStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("accessToken", res.data.accessToken);
+      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
       if (res.data.user) {
         const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem("currentUser", serialized);
-        localStorage.setItem("currentUser", serialized);
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
       }
     }
     return res;
@@ -82,24 +83,29 @@ export const authService = {
    * Đăng xuất người dùng
    */
   logout() {
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("currentUser");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("currentUser");
+    sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   },
 
   /**
    * Kiểm tra xem user có đang đăng nhập hay không
    */
   isAuthenticated() {
-    return !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
+    return !!(
+      sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+    );
   },
 
   /**
    * Lấy user đã lưu trong sessionStorage (theo tab) hoặc localStorage
    */
   getStoredUser() {
-    const user = sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser");
+    const user =
+      sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER) ||
+      localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return user ? JSON.parse(user) : null;
   },
 };

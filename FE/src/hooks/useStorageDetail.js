@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import pricingService from "../api/pricingService";
 import reservationService from "../api/reservationService";
+import { DEFAULT_STORAGE_UNIT_IMAGE } from "../constants/assets";
+import BUSINESS_CONFIG from "../config/businessConfig";
 import paymentService from "../api/paymentService";
 
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -62,7 +64,7 @@ export function useStorageDetail() {
         "100% refundable security deposit",
         "No hidden fees guarantee",
       ],
-      image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
+      image: DEFAULT_STORAGE_UNIT_IMAGE,
     };
   }, [unitFromState]);
 
@@ -74,7 +76,7 @@ export function useStorageDetail() {
   const [agreeLock, setAgreeLock] = useState(true);
 
   // 15-minute hold countdown (starts when page mounts)
-  const [holdCountdown, setHoldCountdown] = useState(15 * 60);
+  const [holdCountdown, setHoldCountdown] = useState(BUSINESS_CONFIG.RESERVATION.HOLD_TIMEOUT_SECONDS);
   useEffect(() => {
     if (holdCountdown <= 0) return;
     const id = setInterval(() => setHoldCountdown((s) => Math.max(0, s - 1)), 1000);

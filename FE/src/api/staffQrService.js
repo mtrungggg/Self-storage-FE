@@ -21,13 +21,18 @@ const staffQrService = {
    * @param {{ actionType: string, reservationId?: number, agreementId?: number, transferRequestId?: number, moveOutId?: number, unitId?: number, notes?: string }} payload
    */
   async confirmAction({ actionType, reservationId, agreementId, transferRequestId, moveOutId, unitId, notes }) {
+    const toNullableId = (val) => {
+      const num = Number(val);
+      return Number.isFinite(num) && num > 0 ? num : null;
+    };
+
     const body = {
       actionType: actionType || "",
-      reservationId: reservationId ? Number(reservationId) : 0,
-      agreementId: agreementId ? Number(agreementId) : 0,
-      transferRequestId: transferRequestId ? Number(transferRequestId) : 0,
-      moveOutId: moveOutId ? Number(moveOutId) : 0,
-      unitId: unitId ? Number(unitId) : 0,
+      reservationId: toNullableId(reservationId),
+      agreementId: toNullableId(agreementId),
+      transferRequestId: toNullableId(transferRequestId),
+      moveOutId: toNullableId(moveOutId),
+      unitId: toNullableId(unitId),
       notes: notes?.trim() || "",
     };
     const response = await apiClient.post("/staff/qr/confirm-action", body);

@@ -348,15 +348,8 @@ export default function StaffSupportTickets() {
 
                     <details className="group mt-4 overflow-hidden rounded-xl border border-[#dfe7f5] bg-[#f8faff]">
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-[#0b1c30] transition hover:bg-[#eef4ff] [&::-webkit-details-marker]:hidden">
-                        <span className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">
-                            settings
-                          </span>
-                          Manage ticket
-                        </span>
-                        <span className="material-symbols-outlined text-[20px] text-[#58657a] transition-transform duration-200 group-open:rotate-180">
-                          expand_more
-                        </span>
+                        <span>Manage ticket</span>
+                        <span className="text-xs text-[#58657a] transition-transform duration-200 group-open:rotate-180">▼</span>
                       </summary>
                       <div className="border-t border-[#dfe7f5] bg-white px-4 pb-4">
                         <StaffTicketReply ticketId={ticket.id} />

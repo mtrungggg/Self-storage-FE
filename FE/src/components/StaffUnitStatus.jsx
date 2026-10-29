@@ -19,12 +19,17 @@ export default function StaffUnitStatus({ unit, onUpdated }) {
   async function submit(event) {
     event.preventDefault();
     if (lock.current || status === currentStatus) return;
+    const targetUnitId = unit.unitId || unit.id;
+    if (!unit.facilityId || !targetUnitId) {
+      setError("Facility ID and Unit ID are required to update physical status.");
+      return;
+    }
     lock.current = true;
     setLoading(true);
     setError("");
     setSaved(false);
     try {
-      await staffFacilityService.updatePhysicalStatus(unit.facilityId, unit.unitId, {
+      await staffFacilityService.updatePhysicalStatus(unit.facilityId, targetUnitId, {
         physicalStatus: status,
       });
       onUpdated({ ...unit, status, physicalStatus: status });
