@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PAGINATION from "../constants/pagination";
 import { ShieldCheck, Search, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle, ShieldAlert, CheckCircle2, XCircle, Lock } from "lucide-react";
 import adminLoginHistoryService from "../api/adminLoginHistoryService";
 import { isValidPositiveInteger, isValidDateRange } from "../lib/validators";
@@ -10,7 +11,7 @@ const defaults = {
   IsSuspiciousOnly: false,
   FromDate: "",
   ToDate: "",
-  PageSize: 20,
+  PageSize: PAGINATION.TABLE_PAGE_SIZE,
 };
 
 const results = [

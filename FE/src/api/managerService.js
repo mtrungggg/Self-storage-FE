@@ -143,6 +143,13 @@ export const managerService = {
     return res?.data ?? null;
   },
 
+  // PUT /api/manager/pricing/fees
+  // Thiết lập / cập nhật quy tắc tính phí cơ sở hoặc toàn hệ thống
+  async updatePricingFee(payload) {
+    const res = await apiClient.put("/manager/pricing/fees", payload);
+    return res?.data ?? res;
+  },
+
   // STT 28: GET /api/manager/promotions
   // Danh sách chương trình khuyến mãi/voucher
   async getPromotions(params = {}) {
@@ -186,6 +193,17 @@ export const managerService = {
   },
   async deleteShiftAssignment(facilityId, shiftId, employeeId) {
     const res = await apiClient.delete(`/manager/facilities/${encodeURIComponent(facilityId)}/shift-assignments/${encodeURIComponent(shiftId)}/${encodeURIComponent(employeeId)}`);
+    return res?.data ?? null;
+  },
+  /**
+   * STT 31: Lưu hàng loạt phân công ca trực
+   * POST /api/manager/facilities/{facilityId}/shift-assignments/batch-save
+   */
+  async batchSaveShiftAssignments(facilityId, payload) {
+    const res = await apiClient.post(
+      `/manager/facilities/${encodeURIComponent(facilityId)}/shift-assignments/batch-save`,
+      payload
+    );
     return res?.data ?? null;
   },
 

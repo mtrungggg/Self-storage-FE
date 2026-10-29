@@ -39,6 +39,7 @@ function ManagementShell() {
         activeId={activeId}
         isOpen={mobileSidebarOpen}
         onClose={closeMobileSidebar}
+        isAdmin={profile?.isAdmin}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopbar

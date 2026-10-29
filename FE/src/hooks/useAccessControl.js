@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import rentalService from "../api/rentalService";
 import reservationService from "../api/reservationService";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 function getStoredFacilityCheckIns() {
   try {
-    const raw = localStorage.getItem("g1_facility_checkins");
+    const raw = localStorage.getItem(STORAGE_KEYS.FACILITY_CHECKINS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -202,7 +203,7 @@ export function useAccessControl() {
       .then((data) => {
         if (active && data) {
           if (data.keypadPin) {
-            localStorage.setItem(`g1_pin_${selectedRentalId}`, data.keypadPin);
+            localStorage.setItem(STORAGE_KEYS.getPinKey(selectedRentalId), data.keypadPin);
           }
           setCredentials(data);
           if (credentialRequest > 0 && data.keypadPin && !data.suspendedReason && data.status !== "suspended") {
@@ -257,7 +258,7 @@ export function useAccessControl() {
     setPinChangeError("");
     try {
       const res = await rentalService.changePin(selectedRentalId, { currentPin, newPin });
-      localStorage.setItem(`g1_pin_${selectedRentalId}`, newPin);
+      localStorage.setItem(STORAGE_KEYS.getPinKey(selectedRentalId), newPin);
       setCredentials((prev) => (prev ? { ...prev, keypadPin: newPin } : prev));
       return res;
     } catch (err) {
@@ -271,7 +272,7 @@ export function useAccessControl() {
 
   const verifyUnlockPin = (enteredPin) => {
     const cleanPin = String(enteredPin || "").trim();
-    const storedLocal = selectedRentalId ? localStorage.getItem(`g1_pin_${selectedRentalId}`) : null;
+    const storedLocal = selectedRentalId ? localStorage.getItem(STORAGE_KEYS.getPinKey(selectedRentalId)) : null;
     const expectedPin = String(credentials?.keypadPin || storedLocal || "482910").trim();
     if (!/^\d{4,8}$/.test(cleanPin)) {
       throw new Error("Please enter a valid PIN (4 to 8 digits).");

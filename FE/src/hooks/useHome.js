@@ -7,23 +7,13 @@ import {
 } from "../data/homeRepository";
 import facilityService from "../api/facilityService";
 import storageUnitService from "../api/storageUnitService";
+import { DEFAULT_STORAGE_UNIT_IMAGE as STANDARD_IMAGE, STORAGE_TYPE_PLACEHOLDERS as UNIT_TYPE_IMAGES } from "../constants/assets";
+import BUSINESS_CONFIG from "../config/businessConfig";
 
-const UNIT_TYPE_IMAGES = {
-  "S-DRY": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-  "M-DRY": "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
-  "M-SEAFOOD": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=800&q=80",
-  "L-WARM": "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
-  "XL-CLIMATE": "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
-  "MINI-DRY": "https://images.unsplash.com/photo-1554774853-719586f82d77?auto=format&fit=crop&w=800&q=80",
-  "S-SEAFOOD": "https://images.unsplash.com/photo-1516542076529-1ea3854896f2?auto=format&fit=crop&w=800&q=80",
-  "M-WARM": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-};
 
-const STANDARD_IMAGE =
-  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
 
 function getUnitTypeImage(unitType) {
-  if (!unitType) return "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
+  if (!unitType) return STANDARD_IMAGE;
   const code = String(unitType.code || "").toUpperCase();
   if (UNIT_TYPE_IMAGES[code]) return UNIT_TYPE_IMAGES[code];
   const name = String(unitType.name || "").toLowerCase();
@@ -36,10 +26,11 @@ function getUnitTypeImage(unitType) {
 
 function sizeCategoryOf(areaM2) {
   if (areaM2 == null) return "all";
-  if (areaM2 <= 1.5) return "mini";
-  if (areaM2 <= 4) return "small";
-  if (areaM2 <= 8) return "medium";
-  if (areaM2 <= 12) return "large";
+  const { MINI_MAX_AREA_M2, SMALL_MAX_AREA_M2, MEDIUM_MAX_AREA_M2, LARGE_MAX_AREA_M2 } = BUSINESS_CONFIG.UNIT_SIZING;
+  if (areaM2 <= MINI_MAX_AREA_M2) return "mini";
+  if (areaM2 <= SMALL_MAX_AREA_M2) return "small";
+  if (areaM2 <= MEDIUM_MAX_AREA_M2) return "medium";
+  if (areaM2 <= LARGE_MAX_AREA_M2) return "large";
   return "xlarge";
 }
 

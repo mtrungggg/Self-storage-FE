@@ -79,10 +79,11 @@ export default function AdminCrudPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Detail modal state (GET /api/admin/facilities/{id})
-  const [selectedFacilityId, setSelectedFacilityId] = useState(paramFacilityId || null);
+  const [activeFacilityId, setActiveFacilityId] = useState(null);
+  const selectedFacilityId = activeFacilityId ?? (paramFacilityId || null);
   const [facilityDetail, setFacilityDetail] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const loadingDetail = Boolean(selectedFacilityId) && !detailError && (!facilityDetail || String(facilityDetail.id) !== String(selectedFacilityId));
 
   // Status change modal state (PUT /api/admin/facilities/{id}/status)
   const [statusModalFacility, setStatusModalFacility] = useState(null);
@@ -90,14 +91,10 @@ export default function AdminCrudPage() {
   const [statusReason, setStatusReason] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  useEffect(() => {
-    if (paramFacilityId) {
-      setSelectedFacilityId(paramFacilityId);
-    }
-  }, [paramFacilityId]);
-
   function closeDetailModal() {
-    setSelectedFacilityId(null);
+    setActiveFacilityId(null);
+    setFacilityDetail(null);
+    setDetailError("");
     if (paramFacilityId) {
       navigate("/admin-facilities", { replace: true });
     }
@@ -128,28 +125,40 @@ export default function AdminCrudPage() {
   }, [loadData]);
 
   // Load facility details when selectedFacilityId changes
-  const fetchFacilityDetail = useCallback(async (id) => {
-    if (!id) {
-      setFacilityDetail(null);
-      return;
-    }
-    setLoadingDetail(true);
+  const fetchFacilityDetail = useCallback((id) => {
+    if (!id) return;
     setDetailError("");
-    try {
-      const res = await adminFacilityService.getFacility(id);
-      setFacilityDetail(res);
-    } catch (err) {
-      setDetailError(err.message || "Failed to load facility details.");
-    } finally {
-      setLoadingDetail(false);
-    }
+    setFacilityDetail(null);
+    adminFacilityService.getFacility(id).then(
+      (res) => {
+        setFacilityDetail(res);
+      },
+      (err) => {
+        setDetailError(err.message || "Failed to load facility details.");
+      }
+    );
   }, []);
 
   useEffect(() => {
-    if (selectedFacilityId) {
-      fetchFacilityDetail(selectedFacilityId);
-    }
-  }, [selectedFacilityId, fetchFacilityDetail]);
+    if (!selectedFacilityId) return;
+    let active = true;
+    adminFacilityService.getFacility(selectedFacilityId).then(
+      (res) => {
+        if (active) {
+          setFacilityDetail(res);
+          setDetailError("");
+        }
+      },
+      (err) => {
+        if (active) {
+          setDetailError(err.message || "Failed to load facility details.");
+        }
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [selectedFacilityId]);
 
   function handleFilterSubmit(e) {
     e.preventDefault();
@@ -789,7 +798,7 @@ export default function AdminCrudPage() {
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setSelectedFacilityId(facility.id)}
+                            onClick={() => setActiveFacilityId(facility.id)}
                             className="reference-button-secondary !py-1 !px-2.5 !text-[11px]"
                             title="View facility details & stats"
                           >

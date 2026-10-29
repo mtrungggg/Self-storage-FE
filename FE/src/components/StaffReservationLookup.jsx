@@ -4,6 +4,7 @@ import staffFacilityService from "../api/staffFacilityService";
 import staffQrService from "../api/staffQrService";
 import StaffAssignUnit from "./StaffAssignUnit";
 import QrCameraScanner from "./QrCameraScanner";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 function formatMoney(value) {
   if (value == null) return "—";
@@ -12,7 +13,7 @@ function formatMoney(value) {
 
 function getStoredFacilityCheckIns() {
   try {
-    const raw = localStorage.getItem("g1_facility_checkins");
+    const raw = localStorage.getItem(STORAGE_KEYS.FACILITY_CHECKINS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -101,7 +102,7 @@ export default function StaffReservationLookup() {
         )
     );
     const updated = [record, ...existing].slice(0, 30);
-    localStorage.setItem("g1_facility_checkins", JSON.stringify(updated));
+    localStorage.setItem(STORAGE_KEYS.FACILITY_CHECKINS, JSON.stringify(updated));
     setCheckIns(updated);
     setQuery("");
 
@@ -178,11 +179,11 @@ export default function StaffReservationLookup() {
     try {
       const payload = {
         actionType: actionName || qrData.actionType || "",
-        reservationId: qrData.reservation?.reservationId || 0,
-        agreementId: qrData.agreement?.agreementId || 0,
-        transferRequestId: qrData.transferRequest?.transferRequestId || 0,
-        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || 0,
-        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || 0,
+        reservationId: qrData.reservation?.reservationId || null,
+        agreementId: qrData.agreement?.agreementId || null,
+        transferRequestId: qrData.transferRequest?.transferRequestId || null,
+        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || null,
+        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || null,
         notes: qrNotes.trim(),
       };
 
@@ -327,7 +328,7 @@ export default function StaffReservationLookup() {
           <span className="material-symbols-outlined text-[#1d5fe5]">qr_code_scanner</span>
           <div>
             <h2 className="text-[14px] font-bold text-slate-900">QR Scanner & Facility Check-in</h2>
-            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Ra/Vào</p>
+            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Entry/Exit</p>
           </div>
         </div>
         <button
@@ -487,7 +488,7 @@ export default function StaffReservationLookup() {
           {/* Notes input for confirm-action */}
           <div className="mt-3 border-t border-indigo-100 pt-3">
             <label className="block text-xs font-semibold text-slate-700">
-              Notes / Ghi chú xử lý (optional):
+              Notes (optional):
               <input
                 type="text"
                 value={qrNotes}
@@ -535,7 +536,7 @@ export default function StaffReservationLookup() {
             <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
               <div className="font-bold text-emerald-800 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
-                <span>{qrActionResult.message || qrActionSuccess || "Hành động đã được xử lý thành công!"}</span>
+                <span>{qrActionResult.message || qrActionSuccess || "Action processed successfully."}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-slate-700">
                 {qrActionResult.actionType && (

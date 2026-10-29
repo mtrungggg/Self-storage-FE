@@ -1,41 +1,56 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
 /**
- * Thanh chọn kho (facility) dùng chung cho các màn hình quản lý kho của Manager và Admin.
- * Hiển thị mã kho, tên kho, địa chỉ và cho phép chuyển đổi nhanh kho đang làm việc.
+ * Top horizontal facility control bar: Minimalist, Text-only, No icons.
+ * Left: Facility dropdown.
+ * Right: Portal destination for page-level actions (e.g. Refresh, tab toggles).
  */
 export function FacilitySwitcher() {
   const { facilities, facilityId, setFacilityId, loading, error } = useManagerFacility();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef1f8] bg-white px-4 py-2.5 lg:px-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#eef4ff] text-[#1d5fe5]">
-          <span className="material-symbols-outlined text-[16px]">domain</span>
-        </div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
-          Cơ sở kho đang quản lý:
-        </span>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5 lg:px-8">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-slate-500">Facility:</span>
         {loading ? (
-          <span className="text-[11px] text-[#8996a9]">Đang tải danh sách kho...</span>
+          <span className="text-xs text-slate-400">Loading facilities...</span>
         ) : error ? (
-          <span className="text-[11px] font-semibold text-[#c0362c]">{error}</span>
+          <span className="text-xs font-semibold text-rose-600">{error}</span>
         ) : (
           <select
             value={facilityId ?? ""}
             onChange={(event) => setFacilityId(Number(event.target.value))}
-            className="rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-1.5 text-[11px] font-bold text-[#1d5fe5] shadow-sm transition hover:border-[#1d5fe5] focus:outline-none focus:ring-2 focus:ring-[#eef4ff]"
+            className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-none focus:outline-none focus:border-slate-400"
           >
             {facilities.map((facility) => (
               <option key={facility.id} value={facility.id}>
-                {facility.code} — {facility.name} ({facility.city || "Việt Nam"})
+                {facility.code} — {facility.name} ({facility.city || "Vietnam"})
               </option>
             ))}
           </select>
         )}
       </div>
+
+      {/* Target container for page actions (rendered via FacilityBarActions) */}
+      <div id="facility-bar-actions" className="flex items-center gap-2" />
     </div>
   );
+}
+
+/**
+ * Portal component allowing any Manager page to project actions directly into the Top Facility Bar.
+ */
+export function FacilityBarActions({ children }) {
+  const [target, setTarget] = useState(null);
+
+  useEffect(() => {
+    setTarget(document.getElementById("facility-bar-actions"));
+  }, []);
+
+  if (!target) return null;
+  return createPortal(children, target);
 }
 
 export default FacilitySwitcher;

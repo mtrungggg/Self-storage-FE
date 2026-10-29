@@ -1,7 +1,9 @@
 /**
  * Admin CRUD repository - Local storage fallback without mock seed data.
  */
-const STORAGE_KEY = "g1_admin_crud_v1";
+import STORAGE_KEYS from "../constants/storageKeys";
+
+const STORAGE_KEY = STORAGE_KEYS.ADMIN_CRUD_CACHE;
 
 const seed = {
   facilities: [],

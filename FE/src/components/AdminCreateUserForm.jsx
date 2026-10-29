@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
 import { UserPlus, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import adminUserService from "../api/adminUserService";
+import { USER_ROLES } from "../constants/roles";
 
 const emptyForm = {
   email: "",
   password: "",
   fullName: "",
   phoneNumber: "",
-  role: "facility_staff",
+  role: USER_ROLES.FACILITY_STAFF,
   employeeCode: "",
   hireDate: "",
   initialFacilityId: "",
@@ -19,7 +20,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const submitting = useRef(false);
-  const isEmployee = form.role !== "storage_customer";
+  const isEmployee = form.role !== USER_ROLES.CUSTOMER;
 
   async function submit(event) {
     event.preventDefault();
