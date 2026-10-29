@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, CheckCircle2, AlertTriangle } from "lucide-react";
 import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
+import { USER_ROLES } from "../constants/roles";
 
-const emptyForm = { facilityId: "", assignmentRole: "facility_staff", startsAt: "", endsAt: "" };
+const emptyForm = { facilityId: "", assignmentRole: USER_ROLES.FACILITY_STAFF, startsAt: "", endsAt: "" };
 
 export default function AdminStaffAssignmentForm({ employee, disabled, onSavingChange, onCreated }) {
   const [form, setForm] = useState(emptyForm);
@@ -123,8 +124,8 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
               onChange={(e) => setForm({ ...form, assignmentRole: e.target.value })}
               className="reference-select"
             >
-              <option value="facility_staff">Facility Staff</option>
-              <option value="facility_manager">Facility Manager</option>
+              <option value={USER_ROLES.FACILITY_STAFF}>Facility Staff</option>
+              <option value={USER_ROLES.FACILITY_MANAGER}>Facility Manager</option>
             </select>
           </label>
 

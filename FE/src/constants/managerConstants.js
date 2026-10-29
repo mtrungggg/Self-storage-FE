@@ -1,61 +1,58 @@
 /**
  * Constants strictly aligned with database CHECK constraints & BE domain constants.
- * DB Constraints:
- * - duty_role IN ('staff', 'shift_lead', 'manager_on_call')
- * - task_type IN ('check_in', 'check_out', 'inspection', 'maintenance', 'support', 'other')
- * - status IN ('todo', 'in_progress', 'blocked', 'done', 'cancelled')
+ * Fully localized in English for the unified Manager Portal.
  */
 
 export const DUTY_ROLES = [
-  { value: "staff", label: "Nhân viên trực ca (staff)" },
-  { value: "shift_lead", label: "Trưởng ca trực (shift_lead)" },
-  { value: "manager_on_call", label: "Quản lý trực ca (manager_on_call)" },
+  { value: "staff", label: "Operations Staff (staff)" },
+  { value: "shift_lead", label: "Shift Lead (shift_lead)" },
+  { value: "manager_on_call", label: "Manager on Call (manager_on_call)" },
 ];
 
 export const STAFF_TASK_TYPES = [
-  { value: "other", label: "Công việc chung / Khác (other)" },
-  { value: "maintenance", label: "Bảo trì ô kho (maintenance)" },
-  { value: "inspection", label: "Kiểm tra cơ sở (inspection)" },
-  { value: "support", label: "Hỗ trợ khách hàng (support)" },
-  { value: "check_in", label: "Thủ tục nhận kho (check_in)" },
-  { value: "check_out", label: "Thủ tục trả kho (check_out)" },
+  { value: "other", label: "General Tasks / Other" },
+  { value: "maintenance", label: "Unit Maintenance" },
+  { value: "inspection", label: "Facility Inspection" },
+  { value: "support", label: "Customer Support" },
+  { value: "check_in", label: "Check-in Procedure" },
+  { value: "check_out", label: "Check-out Procedure" },
 ];
 
 export const STAFF_TASK_STATUSES = [
-  { value: "todo", label: "Cần làm" },
-  { value: "in_progress", label: "Đang thực hiện" },
-  { value: "blocked", label: "Bị chặn" },
-  { value: "done", label: "Hoàn thành" },
+  { value: "todo", label: "To Do" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "blocked", label: "Blocked" },
+  { value: "done", label: "Completed" },
 ];
 
 export const UNIT_PHYSICAL_STATUS_OPTIONS = [
-  ["under_inspection", "Chờ kiểm tra (under_inspection)"],
-  ["pending_inspection", "Chờ kiểm tra (pending_inspection)"],
-  ["available", "Sẵn sàng"],
-  ["reserved", "Đã đặt trước"],
-  ["occupied", "Đang thuê"],
-  ["maintenance", "Bảo trì"],
-  ["out_of_service", "Ngừng hoạt động (out_of_service)"],
-  ["blocked", "Khoá"],
+  ["under_inspection", "Under Inspection"],
+  ["pending_inspection", "Pending Inspection"],
+  ["available", "Available"],
+  ["reserved", "Reserved"],
+  ["occupied", "Occupied"],
+  ["maintenance", "Maintenance"],
+  ["out_of_service", "Out of Service"],
+  ["blocked", "Blocked"],
 ];
 
 export const DELINQUENT_ACTION_TYPES = [
-  ["reminder_sent", "Gửi nhắc nợ (reminder_sent)"],
-  ["customer_contacted", "Liên hệ khách hàng (customer_contacted)"],
-  ["late_fee_added", "Áp phí phạt chậm nộp (late_fee_added)"],
-  ["credential_suspended", "Tạm khóa mã truy cập (credential_suspended)"],
-  ["payment_plan", "Lập kế hoạch trả góp (payment_plan)"],
-  ["waived", "Miễn giảm công nợ (waived)"],
-  ["termination_started", "Khởi động chấm dứt hợp đồng (termination_started)"],
-  ["note", "Ghi chú theo dõi (note)"],
+  ["reminder_sent", "Payment Reminder Sent"],
+  ["customer_contacted", "Customer Contacted"],
+  ["late_fee_added", "Late Fee Added"],
+  ["credential_suspended", "Access Credential Suspended"],
+  ["payment_plan", "Payment Plan Arranged"],
+  ["waived", "Debt Waived"],
+  ["termination_started", "Contract Termination Started"],
+  ["note", "Internal Follow-up Note"],
 ];
 
 export const DELINQUENT_CASE_STATUSES = [
-  ["grace", "Trong hạn ân hạn (grace)"],
-  ["delinquent", "Quá hạn nợ (delinquent)"],
-  ["cured", "Đã khắc phục / Tất toán (cured)"],
-  ["waived", "Đã miễn giảm (waived)"],
-  ["termination_started", "Chấm dứt hợp đồng (termination_started)"],
+  ["grace", "Grace Period"],
+  ["delinquent", "Delinquent"],
+  ["cured", "Cured / Settled"],
+  ["waived", "Waived"],
+  ["termination_started", "Termination Started"],
 ];
 
 export const DECISION_STATUS = {
@@ -63,4 +60,3 @@ export const DECISION_STATUS = {
   REJECTED: "rejected",
   PENDING: "pending",
 };
-

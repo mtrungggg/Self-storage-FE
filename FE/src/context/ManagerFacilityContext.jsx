@@ -1,23 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import managerService from "../api/managerService";
-import operationsService from "../api/operationsService";
+import adminFacilityService from "../api/adminFacilityService";
 import { useAuth } from "./AuthContext";
-import { ADMIN_ROLES, hasAnyRole } from "../constants/roles";
+import { ADMIN_ROLES, MANAGER_ROLES, hasAnyRole } from "../constants/roles";
+import STORAGE_KEYS from "../constants/storageKeys";
+import PAGINATION from "../constants/pagination";
 
-const STORAGE_KEY = "managerActiveFacilityId";
 const ManagerFacilityContext = createContext(null);
 
 /**
  * Context quản lý cơ sở kho (facility) dùng chung cho Manager và Admin.
  * - Manager: Lấy danh sách kho được phân công từ /api/manager/my-facilities.
- * - Admin: Nếu chưa được phân công kho cụ thể, tự động lấy toàn bộ kho từ /api/operations/facilities
+ * - Admin: Nếu chưa được phân công kho cụ thể, tự động lấy toàn bộ kho từ /api/admin/facilities
  *   để Admin có thể quản trị và kiểm tra bất kỳ cơ sở kho nào.
  */
 export function ManagerFacilityProvider({ children }) {
   const { user } = useAuth();
   const [facilities, setFacilities] = useState([]);
   const [facilityId, setFacilityIdState] = useState(() => {
-    const stored = Number(localStorage.getItem(STORAGE_KEY));
+    const stored = Number(localStorage.getItem(STORAGE_KEYS.MANAGER_ACTIVE_FACILITY_ID));
     return Number.isFinite(stored) && stored > 0 ? stored : null;
   });
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ export function ManagerFacilityProvider({ children }) {
 
   const setFacilityId = useCallback((id) => {
     setFacilityIdState(id);
-    if (id) localStorage.setItem(STORAGE_KEY, String(id));
+    if (id) localStorage.setItem(STORAGE_KEYS.MANAGER_ACTIVE_FACILITY_ID, String(id));
   }, []);
 
   useEffect(() => {
@@ -38,17 +39,17 @@ export function ManagerFacilityProvider({ children }) {
         try {
           list = await managerService.getMyFacilities();
         } catch {
-          // If manager endpoint fails or user is admin without assignment, fallback to operations
+          // If manager endpoint fails or user is admin without assignment, fallback to admin facility service
         }
 
         const roles = (user?.roles || []).map((r) => r.toLowerCase());
-        const isAdmin = hasAnyRole(roles, ADMIN_ROLES);
+        const isManager = hasAnyRole(roles, [...ADMIN_ROLES, ...MANAGER_ROLES]);
 
-        // Nếu list rỗng và tài khoản là Admin, tự động tải tất cả các kho qua operationsService
-        if ((!list || list.length === 0) && isAdmin) {
+        // If list is empty and user has manager/admin permissions, fallback to loading facilities
+        if ((!list || list.length === 0) && isManager) {
           try {
-            const opsRes = await operationsService.getFacilities({ pageSize: 100 });
-            const items = opsRes?.items || opsRes?.data || (Array.isArray(opsRes) ? opsRes : []);
+            const adminRes = await adminFacilityService.getFacilities({ PageSize: PAGINATION.MAX_PAGE_SIZE });
+            const items = adminRes?.items || [];
             if (Array.isArray(items) && items.length > 0) {
               list = items.map((f) => ({
                 id: f.id,
@@ -69,7 +70,7 @@ export function ManagerFacilityProvider({ children }) {
         setFacilities(validList);
 
         if (validList.length === 0) {
-          setError("Tài khoản chưa được phân công quản lý cơ sở kho nào. Vui lòng liên hệ Quản trị viên.");
+          setError("No active storage facilities available for your account. Please contact an Administrator.");
           setFacilityIdState(null);
           return;
         }
@@ -77,11 +78,11 @@ export function ManagerFacilityProvider({ children }) {
         setFacilityIdState((current) => {
           if (current && validList.some((facility) => facility.id === current)) return current;
           const fallback = validList[0]?.id ?? null;
-          if (fallback) localStorage.setItem(STORAGE_KEY, String(fallback));
+          if (fallback) localStorage.setItem(STORAGE_KEYS.MANAGER_ACTIVE_FACILITY_ID, String(fallback));
           return fallback;
         });
       } catch (err) {
-        if (!cancelled) setError(err?.message || "Không thể tải danh sách kho.");
+        if (!cancelled) setError(err?.message || "Failed to load facilities list.");
       } finally {
         if (!cancelled) setLoading(false);
       }

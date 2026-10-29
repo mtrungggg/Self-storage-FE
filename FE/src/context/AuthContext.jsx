@@ -1,27 +1,34 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import authService from "../api/authService";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => authService.getStoredUser());
-  const [token, setToken] = useState(() => sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
+  const [token, setToken] = useState(
+    () =>
+      sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadUser() {
-      const storedToken = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+      const storedToken =
+        sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
+        localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (storedToken) {
-        if (!sessionStorage.getItem("accessToken")) {
-          sessionStorage.setItem("accessToken", storedToken);
+        if (!sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+          sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, storedToken);
         }
         try {
           const res = await authService.getCurrentUser();
           if (res?.data) {
             setUser(res.data);
             const serialized = JSON.stringify(res.data);
-            sessionStorage.setItem("currentUser", serialized);
-            localStorage.setItem("currentUser", serialized);
+            sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
           }
         } catch (err) {
           console.warn("Phiên đăng nhập không hợp lệ hoặc đã hết hạn:", err.message);

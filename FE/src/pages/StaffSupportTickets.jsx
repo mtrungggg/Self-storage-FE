@@ -3,29 +3,393 @@ import PageBackground from "../components/PageBackground";
 import StaffLogisticsTickets from "../components/StaffLogisticsTickets";
 
 export default function StaffSupportTickets() {
+  const [tickets, setTickets] = useState([]);
+  const [facilityId, setFacilityId] = useState("");
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
+  const [onlyAssignedToMe, setOnlyAssignedToMe] = useState(false);
+  const [query, setQuery] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [statuses, setStatuses] = useState(TICKET_STATUS_LIST);
+  const requestId = useRef(0);
+  const assignLock = useRef(false);
+  const assignDialog = useRef(null);
+  const [assigningId, setAssigningId] = useState(null);
+  const [receivedTicketIds, setReceivedTicketIds] = useState(() => new Set());
+  const [assignError, setAssignError] = useState("");
+  const [assignSuccess, setAssignSuccess] = useState("");
+  const [resolveSuccess, setResolveSuccess] = useState("");
+
+  function handleResolved(ticket, result) {
+    const unitMsg = result?.unlockedUnitCode
+      ? ` Unit ${result.unlockedUnitCode} has been automatically released back to ${result.unlockedUnitStatus || "available"}.`
+      : "";
+    setResolveSuccess(`Ticket ${ticket.ticketNo || ticket.id} completed successfully.${unitMsg}`);
+    requestId.current++;
+    setLoading(true);
+    setError("");
+    setQuery((current) => ({ ...current }));
+  }
+
+  async function assignTicket(ticket) {
+    const ticketId = String(ticket.id);
+    if (assignLock.current || receivedTicketIds.has(ticketId)) return;
+    assignLock.current = true;
+    setAssigningId(ticket.id);
+    setAssignError("");
+    setAssignSuccess("");
+    try {
+      await staffSupportService.assignTicket(ticket.id);
+      setReceivedTicketIds((current) => {
+        const next = new Set(current);
+        next.add(ticketId);
+        return next;
+      });
+      setAssignSuccess(`Ticket ${ticket.ticketNo || ticket.id} assigned successfully.`);
+      // Refresh the currently applied filters, even if they changed during assignment.
+      requestId.current++;
+      setLoading(true);
+      setError("");
+      setQuery((current) => ({ ...current }));
+    } catch (err) {
+      const message = err.message || "";
+      const alreadyAssigned = message.includes("ticket_assignments_one_active_uidx");
+      setAssignError(
+        alreadyAssigned
+          ? "This ticket has already been assigned. Refresh the list to view its latest status."
+          : err.status >= 500
+          ? "Unable to claim this ticket right now. Please try again later."
+          : message || "Unable to claim this ticket. Please try again."
+      );
+      assignDialog.current?.showModal();
+    } finally {
+      assignLock.current = false;
+      setAssigningId(null);
+    }
+  }
+
+  useEffect(() => {
+    const id = ++requestId.current;
+    let active = true;
+    staffSupportService
+      .getTickets(query)
+      .then((data) => {
+        if (!active || id !== requestId.current) return;
+        setTickets(data);
+        setStatuses((current) => [
+          ...new Set([...current, ...data.map((ticket) => ticket.status).filter(Boolean)]),
+        ]);
+      })
+      .catch((err) => {
+        if (active && id === requestId.current)
+          setError(
+            err.status === 403
+              ? "You do not have permission to view staff support tickets."
+              : err.message || "Unable to load support tickets."
+          );
+      })
+      .finally(() => {
+        if (active && id === requestId.current) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [query]);
+
+  function load(filters) {
+    requestId.current++;
+    setLoading(true);
+    setError("");
+    setQuery({ ...filters });
+  }
+
+  function handleFilterSubmit(e) {
+    e.preventDefault();
+    load({
+      facilityId: facilityId || undefined,
+      category: category.trim() || undefined,
+      status: status.trim() || undefined,
+      onlyAssignedToMe: onlyAssignedToMe || undefined,
+    });
+  }
+
+  function handleClearFilters() {
+    setFacilityId("");
+    setCategory("");
+    setStatus("");
+    setOnlyAssignedToMe(false);
+    load({});
+  }
+
   return (
     <div className="relative min-h-screen text-[#0b1c30] flex flex-col font-sans bg-slate-50/50">
       <PageBackground />
-      <main className="flex-1 mx-auto w-full max-w-[1320px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-          <div>
-            <Link
-              to="/staff-dashboard"
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition mb-1 inline-block"
-            >
-              Back to Staff Workspace
-            </Link>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Facility Tasks
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Handle cleaning, maintenance, and unit turnaround tasks at your facility.
-            </p>
-          </div>
+      <main className="mx-auto max-w-[1320px] px-4 py-6 lg:px-6">
+        <Link
+          to="/staff-dashboard"
+          className="text-sm font-semibold text-[#1d5fe5] hover:underline"
+        >
+          Back to staff dashboard
+        </Link>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">Support &amp; Maintenance Tickets</h1>
+          <button
+            type="button"
+            onClick={() => load(query)}
+            disabled={loading}
+            className="rounded-lg border bg-white px-4 py-2 text-sm disabled:opacity-50"
+          >
+            Refresh
+          </button>
         </div>
 
-        <StaffLogisticsTickets />
+        {/* Filter Bar with /api/staff/tickets query params */}
+        <form
+          onSubmit={handleFilterSubmit}
+          className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[#dfe7f5] bg-white p-4"
+        >
+          <div>
+            <label htmlFor="staff-ticket-facility" className="mb-1 block text-sm font-semibold">
+              Facility ID
+            </label>
+            <input
+              id="staff-ticket-facility"
+              type="number"
+              min="1"
+              step="1"
+              value={facilityId}
+              onChange={(event) => setFacilityId(event.target.value)}
+              placeholder="All facilities"
+              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="staff-ticket-category" className="mb-1 block text-sm font-semibold">
+              Category
+            </label>
+            <input
+              id="staff-ticket-category"
+              type="text"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              placeholder="e.g. cleaning, maintenance"
+              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="staff-ticket-status" className="mb-1 block text-sm font-semibold">
+              Status
+            </label>
+            <input
+              id="staff-ticket-status"
+              list="staff-ticket-statuses"
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              placeholder="All statuses"
+              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
+            />
+            <datalist id="staff-ticket-statuses">
+              {statuses.map((value) => (
+                <option key={value} value={value} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="flex items-center gap-2 pb-2">
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={onlyAssignedToMe}
+                onChange={(e) => setOnlyAssignedToMe(e.target.checked)}
+                className="h-4 w-4 rounded border-[#dfe7f5] text-[#1d5fe5] focus:ring-[#1d5fe5]"
+              />
+              Only Assigned To Me
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Apply filters
+          </button>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="rounded-lg border px-4 py-2 text-sm"
+          >
+            Clear filters
+          </button>
+        </form>
+
+        <section aria-label="Support ticket list" aria-busy={loading} className="mt-5">
+          {assignSuccess && (
+            <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+              {assignSuccess}
+            </p>
+          )}
+          {resolveSuccess && (
+            <p role="status" className="mb-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+              {resolveSuccess}
+            </p>
+          )}
+          {loading ? (
+            <p role="status">Loading tickets from /api/staff/tickets...</p>
+          ) : error ? (
+            <div role="alert" className="rounded-xl bg-white p-4 text-red-600">
+              <p>{error}</p>
+              <button type="button" onClick={() => load(query)} className="mt-2 underline">
+                Try again
+              </button>
+            </div>
+          ) : tickets.length === 0 ? (
+            <p className="rounded-xl border bg-white p-8 text-center text-[#58657a]">
+              No tickets match these filters.
+            </p>
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-[#58657a]">{tickets.length} tickets</p>
+              <div className="grid items-start gap-4 lg:grid-cols-2">
+                {tickets.map((ticket) => (
+                  <article
+                    key={ticket.id}
+                    className="min-w-0 rounded-xl border border-[#dfe7f5] bg-white p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[#1d5fe5]">
+                          {ticket.ticketNo || `#${ticket.id}`}
+                        </span>
+                        {ticket.hasProposedCharges && (
+                          <span className="rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                            Charges Proposed
+                          </span>
+                        )}
+                      </div>
+                      <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold">
+                        {ticket.status || "—"}
+                      </span>
+                    </div>
+
+                    <h2 className="mt-3 break-words font-bold">
+                      {ticket.subject || "Untitled ticket"}
+                    </h2>
+
+                    <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                      {[
+                        ["Customer", ticket.customerName || ticket.customerId],
+                        [
+                          "Facility",
+                          ticket.facilityName || ticket.facilityCode || ticket.facilityId,
+                        ],
+                        ["Agreement", ticket.agreementNo || ticket.agreementId],
+                        ["Unit", ticket.unitCode || ticket.storageUnitId],
+                        ["Category", ticket.category],
+                        ["Priority", ticket.priority],
+                        [
+                          "Assigned Staff",
+                          ticket.assignedEmployeeName ||
+                            (ticket.assignedEmployeeId
+                              ? `#${ticket.assignedEmployeeId}`
+                              : "Unassigned"),
+                        ],
+                        ["Created", formatDate(ticket.createdAt)],
+                      ].map(([label, value]) => (
+                        <div key={label}>
+                          <dt className="text-xs text-[#58657a]">{label}</dt>
+                          <dd className="break-words">{value ?? "—"}</dd>
+                        </div>
+                      ))}
+                    </dl>
+
+                    <p className="mt-4 whitespace-pre-wrap break-words border-t pt-3 text-sm text-[#58657a]">
+                      {ticket.description || "No description provided."}
+                    </p>
+
+                    {ticket.resolution && (
+                      <div className="mt-3 rounded-lg bg-slate-50 p-3 border border-slate-100 text-xs text-[#25232c]">
+                        <strong>Resolution:</strong> {ticket.resolution}
+                        {ticket.resolvedAt && (
+                          <span className="block text-[11px] text-[#767679] mt-0.5">
+                            Resolved at {formatDate(ticket.resolvedAt)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => assignTicket(ticket)}
+                      disabled={assigningId != null || receivedTicketIds.has(String(ticket.id))}
+                      aria-label={`${
+                        receivedTicketIds.has(String(ticket.id)) ? "Received" : "Assign ticket"
+                      } ${ticket.ticketNo || ticket.id}`}
+                      className="mt-4 rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {receivedTicketIds.has(String(ticket.id))
+                        ? "Received"
+                        : assigningId === ticket.id
+                        ? "Assigning..."
+                        : "Assign ticket"}
+                    </button>
+
+                    <details className="group mt-4 overflow-hidden rounded-xl border border-[#dfe7f5] bg-[#f8faff]">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-[#0b1c30] transition hover:bg-[#eef4ff] [&::-webkit-details-marker]:hidden">
+                        <span>Manage ticket</span>
+                        <span className="text-xs text-[#58657a] transition-transform duration-200 group-open:rotate-180">▼</span>
+                      </summary>
+                      <div className="border-t border-[#dfe7f5] bg-white px-4 pb-4">
+                        <StaffTicketReply ticketId={ticket.id} />
+                        <StaffTicketCharge ticketId={ticket.id} />
+                        <StaffTicketResolve
+                          ticketId={ticket.id}
+                          onResolved={(res) => handleResolved(ticket, res)}
+                        />
+                      </div>
+                    </details>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
       </main>
+
+      <dialog
+        ref={assignDialog}
+        aria-labelledby="assign-error-title"
+        aria-describedby="assign-error-description"
+        className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white p-6 text-[#0b1c30] shadow-xl backdrop:bg-black/40"
+      >
+        <h2 id="assign-error-title" className="text-lg font-bold">
+          Unable to assign ticket
+        </h2>
+        <p id="assign-error-description" className="mt-3 text-sm leading-6 text-[#58657a]">
+          {assignError}
+        </p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => assignDialog.current.close()}
+            className="rounded-lg border border-[#dfe7f5] px-4 py-2 text-sm font-semibold"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              assignDialog.current.close();
+              load(query);
+            }}
+            className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Refresh list
+          </button>
+        </div>
+      </dialog>
     </div>
   );
 }

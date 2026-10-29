@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { DUTY_ROLES } from "../constants/managerConstants";
+import { USER_ROLES } from "../constants/roles";
+import { DEFAULT_STAFF_AVATARS } from "../constants/assets";
+import BUSINESS_CONFIG from "../config/businessConfig";
 
 // Standard shift presets for drag-and-drop quick scheduling
 const SHIFT_PRESETS = [
@@ -13,7 +16,6 @@ const SHIFT_PRESETS = [
     startHour: 6,
     endHour: 14,
     hours: 8,
-    icon: "wb_sunny",
     containerClass: "border-[#a6f4c5] bg-[#eefdf5] text-[#027a48]",
     codeClass: "bg-[#d1fadf] text-[#027a48]",
     defaultLocation: "Warehouse Zone A",
@@ -26,7 +28,6 @@ const SHIFT_PRESETS = [
     startHour: 14,
     endHour: 22,
     hours: 8,
-    icon: "light_mode",
     containerClass: "border-[#fedf89] bg-[#fef9ee] text-[#b54708]",
     codeClass: "bg-[#fef0c7] text-[#b54708]",
     defaultLocation: "Receiving Dock",
@@ -39,7 +40,6 @@ const SHIFT_PRESETS = [
     startHour: 22,
     endHour: 30, // cross to next day
     hours: 8,
-    icon: "bedtime",
     containerClass: "border-[#c7d7fe] bg-[#f5f6ff] text-[#3538cd]",
     codeClass: "bg-[#e0eaff] text-[#3538cd]",
     defaultLocation: "Night Watch Zone B",
@@ -52,22 +52,13 @@ const SHIFT_PRESETS = [
     startHour: 8,
     endHour: 32,
     hours: 24,
-    icon: "timelapse",
     containerClass: "border-[#99f6e4] bg-[#f0fdf9] text-[#0f766e]",
     codeClass: "bg-[#ccfbf1] text-[#0f766e]",
     defaultLocation: "Facility Security",
   },
 ];
 
-const AVATAR_LIST = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=120&q=80",
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=120&q=80",
-];
+const AVATAR_LIST = DEFAULT_STAFF_AVATARS;
 
 const getStaffAvatar = (id) => {
   const num = Number(id) || 0;
@@ -225,7 +216,7 @@ function ShiftCard({ shift, onDelete }) {
       className="absolute -top-1.5 -right-1.5 z-10 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#d92d20] shadow-sm border border-[#fda29b] hover:bg-[#fee4e2] transition"
       title="Remove this shift"
     >
-      <span className="material-symbols-outlined text-[13px]">close</span>
+      <span className="text-[12px] font-bold leading-none">✕</span>
     </button>
   );
 
@@ -257,7 +248,6 @@ function ShiftCard({ shift, onDelete }) {
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
-            <span className="material-symbols-outlined text-[14px]">wb_sunny</span>
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#d1fadf] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#027a48]">
@@ -277,7 +267,6 @@ function ShiftCard({ shift, onDelete }) {
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#b54708]">
-            <span className="material-symbols-outlined text-[14px]">light_mode</span>
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#fef0c7] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#b54708]">
@@ -297,7 +286,6 @@ function ShiftCard({ shift, onDelete }) {
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#3538cd]">
-            <span className="material-symbols-outlined text-[14px]">bedtime</span>
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#e0eaff] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#3538cd]">
@@ -310,13 +298,31 @@ function ShiftCard({ shift, onDelete }) {
     );
   }
 
+  // 4. Night Shift - Conflict / Warning
+  if (shift.type === "night_conflict" || shift.warning) {
+    return (
+      <div className="group relative rounded-[12px] border border-[#fecdca] bg-[#fff1f3] p-2 transition hover:shadow-xs">
+        <DeleteButton />
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-[#b42318]">
+            <span>{shift.name}</span>
+          </div>
+          <span className="inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1.5 py-0.5 text-[9px] font-extrabold text-[#d92d20]">
+            <span>{shift.warning || "Conflict"}</span>
+          </span>
+        </div>
+        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#912018]">{shift.time}</div>
+        <div className="mt-0.5 truncate text-[10px] font-semibold text-[#b42318]">{shift.location}</div>
+      </div>
+    );
+  }
+
   // 5. Leave
   if (shift.type === "leave") {
     return (
       <div className="group relative flex min-h-[70px] flex-col items-center justify-center rounded-[12px] border border-[#e9d7fe] bg-[#faf5ff] p-2 text-center transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center gap-1 text-[11px] font-extrabold text-[#6941c6]">
-          <span className="material-symbols-outlined text-[15px]">event_busy</span>
           <span>{shift.name}</span>
         </div>
         <div className="mt-0.5 text-[10px] font-medium text-[#7f56d9]">
@@ -348,7 +354,6 @@ function ShiftCard({ shift, onDelete }) {
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#0f766e]">
-            <span className="material-symbols-outlined text-[14px]">timelapse</span>
             <span>{shift.name}</span>
           </div>
           <span className="rounded bg-[#ccfbf1] px-1.5 py-0.5 text-[9px] font-black text-[#0f766e]">24H</span>
@@ -433,10 +438,10 @@ function ManagerShifts() {
           initialStaff = staffRes.value.map((s) => ({
             id: s.employeeId || s.userId,
             name: s.fullName,
-            title: s.assignmentRole === "facility_manager" ? "Facility Manager" : "Operations Staff",
+            title: s.assignmentRole === USER_ROLES.FACILITY_MANAGER ? "Facility Manager" : "Operations Staff",
             code: s.employeeCode,
             avatar: getStaffAvatar(s.employeeId || s.userId),
-            standardHours: 40,
+            standardHours: BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK,
             shifts: {}, // key: dayKey -> array of shifts
           }));
         }
@@ -454,7 +459,7 @@ function ManagerShifts() {
                 title: item.dutyRole === "shift_lead" ? "Shift Lead" : "Duty Staff",
                 code: item.employeeCode || `EMP-${item.employeeId}`,
                 avatar: getStaffAvatar(item.employeeId),
-                standardHours: 40,
+                standardHours: BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK,
                 shifts: {},
               });
             }
@@ -742,7 +747,35 @@ function ManagerShifts() {
     }
   };
 
-  const handleDeleteShift = (staff, dayKey, shiftIndex) => {
+  // Core assignment function: Appends shift so 1 employee can work multiple shifts in 1 day!
+  const assignPresetToCell = async (staff, dayKey, preset) => {
+    setError("");
+    const previousStaffList = staffList;
+    const previousShifts = shifts;
+
+    // Build startsAt and endsAt ISO dates
+    const [year, month, day] = dayKey.split("-").map(Number);
+    const startHour = preset.startHour || 6;
+    const endHour = preset.endHour || 14;
+
+    const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
+    const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
+    if (endHour >= 24) {
+      endDate.setUTCDate(endDate.getUTCDate() + 1);
+    }
+
+    const tempShiftId = Date.now() + Math.floor(Math.random() * 1000);
+    const newShiftItem = {
+      shiftId: tempShiftId,
+      type: preset.type,
+      name: preset.name,
+      code: preset.code,
+      time: preset.time,
+      location: preset.defaultLocation || "Operations Area",
+      hours: preset.hours || 0,
+    };
+
+    // Optimistically APPEND shift into array for this day
     setStaffList((prev) =>
       prev.map((s) => {
         if (s.id !== staff.id) return s;
@@ -881,19 +914,57 @@ function ManagerShifts() {
             allowPast: isPast || Boolean(op.shift.allowPast),
           });
         }
+      } catch (err) {
+        // Rollback optimistic state when backend save fails
+        setStaffList(previousStaffList);
+        setShifts(previousShifts);
+        setNotice("");
+        const errorMessage =
+          err?.response?.data?.message ||
+          err?.response?.data?.errors?.join?.(", ") ||
+          err?.message ||
+          "Failed to save shift assignment";
+        setError(errorMessage);
+        setTimeout(() => setError(""), 5000);
       }
 
-      if (assignmentsToAdd.length > 0 || assignmentsToDelete.length > 0) {
-        const batchResult = await managerService.batchSaveShiftAssignments(facilityId, {
-          assignmentsToAdd,
-          assignmentsToDelete,
-        });
+  // Delete individual shift from array
+  const handleDeleteShift = async (staff, dayKey, shiftIndex, shiftItem) => {
+    const previousStaffList = staffList;
+    setStaffList((prev) =>
+      prev.map((s) => {
+        if (s.id === staff.id) {
+          const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
+          currentShifts.splice(shiftIndex, 1);
+          return {
+            ...s,
+            shifts: {
+              ...s.shifts,
+              [dayKey]: currentShifts,
+            },
+          };
+        }
+        return s;
+      })
+    );
 
-        const addedCount = batchResult?.addedCount ?? assignmentsToAdd.length;
-        const deletedCount = batchResult?.deletedCount ?? assignmentsToDelete.length;
-        setNotice(`Đã lưu thành công lịch trực: +${addedCount} ca mới, -${deletedCount} ca đã gỡ.`);
-      } else {
-        setNotice("Không có thay đổi cần lưu.");
+    setNotice(`Removed shift for ${staff.name}.`);
+    setTimeout(() => setNotice(""), 2500);
+
+    if (facilityId && shiftItem?.shiftId) {
+      try {
+        await managerService.deleteShiftAssignment(facilityId, shiftItem.shiftId, staff.id);
+      } catch (err) {
+        // Rollback optimistic state when backend delete fails
+        setStaffList(previousStaffList);
+        setNotice("");
+        const errorMessage =
+          err?.response?.data?.message ||
+          err?.response?.data?.errors?.join?.(", ") ||
+          err?.message ||
+          "Failed to remove shift assignment";
+        setError(errorMessage);
+        setTimeout(() => setError(""), 5000);
       }
 
       setTimeout(() => setNotice(""), 3500);
@@ -927,7 +998,7 @@ function ManagerShifts() {
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[#58657a] hover:bg-[#f8faff] hover:text-[#0b1c30] transition"
               title="Previous week"
             >
-              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+              <span className="text-base font-bold">‹</span>
             </button>
 
             <button
@@ -945,21 +1016,18 @@ function ManagerShifts() {
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[#58657a] hover:bg-[#f8faff] hover:text-[#0b1c30] transition"
               title="Next week"
             >
-              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+              <span className="text-base font-bold">›</span>
             </button>
           </div>
 
           {/* Quick search input */}
-          <div className="relative">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-[#8996a9]">
-              search
-            </span>
+          <div>
             <input
               type="text"
               placeholder="Search staff name, code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-48 rounded-xl border border-[#dfe7f5] bg-white pl-8 pr-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-60 focus:border-[#1d5fe5]"
+              className="h-9 w-48 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-60 focus:border-[#1d5fe5]"
             />
           </div>
 
@@ -1003,10 +1071,6 @@ function ManagerShifts() {
                   isSelectedBrush ? "ring-2 ring-offset-1 ring-[#1d5fe5] scale-[1.03]" : ""
                 }`}
               >
-                <span className="material-symbols-outlined text-[14px] opacity-50 group-hover:opacity-100">
-                  drag_indicator
-                </span>
-                <span className="material-symbols-outlined text-[15px]">{preset.icon}</span>
                 <span className="text-xs font-black">{preset.name}</span>
                 <span className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${preset.codeClass}`}>
                   {preset.code}
@@ -1030,7 +1094,6 @@ function ManagerShifts() {
             onClick={() => setSelectedBrush(null)}
             className="inline-flex items-center gap-1 rounded-xl border border-[#fda29b] bg-[#fffbfa] px-2.5 py-1 text-[11px] font-bold text-[#b42318] hover:bg-[#fee4e2] transition shadow-2xs"
           >
-            <span className="material-symbols-outlined text-[14px]">close</span>
             Cancel ({selectedBrush.name})
           </button>
         )}
@@ -1045,14 +1108,12 @@ function ManagerShifts() {
 
       {notice && (
         <div role="status" className="flex items-center gap-2 rounded-xl bg-[#ecfdf3] px-4 py-2.5 text-xs font-bold text-[#027a48] border border-[#a6f4c5]">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
           <span>{notice}</span>
         </div>
       )}
 
       {error && (
         <div role="alert" className="flex items-center gap-2 rounded-xl bg-[#fff1f3] px-4 py-2.5 text-xs font-bold text-[#b42318] border border-[#fecdca]">
-          <span className="material-symbols-outlined text-[18px]">error</span>
           <span>{error}</span>
         </div>
       )}
@@ -1071,7 +1132,7 @@ function ManagerShifts() {
                       ON-DUTY STAFF ({filteredStaff.length})
                     </span>
                     <span className="rounded-full bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-bold text-[#475467]">
-                      Standard: 40h
+                      Standard: ${BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK}h
                     </span>
                   </div>
                 </th>
@@ -1221,10 +1282,8 @@ function ManagerShifts() {
                                   : "Drag and drop shift here"
                               }
                             >
-                              <span className={`material-symbols-outlined text-[26px] font-bold group-hover:scale-125 transition ${
-                                isConflictDrop ? "text-[#d92d20]" : "text-[#2062eb]"
-                              }`}>
-                                {isConflictDrop ? "block" : "add"}
+                              <span className="text-lg font-bold text-[#2062eb] group-hover:scale-125 transition">
+                                +
                               </span>
                             </div>
                           </div>
@@ -1250,9 +1309,9 @@ function ManagerShifts() {
 
                 {weekDays.map((day) => {
                   const summary = dailySummary[day.key] || {
-                    morning: "0 NV",
-                    afternoon: "0 NV",
-                    night: "0 NV",
+                    morning: "0 Staff",
+                    afternoon: "0 Staff",
+                    night: "0 Staff",
                     isShortage: false,
                   };
 
@@ -1264,21 +1323,18 @@ function ManagerShifts() {
                       }`}
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
-                          <span className="material-symbols-outlined text-[13px]">wb_sunny</span>
-                          <span>Morning: {summary.morning}</span>
+                        <div className="text-[11px] font-bold text-[#027a48]">
+                          Morning: {summary.morning}
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-[#b54708]">
-                          <span className="material-symbols-outlined text-[13px]">light_mode</span>
-                          <span>Afternoon: {summary.afternoon}</span>
+                        <div className="text-[11px] font-bold text-[#b54708]">
+                          Afternoon: {summary.afternoon}
                         </div>
                         <div
-                          className={`flex items-center gap-1 text-[11px] font-black ${
+                          className={`text-[11px] font-black ${
                             summary.isShortage ? "text-[#d92d20]" : "text-[#3538cd]"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[13px]">bedtime</span>
-                          <span>Night: {summary.night}</span>
+                          Night: {summary.night}
                         </div>
                       </div>
                     </td>

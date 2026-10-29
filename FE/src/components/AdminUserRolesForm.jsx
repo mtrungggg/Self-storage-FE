@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import adminUserService from "../api/adminUserService";
-
-const roleOptions = [
-  ["storage_customer", "Customer"],
-  ["facility_staff", "Facility Staff"],
-  ["facility_manager", "Facility Manager"],
-  ["business_operations_manager", "Operations Manager"],
-  ["system_administrator", "System Administrator"],
-];
+import { ROLE_OPTIONS as roleOptions } from "../constants/roles";
 
 export default function AdminUserRolesForm({ user, disabled, onSavingChange, onUpdated }) {
   const original = (user.roles || []).map((role) => role.code);

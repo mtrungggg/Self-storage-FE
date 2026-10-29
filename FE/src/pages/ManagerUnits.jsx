@@ -3,6 +3,7 @@ import managerService from "../api/managerService";
 import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
+import PAGINATION from "../constants/pagination";
 
 const emptyUnitForm = { unitCode: "", unitTypeId: "", areaId: "", floorLabel: "", zoneLabel: "", physicalStatus: "under_inspection", isListed: true, notes: "" };
 
@@ -47,7 +48,7 @@ function ManagerUnits() {
     setLoadingUnits(true);
     setError("");
     try {
-      const page = await managerService.getUnits(facilityId, { status: statusFilter || undefined, search: search || undefined, pageSize: 100 });
+      const page = await managerService.getUnits(facilityId, { status: statusFilter || undefined, search: search || undefined, pageSize: PAGINATION.MAX_PAGE_SIZE });
       setUnits(page?.items ?? []);
     } catch (err) {
       setError(err?.message || "Failed to load units list.");
@@ -191,39 +192,38 @@ function ManagerUnits() {
                 {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </div>
-            <button type="button" onClick={openCreateUnit} className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white">
-              <span className="material-symbols-outlined text-[14px]">add</span>
+            <button type="button" onClick={openCreateUnit} className="rounded-md bg-[#1d5fe5] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#154ec2]">
               Add Unit
             </button>
           </div>
 
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-[11px]">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#eef1f8] text-[9px] font-bold uppercase tracking-[0.04em] text-[#8996a9]">
-                  <th className="py-2 pr-2">Unit Code</th>
-                  <th className="py-2 pr-2">Type</th>
-                  <th className="py-2 pr-2">Zone / Floor</th>
-                  <th className="py-2 pr-2">Status</th>
-                  <th className="py-2 pr-2">Listed</th>
-                  <th className="py-2 pr-2 text-right">Actions</th>
+                <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-2.5 w-[20%]">Unit Code</th>
+                  <th className="px-4 py-2.5 w-[22%]">Type</th>
+                  <th className="px-4 py-2.5 w-[20%]">Zone / Floor</th>
+                  <th className="px-4 py-2.5 w-[16%]">Status</th>
+                  <th className="px-4 py-2.5 w-[10%]">Listed</th>
+                  <th className="px-4 py-2.5 w-[12%] text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {loadingUnits ? (
-                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">Loading units...</td></tr>
+                  <tr><td colSpan={6} className="py-6 text-center text-slate-400">Loading units...</td></tr>
                 ) : units.length === 0 ? (
-                  <tr><td colSpan={6} className="py-4 text-center text-[#8996a9]">No units found.</td></tr>
+                  <tr><td colSpan={6} className="py-6 text-center text-slate-400">No units found.</td></tr>
                 ) : (
                   units.map((unit) => (
-                    <tr key={unit.id} className="border-b border-[#f2f5fb]">
-                      <td className="py-2.5 pr-2 font-semibold">{unit.unitCode}</td>
-                      <td className="py-2.5 pr-2 text-[#58657a]">{unit.unitTypeName}</td>
-                      <td className="py-2.5 pr-2 text-[#58657a]">{unit.zoneLabel || "—"} / {unit.floorLabel || "—"}</td>
-                      <td className="py-2.5 pr-2">{STATUS_OPTIONS.find(([value]) => value === unit.physicalStatus)?.[1] || unit.physicalStatus}</td>
-                      <td className="py-2.5 pr-2">{unit.isListed ? "Yes" : "No"}</td>
-                      <td className="py-2.5 pr-2 text-right">
-                        <button type="button" onClick={() => openEditUnit(unit)} className="rounded-[6px] bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#1d5fe5]">Edit</button>
+                    <tr key={unit.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-4 py-2.5 font-semibold text-slate-900">{unit.unitCode}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{unit.unitTypeName}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{unit.zoneLabel || "—"} / {unit.floorLabel || "—"}</td>
+                      <td className="px-4 py-2.5 font-medium text-slate-800">{STATUS_OPTIONS.find(([value]) => value === unit.physicalStatus)?.[1] || unit.physicalStatus}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{unit.isListed ? "Yes" : "No"}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button type="button" onClick={() => openEditUnit(unit)} className="rounded border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">Edit</button>
                       </td>
                     </tr>
                   ))

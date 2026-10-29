@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { DECISION_STATUS } from "../constants/managerConstants";
+import { formatStatusToEnglish } from "../lib/utils";
 
 function formatDate(value) {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("vi-VN");
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US");
 }
 
 const STATUS_BADGE = {
-  pending: "bg-[#fff2d8] text-[#a15c00]",
-  pending_payment: "bg-[#fff2d8] text-[#a15c00]",
-  paid: "bg-[#eef4ff] text-[#1d5fe5]",
-  moved_out_in_transit: "bg-[#f3e8ff] text-[#7e22ce]",
-  cancelled_overdue_move_out: "bg-[#fdecec] text-[#c0362c]",
-  approved: "bg-[#e7f8ee] text-[#0e7b4c]",
-  rejected: "bg-[#fdecec] text-[#c0362c]",
+  [DECISION_STATUS.PENDING]: "bg-amber-50 text-amber-700 border border-amber-200",
+  [DECISION_STATUS.APPROVED]: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  [DECISION_STATUS.REJECTED]: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
 function ManagerTransferRequests() {
@@ -32,7 +30,7 @@ function ManagerTransferRequests() {
     try {
       setRequests(await managerService.getTransferRequests(facilityId));
     } catch (err) {
-      setError(err?.message || "Không thể tải yêu cầu chuyển ô.");
+      setError(err?.message || "Failed to load transfer requests.");
     } finally {
       setLoading(false);
     }
@@ -41,47 +39,126 @@ function ManagerTransferRequests() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [facilityId]);
 
+  function updateDraft(id, field, value) {
+    setDecisionDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  }
+
+  async function decide(id, decision) {
+    const draft = decisionDrafts[id] || {};
+    setDecidingId(id);
+    setError("");
+    try {
+      await managerService.decideTransferRequest(id, {
+        decision,
+        targetUnitId: draft.targetUnitId ? Number(draft.targetUnitId) : undefined,
+        reviewNotes: draft.reviewNotes || undefined,
+      });
+      setNotice(decision === DECISION_STATUS.APPROVED ? "Transfer request approved successfully." : "Transfer request rejected.");
+      await load();
+    } catch (err) {
+      setError(err?.message || "Failed to process transfer request.");
+    } finally {
+      setDecidingId(null);
+    }
+  }
+
   return (
-    <>
-      <h1 className="text-[20px] font-bold">Yêu cầu chuyển ô kho</h1>
-      <p className="mt-1 text-[11px] text-[#8996a9]">Theo dõi yêu cầu chuyển kho tại cơ sở nguồn hoặc cơ sở đích.</p>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">Unit Transfer Requests</h1>
+        <p className="text-xs text-slate-500">Review and approve or reject customer requests to transfer to a different storage unit.</p>
+      </div>
 
-      {notice && <p role="status" className="mt-3 rounded-[8px] bg-[#e7f8ee] px-3 py-2 text-[10px] font-semibold text-[#0e7b4c]">{notice}</p>}
-      {error && <p role="alert" className="mt-3 rounded-[8px] bg-[#fdecec] px-3 py-2 text-[10px] font-semibold text-[#c0362c]">{error}</p>}
+      {notice && (
+        <div role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-700">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-700">
+          {error}
+        </div>
+      )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {loading ? (
-          <p className="text-[11px] text-[#8996a9]">Đang tải...</p>
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
+            Loading transfer requests...
+          </div>
         ) : requests.length === 0 ? (
-          <p className="text-[11px] text-[#8996a9]">Không có yêu cầu nào.</p>
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
+            No transfer requests found.
+          </div>
         ) : (
           requests.map((request) => {
+            const draft = decisionDrafts[request.id] || {};
+            const isPending = request.status === DECISION_STATUS.PENDING;
             return (
-              <div key={request.id} className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+              <div key={request.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-none">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[12px] font-bold">{request.customerName} <span className="font-normal text-[#8996a9]">• {request.customerPhone}</span></div>
-                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${STATUS_BADGE[request.status] || "bg-[#eef4ff] text-[#1d5fe5]"}`}>{request.status}</span>
+                  <div className="text-xs font-bold text-slate-900">
+                    {request.customerName} <span className="font-normal text-slate-400">• {request.customerPhone}</span>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium capitalize ${STATUS_BADGE[request.status] || "bg-slate-50 text-slate-600 border border-slate-200"}`}>
+                    {formatStatusToEnglish(request.status)}
+                  </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-[#3a475a]">
-                  Hợp đồng <strong>{request.agreementNo}</strong> — từ ô <strong>{request.fromUnitCode}</strong> sang loại <strong>{request.requestedUnitTypeName}</strong>
-                  {request.toUnitCode ? <> (ô đề xuất: <strong>{request.toUnitCode}</strong>)</> : null}
+
+                <div className="mt-2 text-xs text-slate-700">
+                  Agreement <span className="font-semibold">{request.agreementNo}</span> — From Unit <span className="font-mono font-semibold">{request.fromUnitCode}</span> to Type <span className="font-semibold">{request.requestedUnitTypeName}</span>
+                  {request.toUnitCode ? <> (Suggested Unit: <span className="font-mono font-semibold">{request.toUnitCode}</span>)</> : null}
                 </div>
-                <div className="mt-2 grid gap-1 rounded-lg bg-[#f8faff] p-2 text-[10px] text-[#58657a] sm:grid-cols-2">
-                  <span>Cơ sở đích: <strong className="text-[#0b1c30]">#{request.requestedFacilityId}</strong></span>
-                  <span>Đổi lịch: <strong className="text-[#0b1c30]">{request.rescheduleCount || 0}/2</strong></span>
-                  <span>Dọn kho nguồn: <strong className="text-[#0b1c30]">{formatDate(request.moveOutDate || request.requestedEffectiveDate)}</strong></span>
-                  <span>Nhận kho đích: <strong className="text-[#0b1c30]">{formatDate(request.moveInDate || request.requestedEffectiveDate)}</strong></span>
-                  <span>Chênh thuê: <strong className="text-[#0b1c30]">{Number(request.diffRentAmount || 0).toLocaleString("vi-VN")} ₫</strong></span>
-                  <span>Chênh cọc: <strong className="text-[#0b1c30]">{Number(request.diffDepositAmount || 0).toLocaleString("vi-VN")} ₫</strong></span>
-                  <span className="sm:col-span-2">Cần thanh toán: <strong className="text-[#1d5fe5]">{Number(request.totalPaidAmount || 0).toLocaleString("vi-VN")} ₫</strong></span>
+                <div className="mt-1 text-[11px] text-slate-400">
+                  Reason: {request.reason || "None"} • Requested Effective Date: {formatDate(request.requestedEffectiveDate)}
                 </div>
-                <div className="mt-1 text-[10px] text-[#8996a9]">Lý do: {request.reason || "—"}</div>
+
+                {isPending && (
+                  <div className="mt-3 flex flex-wrap items-end gap-2.5 border-t border-slate-100 pt-3">
+                    <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
+                      Target Unit ID (if approved)
+                      <input
+                        type="number"
+                        placeholder="e.g. 102"
+                        value={draft.targetUnitId || ""}
+                        onChange={(e) => updateDraft(request.id, "targetUnitId", e.target.value)}
+                        className="w-32 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                      />
+                    </label>
+                    <label className="flex flex-1 min-w-[200px] flex-col gap-1 text-[11px] font-medium text-slate-600">
+                      Review Notes
+                      <input
+                        placeholder="Add review notes or justification..."
+                        value={draft.reviewNotes || ""}
+                        onChange={(e) => updateDraft(request.id, "reviewNotes", e.target.value)}
+                        className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                      />
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={decidingId === request.id}
+                        onClick={() => decide(request.id, DECISION_STATUS.APPROVED)}
+                        className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={decidingId === request.id}
+                        onClick={() => decide(request.id, DECISION_STATUS.REJECTED)}
+                        className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 transition disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })
         )}
       </div>
-    </>
+    </div>
   );
 }
 

@@ -1,18 +1,12 @@
 import apiClient from "./apiClient";
 
 const staffFacilityService = {
-  async getMyFacility() {
-    const response = await apiClient.get("/staff/my-facility");
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to load assigned facility.");
-    }
-    return response.data;
-  },
-
-  async getUnits(facilityId, filters = {}) {
-    const params = { ...filters };
-    if (facilityId != null && facilityId !== "") params.facilityId = facilityId;
-    const response = await apiClient.get("/staff/units", { params });
+  /**
+   * STT 9: Danh sách ô kho và hiện trạng vật lý tại cơ sở
+   * GET /api/staff/facilities/{facilityId}/units
+   */
+  async getUnits(facilityId) {
+    const response = await apiClient.get(`/staff/facilities/${encodeURIComponent(facilityId)}/units`);
     if (response?.success !== true) {
       throw new Error(response?.message || "Unable to load facility units.");
     }
@@ -23,11 +17,35 @@ const staffFacilityService = {
     return response.data;
   },
 
-  async getUnitDetail(unitId) {
-    const response = await apiClient.get(`/staff/units/${encodeURIComponent(unitId)}`);
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to load unit detail.");
+  /**
+   * STT 10: Cập nhật trạng thái vật lý ô kho
+   * PUT /api/staff/facilities/{facilityId}/units/{unitId}/physical-status
+   */
+  async updatePhysicalStatus(facilityId, unitId, payload) {
+    if (!facilityId) {
+      throw new Error("Facility ID is required to update unit physical status.");
     }
+    const body = typeof payload === "string" ? { physicalStatus: payload } : payload;
+    const response = await apiClient.put(
+      `/staff/facilities/${encodeURIComponent(facilityId)}/units/${encodeURIComponent(unitId)}/physical-status`,
+      body
+    );
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to update unit physical status.");
+    }
+    return response.data;
+  },
+
+  async updateUnitStatus(unitId, status, facilityId) {
+    return this.updatePhysicalStatus(facilityId, unitId, status);
+  },
+
+  async createMaintenanceOrder(unitId, payload) {
+    const response = await apiClient.post(`/staff/units/${encodeURIComponent(unitId)}/maintenance-orders`, payload);
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Unable to create the maintenance order.");
+    }
+    if (!response.data) throw new Error("The server did not return the maintenance order.");
     return response.data;
   },
 };

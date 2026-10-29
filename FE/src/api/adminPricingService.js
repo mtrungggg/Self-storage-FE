@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import PAGINATION from "../constants/pagination";
 
 export default {
   /**
@@ -13,7 +14,7 @@ export default {
     IsActive,
     EffectiveOn,
     PageNumber = 1,
-    PageSize = 10,
+    PageSize = PAGINATION.DEFAULT_PAGE_SIZE,
   } = {}) {
     const params = { PageNumber, PageSize };
     for (const [key, value] of Object.entries({

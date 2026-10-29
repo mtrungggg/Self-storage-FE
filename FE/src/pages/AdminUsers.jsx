@@ -3,20 +3,10 @@ import { Link } from "react-router-dom";
 import { Users, Search, RefreshCw, UserPlus, ChevronLeft, ChevronRight, AlertTriangle, ArrowRight } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 import AdminCreateUserForm from "../components/AdminCreateUserForm";
+import { ROLE_OPTIONS as roles, USER_STATUS_OPTIONS as statuses } from "../constants/roles";
+import PAGINATION from "../constants/pagination";
 
-const roles = [
-  ["storage_customer", "Customer"],
-  ["facility_staff", "Facility Staff"],
-  ["facility_manager", "Facility Manager"],
-  ["business_operations_manager", "Operations Manager"],
-  ["system_administrator", "System Administrator"],
-];
-const statuses = [
-  ["active", "Active"],
-  ["disabled", "Disabled"],
-  ["locked", "Locked"],
-];
-const initialFilters = { Search: "", Role: "", Status: "", FacilityId: "", PageSize: 10 };
+const initialFilters = { Search: "", Role: "", Status: "", FacilityId: "", PageSize: PAGINATION.DEFAULT_PAGE_SIZE };
 const labelFor = (options, value) => options.find(([key]) => key === value)?.[1] || value || "—";
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
 const formatDate = (value) => {

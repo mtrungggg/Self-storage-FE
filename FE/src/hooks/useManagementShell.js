@@ -61,28 +61,28 @@ export function useManagementShell() {
   // Manager Facility Operations Group
   const managerGroupOperations = {
     id: "manager-operations",
-    label: "Facility Operations (Manager)",
+    label: "OPERATIONS",
     badge: "FACILITY",
-    hideHeader: true,
     items: [
-      { id: "manager-dashboard", label: "Facility Dashboard", icon: "dashboard", to: "/manager-dashboard" },
-      { id: "manager-units", label: "Units & Layout", icon: "grid_view", to: "/manager-units" },
-      { id: "manager-transfer-requests", label: "Unit Transfer Requests", icon: "swap_horiz", to: "/manager-transfer-requests" },
-      { id: "manager-move-outs", label: "Move-Out Schedule & Inspection", icon: "output", to: "/manager-move-outs" },
+      { id: "manager-dashboard", label: "Dashboard", to: "/manager-dashboard" },
+      { id: "manager-units", label: "Units & Layout", to: "/manager-units" },
+      { id: "manager-transfer-requests", label: "Transfers", to: "/manager-transfer-requests" },
+      { id: "manager-shifts", label: "Shifts", to: "/manager-shifts" },
+      { id: "manager-tickets", label: "Tickets", to: "/manager-tickets" },
     ],
   };
 
   // Manager Finance Group
   const managerGroupFinance = {
     id: "manager-finance",
-    label: "Finance & Contracts",
+    label: "FINANCE",
     badge: "OPERATIONS",
     items: [
-      { id: "manager-charge-proposals", label: "Ancillary Fee Approvals", icon: "receipt_long", to: "/manager-charge-proposals" },
-      { id: "manager-refund-approvals", label: "Refund Approvals", icon: "currency_exchange", to: "/manager-refund-approvals" },
-      { id: "manager-agreements", label: "Rental Agreements", icon: "assignment", to: "/manager-agreements" },
-      { id: "manager-delinquent-cases", label: "Overdue & Delinquency", icon: "report_problem", to: "/manager-delinquent-cases" },
-      { id: "manager-pricing", label: "Pricing & Policies", icon: "tune", to: "/manager-pricing" },
+      { id: "manager-charge-proposals", label: "Fee Approvals", to: "/manager-charge-proposals" },
+      { id: "manager-refund-approvals", label: "Refund Approvals", to: "/manager-refund-approvals" },
+      { id: "manager-agreements", label: "Agreements", to: "/manager-agreements" },
+      { id: "manager-delinquent-cases", label: "Overdue", to: "/manager-delinquent-cases" },
+      { id: "manager-pricing", label: "Pricing", to: "/manager-pricing" },
     ],
   };
 

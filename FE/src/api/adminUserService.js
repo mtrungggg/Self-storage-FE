@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import PAGINATION from "../constants/pagination";
 
 export default {
   async updateRoles(id, roles) {
@@ -35,7 +36,7 @@ export default {
     }
     return response.data;
   },
-  async getUsers({ Search, Role, Status, FacilityId, PageNumber = 1, PageSize = 10 }) {
+  async getUsers({ Search, Role, Status, FacilityId, PageNumber = 1, PageSize = PAGINATION.DEFAULT_PAGE_SIZE }) {
     const params = { PageNumber, PageSize };
     for (const [key, value] of Object.entries({ Search, Role, Status, FacilityId })) {
       if (value !== "" && value != null) params[key] = value;

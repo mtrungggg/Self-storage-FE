@@ -10,6 +10,7 @@ import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import { BRAND_NAME } from "../constants/brand";
 import MediaUpload from "../components/MediaUpload";
 import { CoverflowCarousel } from "@/components/ui/coverflow-carousel";
 
@@ -68,10 +69,10 @@ function Support() {
       id: String(u.id),
       title: `Unit ${u.unitCode}`,
       src: UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
-      alt: `Kho ${u.unitCode} tại ${u.facilityName || "G1 SelfStorage"}`,
+      alt: `Kho ${u.unitCode} tại ${u.facilityName || BRAND_NAME}`,
       badge: u.unitTypeCode || "KHO",
       meta: [
-        { label: "Cơ sở", value: u.facilityName || "G1 SelfStorage" },
+        { label: "Cơ sở", value: u.facilityName || BRAND_NAME },
         { label: "Hợp đồng", value: u.contractLeft },
       ],
       unitData: u,
