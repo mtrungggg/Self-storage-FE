@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GridGradientBackground from "@/components/ui/grid-gradient-background";
 import { useAuth } from "../context/AuthContext";

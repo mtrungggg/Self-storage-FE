@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { ADMIN_ROLES, hasAnyRole } from "../constants/roles";
 // facilities loaded via ManagerFacilityContext
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
@@ -52,9 +50,7 @@ const initialFeeForm = {
 };
 
 export default function ManagerPricing() {
-  const { facilityId } = useManagerFacility();
-  const { user } = useAuth();
-  const isAdmin = hasAnyRole((user?.roles || []).map((r) => r.toLowerCase()), ADMIN_ROLES);
+  const { facilityId, facilities } = useManagerFacility();
 
   // Active Tab: "fees" | "rates" | "promotions"
   const [activeTab, setActiveTab] = useState("fees");
@@ -69,8 +65,8 @@ export default function ManagerPricing() {
   const [feeFilters, setFeeFilters] = useState(initialFeeFilters);
   const [feeQuery, setFeeQuery] = useState({ ...initialFeeFilters, PageNumber: 1 });
   const [feeData, setFeeData] = useState(null);
-  const [loadingFees, setLoadingFees] = useState(false);
-  const [facilitiesList, setFacilitiesList] = useState([]);
+  const [loadingFees, setLoadingFees] = useState(true);
+  const facilitiesList = Array.isArray(facilities) ? facilities : [];
 
   // Fee modal state
   const [showFeeModal, setShowFeeModal] = useState(false);
@@ -94,68 +90,70 @@ export default function ManagerPricing() {
   });
   const [savingPromo, setSavingPromo] = useState(false);
 
-  // Sync facilities list from context or manager service
-  useEffect(() => {
-    if (Array.isArray(facilities) && facilities.length > 0) {
-      setFacilitiesList(facilities);
-    } else {
-      managerService
-        .getMyFacilities()
-        .then((res) => {
-          if (Array.isArray(res) && res.length > 0) setFacilitiesList(res);
-        })
-        .catch(() => {});
-    }
-  }, [facilities]);
+
 
   // Fetch Pricing Fees via GET /api/manager/pricing/fees
-  const loadFees = useCallback(async () => {
+  const [feeReloadKey, setFeeReloadKey] = useState(0);
+  const loadFees = useCallback(() => {
     setLoadingFees(true);
-    try {
-      const res = await managerService.getPricingFees({
-        ...feeQuery,
-        FacilityId: feeQuery.FacilityId || undefined,
-        GlobalOnly: feeQuery.GlobalOnly === "" ? undefined : feeQuery.GlobalOnly === "true",
-        IsActive: feeQuery.IsActive === "" ? undefined : feeQuery.IsActive === "true",
-      });
-      setFeeData(res);
-    } catch (err) {
-      setError(err?.message || "Failed to load pricing fee policies from server.");
-    } finally {
-      setLoadingFees(false);
-    }
-  }, [feeQuery]);
+    setFeeReloadKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
-    loadFees();
-  }, [loadFees]);
+    let active = true;
+    async function fetchFees() {
+      try {
+        const res = await managerService.getPricingFees({
+          ...feeQuery,
+          FacilityId: feeQuery.FacilityId || undefined,
+          GlobalOnly: feeQuery.GlobalOnly === "" ? undefined : feeQuery.GlobalOnly === "true",
+          IsActive: feeQuery.IsActive === "" ? undefined : feeQuery.IsActive === "true",
+        });
+        if (active) setFeeData(res);
+      } catch (err) {
+        if (active) setError(err?.message || "Failed to load pricing fee policies from server.");
+      } finally {
+        if (active) setLoadingFees(false);
+      }
+    }
+    fetchFees();
+    return () => { active = false; };
+  }, [feeQuery, feeReloadKey]);
 
   // Fetch Rates & Promotions
-  const loadRatesAndPromos = useCallback(async () => {
+  const [ratesReloadKey, setRatesReloadKey] = useState(0);
+  const loadRatesAndPromos = useCallback(() => {
     setLoading(true);
     setError("");
-    try {
-      const [ratesRes, promosRes] = await Promise.all([
-        facilityId
-          ? managerService.getPricingRates(facilityId, { pageSize: PAGINATION.BATCH_PAGE_SIZE })
-          : Promise.resolve({ items: [] }),
-        managerService.getPromotions({ pageSize: PAGINATION.BATCH_PAGE_SIZE }),
-      ]);
-
-      setRates(ratesRes?.items ?? (Array.isArray(ratesRes) ? ratesRes : []));
-      setEditedRates({});
-      setDirtyIds(new Set());
-      setPromotions(promosRes?.items ?? (Array.isArray(promosRes) ? promosRes : []));
-    } catch (err) {
-      setError(err?.message || "Failed to load rates and promotion configurations.");
-    } finally {
-      setLoading(false);
-    }
-  }, [facilityId]);
+    setRatesReloadKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
-    loadRatesAndPromos();
-  }, [loadRatesAndPromos]);
+    let active = true;
+    async function fetchRatesAndPromos() {
+      try {
+        const [ratesRes, promosRes] = await Promise.all([
+          facilityId
+            ? managerService.getPricingRates(facilityId, { pageSize: PAGINATION.BATCH_PAGE_SIZE })
+            : Promise.resolve({ items: [] }),
+          managerService.getPromotions({ pageSize: PAGINATION.BATCH_PAGE_SIZE }),
+        ]);
+
+        if (active) {
+          setRates(ratesRes?.items ?? (Array.isArray(ratesRes) ? ratesRes : []));
+          setEditedRates({});
+          setDirtyIds(new Set());
+          setPromotions(promosRes?.items ?? (Array.isArray(promosRes) ? promosRes : []));
+        }
+      } catch (err) {
+        if (active) setError(err?.message || "Failed to load rates and promotion configurations.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    fetchRatesAndPromos();
+    return () => { active = false; };
+  }, [facilityId, ratesReloadKey]);
 
   // Refresh all
   const handleRefreshAll = () => {

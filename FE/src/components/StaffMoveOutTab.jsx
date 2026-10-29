@@ -52,9 +52,10 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
   };
 
   useEffect(() => {
+    const req = requestId;
     loadMoveOuts();
     return () => {
-      requestId.current++;
+      req.current++;
     };
   }, [facilityId, date, filterAll]);
 
