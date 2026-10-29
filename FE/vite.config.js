@@ -50,9 +50,6 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       open: '/',
-      headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-      },
     },
   }
 })

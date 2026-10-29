@@ -156,7 +156,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                       >
                         <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
-                        Staff Workspace
+                        Dashboard Staff
                       </Link>
                     )}
                   </div>

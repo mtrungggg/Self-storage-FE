@@ -1,6 +1,16 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
-import StaffLogisticsTickets from "../components/StaffLogisticsTickets";
+import staffSupportService from "../api/staffSupportService";
+import StaffTicketReply from "../components/StaffTicketReply";
+import StaffTicketCharge from "../components/StaffTicketCharge";
+import StaffTicketResolve from "../components/StaffTicketResolve";
+import { TICKET_STATUS_LIST } from "../constants/ticketConstants";
+
+function formatDate(value) {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-US") : "—";
+}
 
 export default function StaffSupportTickets() {
   const [tickets, setTickets] = useState([]);
@@ -123,7 +133,7 @@ export default function StaffSupportTickets() {
   }
 
   return (
-    <div className="relative min-h-screen text-[#0b1c30] flex flex-col font-sans bg-slate-50/50">
+    <div className="relative min-h-screen text-[#0b1c30]">
       <PageBackground />
       <main className="mx-auto max-w-[1320px] px-4 py-6 lg:px-6">
         <Link

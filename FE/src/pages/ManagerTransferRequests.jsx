@@ -22,6 +22,8 @@ function ManagerTransferRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [decidingId, setDecidingId] = useState(null);
+  const [decisionDrafts, setDecisionDrafts] = useState({});
 
   async function load() {
     if (!facilityId) return;

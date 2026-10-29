@@ -29,6 +29,7 @@ const StaffMoveOuts = lazy(() => import("../pages/StaffMoveOuts"));
 const ManagerUnits = lazy(() => import("../pages/ManagerUnits"));
 const ManagerDashboard = lazy(() => import("../pages/ManagerDashboard"));
 const ManagerTransferRequests = lazy(() => import("../pages/ManagerTransferRequests"));
+const ManagerShifts = lazy(() => import("../pages/ManagerShifts"));
 const ManagerChargeProposals = lazy(() => import("../pages/ManagerChargeProposals"));
 const ManagerRefundApprovals = lazy(() => import("../pages/ManagerRefundApprovals"));
 const ManagerAgreements = lazy(() => import("../pages/ManagerAgreements"));
@@ -105,7 +106,8 @@ function AppRoutes() {
               <Route path="/manager-dashboard" element={<ManagerDashboard />} />
               <Route path="/manager-units" element={<ManagerUnits />} />
               <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
-              <Route path="/manager-tickets" element={<Navigate to="/manager-units" replace />} />
+              <Route path="/manager-shifts" element={<ManagerShifts />} />
+              <Route path="/manager-tickets" element={<StaffSupportTickets />} />
               <Route path="/manager-move-outs" element={<StaffMoveOuts />} />
               <Route path="/manager-charge-proposals" element={<ManagerChargeProposals />} />
               <Route path="/manager-refund-approvals" element={<ManagerRefundApprovals />} />

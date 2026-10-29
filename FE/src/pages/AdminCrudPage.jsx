@@ -334,6 +334,7 @@ export default function AdminCrudPage() {
 
   return (
     <div className="reference-dashboard">
+      {/* Top Toolbar matching AdminDashboard */}
       <div className="reference-toolbar">
         <div>
           <div className="flex items-center gap-3">
