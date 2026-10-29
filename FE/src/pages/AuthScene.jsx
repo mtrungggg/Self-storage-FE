@@ -90,16 +90,12 @@ export default function AuthScene() {
         });
 
         if (googleHiddenBtnRef.current) {
-          try {
-            window.google.accounts.id.renderButton(googleHiddenBtnRef.current, {
-              type: "standard",
-              theme: "outline",
-              size: "large",
-              width: 320,
-            });
-          } catch (e) {
-            console.warn("Google renderButton error:", e);
-          }
+          window.google.accounts.id.renderButton(googleHiddenBtnRef.current, {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            width: 320,
+          });
         }
       }
     };
@@ -135,12 +131,7 @@ export default function AuthScene() {
     } else {
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed()) {
-          const reason = notification.getNotDisplayedReason?.() || "";
-          if (reason === "unregistered_origin") {
-            setGoogleError(`Google OAuth origin '${window.location.origin}' chưa được khai báo trong Google Cloud Console. Vui lòng thêm origin vào Authorized JavaScript origins hoặc đăng nhập bằng Email/Password.`);
-          } else {
-            setGoogleError("Không thể hiển thị Google prompt. Vui lòng cho phép popup hoặc đăng nhập bằng Email & Password.");
-          }
+          setGoogleError("Unable to display Google prompt. Please allow popups or try again.");
         }
       });
     }

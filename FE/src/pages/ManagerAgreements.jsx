@@ -20,7 +20,7 @@ function getStatusBadgeClass(status) {
 }
 
 function ManagerAgreements() {
-  const { facilityId, activeFacility } = useManagerFacility();
+  const { facilityId } = useManagerFacility();
   const [agreements, setAgreements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,28 +32,16 @@ function ManagerAgreements() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   async function load() {
-    if (!facilityId) {
-      setLoading(false);
-      return;
-    }
+    if (!facilityId) return;
     setLoading(true);
     setError("");
     try {
-      const res = await managerService.getAgreements(facilityId, {
+      const page = await managerService.getAgreements(facilityId, {
         status: status || undefined,
         search: search || undefined,
         pageSize: PAGINATION.MAX_PAGE_SIZE,
       });
-      const items = Array.isArray(res)
-        ? res
-        : Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data?.items)
-        ? res.data.items
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
-      setAgreements(items);
+      setAgreements(page?.items ?? []);
     } catch (err) {
       setError(err?.message || "Failed to load agreements list.");
     } finally {
@@ -62,34 +50,20 @@ function ManagerAgreements() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    load();
-  }, [facilityId, status]);
+  useEffect(() => { load(); }, [facilityId, status]);
 
   async function openDetail(id) {
     setDetailId(id);
     setDetail(null);
     setLoadingDetail(true);
     try {
-      const res = await managerService.getAgreementDetail(id);
-      const data = res?.data ?? res ?? null;
-      setDetail(data);
+      setDetail(await managerService.getAgreementDetail(id));
     } catch (err) {
       setError(err?.message || "Failed to load agreement details.");
     } finally {
       setLoadingDetail(false);
     }
   }
-
-  const totalAgreements = agreements.length;
-  const activeAgreements = agreements.filter((a) => (a.status || "").toLowerCase() === "active").length;
-  const totalMonthlyRevenue = agreements
-    .filter((a) => (a.status || "").toLowerCase() === "active")
-    .reduce((sum, a) => sum + (Number(a.monthlyRent) || 0), 0);
-  const totalOutstandingDebt = agreements.reduce(
-    (sum, a) => sum + (Number(a.outstandingBalance) || 0),
-    0
-  );
 
   return (
     <div className="space-y-4">
@@ -124,19 +98,7 @@ function ManagerAgreements() {
             <option value="overdue">Overdue</option>
             <option value="terminated">Terminated</option>
           </select>
-          {(search || status) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setStatus("");
-              }}
-              className="rounded-[8px] border border-[#dfe7f5] px-2.5 py-1.5 text-[10px] text-[#58657a] hover:bg-[#f8fafd]"
-            >
-              Đặt lại
-            </button>
-          )}
-        </form>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">

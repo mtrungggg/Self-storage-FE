@@ -26,7 +26,6 @@ function Support() {
   const navigate = useNavigate();
   const [detailTicketId, setDetailTicketId] = useState(null);
   const [renewalUnit, setRenewalUnit] = useState(null);
-  const [unitAction, setUnitAction] = useState(null);
 
   const {
     unitTabs,
@@ -190,34 +189,18 @@ function Support() {
                         <span className="material-symbols-outlined text-[15px]">autorenew</span>
                         Renew
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setUnitAction((current) => current === "move-out" ? null : "move-out")}
-                        className="inline-flex h-8 items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-[#f8faff]"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">output</span>
-                        Move-out
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUnitAction((current) => current === "transfer" ? null : "transfer")}
-                        className="inline-flex h-8 items-center gap-1 rounded-md border border-[#dfe7f5] bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-[#f8faff]"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">swap_horiz</span>
-                        Transfer
-                      </button>
                     </div>
                   </div>
 
-                  {unitAction && (
-                    <div className="mt-2.5 border-t border-[#eef2f9] pt-2">
-                      {unitAction === "move-out" ? (
-                        <MoveOutRequest key={`move-out-${activeGalleryUnit.id}`} agreementId={activeGalleryUnit.id} />
-                      ) : (
-                        <UnitTransferRequest key={`transfer-${activeGalleryUnit.id}`} agreementId={activeGalleryUnit.id} />
-                      )}
+                  <details className="mt-2.5 border-t border-[#eef2f9] pt-2 text-xs">
+                    <summary className="cursor-pointer text-slate-400 hover:text-slate-700 transition">
+                      More options
+                    </summary>
+                    <div className="mt-1.5 space-y-1 rounded-lg bg-white p-2">
+                      <MoveOutRequest agreementId={activeGalleryUnit.id} />
+                      <UnitTransferRequest agreementId={activeGalleryUnit.id} />
                     </div>
-                  )}
+                  </details>
                 </div>
               )}
             </div>
