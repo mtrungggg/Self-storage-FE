@@ -65,8 +65,6 @@ export function useBilling() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
     Promise.all([paymentService.getPaymentHistory(), paymentService.getUnpaidInvoices()])
       .then(([history, unpaid]) => {
         if (!active) return;

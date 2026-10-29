@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useStorageDetail } from "../hooks/useStorageDetail";
 import { useAuth } from "../hooks/useAuth";
 import Header from "../components/Header";
@@ -50,7 +50,6 @@ function StorageDetail() {
   const location = useLocation();
   const { user } = useAuth();
   const totalToday = pricing?.totalAmount ?? 0;
-  const monthlyRent = pricing?.baseMonthlyRate ?? unit.rentPrice ?? 0;
 
   const handleConfirmClick = () => {
     if (!user) {

@@ -13,7 +13,7 @@ export function useStaffDashboard() {
 
   async function loadTasks(facilityId = taskFacilityId) {
     const currentRequest = ++requestId.current;
-    setTasksLoading(true);
+    setTasksLoading((prev) => (prev ? prev : true));
     setTasksError("");
     try {
       const data = await staffTaskService.getTasks(facilityId);
@@ -26,8 +26,9 @@ export function useStaffDashboard() {
   }
 
   useEffect(() => {
+    const req = requestId;
     loadTasks("");
-    return () => { requestId.current++; };
+    return () => { req.current++; };
   }, []);
 
   const taskTabs = useMemo(() => [
