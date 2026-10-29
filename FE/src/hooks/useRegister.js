@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getDefaultRouteForUser } from "../constants/roles";
 
 // Application layer: encapsulates Register page state, side effects and API data wiring.
 export function useRegister() {
@@ -105,20 +106,9 @@ export function useRegister() {
       setSuccessMessage(res?.message || "Account activated successfully! Redirecting...");
 
       const user = res?.data?.user;
-      const roles = user?.roles || [];
 
       setTimeout(() => {
-        if (roles.includes("admin") || roles.includes("system_admin")) {
-          navigate("/admin-overview");
-        } else if (
-          roles.includes("staff") ||
-          roles.includes("facility_staff") ||
-          roles.includes("manager")
-        ) {
-          navigate("/staff-dashboard");
-        } else {
-          navigate("/home");
-        }
+        navigate(getDefaultRouteForUser(user));
       }, 800);
     } catch (err) {
       setErrorMessage(err?.message || "Invalid or expired OTP code.");

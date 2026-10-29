@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
-import { formatVnd } from "../lib/utils";
+import { formatStatusToEnglish, formatVnd } from "../lib/utils";
+import { DECISION_STATUS } from "../constants/managerConstants";
 
 function formatDateTime(value) {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-US");
 }
 
 const STATUS_BADGE = {
-  pending: "bg-[#fff2d8] text-[#a15c00]",
-  approved: "bg-[#e7f8ee] text-[#0e7b4c]",
-  rejected: "bg-[#fdecec] text-[#c0362c]",
+  [DECISION_STATUS.PENDING]: "bg-amber-50 text-amber-700 border border-amber-200",
+  [DECISION_STATUS.APPROVED]: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  [DECISION_STATUS.REJECTED]: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
 function ManagerRefundApprovals() {
@@ -31,7 +32,7 @@ function ManagerRefundApprovals() {
     try {
       setRefunds(await managerService.getRefundApprovals(facilityId));
     } catch (err) {
-      setError(err?.message || "Không thể tải danh sách hoàn tiền.");
+      setError(err?.message || "Failed to load refund requests.");
     } finally {
       setLoading(false);
     }
@@ -54,77 +55,116 @@ function ManagerRefundApprovals() {
         reason: draft.reason || undefined,
         overrideAmount: draft.overrideAmount ? Number(draft.overrideAmount) : undefined,
       });
-      setNotice(decision === "approved" ? `Đã duyệt hoàn ${formatVnd(result?.approvedAmount)}.` : "Đã từ chối yêu cầu hoàn tiền.");
+      setNotice(decision === DECISION_STATUS.APPROVED ? `Refund of ${formatVnd(result?.approvedAmount)} approved successfully.` : "Refund request rejected.");
       await load();
     } catch (err) {
-      setError(err?.message || "Không thể xử lý yêu cầu hoàn tiền.");
+      setError(err?.message || "Failed to process refund request.");
     } finally {
       setDecidingId(null);
     }
   }
 
   return (
-    <>
-      <h1 className="text-[20px] font-bold">Duyệt hoàn tiền đặt cọc</h1>
-      <p className="mt-1 text-[11px] text-[#8996a9]">Xét duyệt hoàn cọc khi khách thuê kết thúc hợp đồng, có thể điều chỉnh số tiền thực tế.</p>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">Security Deposit Refund Approvals</h1>
+        <p className="text-xs text-slate-500">Review security deposit refunds upon lease termination with optional adjustment override.</p>
+      </div>
 
-      {notice && <p role="status" className="mt-3 rounded-[8px] bg-[#e7f8ee] px-3 py-2 text-[10px] font-semibold text-[#0e7b4c]">{notice}</p>}
-      {error && <p role="alert" className="mt-3 rounded-[8px] bg-[#fdecec] px-3 py-2 text-[10px] font-semibold text-[#c0362c]">{error}</p>}
+      {notice && (
+        <div role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-700">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-700">
+          {error}
+        </div>
+      )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {loading ? (
-          <p className="text-[11px] text-[#8996a9]">Đang tải...</p>
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
+            Loading refund requests...
+          </div>
         ) : refunds.length === 0 ? (
-          <p className="text-[11px] text-[#8996a9]">Không có yêu cầu hoàn tiền nào.</p>
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
+            No refund requests found.
+          </div>
         ) : (
           refunds.map((refund) => {
             const draft = drafts[refund.refundId] || {};
-            const isPending = refund.status === "pending";
+            const isPending = refund.status === DECISION_STATUS.PENDING;
             return (
-              <div key={refund.refundId} className="rounded-[14px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+              <div key={refund.refundId} className="rounded-lg border border-slate-200 bg-white p-4 shadow-none">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[12px] font-bold">{refund.customerName} {refund.agreementNo && <span className="font-normal text-[#8996a9]">• HĐ {refund.agreementNo}</span>}</div>
-                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${STATUS_BADGE[refund.status] || "bg-[#eef4ff] text-[#1d5fe5]"}`}>{refund.status}</span>
+                  <div className="text-xs font-bold text-slate-900">
+                    {refund.customerName} {refund.agreementNo && <span className="font-normal text-slate-400">• Agreement #{refund.agreementNo}</span>}
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium capitalize ${STATUS_BADGE[refund.status] || "bg-slate-50 text-slate-600 border border-slate-200"}`}>
+                    {formatStatusToEnglish(refund.status)}
+                  </span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-[#3a475a]">{refund.reason}</div>
-                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-[8px] border border-[#eef1f8] p-2">
-                    <div className="text-[9px] text-[#8996a9]">Cọc gốc</div>
-                    <div className="text-[11px] font-bold">{formatVnd(refund.originalDeposit)}</div>
+
+                <div className="mt-2 text-xs text-slate-700">{refund.reason || "Termination deposit refund request."}</div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Original Deposit</div>
+                    <div className="mt-0.5 text-xs font-bold text-slate-800">{formatVnd(refund.originalDeposit)}</div>
                   </div>
-                  <div className="rounded-[8px] border border-[#eef1f8] p-2">
-                    <div className="text-[9px] text-[#8996a9]">Khấu trừ ước tính</div>
-                    <div className="text-[11px] font-bold text-[#c0362c]">{formatVnd(refund.estimatedDeductions)}</div>
+                  <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Estimated Deductions</div>
+                    <div className="mt-0.5 text-xs font-bold text-rose-600">{formatVnd(refund.estimatedDeductions)}</div>
                   </div>
-                  <div className="rounded-[8px] border border-[#eef1f8] p-2">
-                    <div className="text-[9px] text-[#8996a9]">Đề xuất hoàn</div>
-                    <div className="text-[11px] font-bold text-[#0e7b4c]">{formatVnd(refund.recommendedRefundAmount)}</div>
+                  <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Recommended Refund</div>
+                    <div className="mt-0.5 text-xs font-bold text-emerald-600">{formatVnd(refund.recommendedRefundAmount)}</div>
                   </div>
                 </div>
-                <div className="mt-1 text-[9px] text-[#8996a9]">{formatDateTime(refund.createdAt)}</div>
+
+                <div className="mt-2 text-[11px] text-slate-400">{formatDateTime(refund.createdAt)}</div>
 
                 {isPending && (
-                  <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-[#eef1f8] pt-3">
-                    <label className="flex flex-col gap-1 text-[9px] font-semibold text-[#3a475a]">
-                      Số tiền duyệt khác (nếu có)
+                  <div className="mt-3 flex flex-wrap items-end gap-2.5 border-t border-slate-100 pt-3">
+                    <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
+                      Override Amount (optional)
                       <input
                         type="number"
                         min="0"
+                        placeholder="Leave blank to use recommended"
                         value={draft.overrideAmount || ""}
                         onChange={(e) => updateDraft(refund.refundId, "overrideAmount", e.target.value)}
-                        className="w-32 rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px]"
+                        className="w-48 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                       />
                     </label>
-                    <label className="flex flex-1 min-w-[160px] flex-col gap-1 text-[9px] font-semibold text-[#3a475a]">
-                      Ghi chú
+                    <label className="flex flex-1 min-w-[200px] flex-col gap-1 text-[11px] font-medium text-slate-600">
+                      Decision Notes
                       <input
+                        placeholder="Add decision remarks..."
                         value={draft.reason || ""}
                         onChange={(e) => updateDraft(refund.refundId, "reason", e.target.value)}
-                        className="rounded-[6px] border border-[#dfe7f5] px-2 py-1 text-[11px]"
+                        className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                       />
                     </label>
-                    <button type="button" disabled={decidingId === refund.refundId} onClick={() => decide(refund.refundId, "approved")} className="rounded-[8px] bg-[#0e7b4c] px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-60">Duyệt hoàn tiền</button>
-                    <button type="button" disabled={decidingId === refund.refundId} onClick={() => decide(refund.refundId, "rejected")} className="rounded-[8px] bg-[#c0362c] px-3 py-1.5 text-[10px] font-bold text-white disabled:opacity-60">Từ chối</button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={decidingId === refund.refundId}
+                        onClick={() => decide(refund.refundId, DECISION_STATUS.APPROVED)}
+                        className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition disabled:opacity-50"
+                      >
+                        Approve Refund
+                      </button>
+                      <button
+                        type="button"
+                        disabled={decidingId === refund.refundId}
+                        onClick={() => decide(refund.refundId, DECISION_STATUS.REJECTED)}
+                        className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 transition disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -132,7 +172,7 @@ function ManagerRefundApprovals() {
           })
         )}
       </div>
-    </>
+    </div>
   );
 }
 

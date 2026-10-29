@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getDefaultRouteForUser } from "../constants/roles";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 // Application layer: encapsulates Login page state, side effects and API data wiring.
 export function useLogin() {
@@ -9,7 +10,7 @@ export function useLogin() {
   const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState(() => localStorage.getItem("rememberedEmail") || "");
+  const [email, setEmail] = useState(() => localStorage.getItem(STORAGE_KEYS.REMEMBERED_EMAIL) || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -40,13 +41,12 @@ export function useLogin() {
       setSuccessMessage(msg);
 
       if (rememberMe) {
-        localStorage.setItem("rememberedEmail", cleanEmail);
+        localStorage.setItem(STORAGE_KEYS.REMEMBERED_EMAIL, cleanEmail);
       } else {
-        localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem(STORAGE_KEYS.REMEMBERED_EMAIL);
       }
 
       const user = res?.data?.user;
-      const roles = user?.roles || [];
       const returnUrl = location.state?.from?.pathname;
 
       const defaultRoute = getDefaultRouteForUser(user);

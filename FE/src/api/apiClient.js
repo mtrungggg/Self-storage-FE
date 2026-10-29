@@ -1,22 +1,24 @@
 import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:51283/api";
+import appConfig from "../config/appConfig";
+import STORAGE_KEYS from "../constants/storageKeys";
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: appConfig.api.baseUrl,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 15000,
+  timeout: appConfig.api.timeoutMs,
 });
 
 // Request Interceptor: Tự động trích xuất Access Token (ưu tiên sessionStorage theo từng tab để hỗ trợ mở song song Customer & Staff)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    const token =
+      sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
-      if (!sessionStorage.getItem("accessToken")) {
-        sessionStorage.setItem("accessToken", token);
+      if (!sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+        sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
       }
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -53,10 +55,10 @@ apiClient.interceptors.response.use(
 
       if (status === 401) {
         // Hết phiên hoặc token không hợp lệ
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("currentUser");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
         if (
           !window.location.pathname.includes("/login") &&
           !window.location.pathname.includes("/register")

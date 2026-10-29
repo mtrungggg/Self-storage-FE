@@ -24,17 +24,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
     navigate("/login");
   };
 
-  const getRoleLabel = () => {
-    const roles = user?.roles || [];
-    if (roles.includes("admin") || roles.includes("system_admin")) return "Administrator";
-    if (roles.includes("manager")) return "Facility Manager";
-    if (roles.includes("staff") || roles.includes("facility_staff")) return "Operations Staff";
-    return "Member Customer";
-  };
-
-  const isStaffRole = user?.roles?.some((r) =>
-    ["staff", "facility_staff", "manager", "admin", "system_admin"].includes(r)
-  );
+  const isStaffRole = hasAnyRole(user?.roles || [], [...ADMIN_ROLES, ...MANAGER_ROLES, ...STAFF_ROLES]);
   const isCustomerOnly = Boolean(user) &&
     hasAnyRole(user?.roles || [], CUSTOMER_ROLES) &&
     !hasAnyRole(user?.roles || [], [...ADMIN_ROLES, ...MANAGER_ROLES, ...STAFF_ROLES]);

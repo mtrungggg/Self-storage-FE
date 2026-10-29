@@ -7,16 +7,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import { Component as LuminaInteractiveList } from "../components/ui/lumina-interactive-list";
-
-// Visual fallbacks only. Rental details and credentials remain API-driven.
-const UNIT_PHOTOS = [
-  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1590496793929-36417d3117de?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1549194388-f61be84a6e9e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-];
+import { FACILITY_GALLERY_PHOTOS as UNIT_PHOTOS } from "../constants/assets";
 
 function AccessControl() {
   const navigate = useNavigate();
