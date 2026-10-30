@@ -26,14 +26,13 @@ export const STAFF_TASK_STATUSES = [
 ];
 
 export const UNIT_PHYSICAL_STATUS_OPTIONS = [
-  ["under_inspection", "Under Inspection"],
-  ["pending_inspection", "Pending Inspection"],
   ["available", "Available"],
-  ["reserved", "Reserved"],
-  ["occupied", "Occupied"],
+  ["cleaning", "Cleaning"],
+  ["pending_inspection", "Pending Inspection"],
   ["maintenance", "Maintenance"],
   ["out_of_service", "Out of Service"],
-  ["blocked", "Blocked"],
+  ["occupied", "Occupied"],
+  ["reserved", "Reserved"],
 ];
 
 export const DELINQUENT_ACTION_TYPES = [

@@ -39,9 +39,8 @@ const ManagerDelinquentCases = lazy(() => import("../pages/ManagerDelinquentCase
 const AdminDashboard = lazy(() => import("../pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("../pages/AdminUsers"));
 const AdminUserDetail = lazy(() => import("../pages/AdminUserDetail"));
-const AdminLoginHistories = lazy(() => import("../pages/AdminLoginHistories"));
-const AdminAuditLog = lazy(() => import("../pages/AdminAuditLog"));
 const AdminCrudPage = lazy(() => import("../pages/AdminCrudPage"));
+const AdminAuditLog = lazy(() => import("../pages/AdminAuditLog"));
 const ManagerPricing = lazy(() => import("../pages/ManagerPricing"));
 
 function RouteSuspenseFallback() {
@@ -94,6 +93,7 @@ function AppRoutes() {
           <Route element={<RequireAuth allowedRoles={STAFF_ROLES} />}>
             <Route element={<StaffLayouts />}>
               <Route path="/staff-dashboard" element={<StaffDashboard />} />
+              <Route path="/staff-shifts" element={<StaffDashboard initialTab="shifts" />} />
               <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
               <Route path="/staff-move-outs" element={<StaffMoveOuts />} />
             </Route>
@@ -121,12 +121,9 @@ function AppRoutes() {
               <Route path="/admin-overview" element={<AdminDashboard />} />
               <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
               <Route path="/admin-facilities/:id" element={<AdminCrudPage key="facility-detail" resource="facilities" />} />
-              <Route path="/admin-pricing" element={<ManagerPricing />} />
-              <Route path="/admin-pricing-policy" element={<ManagerPricing />} />
-              <Route path="/admin-login-histories" element={<AdminLoginHistories />} />
-              <Route path="/admin-audit-log" element={<AdminAuditLog />} />
               <Route path="/admin-users" element={<AdminUsers />} />
               <Route path="/admin-users/:id" element={<AdminUserDetail />} />
+              <Route path="/admin-audit-log" element={<AdminAuditLog />} />
 
             </Route>
           </Route>

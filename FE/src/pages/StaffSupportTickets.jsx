@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useContext, useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
 import staffSupportService from "../api/staffSupportService";
 import StaffTicketReply from "../components/StaffTicketReply";
 import StaffTicketCharge from "../components/StaffTicketCharge";
 import StaffTicketResolve from "../components/StaffTicketResolve";
+import ManagerFacilityContext from "../context/ManagerFacilityContext";
+import { useAuth } from "../context/AuthContext";
 import { TICKET_STATUS_LIST } from "../constants/ticketConstants";
 
 function formatDate(value) {
@@ -12,13 +14,36 @@ function formatDate(value) {
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-US") : "—";
 }
 
+const CATEGORY_PILLS = [
+  { key: "", label: "All" },
+  { key: "cleaning", label: "Cleaning" },
+  { key: "maintenance", label: "Maintenance" },
+  { key: "damage", label: "Damage / Issue" },
+];
+
+const STATUS_PILLS = [
+  { key: "", label: "All" },
+  { key: "open", label: "Open" },
+  { key: "in_progress", label: "In Progress" },
+  { key: "completed", label: "Completed" },
+];
+
 export default function StaffSupportTickets() {
+  const location = useLocation();
+  const isManagerRoute = location.pathname.startsWith("/manager-");
+  const managerFacilityContext = useContext(ManagerFacilityContext);
+  const { user } = useAuth();
+
+  const activeFacilityId = managerFacilityContext?.facilityId || user?.facilityId || "";
+  const activeFacility = managerFacilityContext?.activeFacility || null;
+
   const [tickets, setTickets] = useState([]);
-  const [facilityId, setFacilityId] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [onlyAssignedToMe, setOnlyAssignedToMe] = useState(false);
-  const [query, setQuery] = useState({});
+  const [query, setQuery] = useState(() => ({
+    facilityId: activeFacilityId || undefined,
+  }));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statuses, setStatuses] = useState(TICKET_STATUS_LIST);
@@ -114,126 +139,164 @@ export default function StaffSupportTickets() {
     setQuery({ ...filters });
   }
 
-  function handleFilterSubmit(e) {
-    e.preventDefault();
+  // React to facility changes from header context
+  useEffect(() => {
+    if (activeFacilityId) {
+      load({
+        facilityId: activeFacilityId,
+        category: category || undefined,
+        status: status || undefined,
+        onlyAssignedToMe: onlyAssignedToMe || undefined,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFacilityId]);
+
+  function handleCategoryChange(catKey) {
+    setCategory(catKey);
     load({
-      facilityId: facilityId || undefined,
-      category: category.trim() || undefined,
-      status: status.trim() || undefined,
+      facilityId: activeFacilityId || undefined,
+      category: catKey || undefined,
+      status: status || undefined,
       onlyAssignedToMe: onlyAssignedToMe || undefined,
     });
   }
 
+  function handleStatusChange(statKey) {
+    setStatus(statKey);
+    load({
+      facilityId: activeFacilityId || undefined,
+      category: category || undefined,
+      status: statKey || undefined,
+      onlyAssignedToMe: onlyAssignedToMe || undefined,
+    });
+  }
+
+  function handleToggleOnlyAssigned() {
+    const nextVal = !onlyAssignedToMe;
+    setOnlyAssignedToMe(nextVal);
+    load({
+      facilityId: activeFacilityId || undefined,
+      category: category || undefined,
+      status: status || undefined,
+      onlyAssignedToMe: nextVal || undefined,
+    });
+  }
+
   function handleClearFilters() {
-    setFacilityId("");
     setCategory("");
     setStatus("");
     setOnlyAssignedToMe(false);
-    load({});
+    load({
+      facilityId: activeFacilityId || undefined,
+    });
   }
 
   return (
     <div className="relative min-h-screen text-[#0b1c30]">
       <PageBackground />
       <main className="mx-auto max-w-[1320px] px-4 py-6 lg:px-6">
-        <Link
-          to="/staff-dashboard"
-          className="text-sm font-semibold text-[#1d5fe5] hover:underline"
-        >
-          Back to staff dashboard
-        </Link>
+        {!isManagerRoute && (
+          <Link
+            to="/staff-dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d5fe5] hover:underline"
+          >
+            ← Back to staff dashboard
+          </Link>
+        )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold">Support &amp; Maintenance Tickets</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Support &amp; Maintenance Tickets</h1>
+            <p className="mt-1 text-xs text-slate-500">
+              Active Facility: <span className="font-semibold text-slate-700">{activeFacility?.name ? `${activeFacility.name} (${activeFacility.code || `ID: ${activeFacilityId}`})` : activeFacilityId ? `Facility #${activeFacilityId}` : "All Facilities"}</span>
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => load(query)}
             disabled={loading}
-            className="rounded-lg border bg-white px-4 py-2 text-sm disabled:opacity-50"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
           >
-            Refresh
+            {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
 
-        {/* Filter Bar with /api/staff/tickets query params */}
-        <form
-          onSubmit={handleFilterSubmit}
-          className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[#dfe7f5] bg-white p-4"
-        >
-          <div>
-            <label htmlFor="staff-ticket-facility" className="mb-1 block text-sm font-semibold">
-              Facility ID
-            </label>
-            <input
-              id="staff-ticket-facility"
-              type="number"
-              min="1"
-              step="1"
-              value={facilityId}
-              onChange={(event) => setFacilityId(event.target.value)}
-              placeholder="All facilities"
-              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
-            />
+        {/* Minimalist & Lazy-Friendly Interactive Pill Filter Bar */}
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3.5">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-20">Category:</span>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORY_PILLS.map((pill) => {
+                const isSelected = category === pill.key;
+                return (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    onClick={() => handleCategoryChange(pill.key)}
+                    className={`rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "bg-[#1d5fe5] text-white shadow-sm ring-2 ring-blue-200"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="staff-ticket-category" className="mb-1 block text-sm font-semibold">
-              Category
-            </label>
-            <input
-              id="staff-ticket-category"
-              type="text"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder="e.g. cleaning, maintenance"
-              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
-            />
+          {/* Status Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-20">Status:</span>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_PILLS.map((pill) => {
+                const isSelected = status === pill.key;
+                return (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    onClick={() => handleStatusChange(pill.key)}
+                    className={`rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "bg-[#1d5fe5] text-white shadow-sm ring-2 ring-blue-200"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="staff-ticket-status" className="mb-1 block text-sm font-semibold">
-              Status
-            </label>
-            <input
-              id="staff-ticket-status"
-              list="staff-ticket-statuses"
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              placeholder="All statuses"
-              className="rounded-lg border border-[#dfe7f5] p-2 text-sm"
-            />
-            <datalist id="staff-ticket-statuses">
-              {statuses.map((value) => (
-                <option key={value} value={value} />
-              ))}
-            </datalist>
-          </div>
-
-          <div className="flex items-center gap-2 pb-2">
-            <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={onlyAssignedToMe}
-                onChange={(e) => setOnlyAssignedToMe(e.target.checked)}
-                className="h-4 w-4 rounded border-[#dfe7f5] text-[#1d5fe5] focus:ring-[#1d5fe5]"
-              />
+          {/* Controls: Assigned to Me & Reset */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleToggleOnlyAssigned}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
+                onlyAssignedToMe
+                  ? "border-blue-300 bg-blue-50 text-blue-700 shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <span className={`inline-block h-2 w-2 rounded-full ${onlyAssignedToMe ? "bg-blue-600" : "bg-slate-300"}`} />
               Only Assigned To Me
-            </label>
-          </div>
+            </button>
 
-          <button
-            type="submit"
-            className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-sm font-semibold text-white"
-          >
-            Apply filters
-          </button>
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            className="rounded-lg border px-4 py-2 text-sm"
-          >
-            Clear filters
-          </button>
-        </form>
+            {(category || status || onlyAssignedToMe) && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="text-xs font-semibold text-slate-500 hover:text-red-600 transition"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+        </div>
 
         <section aria-label="Support ticket list" aria-busy={loading} className="mt-5">
           {assignSuccess && (

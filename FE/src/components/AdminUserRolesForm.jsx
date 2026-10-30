@@ -3,6 +3,14 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 import { ROLE_OPTIONS as roleOptions } from "../constants/roles";
 
+const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
+const formatDate = (value) => {
+  if (!value) return "—";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "—" : dateFormat.format(parsed);
+};
+
 export default function AdminUserRolesForm({ user, disabled, onSavingChange, onUpdated }) {
   const original = (user.roles || []).map((role) => role.code);
   const [selected, setSelected] = useState(original);
@@ -48,8 +56,8 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
   }
 
   return (
-    <section className="reference-card mb-5 p-6">
-      <div className="reference-card-heading mb-4">
+    <section className="reference-card mb-5 p-5">
+      <div className="reference-card-heading mb-3">
         <div>
           <h2>Manage System Roles &amp; Permissions</h2>
           <p className="reference-muted">
@@ -60,7 +68,7 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
 
       {error && (
         <div role="alert" className="reference-error mb-4">
-          <AlertTriangle size={20} />
+          <AlertTriangle size={18} />
           <div>
             <strong>Role Update Error</strong>
             <p>{error}</p>
@@ -69,17 +77,18 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
       )}
 
       <form onSubmit={submit} aria-busy={saving}>
-        <fieldset disabled={saving || disabled} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <fieldset disabled={saving || disabled} className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           <legend className="sr-only">User Roles</legend>
           {options.map(([code, label]) => {
             const isChecked = selected.includes(code);
+            const assignedRole = (user.roles || []).find((r) => r.code === code);
             return (
               <label
                 key={code}
-                className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
                   isChecked
-                    ? "bg-[#fff] border-[#171717] shadow-2xs"
-                    : "bg-[#fafafa] border-[#e5e5e5] hover:bg-[#fff]"
+                    ? "bg-blue-50/50 border-blue-500 shadow-xs ring-1 ring-blue-500/20"
+                    : "bg-white border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -91,27 +100,36 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
                       : selected.filter((item) => item !== code);
                     setSelected(next);
                   }}
-                  className="h-4 w-4 rounded accent-black"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
-                <div>
-                  <span className="block text-xs font-semibold text-[#14121b]">{label}</span>
-                  <span className="block font-mono text-[10px] text-[#767679]">{code}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold text-slate-900">{label}</span>
+                  <span className="block font-mono text-[10px] text-slate-500">{code}</span>
+                  {assignedRole && (
+                    <span className="block text-[10px] text-blue-700 font-medium mt-1">
+                      Granted: {formatDate(assignedRole.grantedAt)} by {assignedRole.grantedByEmail || assignedRole.grantedBy || "administrator"}
+                    </span>
+                  )}
                 </div>
               </label>
             );
           })}
         </fieldset>
 
-        <div className="mt-5 flex items-center justify-between border-t border-[#ededed] pt-4">
-          <span className="text-xs text-[#767679]">
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <span className="text-xs text-slate-500">
             {changed ? "Unsaved role modifications pending." : "No role changes pending."}
           </span>
           <button
             type="submit"
             disabled={saving || disabled || !changed}
-            className="reference-button-primary"
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+              changed
+                ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 cursor-pointer"
+                : "bg-slate-100 text-slate-400 cursor-not-allowed"
+            }`}
           >
-            <ShieldCheck size={15} />
+            <ShieldCheck size={14} />
             {saving ? "Saving..." : "Save Role Changes"}
           </button>
         </div>

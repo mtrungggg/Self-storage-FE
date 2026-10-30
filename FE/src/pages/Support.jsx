@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import SupportTicketDetail from "../components/SupportTicketDetail";
 import { useSupport } from "../hooks/useSupport";
+import { useAuth } from "../hooks/useAuth";
 import MoveOutRequest from "../components/MoveOutRequest";
 import UnitTransferRequest from "../components/UnitTransferRequest";
 import RentalRenewal from "../components/RentalRenewal";
@@ -24,6 +25,7 @@ const UNIT_CARD_IMAGES = [
 ];
 function Support() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [detailTicketId, setDetailTicketId] = useState(null);
   const [renewalUnit, setRenewalUnit] = useState(null);
 
@@ -106,6 +108,22 @@ function Support() {
             <h1 className="text-xl font-bold">Support</h1>
           </div>
         </div>
+
+        {!user && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold text-blue-900">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">info</span>
+              <span>Please sign in to view your rented storage units and submit support tickets.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/login", { state: { from: { pathname: "/support" } } })}
+              className="rounded-lg bg-[#1d5fe5] px-3.5 py-1.5 font-bold text-white shadow-xs hover:bg-[#174fc7] transition"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
 
         {/* Units section */}
         <section id="units-section" className="mt-6">

@@ -19,6 +19,11 @@ const STATUS_CONFIG = {
     badge: "border-amber-200 bg-amber-50 text-amber-700",
     dot: "bg-amber-500",
   },
+  cleaning: {
+    label: "Cleaning",
+    badge: "border-purple-200 bg-purple-50 text-purple-700",
+    dot: "bg-purple-500",
+  },
   maintenance: {
     label: "Maintenance",
     badge: "border-rose-200 bg-rose-50 text-rose-700",
@@ -158,6 +163,18 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
           </button>
           <button
             type="button"
+            onClick={() => setActiveFilter("cleaning")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+              activeFilter === "cleaning"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+            Cleaning ({counts.cleaning || 0})
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveFilter("maintenance")}
             className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
               activeFilter === "maintenance"
@@ -270,7 +287,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                       <span>Unit status</span>
                     </h4>
                     <StaffUnitStatus
-                      unit={unit}
+                      unit={{ ...unit, facilityId: unit.facilityId || facilityId }}
                       onUpdated={(updated) =>
                         setUnits((current) =>
                           current.map((entry) =>

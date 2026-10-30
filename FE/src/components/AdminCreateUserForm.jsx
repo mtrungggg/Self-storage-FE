@@ -68,8 +68,8 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
   if (!open) {
     if (!notice) return null;
     return (
-      <div role="status" className="mb-5 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
-        <CheckCircle2 size={18} className="text-[#23866a]" />
+      <div role="status" className="mb-5 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 border border-emerald-200">
+        <CheckCircle2 size={18} className="text-emerald-600" />
         <span>{notice}</span>
       </div>
     );
@@ -98,8 +98,8 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
       </div>
 
       {notice && (
-        <div role="status" className="mb-4 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
-          <CheckCircle2 size={18} className="text-[#23866a]" />
+        <div role="status" className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 border border-emerald-200">
+          <CheckCircle2 size={18} className="text-emerald-600" />
           <span>{notice}</span>
         </div>
       )}

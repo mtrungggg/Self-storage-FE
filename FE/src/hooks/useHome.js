@@ -4,6 +4,8 @@ import {
   getRentalTerms,
   getSizeGuideTabs,
   getHomeHighlights,
+  getStorageTypeFilters,
+  getSizeFilters,
 } from "../data/homeRepository";
 import facilityService from "../api/facilityService";
 import storageUnitService from "../api/storageUnitService";
@@ -51,6 +53,24 @@ function shortSizeName(areaM2) {
   }
 }
 
+function getUnitStorageType(unitType) {
+  const code = String(unitType?.code || "").toUpperCase();
+  const name = String(unitType?.name || "").toLowerCase();
+
+  if (code.includes("MINI") || code.includes("LOCKER") || name.includes("locker")) {
+    return "locker";
+  }
+  if (code.includes("SEAFOOD") || name.includes("freeze") || name.includes("cold") || name.includes("seafood")) {
+    return "cold";
+  }
+  if (code.includes("WARM") || name.includes("warm") || name.includes("heat")) {
+    return "warm";
+  }
+  if (code.includes("CLIMATE") || name.includes("climate")) {
+    return "climate";
+  }
+  return "dry";
+}
 function shortUnitTypeLabel(unitType) {
   const code = String(unitType?.code || "").toUpperCase();
   const name = String(unitType?.name || "").toLowerCase();
@@ -154,37 +174,7 @@ export function useHome() {
     [facilities, availableFacilityIds]
   );
 
-  const storageTypes = useMemo(() => {
-    const list = [{ id: "all", label: "All Types", code: "ALL", icon: "warehouse" }];
-    const sorted = unitTypes
-      .filter((unitType) => availableUnitTypeIds.has(String(unitType.id)))
-      .sort((a, b) => a.id - b.id);
-    sorted.forEach((t) => {
-      let icon = "warehouse";
-      const code = String(t.code || "").toUpperCase();
-      const name = String(t.name || "").toLowerCase();
-      if (name.includes("freeze") || name.includes("seafood") || code.includes("SEAFOOD")) {
-        icon = "ac_unit";
-      } else if (name.includes("warm") || code.includes("WARM")) {
-        icon = "device_thermostat";
-      } else if (name.includes("climate") || code.includes("CLIMATE")) {
-        icon = "hvac";
-      } else if (name.includes("locker") || code.includes("MINI")) {
-        icon = "lock";
-      }
-
-      list.push({
-        id: String(t.id),
-        code: t.code || `TYPE-${t.id}`,
-        label: shortUnitTypeLabel(t),
-        icon,
-        climateControlled: t.climateControlled,
-        areaM2: t.areaM2,
-        description: t.description,
-      });
-    });
-    return list;
-  }, [unitTypes, availableUnitTypeIds]);
+  const storageTypes = useMemo(() => getStorageTypeFilters(), []);
 
   // Adapt raw storage units (backend shape) into the shape the UI cards expect
   const allUnits = useMemo(() => {
@@ -220,6 +210,7 @@ export function useHome() {
         typeCode: unitType?.code || "",
         typeName: unitType?.name || `Type #${u.unitTypeId}`,
         climateControlled: Boolean(unitType?.climateControlled),
+        storageType: getUnitStorageType(unitType),
         climateNote,
         type: unitType?.climateControlled ? "climate" : "standard",
         sizeCategory: sizeCategoryOf(unitType?.areaM2),
@@ -236,24 +227,7 @@ export function useHome() {
     });
   }, [rawUnits, facilityById, unitTypeById]);
 
-  const sizeFilters = useMemo(() => {
-    const sizes = new Map();
-    allUnits.forEach((unit) => {
-      if (unit.sizeCategory !== "all" && !sizes.has(unit.sizeCategory)) {
-        sizes.set(unit.sizeCategory, unit.areaM2);
-      }
-    });
-
-    return [
-      { id: "all", label: "All Sizes" },
-      ...[...sizes.entries()]
-        .sort(([, firstArea], [, secondArea]) => (firstArea ?? 0) - (secondArea ?? 0))
-        .map(([id, area]) => ({
-          id,
-          label: Number.isFinite(Number(area)) ? `${shortSizeName(area)}-${area}m²` : shortSizeName(area),
-        })),
-    ];
-  }, [allUnits]);
+  const sizeFilters = useMemo(() => getSizeFilters(), []);
 
   const facilitiesWithFromPrice = useMemo(() => {
     return facilities.map((f) => {
@@ -287,15 +261,9 @@ export function useHome() {
           return false;
         }
 
-        // Type filter
-        if (selectedType !== "all") {
-          if (selectedType === "climate") {
-            if (!unit.climateControlled) return false;
-          } else if (selectedType === "driveup") {
-            return false; // not offered by backend yet
-          } else if (String(unit.unitTypeId) !== selectedType) {
-            return false;
-          }
+        // Storage Type (Preservation Condition) filter
+        if (selectedType !== "all" && unit.storageType !== selectedType) {
+          return false;
         }
 
         // Size filter

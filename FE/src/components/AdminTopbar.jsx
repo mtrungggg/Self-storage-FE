@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, ChevronDown, Box, Boxes, Users, History, ShieldCheck } from "lucide-react";
+import { Menu, ChevronDown, Box, Boxes, Users, History } from "lucide-react";
 
 const adminNavigation = {
   "admin-overview": ["Dashboard", Box],
   "admin-facilities": ["Facilities", Boxes],
   "admin-users": ["Users & Roles", Users],
-  "admin-audit-log": ["Audit Logs", History],
-  "admin-login-histories": ["Login Activity", ShieldCheck],
+  "admin-audit-log": ["Audit & Logs", History],
 };
 
 export default function AdminTopbar({ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
@@ -51,7 +50,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
         {profile?.isAdmin ? (
           <Link to="/admin-overview" className="reference-brand">
             <Box size={24} strokeWidth={2.2} />
-            <span>G1<span className="reference-brand-detail"> Storage</span></span>
+            <span>G1<span className="reference-brand-detail">SelfStorage</span></span>
           </Link>
         ) : (
           <div className="flex min-w-0 items-center">
@@ -116,8 +115,8 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
               >
                 Dashboard
               </Link>
-              <Link onClick={() => setProfileOpen(false)} to="/home">
-                Customer Portal
+              <Link onClick={() => setProfileOpen(false)} to="/staff-dashboard">
+                Staff Ops Hub
               </Link>
               <button
                 type="button"

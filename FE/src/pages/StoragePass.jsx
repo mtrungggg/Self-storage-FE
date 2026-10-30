@@ -6,7 +6,6 @@ import { useAccessControl } from "../hooks/useAccessControl";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
-import AuthorizedMembers from "../components/AuthorizedMembers";
 
 const ITEM_CATEGORIES = [
   { value: "household", label: "Household Items" },
@@ -304,7 +303,7 @@ export default function StoragePass() {
                         Unit {activeUnitCode} is Unlocked!
                       </div>
                       <div className="text-xs text-[#067647]">
-                        Inventory declaration and authorized member access are now active below.
+                        Inventory declaration is now active below.
                       </div>
                     </div>
                   </div>
@@ -399,7 +398,7 @@ export default function StoragePass() {
           </div>
         </div>
 
-        {/* CONDITIONALLY REVEALED: Stored Items & Authorized Members ONLY when Unit is Unlocked */}
+        {/* CONDITIONALLY REVEALED: Stored Items ONLY when Unit is Unlocked */}
         {isUnitUnlocked ? (
           <div className="mt-8 space-y-8 animate-in fade-in duration-300">
             {/* Stored Items Inventory Manager Section */}
@@ -465,10 +464,7 @@ export default function StoragePass() {
               </div>
             </div>
 
-            {/* Authorized Members Section */}
-            {hasLiveRentals && selectedRentalId && (
-              <AuthorizedMembers agreementId={selectedRentalId} unitCode={activeUnitCode} />
-            )}
+
           </div>
         ) : null}
       </motion.main>

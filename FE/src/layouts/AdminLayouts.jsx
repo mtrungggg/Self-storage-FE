@@ -25,7 +25,6 @@ function ManagementShell() {
     .find(
       (item) =>
         pathname === item.to ||
-        (item.to === "/admin-pricing" && pathname === "/admin-pricing-policy") ||
         (item.to !== "/admin-overview" && pathname.startsWith(item.to))
     )?.id;
 

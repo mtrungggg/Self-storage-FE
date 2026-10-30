@@ -1,3 +1,4 @@
+import RefundPreview from "./RefundPreview";
 import { useId, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
 
@@ -33,7 +34,8 @@ export default function MoveOutRequest({ agreementId }) {
 
   return (
     <details className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
-      <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Move-out</summary>
+      <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Move-out & Refund Preview</summary>
+      <RefundPreview agreementId={agreementId} />
       {request ? <div className="mt-2 rounded-lg bg-green-50 p-2.5">
         <p role="status" className="font-semibold text-green-800">Submitted.</p>
         <p className="mt-0.5">Date: {request.requestedMoveOutDate}</p>

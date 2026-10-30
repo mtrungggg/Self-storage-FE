@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import adminUserService from "../api/adminUserService";
 
 const statuses = [
@@ -8,7 +8,7 @@ const statuses = [
   ["locked", "Locked"],
 ];
 
-export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, disabled = false }) {
+export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, disabled = false, compact = false }) {
   const [status, setStatus] = useState(user.status);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,6 +23,10 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
       mounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    setStatus(user.status);
+  }, [user.status]);
 
   async function submit(event) {
     event.preventDefault();
@@ -56,73 +60,101 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
     }
   }
 
-  return (
-    <section className="reference-card mb-5 p-6">
-      <div className="reference-card-heading mb-4">
-        <div>
-          <h2>Account Access &amp; Status</h2>
-          <p className="reference-muted">Lock, activate, or disable access for this user account.</p>
-        </div>
+  const isChanged = status !== user.status;
+
+  const formBody = (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert size={16} className="text-blue-600" />
+        <h3 className="text-sm font-bold text-slate-900">Account Access &amp; Status</h3>
       </div>
 
       {notice && (
-        <div role="status" className="mb-4 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
-          <CheckCircle2 size={18} className="text-[#23866a]" />
+        <div role="status" className="mb-3 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 border border-emerald-200">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
       {error && (
-        <div role="alert" className="reference-error mb-4">
-          <AlertTriangle size={20} />
+        <div role="alert" className="reference-error mb-3 !p-3">
+          <AlertTriangle size={16} className="shrink-0" />
           <div>
-            <strong>Status Update Error</strong>
-            <p>{error}</p>
+            <strong className="text-xs">Status Update Error</strong>
+            <p className="text-xs">{error}</p>
           </div>
         </div>
       )}
 
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">New Status</span>
-            <select
-              value={status}
-              disabled={disabled || saving}
-              onChange={(e) => setStatus(e.target.value)}
-              className="reference-select"
-            >
-              {statuses.map(([value, label]) => (
-                <option key={value} value={value}>
+      <form onSubmit={submit} className="space-y-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Account Status
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {statuses.map(([value, label]) => {
+              const isSelected = status === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={disabled || saving}
+                  onClick={() => setStatus(value)}
+                  className={`rounded-lg border py-2 text-xs font-bold transition-all ${
+                    isSelected
+                      ? value === "active"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200"
+                        : value === "locked"
+                        ? "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200"
+                        : "border-slate-500 bg-slate-100 text-slate-800 ring-2 ring-slate-300"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
                   {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Reason / Audit Note</span>
-            <input
-              type="text"
-              value={reason}
-              disabled={disabled || saving}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Requested by facility supervisor..."
-              className="reference-input"
-            />
-          </label>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex justify-end">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Reason / Audit Note {isChanged && <span className="text-blue-600">*</span>}
+          </label>
+          <input
+            type="text"
+            value={reason}
+            disabled={disabled || saving}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Security verification, customer request..."
+            className="reference-input"
+          />
+        </div>
+
+        <div className="flex justify-end pt-1">
           <button
             type="submit"
-            disabled={disabled || saving || status === user.status}
-            className="reference-button-primary"
+            disabled={disabled || saving || !isChanged}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${
+              isChanged
+                ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 cursor-pointer"
+                : "bg-slate-100 text-slate-400 cursor-not-allowed"
+            }`}
           >
-            {saving ? "Saving..." : "Update Status"}
+            {saving ? "Saving..." : "Save Status"}
           </button>
         </div>
       </form>
+    </div>
+  );
+
+  if (compact) {
+    return formBody;
+  }
+
+  return (
+    <section className="reference-card mb-5 p-5">
+      {formBody}
     </section>
   );
 }

@@ -19,7 +19,7 @@ const STATUS_BADGE = {
 };
 
 function ManagerDelinquentCases() {
-  const { facilityId } = useManagerFacility();
+  const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +29,10 @@ function ManagerDelinquentCases() {
   const [submittingId, setSubmittingId] = useState(null);
 
   async function load() {
-    if (!facilityId) return;
+    if (!facilityId) {
+      if (!facilityLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -42,7 +45,9 @@ function ManagerDelinquentCases() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [facilityId]);
+  useEffect(() => {
+    if (!facilityLoading && !facilityId) { setLoading(false); } else if (facilityId) { load(); }
+  }, [facilityId, facilityLoading]);
 
   function updateDraft(id, field, value) {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));

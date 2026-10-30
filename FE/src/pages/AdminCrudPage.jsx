@@ -71,6 +71,39 @@ export default function AdminCrudPage() {
   const [result, setResult] = useState(null);
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
+  const [statusTogglingId, setStatusTogglingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(initialFilters.Search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery((prev) => (prev.Search === searchTerm.trim() ? prev : { ...prev, Search: searchTerm.trim(), PageNumber: 1 }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  async function handleQuickToggleStatus(facility) {
+    const currentStatus = String(facility.status || "").toLowerCase();
+    const nextStatus = currentStatus === "active" ? "inactive" : "active";
+    setStatusTogglingId(facility.id);
+    setActionError("");
+    try {
+      await adminFacilityService.updateStatus(facility.id, {
+        status: nextStatus,
+        reason: `Status switched to ${nextStatus} by Administrator`,
+      });
+      setNotice(`Facility "${facility.name}" is now ${nextStatus.toUpperCase()}.`);
+      loadData();
+      if (selectedFacilityId === facility.id) {
+        fetchFacilityDetail(facility.id);
+      }
+      window.dispatchEvent(new Event("admin-data-changed"));
+      setTimeout(() => setNotice(""), 3500);
+    } catch (err) {
+      setActionError(err.message || "Failed to update facility status.");
+    } finally {
+      setStatusTogglingId(null);
+    }
+  }
 
   // Form modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -375,9 +408,9 @@ export default function AdminCrudPage() {
       {notice && (
         <div
           role="status"
-          className="mb-4 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]"
+          className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 border border-emerald-200"
         >
-          <CheckCircle2 size={18} className="text-[#23866a]" />
+          <CheckCircle2 size={18} className="text-emerald-600" />
           <span>{notice}</span>
         </div>
       )}
@@ -609,63 +642,80 @@ export default function AdminCrudPage() {
         </section>
       )}
 
-      {/* Filter Card matching AdminUsers and AdminAuditLog */}
+      {/* Quick 1-Click Lazy Filter Bar */}
       <section className="reference-card mb-6 p-4">
-        <form onSubmit={handleFilterSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Search</span>
-            <div className="reference-search w-full">
-              <Search size={16} strokeWidth={1.5} />
-              <input
-                type="search"
-                placeholder="Search code, name, address..."
-                value={filters.Search}
-                onChange={(e) => setFilters({ ...filters, Search: e.target.value })}
-              />
-            </div>
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Status</span>
-            <select
-              value={filters.Status}
-              onChange={(e) => setFilters({ ...filters, Status: e.target.value })}
-              className="reference-select w-full"
-            >
-              <option value="">All Statuses</option>
-              {statuses.map(([val, label]) => (
-                <option key={val} value={val}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">City</span>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Instant Search */}
+          <div className="reference-search min-w-[280px] max-w-sm flex-1">
+            <Search size={16} strokeWidth={1.5} />
             <input
-              type="text"
-              placeholder="e.g. Ho Chi Minh"
-              value={filters.City}
-              onChange={(e) => setFilters({ ...filters, City: e.target.value })}
-              className="reference-input w-full"
+              type="search"
+              placeholder="Instant search code, name, address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </label>
-
-          <div className="flex items-center gap-2">
-            <button type="submit" className="reference-button-primary flex-1">
-              Apply Filters
-            </button>
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="reference-button-secondary"
-              title="Reset Filters"
-            >
-              Reset
-            </button>
           </div>
-        </form>
+
+          {/* 1-Click Filter Pills */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* City Pills */}
+            <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl">
+              {[
+                ["", "All Cities"],
+                ["Ho Chi Minh", "Ho Chi Minh City"],
+                ["Ha Noi", "Ha Noi"],
+              ].map(([val, label]) => {
+                const isActive = (query.City || "") === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, City: val }));
+                      setQuery((prev) => ({ ...prev, City: val, PageNumber: 1 }));
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-white text-slate-900 shadow-sm font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Status Pills */}
+            <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl">
+              {[
+                ["", "All Status"],
+                ["active", "Active"],
+                ["inactive", "Inactive"],
+                ["maintenance", "Maintenance"],
+              ].map(([val, label]) => {
+                const isActive = (query.Status || "") === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, Status: val }));
+                      setQuery((prev) => ({ ...prev, Status: val, PageNumber: 1 }));
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-[#111e35] text-white shadow-sm font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Facilities Directory Table */}
@@ -674,7 +724,7 @@ export default function AdminCrudPage() {
           <div>
             <h2>Facilities Directory</h2>
             <p className="reference-muted">
-              Live records from `/api/admin/facilities` with unit distribution and staff allocation.
+              Overview of branch locations, operating hours, capacity, and active staffing.
             </p>
           </div>
           <span className="reference-pill">
@@ -778,21 +828,28 @@ export default function AdminCrudPage() {
                         </span>
                       </td>
                       <td>
-                        <span
-                          className={`reference-status ${
+                        <button
+                          type="button"
+                          onClick={() => handleQuickToggleStatus(facility)}
+                          disabled={statusTogglingId === facility.id}
+                          title={`Click to switch between Active and Inactive (currently ${statusKey})`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border ${
                             statusKey === "active"
-                              ? "active"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                               : statusKey === "maintenance"
-                              ? "maintenance"
-                              : "inactive"
+                              ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
                           }`}
                         >
-                          {statusKey === "active"
-                            ? "Active"
-                            : statusKey === "maintenance"
-                            ? "Maintenance"
-                            : "Inactive"}
-                        </span>
+                          <span className={`w-2 h-2 rounded-full ${
+                            statusKey === "active" ? "bg-emerald-500 animate-pulse" : statusKey === "maintenance" ? "bg-amber-500" : "bg-slate-400"
+                          }`} />
+                          {statusTogglingId === facility.id ? (
+                            <RefreshCw size={12} className="animate-spin" />
+                          ) : (
+                            <span>{statusKey === "active" ? "Active" : statusKey === "maintenance" ? "Maintenance" : "Inactive"}</span>
+                          )}
+                        </button>
                       </td>
                       <td className="text-right pr-6">
                         <div className="inline-flex items-center gap-1.5">
@@ -811,14 +868,6 @@ export default function AdminCrudPage() {
                             title="Edit facility configuration"
                           >
                             <Edit3 size={13} /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openStatusModal(facility)}
-                            className="reference-button-secondary !py-1 !px-2.5 !text-[11px] hover:!text-amber-600 hover:!border-amber-300"
-                            title="Update facility operational status"
-                          >
-                            <Power size={13} /> Status
                           </button>
                         </div>
                       </td>

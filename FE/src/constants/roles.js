@@ -71,3 +71,52 @@ export function getDefaultRouteForUser(user) {
   if (hasAnyRole(roles, STAFF_ROLES)) return "/staff-dashboard";
   return "/home";
 }
+
+export const CAPABILITIES = Object.freeze({
+  SHIFT_VIEW: "shift:view",
+  HANDOVER_CHECK: "handover:check",
+  QR_VERIFY: "qr:verify",
+  QR_CONFIRM: "qr:confirm",
+  UNIT_LIST: "unit:list",
+  UNIT_VIEW: "unit:view",
+  UNIT_UPDATE_STATUS: "unit:update_status",
+  UNIT_LOCK: "unit:lock",
+  TICKET_LIST: "ticket:list",
+  TICKET_ASSIGN: "ticket:assign",
+  TICKET_PROPOSE_CHARGE: "ticket:propose_charge",
+  TICKET_COMPLETE: "ticket:complete",
+  CATALOG_VIEW: "catalog:view",
+  RESERVATION_CREATE: "reservation:create",
+  AGREEMENT_VIEW: "agreement:view",
+  UNIT_ACCESS: "unit:access",
+  UNIT_TRANSFER: "unit:transfer",
+  UNIT_MOVE_OUT: "unit:move_out",
+  INVOICE_VIEW: "invoice:view",
+  PAYMENT_CREATE: "payment:create",
+  SUPPORT_TICKET: "support:ticket",
+  FACILITY_DASHBOARD: "facility:dashboard",
+  FACILITY_RENTALS: "facility:rentals",
+  FACILITY_UNITS: "facility:units",
+  FACILITY_STAFF_TASKS: "facility:staff_tasks",
+  FACILITY_REFUND_APPROVALS: "facility:refund_approvals",
+  FACILITY_CHARGE_PROPOSALS: "facility:charge_proposals",
+  FACILITY_DEBTS: "facility:debts",
+  USERS_MANAGE: "users:manage",
+  FACILITIES_MANAGE: "facilities:manage",
+  STAFF_ASSIGNMENT_MANAGE: "staff_assignment:manage",
+  PRICING_POLICY_MANAGE: "pricing_policy:manage",
+});
+
+export function hasCapability(user, capability) {
+  if (!user) return false;
+  const permissions = (user?.permissions || []).map((p) => String(p).toLowerCase());
+  if (permissions.includes("*") || permissions.includes(capability.toLowerCase())) {
+    return true;
+  }
+  const roles = (user?.roles || []).map((r) => String(r).toLowerCase());
+  if (hasAnyRole(roles, ADMIN_ROLES)) return true;
+  if (capability === CAPABILITIES.SHIFT_VIEW && (hasAnyRole(roles, STAFF_ROLES) || hasAnyRole(roles, MANAGER_ROLES))) {
+    return true;
+  }
+  return false;
+}

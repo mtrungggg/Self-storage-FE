@@ -163,7 +163,7 @@ function Home() {
                 )}
               </div>
 
-              {/* Filter 2: Unit Type */}
+              {/* Filter 2: Storage Type (Preservation Condition) */}
               <div className="custom-dropdown-container relative">
                 <button
                   type="button"
@@ -175,8 +175,8 @@ function Home() {
                   }`}
                 >
                   <label className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
-                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">warehouse</span>
-                    Type
+                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">inventory_2</span>
+                    Storage Type
                   </label>
                   <div className="flex w-full items-center justify-between">
                     <span className="truncate text-[13px] font-bold text-[#0b1c30]">
@@ -193,7 +193,7 @@ function Home() {
                 </button>
 
                 {openDropdown === "type" && (
-                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[280px] sm:min-w-[360px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
+                  <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[280px] sm:min-w-[340px] rounded-[16px] border border-[#d8e3f5] bg-white/95 p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95">
                     <div className="max-h-[300px] overflow-y-auto space-y-0.5">
                       {storageTypes.map((t) => {
                         const isSelected = selectedType === t.id;
@@ -205,29 +205,20 @@ function Home() {
                               setSelectedType(t.id);
                               setOpenDropdown(null);
                             }}
-                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold transition ${
+                            className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2.5 text-left text-[12px] font-semibold transition ${
                               isSelected
                                 ? "bg-[#1d5fe5] text-white font-bold"
                                 : "text-[#0b1c30] hover:bg-[#f0f4fc] hover:text-[#1d5fe5]"
                             }`}
                           >
-                            <div className="flex items-center gap-2 truncate">
+                            <div className="flex items-center gap-2.5 truncate">
                               <span
-                                className={`material-symbols-outlined text-[17px] ${
+                                className={`material-symbols-outlined text-[18px] ${
                                   isSelected ? "text-white" : "text-[#1d5fe5]"
                                 }`}
                               >
                                 {t.icon || "warehouse"}
                               </span>
-                              {t.code && t.code !== "ALL" && (
-                                <span
-                                  className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${
-                                    isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
-                                  }`}
-                                >
-                                  {t.code}
-                                </span>
-                              )}
                               <span className="truncate">{t.label}</span>
                             </div>
                             {isSelected && (
@@ -253,8 +244,8 @@ function Home() {
                   }`}
                 >
                   <label className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
-                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">straighten</span>
-                    Size
+                    <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">aspect_ratio</span>
+                    Unit Size
                   </label>
                   <div className="flex w-full items-center justify-between">
                     <span className="truncate text-[13px] font-bold text-[#0b1c30]">

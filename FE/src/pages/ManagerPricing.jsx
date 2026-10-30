@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { X } from "lucide-react";
 // facilities loaded via ManagerFacilityContext
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
@@ -25,6 +26,56 @@ const calculationMethods = [
   ["percentage", "Percentage (%)"],
   ["daily_accrual", "Daily Accrual (₫/day)"],
 ];
+
+const FEE_TEMPLATES = [
+  {
+    name: "Standard Late Fee (50,000₫/day)",
+    code: "LATE_STANDARD",
+    feeType: "late_payment",
+    calculationMethod: "daily_accrual",
+    amount: "50000",
+    ratePercent: "",
+    graceDays: 3,
+    conditions: "Applied after 3 grace days of overdue payment, daily accrual 50,000 VND",
+  },
+  {
+    name: "Standard Cleaning Fee (150,000₫)",
+    code: "CLEAN_STANDARD",
+    feeType: "cleaning",
+    calculationMethod: "fixed_amount",
+    amount: "150000",
+    ratePercent: "",
+    graceDays: 0,
+    conditions: "Cleaning surcharge when unit is returned unclean upon move-out",
+  },
+  {
+    name: "Basic Damage Penalty (500,000₫)",
+    code: "DAMAGE_BASIC",
+    feeType: "damage",
+    calculationMethod: "fixed_amount",
+    amount: "500000",
+    ratePercent: "",
+    graceDays: 0,
+    conditions: "Standard penalty for physical damage (heavy scratches, bent door, broken lock)",
+  },
+];
+
+function getStandardFeeCode(type) {
+  const map = {
+    late_payment: "LATE_FEE_01",
+    cleaning: "CLEAN_FEE_01",
+    damage: "DMG_FEE_01",
+    maintenance_fee: "MAINT_FEE_01",
+    key_replacement: "KEY_REP_01",
+    lock_cut: "LOCK_CUT_01",
+    overstay: "OVERSTAY_01",
+    booking_fee: "BOOKING_FEE_01",
+    vat_tax: "VAT_TAX_01",
+    admin: "ADMIN_FEE_01",
+    service: "SERVICE_FEE_01",
+  };
+  return map[type] || `${(type || "FEE").toUpperCase()}_01`;
+}
 
 const initialFeeFilters = {
   Search: "",
@@ -161,10 +212,11 @@ export default function ManagerPricing() {
     loadRatesAndPromos();
   };
 
-  // Fees handlers
-  const handleFeeFilterSubmit = (e) => {
-    e.preventDefault();
-    setFeeQuery({ ...feeFilters, PageNumber: 1 });
+  // Fees handlers - Reactive (no manual Apply button required)
+  const handleFeeFilterChange = (field, value) => {
+    const nextFilters = { ...feeFilters, [field]: value };
+    setFeeFilters(nextFilters);
+    setFeeQuery({ ...nextFilters, PageNumber: 1 });
   };
 
   const handleResetFeeFilters = () => {
@@ -173,7 +225,11 @@ export default function ManagerPricing() {
   };
 
   const openCreateFeeModal = () => {
-    setFeeFormData(initialFeeForm);
+    setFeeFormData({
+      ...initialFeeForm,
+      facilityId: facilityId ? String(facilityId) : "",
+      code: "LATE_FEE_01",
+    });
     setShowFeeModal(true);
   };
 
@@ -458,18 +514,18 @@ export default function ManagerPricing() {
       {/* TAB 1: FEES & SURCHARGES SECTION */}
       {activeTab === "fees" && (
         <div className="space-y-4">
-          {/* Fees Filter Bar */}
-          <form onSubmit={handleFeeFilterSubmit} className="flex flex-wrap items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3">
+          {/* Fees Filter Bar - Reactive Instant Search */}
+          <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3">
             <input
               type="search"
               placeholder="Search code, conditions..."
               value={feeFilters.Search}
-              onChange={(e) => setFeeFilters({ ...feeFilters, Search: e.target.value })}
+              onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
               className="h-8 w-48 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400"
             />
             <select
               value={feeFilters.FeeType}
-              onChange={(e) => setFeeFilters({ ...feeFilters, FeeType: e.target.value })}
+              onChange={(e) => handleFeeFilterChange("FeeType", e.target.value)}
               className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
             >
               <option value="">All Fee Types</option>
@@ -479,7 +535,7 @@ export default function ManagerPricing() {
             </select>
             <select
               value={feeFilters.GlobalOnly}
-              onChange={(e) => setFeeFilters({ ...feeFilters, GlobalOnly: e.target.value })}
+              onChange={(e) => handleFeeFilterChange("GlobalOnly", e.target.value)}
               className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
             >
               <option value="">All Scopes</option>
@@ -488,24 +544,23 @@ export default function ManagerPricing() {
             </select>
             <select
               value={feeFilters.IsActive}
-              onChange={(e) => setFeeFilters({ ...feeFilters, IsActive: e.target.value })}
+              onChange={(e) => handleFeeFilterChange("IsActive", e.target.value)}
               className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
             >
               <option value="">All Statuses</option>
               <option value="true">Active Only</option>
               <option value="false">Inactive Only</option>
             </select>
-            <button type="submit" className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition">
-              Apply
-            </button>
-            <button
-              type="button"
-              onClick={handleResetFeeFilters}
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              Reset
-            </button>
-          </form>
+            {(feeFilters.Search || feeFilters.FeeType || feeFilters.GlobalOnly || feeFilters.IsActive) && (
+              <button
+                type="button"
+                onClick={handleResetFeeFilters}
+                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+              >
+                Reset
+              </button>
+            )}
+          </div>
 
           {/* Fees Data Table */}
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -771,20 +826,55 @@ export default function ManagerPricing() {
 
       {/* Modal: Create / Edit Fee Policy */}
       {showFeeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-sm font-bold text-slate-900">
-                {feeFormData.id ? "Edit Fee Policy" : "Create New Fee Policy"}
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  {feeFormData.id ? "Edit Fee Policy" : "Create New Fee Policy"}
+                </h2>
+                {!feeFormData.id && (
+                  <p className="text-[11px] text-slate-500">
+                    Select a quick template or enter custom fee parameters.
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowFeeModal(false)}
-                className="text-xs font-bold text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                aria-label="Close modal"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
+
+            {/* Quick Templates 1-Click Bar */}
+            {!feeFormData.id && (
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <span>Quick Templates:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {FEE_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.name}
+                      type="button"
+                      onClick={() =>
+                        setFeeFormData((prev) => ({
+                          ...prev,
+                          ...tpl,
+                          facilityId: prev.facilityId || (facilityId ? String(facilityId) : ""),
+                        }))
+                      }
+                      className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-[#2563eb] hover:bg-blue-50/60 hover:text-[#2563eb] transition shadow-xs cursor-pointer"
+                    >
+                      + {tpl.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSaveFee} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -797,8 +887,8 @@ export default function ManagerPricing() {
                     required
                     placeholder="e.g. LATE_FEE_STD"
                     value={feeFormData.code}
-                    onChange={(e) => setFeeFormData({ ...feeFormData, code: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-mono uppercase text-slate-800 focus:outline-none focus:border-slate-400"
+                    onChange={(e) => setFeeFormData({ ...feeFormData, code: e.target.value.toUpperCase() })}
+                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-mono font-bold uppercase text-slate-800 focus:outline-none focus:border-slate-400"
                   />
                 </label>
 
@@ -826,7 +916,14 @@ export default function ManagerPricing() {
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Fee Type <span className="text-red-500">*</span></span>
                   <select
                     value={feeFormData.feeType}
-                    onChange={(e) => setFeeFormData({ ...feeFormData, feeType: e.target.value })}
+                    onChange={(e) => {
+                      const nextType = e.target.value;
+                      setFeeFormData((prev) => ({
+                        ...prev,
+                        feeType: nextType,
+                        code: prev.id ? prev.code : getStandardFeeCode(nextType),
+                      }));
+                    }}
                     className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
                   >
                     {feeTypes.map(([val, label]) => (
@@ -849,33 +946,42 @@ export default function ManagerPricing() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Fixed Amount (₫)</span>
-                  <input
-                    type="number"
-                    step="1000"
-                    placeholder="e.g. 50000"
-                    value={feeFormData.amount}
-                    onChange={(e) => setFeeFormData({ ...feeFormData, amount: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-400"
-                  />
-                </label>
+              {/* Conditional Amount vs Percentage Rendering */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {feeFormData.calculationMethod === "percentage" ? (
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Rate Percent (%) <span className="text-red-500">*</span>
+                    </span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      required
+                      placeholder="e.g. 5"
+                      value={feeFormData.ratePercent}
+                      onChange={(e) => setFeeFormData({ ...feeFormData, ratePercent: e.target.value })}
+                      className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-400"
+                    />
+                  </label>
+                ) : (
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      {feeFormData.calculationMethod === "daily_accrual" ? "Daily Accrual (₫/day) *" : "Fixed Amount (₫) *"}
+                    </span>
+                    <input
+                      type="number"
+                      step="1000"
+                      required
+                      placeholder="e.g. 50000"
+                      value={feeFormData.amount}
+                      onChange={(e) => setFeeFormData({ ...feeFormData, amount: e.target.value })}
+                      className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-400"
+                    />
+                  </label>
+                )}
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Rate Percent (%)</span>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="e.g. 5"
-                    value={feeFormData.ratePercent}
-                    onChange={(e) => setFeeFormData({ ...feeFormData, ratePercent: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-400"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Grace Days</span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Grace Period (Days)</span>
                   <input
                     type="number"
                     min="0"
@@ -953,16 +1059,17 @@ export default function ManagerPricing() {
 
       {/* Modal: Create Promotion */}
       {showPromoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <h2 className="text-sm font-bold text-slate-900">Create New Promotional Voucher</h2>
               <button
                 type="button"
                 onClick={() => setShowPromoModal(false)}
-                className="text-xs font-bold text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                aria-label="Close modal"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

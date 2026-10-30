@@ -12,7 +12,10 @@ export default function ManagerDashboard() {
   const [error, setError] = useState("");
 
   const loadDashboard = useCallback(async () => {
-    if (!facilityId) return;
+    if (!facilityId) {
+      if (!facilityLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -23,11 +26,15 @@ export default function ManagerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [facilityId]);
+  }, [facilityId, facilityLoading]);
 
   useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+    if (!facilityLoading && !facilityId) {
+      setLoading(false);
+    } else if (facilityId) {
+      loadDashboard();
+    }
+  }, [facilityId, facilityLoading, loadDashboard]);
 
   const stats = {
     totalUnits: data?.totalUnits ?? 0,
