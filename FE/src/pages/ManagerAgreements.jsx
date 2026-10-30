@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
@@ -20,7 +21,7 @@ function getStatusBadgeClass(status) {
 }
 
 function ManagerAgreements() {
-  const { facilityId } = useManagerFacility();
+  const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [agreements, setAgreements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +33,10 @@ function ManagerAgreements() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   async function load() {
-    if (!facilityId) return;
+    if (!facilityId) {
+      if (!facilityLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -50,7 +54,9 @@ function ManagerAgreements() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [facilityId, status]);
+  useEffect(() => {
+    if (!facilityLoading && !facilityId) { setLoading(false); } else if (facilityId) { load(); }
+  }, [facilityId, status, facilityLoading]);
 
   async function openDetail(id) {
     setDetailId(id);
@@ -131,7 +137,7 @@ function ManagerAgreements() {
                     <td className="px-4 py-3 font-mono font-medium text-slate-700">{agreement.unitCode}</td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(agreement.startDate)} → {formatDate(agreement.endDate)}</td>
                     <td className="px-4 py-3 text-right font-medium">{formatVnd(agreement.monthlyRent)}</td>
-                    <td className={`px-4 py-3 text-right font-semibold ${agreement.outstandingBalance > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                    <td className={`px-4 py-3 text-right font-semibold ${agreement.outstandingBalance > 0 ? "text-red-600 font-bold" : "text-slate-500 font-normal"}`}>
                       {formatVnd(agreement.outstandingBalance)}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -157,17 +163,25 @@ function ManagerAgreements() {
       </div>
 
       {detailId && (
-        <dialog open className="fixed inset-0 m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-xl backdrop:bg-black/40">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-bold text-slate-900">Agreement Details: {detail?.agreementNo || ""}</h2>
-            <button
-              type="button"
-              onClick={() => setDetailId(null)}
-              className="text-xs font-medium text-slate-500 hover:text-slate-800 transition"
-            >
-              Close
-            </button>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Agreement Details: {detail?.agreementNo || ""}</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Lease term, payment schedule, and customer item inventory.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailId(null);
+                  setDetail(null);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
           {loadingDetail ? (
             <p className="mt-4 text-xs text-slate-400">Loading details...</p>
@@ -196,7 +210,7 @@ function ManagerAgreements() {
                 </div>
                 <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
                   <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Outstanding Balance</div>
-                  <div className={`mt-0.5 font-bold ${detail.totalDebt > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                  <div className={`mt-0.5 font-bold ${detail.totalDebt > 0 ? "text-red-600 font-bold" : "text-slate-600 font-medium"}`}>
                     {formatVnd(detail.totalDebt)}
                   </div>
                 </div>
@@ -237,7 +251,8 @@ function ManagerAgreements() {
           ) : (
             <p className="mt-4 text-xs text-slate-400">No data available.</p>
           )}
-        </dialog>
+          </div>
+        </div>
       )}
     </div>
   );

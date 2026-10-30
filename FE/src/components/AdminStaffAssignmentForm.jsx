@@ -1,20 +1,50 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
+import adminFacilityService from "../api/adminFacilityService";
 import { USER_ROLES } from "../constants/roles";
 
-const emptyForm = { facilityId: "", assignmentRole: USER_ROLES.FACILITY_STAFF, startsAt: "", endsAt: "" };
+const defaultStartTime = () => {
+  const now = new Date();
+  return now.toISOString().slice(0, 16);
+};
 
-export default function AdminStaffAssignmentForm({ employee, disabled, onSavingChange, onCreated }) {
+const emptyForm = {
+  facilityId: "",
+  assignmentRole: USER_ROLES.FACILITY_STAFF,
+  startsAt: defaultStartTime(),
+  endsAt: "",
+};
+
+export default function AdminStaffAssignmentForm({ employee, disabled, onSavingChange, onCreated, onClose }) {
   const [form, setForm] = useState(emptyForm);
+  const [facilities, setFacilities] = useState([]);
+  const [loadingFacilities, setLoadingFacilities] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const submitting = useRef(false);
   const mounted = useRef(true);
 
   useEffect(() => {
     mounted.current = true;
+    setLoadingFacilities(true);
+    adminFacilityService.getFacilities({ PageSize: 50 }).then(
+      (res) => {
+        if (mounted.current) {
+          const list = res?.items || [];
+          setFacilities(list);
+          if (list.length > 0 && !form.facilityId) {
+            setForm((prev) => ({ ...prev, facilityId: String(list[0].id) }));
+          }
+        }
+      },
+      () => {
+        if (mounted.current) setFacilities([]);
+      }
+    ).finally(() => {
+      if (mounted.current) setLoadingFacilities(false);
+    });
+
     return () => {
       mounted.current = false;
     };
@@ -24,16 +54,15 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
     event.preventDefault();
     if (disabled || submitting.current) return;
     setError("");
-    setNotice("");
     const facilityId = Number(form.facilityId);
     const startsAt = new Date(form.startsAt);
     const endsAt = form.endsAt ? new Date(form.endsAt) : null;
     if (!Number.isSafeInteger(facilityId) || facilityId <= 0) {
-      setError("Facility ID must be a valid positive integer.");
+      setError("Please select a valid facility.");
       return;
     }
     if (Number.isNaN(startsAt.getTime()) || (endsAt && Number.isNaN(endsAt.getTime()))) {
-      setError("Please provide a valid date and time.");
+      setError("Please provide a valid start date and time.");
       return;
     }
     if (endsAt && endsAt <= startsAt) {
@@ -65,59 +94,60 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
     window.dispatchEvent(new Event("admin-data-changed"));
     if (mounted.current) {
       setForm(emptyForm);
-      setNotice("Assigned employee to facility successfully.");
-      setTimeout(() => setNotice(""), 3500);
       onCreated(assignment);
+      onClose?.();
     }
   }
 
   return (
-    <section className="reference-card mb-5 p-6">
-      <div className="reference-card-heading mb-4">
-        <div>
-          <h2>Assign Facility Branch</h2>
-          <p className="reference-muted">Assign a physical storage facility branch and operational shift schedule for this employee.</p>
-        </div>
+    <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+          <Plus size={14} className="text-blue-600" />
+          Assign to Facility Branch
+        </h4>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 p-1"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
-      {notice && (
-        <div role="status" className="mb-4 flex items-center gap-2 rounded-2xl bg-[#e2fff2] px-4 py-3 text-xs font-semibold text-[#173000] border border-[#b3fa65]">
-          <CheckCircle2 size={18} className="text-[#23866a]" />
-          <span>{notice}</span>
-        </div>
-      )}
-
       {error && (
-        <div role="alert" className="reference-error mb-4">
-          <AlertTriangle size={20} />
-          <div>
-            <strong>Assignment Error</strong>
-            <p>{error}</p>
-          </div>
+        <div role="alert" className="reference-error mb-3 !p-2.5">
+          <AlertTriangle size={15} className="shrink-0" />
+          <p className="text-xs">{error}</p>
         </div>
       )}
 
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              Facility ID <span className="text-red-500">*</span>
-            </span>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              required
-              disabled={disabled || saving}
+      <form onSubmit={submit} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Select Facility *
+            </label>
+            <select
               value={form.facilityId}
+              disabled={disabled || saving || loadingFacilities}
               onChange={(e) => setForm({ ...form, facilityId: e.target.value })}
-              placeholder="e.g. 1, 2, 3..."
-              className="reference-input"
-            />
-          </label>
+              className="reference-select"
+            >
+              {facilities.map((fac) => (
+                <option key={fac.id} value={fac.id}>
+                  {fac.code} — {fac.name} ({fac.city})
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Operational Role</span>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Assignment Role *
+            </label>
             <select
               value={form.assignmentRole}
               disabled={disabled || saving}
@@ -127,41 +157,56 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
               <option value={USER_ROLES.FACILITY_STAFF}>Facility Staff</option>
               <option value={USER_ROLES.FACILITY_MANAGER}>Facility Manager</option>
             </select>
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              Start Date &amp; Time <span className="text-red-500">*</span>
-            </span>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Start Date &amp; Time *
+            </label>
             <input
               type="datetime-local"
-              required
-              disabled={disabled || saving}
               value={form.startsAt}
+              disabled={disabled || saving}
               onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
               className="reference-input"
             />
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">End Date &amp; Time (Optional)</span>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              End Date &amp; Time (Optional)
+            </label>
             <input
               type="datetime-local"
-              disabled={disabled || saving}
               value={form.endsAt}
+              disabled={disabled || saving}
               onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
               className="reference-input"
             />
-          </label>
+          </div>
         </div>
 
-        <div className="flex justify-end pt-2">
-          <button type="submit" disabled={disabled || saving} className="reference-button-primary">
-            <Plus size={15} />
-            {saving ? "Assigning..." : "Create Facility Assignment"}
+        <div className="flex justify-end gap-2 pt-1">
+          {onClose && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={onClose}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={disabled || saving || !form.facilityId}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition"
+          >
+            <Plus size={14} />
+            {saving ? "Assigning..." : "Confirm Assignment"}
           </button>
         </div>
       </form>
-    </section>
+    </div>
   );
 }

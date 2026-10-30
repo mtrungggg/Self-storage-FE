@@ -334,16 +334,16 @@ export default function StaffReservationLookup() {
         <button
           type="button"
           onClick={() => setCameraActive((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-[9px] border px-3 py-1.5 text-xs font-bold transition ${
+          className={`inline-flex items-center gap-1.5 rounded-[9px] px-3.5 py-1.5 text-xs font-bold transition shadow-xs ${
             cameraActive
-              ? "border-[#2dd4a0] bg-[#effcf6] text-[#0e7b4c]"
-              : "border-[#dfe7f5] bg-[#f8faff] text-[#3a475a] hover:border-[#1d5fe5] hover:text-[#1d5fe5]"
+              ? "border border-emerald-500 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+              : "bg-[#1d5fe5] text-white hover:bg-[#1550c7] shadow-sm hover:shadow"
           }`}
         >
           <span className="material-symbols-outlined text-[16px]">
-            {cameraActive ? "videocam_off" : "photo_camera"}
+            {cameraActive ? "videocam_off" : "qr_code_scanner"}
           </span>
-          <span>{cameraActive ? "Close Camera" : "Scan QR"}</span>
+          <span>{cameraActive ? "Close Camera" : "Scan QR Camera"}</span>
         </button>
       </div>
 

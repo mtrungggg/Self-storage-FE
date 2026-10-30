@@ -150,14 +150,24 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                       </Link>
                     )}
                     {hasAnyRole(user?.roles || [], STAFF_ROLES) && (
-                      <Link
-                        to="/staff-dashboard"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
-                      >
-                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
-                        Dashboard Staff
-                      </Link>
+                      <>
+                        <Link
+                          to="/staff-dashboard"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
+                          Ops Hub Dashboard
+                        </Link>
+                        <Link
+                          to="/staff-shifts"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">calendar_month</span>
+                          My Shifts
+                        </Link>
+                      </>
                     )}
                   </div>
 

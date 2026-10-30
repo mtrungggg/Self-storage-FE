@@ -26,8 +26,12 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
     <aside className="flex h-screen w-full flex-col bg-[#111e35] text-slate-300">
       {/* Brand Header */}
       <div className="shrink-0 px-4 py-4 border-b border-slate-800">
-        <Link to="/home" onClick={onClose} className="block text-base font-bold text-white no-underline tracking-tight">
-          G1 SelfStorage
+        <Link
+          to={isAdmin ? "/admin-overview" : "/manager-dashboard"}
+          onClick={onClose}
+          className="block text-base font-bold text-white no-underline tracking-tight"
+        >
+          G1SelfStorage
         </Link>
       </div>
 
@@ -72,11 +76,12 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
       {/* Footer pinned to bottom */}
       <div className="shrink-0 border-t border-slate-800 p-3">
         <Link
-          to="/home"
+          to="/staff-dashboard"
           onClick={onClose}
-          className="block w-full rounded-md border border-slate-700/80 bg-slate-900/40 px-3 py-2 text-center text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-900/40 px-3 py-2 text-center text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
         >
-          Customer Portal
+          <span className="material-symbols-outlined text-[15px]">badge</span>
+          <span>Staff Ops Hub</span>
         </Link>
       </div>
     </aside>

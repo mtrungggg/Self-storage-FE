@@ -7,6 +7,7 @@ export const STORAGE_UNIT_STATUS = {
   RESERVED: "reserved",
   OCCUPIED: "occupied",
   PENDING_INSPECTION: "pending_inspection",
+  CLEANING: "cleaning",
   MAINTENANCE: "maintenance",
   OUT_OF_SERVICE: "out_of_service",
   // Legacy aliases

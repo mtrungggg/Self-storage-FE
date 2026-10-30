@@ -271,6 +271,8 @@ function ManagerShifts() {
   const [draggingPreset, setDraggingPreset] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null); // { employeeId, dayKey }
   const [selectedBrush, setSelectedBrush] = useState(null);
+  const [activeCellPopover, setActiveCellPopover] = useState(null); // { staffId, dayKey }
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   // Formatted week title
   const weekLabel = useMemo(() => {
@@ -307,26 +309,38 @@ function ManagerShifts() {
           setShifts(loadedShifts);
         }
 
-        // 2. Real staff members from backend
+        // 2. Real staff members from backend (Strictly filter out Facility Managers)
         let initialStaff = [];
         if (staffRes.status === "fulfilled" && Array.isArray(staffRes.value) && staffRes.value.length > 0) {
-          initialStaff = staffRes.value.map((s) => ({
-            id: s.employeeId || s.userId,
-            name: s.fullName,
-            title: s.assignmentRole === USER_ROLES.FACILITY_MANAGER ? "Facility Manager" : "Operations Staff",
-            code: s.employeeCode,
-            avatar: getStaffAvatar(s.employeeId || s.userId),
-            standardHours: BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK,
-            shifts: {}, // key: dayKey -> array of shifts
-          }));
+          initialStaff = staffRes.value
+            .filter((s) => {
+              const role = String(s.assignmentRole || s.role || "").toLowerCase();
+              return (
+                role !== USER_ROLES.FACILITY_MANAGER.toLowerCase() &&
+                role !== "facility_manager" &&
+                role !== "manager" &&
+                s.assignmentRole !== USER_ROLES.FACILITY_MANAGER
+              );
+            })
+            .map((s) => ({
+              id: s.employeeId || s.userId,
+              name: s.fullName,
+              title: s.dutyRole === "shift_lead" ? "Shift Lead" : "Operations Staff",
+              code: s.employeeCode,
+              avatar: getStaffAvatar(s.employeeId || s.userId),
+              standardHours: BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK,
+              shifts: {}, // key: dayKey -> array of shifts
+            }));
         }
 
         // 3. Merge Live Roster Assignments (shifts can be multiple per day)
         if (rosterRes.status === "fulfilled" && Array.isArray(rosterRes.value)) {
           const rosterItems = rosterRes.value;
 
-          // Merge any employee from roster not yet in initialStaff
+          // Merge any employee from roster not yet in initialStaff (excluding managers)
           rosterItems.forEach((item) => {
+            const dutyRole = String(item.dutyRole || "").toLowerCase();
+            if (dutyRole === "manager" || dutyRole === "facility_manager") return;
             if (!initialStaff.some((s) => s.id === item.employeeId)) {
               initialStaff.push({
                 id: item.employeeId,
@@ -371,13 +385,17 @@ function ManagerShifts() {
               hours = 0;
             }
 
-            const startTime = new Date(item.startsAt).toLocaleTimeString("vi-VN", {
+            const startTime = new Date(item.startsAt).toLocaleTimeString("en-GB", {
+              timeZone: "UTC",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             });
-            const endTime = new Date(item.endsAt).toLocaleTimeString("vi-VN", {
+            const endTime = new Date(item.endsAt).toLocaleTimeString("en-GB", {
+              timeZone: "UTC",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             });
 
             if (!target.shifts[d]) {
@@ -544,6 +562,18 @@ function ManagerShifts() {
   // Core assignment function: Appends shift so 1 employee can work multiple shifts in 1 day!
   const assignPresetToCell = async (staff, dayKey, preset) => {
     setError("");
+
+    // Prevent duplicate assignment of the exact same shift preset to this cell
+    const existingShifts = Array.isArray(staff.shifts?.[dayKey]) ? staff.shifts[dayKey] : [];
+    const alreadyHasThisShift = existingShifts.some(
+      (s) => s.type === preset.type || s.name?.toLowerCase() === preset.name?.toLowerCase()
+    );
+    if (alreadyHasThisShift) {
+      setNotice(`${staff.name} is already assigned to ${preset.name} on ${dayKey}.`);
+      setTimeout(() => setNotice(""), 3000);
+      return;
+    }
+
     const previousStaffList = staffList;
     const previousShifts = shifts;
 
@@ -605,6 +635,7 @@ function ManagerShifts() {
             startsAt: startDate.toISOString(),
             endsAt: endDate.toISOString(),
             status: "open",
+            allowPast: true,
           });
           matchingShift = created;
           if (created) {
@@ -617,6 +648,7 @@ function ManagerShifts() {
             shiftId: matchingShift.id,
             employeeId: staff.id,
             dutyRole: DUTY_ROLES[0].value,
+            allowPast: true,
           });
         }
       } catch (err) {
@@ -673,6 +705,103 @@ function ManagerShifts() {
         setError(errorMessage);
         setTimeout(() => setError(""), 5000);
       }
+    }
+  };
+
+  const handlePlusClick = (e, staff, dayKey) => {
+    e.stopPropagation();
+    if (selectedBrush) {
+      assignPresetToCell(staff, dayKey, selectedBrush);
+      return;
+    }
+    setActiveCellPopover((prev) =>
+      prev && prev.staffId === staff.id && prev.dayKey === dayKey
+        ? null
+        : { staffId: staff.id, dayKey }
+    );
+  };
+
+  const handleQuickAssignFromPopover = async (staff, dayKey, presetType) => {
+    const preset = SHIFT_PRESETS.find((p) => p.type === presetType);
+    if (preset) {
+      await assignPresetToCell(staff, dayKey, preset);
+    }
+    setActiveCellPopover(null);
+  };
+
+  const handleAutoFillWeek = async () => {
+    if (staffList.length === 0) {
+      setError("No operations staff found to assign shifts.");
+      return;
+    }
+    setIsAutoFilling(true);
+    setNotice("⚡ Đang tự động điền lịch trực tối ưu cho cả tuần...");
+    setError("");
+
+    try {
+      const presets = [
+        SHIFT_PRESETS.find((p) => p.type === "morning") || SHIFT_PRESETS[0],
+        SHIFT_PRESETS.find((p) => p.type === "afternoon") || SHIFT_PRESETS[1],
+        SHIFT_PRESETS.find((p) => p.type === "night") || SHIFT_PRESETS[2],
+      ];
+
+      const workDays = weekDays.slice(0, 5); // Monday - Friday
+
+      for (let sIdx = 0; sIdx < staffList.length; sIdx++) {
+        const staff = staffList[sIdx];
+        const assignedPreset = presets[sIdx % presets.length];
+
+        for (const day of workDays) {
+          const currentShifts = Array.isArray(staff.shifts?.[day.key]) ? staff.shifts[day.key] : [];
+          const alreadyAssigned = currentShifts.some(
+            (s) => s.type === assignedPreset.type || s.name?.toLowerCase() === assignedPreset.name?.toLowerCase()
+          );
+          if (!alreadyAssigned) {
+            await assignPresetToCell(staff, day.key, assignedPreset);
+          }
+        }
+      }
+
+      setNotice("⚡ Đã tự động điền lịch trực cả tuần thành công cho toàn bộ nhân viên!");
+      setTimeout(() => setNotice(""), 4000);
+    } catch (err) {
+      setError(err?.message || "Failed to auto-fill week schedule.");
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
+  const handleCopyPreviousWeek = async () => {
+    if (staffList.length === 0) {
+      setError("No operations staff found to copy shifts.");
+      return;
+    }
+    setIsAutoFilling(true);
+    setNotice("✨ Đang sao chép lịch trực cho các ngày trong tuần...");
+    setError("");
+
+    try {
+      const monday = weekDays[0];
+      const otherDays = weekDays.slice(1, 5);
+
+      for (const staff of staffList) {
+        const monShifts = Array.isArray(staff.shifts?.[monday.key]) ? staff.shifts[monday.key] : [];
+        if (monShifts.length > 0) {
+          const preset = SHIFT_PRESETS.find((p) => p.type === monShifts[0].type) || SHIFT_PRESETS[0];
+          for (const day of otherDays) {
+            const dayShifts = Array.isArray(staff.shifts?.[day.key]) ? staff.shifts[day.key] : [];
+            if (dayShifts.length === 0) {
+              await assignPresetToCell(staff, day.key, preset);
+            }
+          }
+        }
+      }
+      setNotice("✨ Đã sao chép lịch trực thành công!");
+      setTimeout(() => setNotice(""), 4000);
+    } catch (err) {
+      setError(err?.message || "Failed to copy shift schedule.");
+    } finally {
+      setIsAutoFilling(false);
     }
   };
 
@@ -740,8 +869,30 @@ function ManagerShifts() {
               placeholder="Search staff name, code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-48 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-60 focus:border-[#1d5fe5]"
+              className="h-9 w-44 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-56 focus:border-[#1d5fe5]"
             />
+          </div>
+
+          {/* 1-Click Roster Automation Utilities */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isAutoFilling}
+              onClick={handleCopyPreviousWeek}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-bold text-indigo-700 shadow-2xs hover:bg-indigo-100 transition disabled:opacity-50"
+              title="Sao chép ca trực sang các ngày còn lại trong tuần"
+            >
+              <span>✨ Copy Previous Week</span>
+            </button>
+            <button
+              type="button"
+              disabled={isAutoFilling}
+              onClick={handleAutoFillWeek}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600 bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-blue-700 transition disabled:opacity-50"
+              title="Tự động điền phân ca chuẩn xoay vòng (Sáng / Chiều / Đêm) cho cả tuần"
+            >
+              <span>{isAutoFilling ? "⚡ Điền lịch..." : "⚡ Auto-Fill Week"}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -937,28 +1088,73 @@ function ManagerShifts() {
                               />
                             ))}
 
-                            {/* Minimalist '+' Drop Target / Brush Click (NO popup dialog) */}
-                            <div
-                              onClick={() => handleCellClick(staff, day.key)}
-                              className={`group flex items-center justify-center rounded-[12px] border border-dashed transition cursor-pointer ${
-                                dayShifts.length > 0
-                                  ? "h-8 hover:border-[#1d5fe5] hover:bg-[#eef4ff]/40"
-                                  : "flex-1 min-h-[92px]"
-                              } ${
-                                isDropTarget
-                                  ? "border-2 border-[#1d5fe5] bg-[#eef4ff] shadow-inner scale-[1.01]"
-                                  : "border-[#2b64e3] border-[1.5px] bg-[#fafcff] hover:bg-[#eef4ff]/40"
-                              }`}
-                              title={
-                                selectedBrush
-                                  ? `Click to assign ${selectedBrush.name}`
-                                  : "Drag and drop shift here"
-                              }
-                            >
-                              <span className="text-lg font-bold text-[#2062eb] group-hover:scale-125 transition">
-                                +
-                              </span>
-                            </div>
+                            {/* 1-Click Shift Assignment Popover / '+' Quick Trigger */}
+                            {activeCellPopover?.staffId === staff.id &&
+                            activeCellPopover?.dayKey === day.key ? (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="rounded-xl border border-blue-200 bg-white p-2 shadow-lg z-20 space-y-1.5 animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                                  <span className="text-[10px] font-bold text-slate-700">Gán nhanh ca:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveCellPopover(null)}
+                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-1"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "morning")}
+                                    className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-left text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs"
+                                  >
+                                    <span>🌅 Morning</span>
+                                    <span className="font-mono text-[9px] font-semibold text-emerald-600">06:00 - 14:00</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "afternoon")}
+                                    className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-left text-[10px] font-bold text-amber-800 hover:bg-amber-100 transition shadow-2xs"
+                                  >
+                                    <span>☀️ Afternoon</span>
+                                    <span className="font-mono text-[9px] font-semibold text-amber-600">14:00 - 22:00</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "night")}
+                                    className="flex items-center justify-between rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-left text-[10px] font-bold text-indigo-800 hover:bg-indigo-100 transition shadow-2xs"
+                                  >
+                                    <span>🌙 Night</span>
+                                    <span className="font-mono text-[9px] font-semibold text-indigo-600">22:00 - 06:00</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                onClick={(e) => handlePlusClick(e, staff, day.key)}
+                                className={`group flex items-center justify-center rounded-[12px] border border-dashed transition cursor-pointer ${
+                                  dayShifts.length > 0
+                                    ? "h-8 hover:border-[#1d5fe5] hover:bg-[#eef4ff]/40"
+                                    : "flex-1 min-h-[92px]"
+                                } ${
+                                  isDropTarget
+                                    ? "border-2 border-[#1d5fe5] bg-[#eef4ff] shadow-inner scale-[1.01]"
+                                    : "border-[#2b64e3] border-[1.5px] bg-[#fafcff] hover:bg-[#eef4ff]/40"
+                                }`}
+                                title={
+                                  selectedBrush
+                                    ? `Click to assign ${selectedBrush.name}`
+                                    : "Click for 1-Click Shift Selector (Morning, Afternoon, Night)"
+                                }
+                              >
+                                <span className="text-lg font-bold text-[#2062eb] group-hover:scale-125 transition">
+                                  +
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
                       );

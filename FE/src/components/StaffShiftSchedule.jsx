@@ -4,13 +4,19 @@ import staffShiftService from "../api/staffShiftService";
 function formatTime(isoString) {
   if (!isoString) return "";
   const d = new Date(isoString);
-  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString("en-GB", {
+    timeZone: "UTC",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function formatDate(isoString) {
   if (!isoString) return "";
   const d = new Date(isoString);
   return d.toLocaleDateString("en-US", {
+    timeZone: "UTC",
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -22,9 +28,9 @@ function isToday(isoString) {
   const d = new Date(isoString);
   const now = new Date();
   return (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
+    d.getUTCDate() === now.getDate() &&
+    d.getUTCMonth() === now.getMonth() &&
+    d.getUTCFullYear() === now.getFullYear()
   );
 }
 

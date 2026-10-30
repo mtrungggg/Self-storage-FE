@@ -8,6 +8,8 @@ import StaffMoveOutTab from "../components/StaffMoveOutTab";
 import StaffFacilityUnits from "../components/StaffFacilityUnits";
 import StaffOverdueAgreements from "../components/StaffOverdueAgreements";
 import StaffTaskStatus from "../components/StaffTaskStatus";
+import StaffShiftSchedule from "../components/StaffShiftSchedule";
+import { hasCapability, CAPABILITIES } from "../constants/roles";
 import { useAuth } from "../hooks/useAuth";
 import staffFacilityService from "../api/staffFacilityService";
 import staffReservationService from "../api/staffReservationService";
@@ -18,12 +20,12 @@ import facilityService from "../api/facilityService";
 import { STORAGE_UNIT_STATUS, RESERVATION_STATUS } from "../constants/rentalConstants";
 import { TICKET_STATUS } from "../constants/ticketConstants";
 
-export default function StaffDashboard() {
+export default function StaffDashboard({ initialTab = "checkin" }) {
   const { user } = useAuth();
 
   // Selected operational facility (1 = HCM-TD, 2 = HCM-D7)
   const [selectedFacilityId, setSelectedFacilityId] = useState("1");
-  const [activeTab, setActiveTab] = useState("checkin"); // 'checkin' | 'moveout' | 'units' | 'overdue' | 'issues'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'overdue' | 'issues'
 
   // Dynamic Metrics State
   const [facilities, setFacilities] = useState([]);
@@ -88,6 +90,9 @@ export default function StaffDashboard() {
   ).length;
   const pendingUnits = units.filter(
     (u) => u.status === STORAGE_UNIT_STATUS.RESERVED || u.status === "pending"
+  ).length;
+  const cleaningUnits = units.filter(
+    (u) => u.status === STORAGE_UNIT_STATUS.CLEANING || u.status === "cleaning"
   ).length;
   const maintenanceUnits = units.filter(
     (u) => u.status === STORAGE_UNIT_STATUS.MAINTENANCE || u.status === "under_maintenance"
@@ -167,23 +172,38 @@ export default function StaffDashboard() {
         {/* 4 Informational KPI Stat Cards (Strictly Non-Clickable) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
-          {/* KPI 1: Check-in Queue */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+          {/* KPI 1: Check-in Queue (Click to switch to Check-in / Scan QR) */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("checkin");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-[#1d5fe5] hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#1d5fe5]"
+            title="Click to open Check-in & Scan QR"
+          >
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Check-in</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-[#1d5fe5] transition-colors">
+                  Check-in
+                </p>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-[#1d5fe5] border border-blue-200 group-hover:bg-[#1d5fe5] group-hover:text-white transition-colors">
+                  Scan QR
+                </span>
+              </div>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-slate-900">
+                <span className="text-2xl font-extrabold text-slate-900 group-hover:text-[#1d5fe5] transition-colors">
                   {loadingMetrics ? "..." : String(confirmedReservations).padStart(2, "0")}
                 </span>
                 <span className="text-xs font-semibold text-blue-600">Pending</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1d5fe5] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-[#1d5fe5] text-[#1d5fe5] group-hover:text-white flex items-center justify-center transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
             </div>
-          </div>
+          </button>
 
           {/* KPI 2: Shift Tasks */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
@@ -288,6 +308,20 @@ export default function StaffDashboard() {
                   Units
                 </button>
 
+                {hasCapability(user, CAPABILITIES.SHIFT_VIEW) && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("shifts")}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                      activeTab === "shifts"
+                        ? "bg-[#1d5fe5] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    Shifts
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setActiveTab("overdue")}
@@ -325,6 +359,10 @@ export default function StaffDashboard() {
 
                 {activeTab === "units" && (
                   <StaffFacilityUnits initialFacilityId={selectedFacilityId} />
+                )}
+
+                {activeTab === "shifts" && (
+                  <StaffShiftSchedule facilityId={selectedFacilityId} />
                 )}
 
                 {activeTab === "overdue" && (
@@ -471,7 +509,7 @@ export default function StaffDashboard() {
               </div>
 
               {/* Status Counters */}
-              <div className="grid grid-cols-4 gap-1.5 text-center">
+              <div className="grid grid-cols-5 gap-1.5 text-center">
                 <div className="bg-emerald-50 border border-emerald-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : vacantUnits}
@@ -489,6 +527,12 @@ export default function StaffDashboard() {
                     {loadingMetrics ? "..." : pendingUnits}
                   </span>
                   <span className="block text-[10px] text-amber-700 font-medium">Pending</span>
+                </div>
+                <div className="bg-purple-50 border border-purple-100 py-1.5 rounded-lg">
+                  <span className="block text-xs font-bold text-slate-900">
+                    {loadingMetrics ? "..." : cleaningUnits}
+                  </span>
+                  <span className="block text-[10px] text-purple-700 font-medium">Cleaning</span>
                 </div>
                 <div className="bg-red-50 border border-red-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">

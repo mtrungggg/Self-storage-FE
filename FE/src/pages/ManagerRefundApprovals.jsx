@@ -17,7 +17,7 @@ const STATUS_BADGE = {
 };
 
 function ManagerRefundApprovals() {
-  const { facilityId } = useManagerFacility();
+  const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,7 +26,10 @@ function ManagerRefundApprovals() {
   const [drafts, setDrafts] = useState({});
 
   async function load() {
-    if (!facilityId) return;
+    if (!facilityId) {
+      if (!facilityLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -39,7 +42,9 @@ function ManagerRefundApprovals() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [facilityId]);
+  useEffect(() => {
+    if (!facilityLoading && !facilityId) { setLoading(false); } else if (facilityId) { load(); }
+  }, [facilityId, facilityLoading]);
 
   function updateDraft(id, field, value) {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));

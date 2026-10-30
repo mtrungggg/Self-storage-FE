@@ -18,6 +18,15 @@ export function FacilitySwitcher() {
           <span className="text-xs text-slate-400">Loading facilities...</span>
         ) : error ? (
           <span className="text-xs font-semibold text-rose-600">{error}</span>
+        ) : facilities.length === 1 ? (
+          <div className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800">
+            <span>
+              {facilities[0].code} — {facilities[0].name} ({facilities[0].city || "Vietnam"})
+            </span>
+            <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+              Assigned
+            </span>
+          </div>
         ) : (
           <select
             value={facilityId ?? ""}
@@ -40,17 +49,17 @@ export function FacilitySwitcher() {
 }
 
 /**
- * Portal component allowing any Manager page to project actions directly into the Top Facility Bar.
+ * Helper to render page-specific action buttons directly into the top FacilitySwitcher bar.
  */
 export function FacilityBarActions({ children }) {
-  const [target, setTarget] = useState(null);
+  const [container, setContainer] = useState(null);
 
   useEffect(() => {
-    setTarget(document.getElementById("facility-bar-actions"));
+    setContainer(document.getElementById("facility-bar-actions"));
   }, []);
 
-  if (!target) return null;
-  return createPortal(children, target);
+  if (!container) return null;
+  return createPortal(children, container);
 }
 
 export default FacilitySwitcher;

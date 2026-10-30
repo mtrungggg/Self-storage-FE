@@ -1,9 +1,20 @@
 // Data layer: content & listing source for the Home (storage search & reservation) page.
 
+export function getStorageTypeFilters() {
+  return [
+    { id: "all", label: "All Types", icon: "warehouse", desc: "Tất cả các loại bảo quản" },
+    { id: "dry", label: "Dry Goods Storage", icon: "inventory_2", desc: "Kho khô tiêu chuẩn" },
+    { id: "cold", label: "Cold / Seafood Freeze", icon: "ac_unit", desc: "Kho lạnh / Đông sâu" },
+    { id: "warm", label: "Heated Warm Storage", icon: "device_thermostat", desc: "Kho sưởi ấm (22°C–26°C)" },
+    { id: "climate", label: "Climate-Controlled", icon: "hvac", desc: "Kho kiểm soát nhiệt độ & độ ẩm" },
+    { id: "locker", label: "Smart Locker", icon: "lock", desc: "Tủ khóa mini tự động" },
+  ];
+}
+
 export function getSizeFilters() {
   return [
     { id: "all", label: "All Sizes", subtext: "Any square meters" },
-    { id: "mini", label: "Mini Locker (1 m²)", subtext: "Personal items, gadgets" },
+    { id: "mini", label: "Mini (1 m²)", subtext: "Personal items, gadgets" },
     { id: "small", label: "Small (3 m²)", subtext: "Dry goods & seafood cold storage" },
     { id: "medium", label: "Medium (6 m²)", subtext: "Dry, warm & deep freeze units" },
     { id: "large", label: "Large (10 m²)", subtext: "Heated warm storage (22°C–26°C)" },

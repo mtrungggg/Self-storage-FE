@@ -17,7 +17,7 @@ const STATUS_BADGE = {
 };
 
 function ManagerChargeProposals() {
-  const { facilityId } = useManagerFacility();
+  const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,7 +26,10 @@ function ManagerChargeProposals() {
   const [reasonDrafts, setReasonDrafts] = useState({});
 
   async function load() {
-    if (!facilityId) return;
+    if (!facilityId) {
+      if (!facilityLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -39,7 +42,9 @@ function ManagerChargeProposals() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [facilityId]);
+  useEffect(() => {
+    if (!facilityLoading && !facilityId) { setLoading(false); } else if (facilityId) { load(); }
+  }, [facilityId, facilityLoading]);
 
   async function decide(id, decision) {
     setDecidingId(id);

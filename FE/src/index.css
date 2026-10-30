@@ -21,6 +21,36 @@ html {
   --font-size-mono: clamp(10px, 1.2vw, 12px);
   --spacing-sm: 0.75rem;
   --spacing-md: 1rem;
+
+  /* Standardized Color Palette (60-30-10 Rule) */
+  --color-brand-primary: #2563EB;
+  --color-brand-primary-hover: #1D4ED8;
+  --color-dark-sidebar: #0F172A;
+  --color-dark-border: #1E293B;
+  --color-dark-text-muted: #94A3B8;
+
+  --color-neutral-bg: #F8FAFC;
+  --color-neutral-card: #FFFFFF;
+  --color-neutral-title: #0F172A;
+  --color-neutral-muted: #64748B;
+  --color-neutral-border: #E2E8F0;
+
+  /* Status Colors */
+  --color-status-available-bg: #ECFDF5;
+  --color-status-available-text: #059669;
+  --color-status-available-border: #A7F3D0;
+
+  --color-status-occupied-bg: #EEF2FF;
+  --color-status-occupied-text: #4F46E5;
+  --color-status-occupied-border: #C7D2FE;
+
+  --color-status-reserved-bg: #FFFBEB;
+  --color-status-reserved-text: #D97706;
+  --color-status-reserved-border: #FDE68A;
+
+  --color-status-overdue-bg: #FEF2F2;
+  --color-status-overdue-text: #DC2626;
+  --color-status-overdue-border: #FECACA;
 }
 
 .dark {

@@ -3,6 +3,7 @@ import rentalService from "../api/rentalService";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 
 import supportService from "../api/supportService";
+import { useAuth } from "./useAuth";
 
 function toTicketView(ticket) {
   const status = (ticket.status || ticket.displayStatus || "pending").toLowerCase().replace(/[ _-]/g, "");
@@ -20,6 +21,7 @@ function toTicketView(ticket) {
 
 // Application layer: encapsulates Support page state, filtering and data wiring.
 export function useSupport() {
+  const { user } = useAuth();
   const [activeRentals, setActiveRentals] = useState([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
   const [facilityNameState, setFacilityNameState] = useState("");
@@ -32,15 +34,25 @@ export function useSupport() {
   const submitLock = useRef(false);
 
   useEffect(() => {
+    if (!user) {
+      setTickets([]);
+      setTicketsLoading(false);
+      return;
+    }
     let active = true;
     supportService.getTickets()
       .then((data) => { if (active) setTickets(data.map(toTicketView)); })
       .catch((error) => { if (active) setTicketsError(error.message || "Unable to load tickets."); })
       .finally(() => { if (active) setTicketsLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setActiveRentals([]);
+      setRentalsLoading(false);
+      return;
+    }
     let active = true;
     rentalService
       .getMyRentals()
@@ -63,7 +75,7 @@ export function useSupport() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   // Map real rental data into Support view models (English)
   const units = useMemo(() => {

@@ -1,12 +1,36 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Search, RefreshCw, UserPlus, ChevronLeft, ChevronRight, AlertTriangle, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Search,
+  RefreshCw,
+  UserPlus,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Building2,
+} from "lucide-react";
 import adminUserService from "../api/adminUserService";
+import adminFacilityService from "../api/adminFacilityService";
+import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
 import AdminCreateUserForm from "../components/AdminCreateUserForm";
-import { ROLE_OPTIONS as roles, USER_STATUS_OPTIONS as statuses } from "../constants/roles";
+import {
+  ROLE_OPTIONS as roles,
+  USER_STATUS_OPTIONS as statuses,
+  USER_ROLES,
+} from "../constants/roles";
 import PAGINATION from "../constants/pagination";
 
-const initialFilters = { Search: "", Role: "", Status: "", FacilityId: "", PageSize: PAGINATION.DEFAULT_PAGE_SIZE };
+const initialFilters = {
+  Search: "",
+  Role: "",
+  Status: "",
+  FacilityId: "",
+  PageSize: PAGINATION.DEFAULT_PAGE_SIZE,
+};
+
 const labelFor = (options, value) => options.find(([key]) => key === value)?.[1] || value || "—";
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
 const formatDate = (value) => {
@@ -15,15 +39,58 @@ const formatDate = (value) => {
   return Number.isNaN(date.getTime()) ? "—" : dateFormat.format(date);
 };
 
+const ROLE_PILLS = [
+  { id: "", label: "All Accounts" },
+  { id: USER_ROLES.SYSTEM_ADMINISTRATOR, label: "Admin" },
+  { id: USER_ROLES.FACILITY_MANAGER, label: "Facility Manager" },
+  { id: USER_ROLES.FACILITY_STAFF, label: "Facility Staff" },
+  { id: USER_ROLES.CUSTOMER, label: "Customer" },
+];
+
+const STATUS_PILLS = [
+  { id: "", label: "All Status" },
+  { id: "active", label: "Active" },
+  { id: "disabled", label: "Disabled" },
+  { id: "locked", label: "Locked" },
+];
+
 export default function AdminUsers() {
   const [filters, setFilters] = useState(initialFilters);
   const [query, setQuery] = useState({ ...initialFilters, PageNumber: 1 });
   const [result, setResult] = useState(null);
+  const [facilities, setFacilities] = useState([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [reassigningUserId, setReassigningUserId] = useState(null);
+  const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialFilters.Search);
+
   const loading = result?.query !== query;
   const error = loading ? "" : result?.error;
   const data = loading || error ? null : result?.data;
 
+  // Fetch facilities list for dropdown filter & inline assignment
+  useEffect(() => {
+    adminFacilityService.getFacilities({ PageSize: 50 }).then(
+      (res) => setFacilities(res?.items || []),
+      () => setFacilities([])
+    );
+  }, []);
+
+  // Search input debounce (instant filtering)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery((prev) =>
+        prev.Search === searchTerm.trim()
+          ? prev
+          : { ...prev, Search: searchTerm.trim(), PageNumber: 1 }
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch users list
   useEffect(() => {
     let active = true;
     adminUserService.getUsers(query).then(
@@ -39,9 +106,50 @@ export default function AdminUsers() {
     };
   }, [query]);
 
-  function applyFilters(event) {
-    event.preventDefault();
-    setQuery({ ...filters, Search: filters.Search.trim(), PageNumber: 1 });
+  // 1-Click Toggle User Status (Active <-> Disabled)
+  async function handleToggleUserStatus(user) {
+    const nextStatus = user.status === "active" ? "disabled" : "active";
+    setStatusUpdatingId(user.id);
+    setActionError("");
+    try {
+      await adminUserService.updateStatus(user.id, {
+        status: nextStatus,
+        reason: `Status switched to ${nextStatus} by Administrator`,
+      });
+      setNotice(`User "${user.fullName || user.email}" is now ${nextStatus.toUpperCase()}.`);
+      setQuery((prev) => ({ ...prev }));
+      window.dispatchEvent(new Event("admin-data-changed"));
+      setTimeout(() => setNotice(""), 3500);
+    } catch (err) {
+      setActionError(err.message || "Failed to update user status.");
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  }
+
+  // 1-Click Inline Facility Reassignment
+  async function handleReassignFacility(user, newFacilityId) {
+    if (!newFacilityId) return;
+    setReassigningUserId(user.id);
+    setActionError("");
+    try {
+      const isManager = user.roles?.some((r) => r.toLowerCase().includes("manager"));
+      const assignmentRole = isManager ? USER_ROLES.FACILITY_MANAGER : USER_ROLES.FACILITY_STAFF;
+      await adminStaffAssignmentService.create({
+        employeeId: user.id,
+        facilityId: Number(newFacilityId),
+        assignmentRole,
+        startsAt: new Date().toISOString(),
+      });
+      setNotice(`Assigned "${user.fullName || user.email}" to facility branch successfully.`);
+      setQuery((prev) => ({ ...prev }));
+      window.dispatchEvent(new Event("admin-data-changed"));
+      setTimeout(() => setNotice(""), 3500);
+    } catch (err) {
+      setActionError(err.message || "Failed to reassign facility.");
+    } finally {
+      setReassigningUserId(null);
+    }
   }
 
   return (
@@ -58,22 +166,6 @@ export default function AdminUsers() {
           </p>
         </div>
         <div className="reference-toolbar-actions">
-          <label className="reference-search">
-            <Search size={18} strokeWidth={1.5} />
-            <input
-              type="search"
-              aria-label="Search users"
-              value={filters.Search}
-              onChange={(e) => setFilters({ ...filters, Search: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  setQuery({ ...filters, Search: filters.Search.trim(), PageNumber: 1 });
-                }
-              }}
-              placeholder="Search name, email, phone..."
-            />
-          </label>
           <button
             type="button"
             onClick={() => setCreateOpen(!createOpen)}
@@ -94,6 +186,28 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {/* Notice feedback */}
+      {notice && (
+        <div
+          role="status"
+          className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 border border-emerald-200"
+        >
+          <CheckCircle2 size={18} className="text-emerald-600" />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      {/* Action Error feedback */}
+      {actionError && (
+        <div role="alert" className="reference-error mb-4">
+          <AlertTriangle size={20} />
+          <div>
+            <strong>Action Error</strong>
+            <p>{actionError}</p>
+          </div>
+        </div>
+      )}
+
       {/* Form: Create User */}
       <AdminCreateUserForm
         roles={roles}
@@ -101,90 +215,126 @@ export default function AdminUsers() {
         setOpen={setCreateOpen}
         onCreated={() => {
           setFilters(initialFilters);
+          setSearchTerm("");
           setQuery({ ...initialFilters, PageNumber: 1 });
         }}
       />
 
-      {/* Filter Card */}
-      <form onSubmit={applyFilters} className="reference-card mb-6 p-5">
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5 items-end">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Keyword</span>
-            <input
-              type="search"
-              value={filters.Search}
-              onChange={(e) => setFilters({ ...filters, Search: e.target.value })}
-              placeholder="Name, email, phone..."
-              className="reference-input"
-            />
-          </label>
+      {/* Quick 1-Click Lazy Filter Bar */}
+      <section className="reference-card mb-6 p-4">
+        <div className="flex flex-col gap-3.5">
+          {/* Row 1: Instant Search & Real Facility Select & Page Size */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="reference-search min-w-[260px] max-w-sm flex-1">
+              <Search size={16} strokeWidth={1.5} />
+              <input
+                type="search"
+                placeholder="Instant search name, email, phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-          {[
-            ["Role", "Role", roles],
-            ["Status", "Status", statuses],
-          ].map(([key, label, options]) => (
-            <label key={key} className="block">
-              <span className="mb-1 block text-xs font-semibold text-[#25232c]">{label}</span>
-              <select
-                value={filters[key]}
-                onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
-                className="reference-select"
-              >
-                <option value="">All</option>
-                {options.map(([value, text]) => (
-                  <option key={value} value={value}>
-                    {text}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Facility Dropdown with real branch names */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                  <Building2 size={13} /> Facility:
+                </span>
+                <select
+                  className="reference-select !py-1.5 !text-xs min-w-[210px]"
+                  value={query.FacilityId || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFilters((prev) => ({ ...prev, FacilityId: val }));
+                    setQuery((prev) => ({ ...prev, FacilityId: val, PageNumber: 1 }));
+                  }}
+                >
+                  <option value="">All Facilities</option>
+                  {facilities.map((fac) => (
+                    <option key={fac.id} value={fac.id}>
+                      {fac.code} — {fac.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Facility ID</span>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={filters.FacilityId}
-              onChange={(e) => setFilters({ ...filters, FacilityId: e.target.value })}
-              placeholder="Facility ID"
-              className="reference-input"
-            />
-          </label>
+              {/* Rows per page */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500">Rows:</span>
+                <select
+                  className="reference-select !py-1.5 !text-xs w-24"
+                  value={query.PageSize}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setFilters((prev) => ({ ...prev, PageSize: val }));
+                    setQuery((prev) => ({ ...prev, PageSize: val, PageNumber: 1 }));
+                  }}
+                >
+                  {[10, 20, 50].map((size) => (
+                    <option key={size} value={size}>
+                      {size} rows
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-[#25232c]">Rows per page</span>
-            <select
-              value={filters.PageSize}
-              onChange={(e) => setFilters({ ...filters, PageSize: Number(e.target.value) })}
-              className="reference-select"
-            >
-              {[10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size} rows
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Row 2: 1-Click Interactive Role Pills & Status Pills */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            {/* Role Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 mr-1">Role:</span>
+              {ROLE_PILLS.map((pill) => {
+                const isActive = (query.Role || "") === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, Role: pill.id }));
+                      setQuery((prev) => ({ ...prev, Role: pill.id, PageNumber: 1 }));
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-[#111e35] text-white font-semibold shadow-sm"
+                        : "bg-slate-100/90 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Status Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 mr-1">Status:</span>
+              {STATUS_PILLS.map((pill) => {
+                const isActive = (query.Status || "") === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, Status: pill.id }));
+                      setQuery((prev) => ({ ...prev, Status: pill.id, PageNumber: 1 }));
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-[#111e35] text-white font-semibold shadow-sm"
+                        : "bg-slate-100/90 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-
-        <div className="mt-4 flex items-center justify-end gap-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              setFilters(initialFilters);
-              setQuery({ ...initialFilters, PageNumber: 1 });
-            }}
-            className="reference-button-secondary"
-          >
-            Reset
-          </button>
-          <button type="submit" className="reference-button-primary">
-            Apply Filters
-          </button>
-        </div>
-      </form>
+      </section>
 
       {/* Users Table Card */}
       <section aria-busy={loading} className="reference-card reference-table-card">
@@ -249,69 +399,117 @@ export default function AdminUsers() {
                   </td>
                 </tr>
               ) : (
-                data.items.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <span className="font-mono text-xs text-slate-500">#{user.id}</span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-grid h-7 w-7 place-items-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
-                          {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
+                data.items.map((user) => {
+                  const isStaffOrManager = user.roles?.some(
+                    (r) => r.toLowerCase().includes("staff") || r.toLowerCase().includes("manager")
+                  );
+                  return (
+                    <tr key={user.id}>
+                      <td>
+                        <span className="font-mono text-xs text-slate-500">#{user.id}</span>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-grid h-7 w-7 place-items-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
+                            {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
+                          </span>
+                          <Link
+                            to={`/admin-users/${encodeURIComponent(user.id)}`}
+                            className="font-semibold text-[#14121b] hover:underline"
+                          >
+                            {user.fullName || "—"}
+                          </Link>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="font-mono text-xs">{user.email}</span>
+                      </td>
+                      <td>{user.phoneNumber || "—"}</td>
+                      <td>
+                        {user.employeeCode ? (
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100">
+                            {user.employeeCode}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        <span className="reference-pill !py-0.5 !px-2.5 !text-[10px]">
+                          {user.roles?.map((r) => labelFor(roles, r)).join(", ") || "—"}
                         </span>
+                      </td>
+                      <td className="max-w-[220px]">
+                        {isStaffOrManager ? (
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 max-w-[190px] truncate hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                              value={user.assignedFacilityIds?.[0] || ""}
+                              onChange={(e) => handleReassignFacility(user, e.target.value)}
+                              disabled={reassigningUserId === user.id}
+                              title={
+                                user.assignedFacilityNames?.length
+                                  ? `Current: ${user.assignedFacilityNames.join(", ")} (Click to switch)`
+                                  : "Select branch to assign"
+                              }
+                            >
+                              <option value="" disabled>Select Branch...</option>
+                              {facilities.map((fac) => (
+                                <option key={fac.id} value={fac.id}>
+                                  {fac.code} — {fac.name}
+                                </option>
+                              ))}
+                            </select>
+                            {reassigningUserId === user.id && (
+                              <RefreshCw size={12} className="animate-spin text-blue-600 shrink-0" />
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleUserStatus(user)}
+                          disabled={statusUpdatingId === user.id}
+                          title={`Click to ${user.status === "active" ? "disable" : "activate"} user account`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border ${
+                            user.status === "active"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                              : user.status === "locked"
+                              ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              user.status === "active"
+                                ? "bg-emerald-500 animate-pulse"
+                                : user.status === "locked"
+                                ? "bg-amber-500"
+                                : "bg-slate-400"
+                            }`}
+                          />
+                          {statusUpdatingId === user.id ? (
+                            <RefreshCw size={12} className="animate-spin" />
+                          ) : (
+                            <span>{labelFor(statuses, user.status)}</span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="text-xs text-[#767679]">{formatDate(user.lastLoginAt)}</td>
+                      <td className="text-right pr-6">
                         <Link
                           to={`/admin-users/${encodeURIComponent(user.id)}`}
-                          className="font-semibold text-[#14121b] hover:underline"
+                          className="reference-button-secondary !py-1 !px-3 !text-[11px]"
                         >
-                          {user.fullName || "—"}
+                          Details <ArrowRight size={12} />
                         </Link>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="font-mono text-xs">{user.email}</span>
-                    </td>
-                    <td>{user.phoneNumber || "—"}</td>
-                    <td>
-                      {user.employeeCode ? (
-                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100">
-                          {user.employeeCode}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>
-                      <span className="reference-pill !py-0.5 !px-2.5 !text-[10px]">
-                        {user.roles?.map((r) => labelFor(roles, r)).join(", ") || "—"}
-                      </span>
-                    </td>
-                    <td className="max-w-[200px] truncate" title={user.assignedFacilityNames?.join(", ")}>
-                      {user.assignedFacilityNames?.join(", ") || "—"}
-                    </td>
-                    <td>
-                      <span
-                        className={`reference-status ${
-                          user.status === "active"
-                            ? "active"
-                            : user.status === "locked"
-                            ? "maintenance"
-                            : "inactive"
-                        }`}
-                      >
-                        {labelFor(statuses, user.status)}
-                      </span>
-                    </td>
-                    <td className="text-xs text-[#767679]">{formatDate(user.lastLoginAt)}</td>
-                    <td className="text-right pr-6">
-                      <Link
-                        to={`/admin-users/${encodeURIComponent(user.id)}`}
-                        className="reference-button-secondary !py-1 !px-3 !text-[11px]"
-                      >
-                        Details <ArrowRight size={12} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

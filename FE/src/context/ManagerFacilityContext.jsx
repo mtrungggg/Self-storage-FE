@@ -43,10 +43,11 @@ export function ManagerFacilityProvider({ children }) {
         }
 
         const roles = (user?.roles || []).map((r) => r.toLowerCase());
-        const isManager = hasAnyRole(roles, [...ADMIN_ROLES, ...MANAGER_ROLES]);
+        const isAdmin = hasAnyRole(roles, ADMIN_ROLES);
 
-        // If list is empty and user has manager/admin permissions, fallback to loading facilities
-        if ((!list || list.length === 0) && isManager) {
+        // ONLY fallback to loading all facilities if the user is a System Administrator.
+        // Facility Managers must be strictly confined to their assigned facilities.
+        if ((!list || list.length === 0) && isAdmin) {
           try {
             const adminRes = await adminFacilityService.getFacilities({ PageSize: PAGINATION.MAX_PAGE_SIZE });
             const items = adminRes?.items || [];
