@@ -216,7 +216,7 @@ function Support() {
                     </summary>
                     <div className="mt-1.5 space-y-1 rounded-lg bg-white p-2">
                       <MoveOutRequest agreementId={activeGalleryUnit.id} />
-                      <UnitTransferRequest agreementId={activeGalleryUnit.id} />
+                      <UnitTransferRequest agreementId={activeGalleryUnit.id} facilityId={activeGalleryUnit.facilityId} />
                     </div>
                   </details>
                 </div>

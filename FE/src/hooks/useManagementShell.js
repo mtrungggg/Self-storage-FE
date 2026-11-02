@@ -7,10 +7,11 @@ import { ADMIN_ROLES, MANAGER_ROLES, hasAnyRole } from "../constants/roles";
  * - Tự động nhận diện quyền của người dùng (Admin / Manager).
  * - Phân chia rõ ràng 2 khối: "Quản trị hệ thống (Admin)" và "Vận hành cơ sở kho (Manager)".
  * - Tách riêng Dashboard Admin (/admin-overview) và Dashboard Manager (/manager-dashboard).
+ * - Cập nhật số lượng thông báo (badge) cho các mục cần duyệt (như Transfers).
  */
 export function useManagementShell() {
   const { user, logout } = useAuth();
-  const { activeFacility, loading: facilityLoading } = useManagerFacility();
+  const { activeFacility, loading: facilityLoading, pendingTransferCount, pendingTransfers } = useManagerFacility();
 
   const userRoles = (user?.roles || []).map((r) => r.toLowerCase());
   const isAdmin = hasAnyRole(userRoles, ADMIN_ROLES);
@@ -65,7 +66,12 @@ export function useManagementShell() {
     items: [
       { id: "manager-dashboard", label: "Dashboard", to: "/manager-dashboard" },
       { id: "manager-units", label: "Units & Layout", to: "/manager-units" },
-      { id: "manager-transfer-requests", label: "Transfers", to: "/manager-transfer-requests" },
+      {
+        id: "manager-transfer-requests",
+        label: "Transfers",
+        to: "/manager-transfer-requests",
+        badge: pendingTransferCount > 0 ? pendingTransferCount : undefined,
+      },
       { id: "manager-shifts", label: "Shifts", to: "/manager-shifts" },
       { id: "manager-tickets", label: "Tickets", to: "/manager-tickets" },
     ],
@@ -110,6 +116,8 @@ export function useManagementShell() {
     sidebarFooter,
     sidebarSectionBadge,
     sidebarNetworkStatus,
+    pendingTransferCount,
+    pendingTransfers,
   };
 }
 

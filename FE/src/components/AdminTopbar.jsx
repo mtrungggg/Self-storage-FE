@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, ChevronDown, Box, Boxes, Users, History } from "lucide-react";
+import { Menu, ChevronDown, Box, Boxes, Users, History, Bell } from "lucide-react";
+import { useManagerFacility } from "../context/ManagerFacilityContext";
 
 const adminNavigation = {
   "admin-overview": ["Dashboard", Box],
@@ -12,17 +13,30 @@ const adminNavigation = {
 export default function AdminTopbar({ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifyOpen, setNotifyOpen] = useState(false);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
+  const notifyRef = useRef(null);
+
+  // Get live pending transfer requests from context
+  const facilityCtx = useManagerFacility();
+  const pendingTransferCount = facilityCtx?.pendingTransferCount ?? 0;
+  const pendingTransfers = facilityCtx?.pendingTransfers ?? [];
 
   useEffect(() => {
-    if (!profileOpen) return;
+    if (!profileOpen && !notifyOpen) return;
     const closeOutside = (event) => {
-      if (!dropdownRef.current?.contains(event.target)) setProfileOpen(false);
+      if (profileOpen && !dropdownRef.current?.contains(event.target)) {
+        setProfileOpen(false);
+      }
+      if (notifyOpen && !notifyRef.current?.contains(event.target)) {
+        setNotifyOpen(false);
+      }
     };
     const closeEscape = (event) => {
       if (event.key === "Escape") {
         setProfileOpen(false);
+        setNotifyOpen(false);
         triggerRef.current?.focus();
       }
     };
@@ -32,7 +46,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
       document.removeEventListener("mousedown", closeOutside);
       document.removeEventListener("keydown", closeEscape);
     };
-  }, [profileOpen]);
+  }, [profileOpen, notifyOpen]);
 
   const initial = (profile?.name || "U").charAt(0).toUpperCase();
 
@@ -75,12 +89,78 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
         </nav>
       )}
 
-      <div className="flex shrink-0 items-center gap-4">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-4">
         {!profile?.isAdmin && (
           <span className="hidden text-xs font-medium text-slate-500 xl:inline">
             {new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date())}
           </span>
         )}
+
+        {/* Notification Bell for Facility Manager */}
+        {!profile?.isAdmin && (
+          <div className="relative" ref={notifyRef}>
+            <button
+              type="button"
+              onClick={() => setNotifyOpen((prev) => !prev)}
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition shadow-xs cursor-pointer"
+              title="Thông báo yêu cầu chuyển kho"
+              aria-label="Thông báo yêu cầu chuyển kho"
+            >
+              <Bell size={16} />
+              {pendingTransferCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-extrabold text-white ring-2 ring-white animate-pulse">
+                  {pendingTransferCount}
+                </span>
+              )}
+            </button>
+
+            {notifyOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-xl z-50 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <Bell size={14} className="text-amber-500" />
+                    <span>Yêu cầu chuyển kho</span>
+                  </div>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 border border-amber-200">
+                    {pendingTransferCount} chờ duyệt
+                  </span>
+                </div>
+
+                {pendingTransfers.length === 0 ? (
+                  <p className="py-4 text-center text-slate-400 text-xs">Không có yêu cầu chuyển kho nào đang chờ.</p>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {pendingTransfers.slice(0, 5).map((req) => (
+                      <Link
+                        key={req.id}
+                        to="/manager-transfer-requests"
+                        onClick={() => setNotifyOpen(false)}
+                        className="block rounded-lg border border-amber-100 bg-amber-50/50 p-2.5 transition hover:bg-amber-100/60"
+                      >
+                        <div className="flex items-center justify-between font-bold text-slate-900 text-xs">
+                          <span>{req.customerName || `Khách hàng #${req.customerId}`}</span>
+                          <span className="text-[10px] text-amber-700 font-bold">Chờ duyệt</span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-slate-600">
+                          HĐ <span className="font-mono font-semibold">{req.agreementNo}</span>: Kho <span className="font-mono font-bold text-blue-700">{req.fromUnitCode}</span> ➔ {req.requestedUnitTypeName}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                <Link
+                  to="/manager-transfer-requests"
+                  onClick={() => setNotifyOpen(false)}
+                  className="mt-2.5 block text-center rounded-lg bg-blue-50 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
+                >
+                  Xem tất cả yêu cầu chuyển kho &rarr;
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         <div
           className="relative"
           ref={dropdownRef}

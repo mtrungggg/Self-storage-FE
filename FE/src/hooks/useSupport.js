@@ -81,6 +81,7 @@ export function useSupport() {
   const units = useMemo(() => {
     return activeRentals.map((r) => ({
       id: String(r.agreementId),
+      facilityId: r.facilityId,
       unitCode: r.unitCode,
       facilityName: r.facilityName || "",
       status: "active",

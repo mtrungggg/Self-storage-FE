@@ -9,10 +9,9 @@ import PAGINATION from "../constants/pagination";
 const ManagerFacilityContext = createContext(null);
 
 /**
- * Context quản lý cơ sở kho (facility) dùng chung cho Manager và Admin.
+ * Context quản lý cơ sở kho (facility) & thông báo vận hành (notifications) dùng chung cho Manager và Admin.
  * - Manager: Lấy danh sách kho được phân công từ /api/manager/my-facilities.
- * - Admin: Nếu chưa được phân công kho cụ thể, tự động lấy toàn bộ kho từ /api/admin/facilities
- *   để Admin có thể quản trị và kiểm tra bất kỳ cơ sở kho nào.
+ * - Theo dõi tự động các yêu cầu chuyển kho (Unit Transfer Requests) đang chờ duyệt để thông báo tức thời.
  */
 export function ManagerFacilityProvider({ children }) {
   const { user } = useAuth();
@@ -23,6 +22,10 @@ export function ManagerFacilityProvider({ children }) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Notification state: pending transfer requests
+  const [pendingTransfers, setPendingTransfers] = useState([]);
+  const [latestNewTransfer, setLatestNewTransfer] = useState(null);
 
   const setFacilityId = useCallback((id) => {
     setFacilityIdState(id);
@@ -45,8 +48,6 @@ export function ManagerFacilityProvider({ children }) {
         const roles = (user?.roles || []).map((r) => r.toLowerCase());
         const isAdmin = hasAnyRole(roles, ADMIN_ROLES);
 
-        // ONLY fallback to loading all facilities if the user is a System Administrator.
-        // Facility Managers must be strictly confined to their assigned facilities.
         if ((!list || list.length === 0) && isAdmin) {
           try {
             const adminRes = await adminFacilityService.getFacilities({ PageSize: PAGINATION.MAX_PAGE_SIZE });
@@ -95,9 +96,57 @@ export function ManagerFacilityProvider({ children }) {
     };
   }, [user]);
 
-  const activeFacility = facilities.find((facility) => facility.id === facilityId) || null;
+  // Polling transfer requests to keep notification count & alerts up-to-date
+  const refreshTransferRequests = useCallback(async () => {
+    if (!facilityId) {
+      setPendingTransfers([]);
+      return [];
+    }
+    try {
+      const res = await managerService.getTransferRequests(facilityId);
+      const list = Array.isArray(res) ? res : [];
+      const pending = list.filter((r) => {
+        const s = (r.status || "").toLowerCase();
+        return s === "pending" || s === "pending_payment" || s === "paid";
+      });
 
-  const value = { facilities, facilityId, setFacilityId, activeFacility, loading, error };
+      setPendingTransfers((prev) => {
+        const prevIds = new Set(prev.map((p) => p.id));
+        const newlyAdded = pending.find((p) => !prevIds.has(p.id));
+        if (newlyAdded && prev.length > 0) {
+          setLatestNewTransfer(newlyAdded);
+        }
+        return pending;
+      });
+      return list;
+    } catch {
+      return [];
+    }
+  }, [facilityId]);
+
+  useEffect(() => {
+    if (!facilityId) return undefined;
+    refreshTransferRequests();
+    const interval = setInterval(refreshTransferRequests, 12000);
+    return () => clearInterval(interval);
+  }, [facilityId, refreshTransferRequests]);
+
+  const activeFacility = facilities.find((facility) => facility.id === facilityId) || null;
+  const pendingTransferCount = pendingTransfers.length;
+
+  const value = {
+    facilities,
+    facilityId,
+    setFacilityId,
+    activeFacility,
+    loading,
+    error,
+    pendingTransfers,
+    pendingTransferCount,
+    latestNewTransfer,
+    clearLatestNewTransfer: () => setLatestNewTransfer(null),
+    refreshTransferRequests,
+  };
 
   return <ManagerFacilityContext.Provider value={value}>{children}</ManagerFacilityContext.Provider>;
 }

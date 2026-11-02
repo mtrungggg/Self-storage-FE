@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Plus, Trash2, Move, GripVertical, Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import managerService from "../api/managerService";
 import facilityService from "../api/facilityService";
@@ -65,6 +65,9 @@ function ManagerUnits() {
   const [loadingLayout, setLoadingLayout] = useState(true);
   const [savingLayout, setSavingLayout] = useState(false);
   const [selectedMapUnitId, setSelectedMapUnitId] = useState(null);
+  const [activeDropZone, setActiveDropZone] = useState(null);
+  const [isDeletingUnit, setIsDeletingUnit] = useState(false);
+  const [isCreatingDropUnit, setIsCreatingDropUnit] = useState(false);
 
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -295,6 +298,181 @@ function ManagerUnits() {
     }
   }
 
+  async function handleDeleteUnit(targetUnitId) {
+    const unitId = targetUnitId || selectedMapUnitId;
+    if (!unitId) return;
+
+    const unitObj =
+      units.find((u) => u.id === unitId) ||
+      layout?.unitPositions?.find((p) => p.unitId === unitId) ||
+      mapPositions.find((p) => p.unitId === unitId);
+    const unitCode = unitObj?.unitCode || `ID #${unitId}`;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa kho "${unitCode}" khỏi hệ thống không?`)) {
+      return;
+    }
+
+    setIsDeletingUnit(true);
+    setError("");
+    try {
+      await managerService.deleteUnit(unitId);
+      setNotice(`Đã xóa kho ${unitCode} thành công.`);
+      setTimeout(() => setNotice(""), 3500);
+
+      // Remove from units state
+      setUnits((prev) => prev.filter((u) => u.id !== unitId));
+
+      // Remove from layout state
+      setLayout((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          unitPositions: (prev.unitPositions || []).filter((p) => p.unitId !== unitId),
+        };
+      });
+
+      if (selectedMapUnitId === unitId) {
+        setSelectedMapUnitId(null);
+      }
+    } catch (err) {
+      setError(err?.message || "Không thể xóa ô kho. Vui lòng kiểm tra lại ràng buộc hợp đồng hoặc vị trí.");
+    } finally {
+      setIsDeletingUnit(false);
+    }
+  }
+
+  async function handleDropOnZone(e, area) {
+    e.preventDefault();
+    setActiveDropZone(null);
+
+    const rawData = e.dataTransfer.getData("application/json");
+    if (!rawData) return;
+
+    let data;
+    try {
+      data = JSON.parse(rawData);
+    } catch {
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+    const scale = 2.2;
+    const unitX = Math.max(5, Math.min(80, Math.round(rawX / scale)));
+    const unitY = Math.max(5, Math.min(80, Math.round(rawY / scale)));
+
+    if (data.type === "move-unit") {
+      const unitId = data.unitId;
+      setLayout((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          unitPositions: (prev.unitPositions || []).map((pos) =>
+            pos.unitId === unitId
+              ? { ...pos, x: unitX, y: unitY, areaId: area.areaId || pos.areaId }
+              : pos
+          ),
+        };
+      });
+      setSelectedMapUnitId(unitId);
+      setNotice("Đã di chuyển vị trí kho. Nhấn 'Save Layout' để lưu lại.");
+      setTimeout(() => setNotice(""), 3500);
+      return;
+    }
+
+    if (data.type === "new-unit") {
+      setIsCreatingDropUnit(true);
+      setError("");
+
+      const zoneCode = (area.code || "").toUpperCase();
+      let zoneLabel = "A";
+      let floorLabel = "1";
+      if (zoneCode === "F1-ZA") {
+        zoneLabel = "A";
+        floorLabel = "1";
+      } else if (zoneCode === "F1-ZB") {
+        zoneLabel = "B";
+        floorLabel = "1";
+      } else if (zoneCode === "F2-ZA") {
+        zoneLabel = "A";
+        floorLabel = "2";
+      } else if (area.name?.includes("B")) {
+        zoneLabel = "B";
+      }
+
+      const nextCode = getNextUnitCode(units, zoneLabel, floorLabel, 0);
+      const chosenTypeId = data.unitTypeId || unitTypes[0]?.id || 1;
+      const width = Number(data.width) || 15;
+      const height = Number(data.height) || 15;
+
+      try {
+        const created = await managerService.createUnit(facilityId, {
+          unitCode: nextCode,
+          unitTypeId: Number(chosenTypeId),
+          areaId: area.areaId ? Number(area.areaId) : undefined,
+          floorLabel,
+          zoneLabel,
+          physicalStatus: "available",
+          isListed: true,
+          notes: "Tạo tự động qua kéo thả sơ đồ",
+        });
+
+        const newUnitId = created?.id || Date.now();
+        const newPos = {
+          unitId: newUnitId,
+          unitCode: nextCode,
+          areaId: area.areaId,
+          x: unitX,
+          y: unitY,
+          width,
+          height,
+          rotationDegrees: 0,
+          physicalStatus: "available",
+          metadata: "{}",
+        };
+
+        setLayout((prev) => {
+          if (!prev) return { facilityId, facilityName: "", areas: [area], unitPositions: [newPos] };
+          return {
+            ...prev,
+            unitPositions: [...(prev.unitPositions || []), newPos],
+          };
+        });
+
+        setUnits((prev) => [
+          ...prev,
+          {
+            id: newUnitId,
+            unitCode: nextCode,
+            unitTypeId: chosenTypeId,
+            unitTypeName: unitTypes.find((t) => t.id === Number(chosenTypeId))?.name || "Standard",
+            areaId: area.areaId,
+            floorLabel,
+            zoneLabel,
+            physicalStatus: "available",
+            isListed: true,
+          },
+        ]);
+
+        setSelectedMapUnitId(newUnitId);
+        setNotice(`Đã tạo kho mới [${nextCode}] tại ${area.code} (X: ${unitX}, Y: ${unitY}). Bạn có thể chỉnh kích thước bên dưới và bấm 'Save Layout'.`);
+        setTimeout(() => setNotice(""), 5000);
+
+        try {
+          const currentPositions = layout?.unitPositions || [];
+          await managerService.updateMapLayout(facilityId, [...currentPositions, newPos]);
+        } catch {
+          // ignore auto-save fail
+        }
+      } catch (err) {
+        setError(err?.message || "Không thể tạo kho mới.");
+      } finally {
+        setIsCreatingDropUnit(false);
+      }
+    }
+  }
+
   const areaNameById = useMemo(() => {
     const map = {};
     (layout?.areas ?? []).forEach((area) => {
@@ -337,6 +515,11 @@ function ManagerUnits() {
       };
     });
   }, [layout, units, zoneAreas]);
+
+  const selectedUnit = useMemo(() => {
+    if (!selectedMapUnitId) return null;
+    return mapPositions.find((position) => position.unitId === selectedMapUnitId) || null;
+  }, [mapPositions, selectedMapUnitId]);
 
   return (
     <>
@@ -462,11 +645,22 @@ function ManagerUnits() {
                           />
                         </button>
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-right space-x-1.5">
                         <button type="button" onClick={() => openEditUnit(unit)} className="rounded border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">Edit</button>
+                        <button
+                          type="button"
+                          disabled={isDeletingUnit}
+                          onClick={() => handleDeleteUnit(unit.id)}
+                          title={`Xóa kho ${unit.unitCode}`}
+                          className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
+                        >
+                          <Trash2 size={12} />
+                          <span>Xóa</span>
+                        </button>
                       </td>
-                    </tr>
-                  ))
+
+                      </tr>
+                    ))
                 )}
               </tbody>
             </table>
@@ -478,9 +672,91 @@ function ManagerUnits() {
         <div className="mt-4 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[10px] text-[#8996a9]">Select a unit on the map to inspect coordinates; values below can be adjusted manually.</p>
-            <button type="button" disabled={savingLayout || !layout} onClick={saveLayout} className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60">
-              {savingLayout ? "Saving..." : "Save Layout"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openCreateUnit}
+                className="flex items-center gap-1.5 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs transition cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>Tạo kho (Add Unit)</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={!selectedMapUnitId || isDeletingUnit}
+                onClick={() => handleDeleteUnit(selectedMapUnitId)}
+                title={selectedMapUnitId && selectedUnit ? `Xóa kho ${selectedUnit.unitCode}` : "Chọn 1 kho trên sơ đồ để xóa"}
+                className={`flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-bold shadow-xs transition ${
+                  selectedMapUnitId
+                    ? "bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+                    : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                }`}
+              >
+                <Trash2 size={14} />
+                <span>{selectedMapUnitId && selectedUnit ? `Xóa kho ${selectedUnit.unitCode}` : "Xóa kho"}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={savingLayout || !layout}
+                onClick={saveLayout}
+                className="flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] hover:bg-[#154fc4] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs transition disabled:opacity-60 cursor-pointer"
+              >
+                <Check size={14} />
+                <span>{savingLayout ? "Đang lưu..." : "Save Layout"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Drag & Drop Template Bar */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/90 via-sky-50/70 to-indigo-50/80 p-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs text-xs font-bold">
+                <Move size={14} />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-slate-800">
+                  Kéo thả để tạo kho mới (Drag &amp; Drop to Add Unit)
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Kéo 1 trong các ô mẫu bên cạnh rồi thả xuống khu vực (Zone) màu xanh bên dưới để tạo ô kho mới:
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: "Kho Tiêu Chuẩn", code: "Standard", w: 15, h: 15, color: "border-emerald-400 bg-emerald-100 text-emerald-800" },
+                { label: "Kho Lớn", code: "Large", w: 25, h: 20, color: "border-indigo-400 bg-indigo-100 text-indigo-800" },
+                { label: "Kho Nhỏ", code: "Compact", w: 12, h: 12, color: "border-amber-400 bg-amber-100 text-amber-800" },
+              ].map((template) => (
+                <div
+                  key={template.code}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "application/json",
+                      JSON.stringify({
+                        type: "new-unit",
+                        template: template.code,
+                        width: template.w,
+                        height: template.h,
+                      })
+                    );
+
+                  }}
+                  className={`flex cursor-grab items-center gap-2 rounded-lg border-2 border-dashed px-3 py-1.5 text-xs font-bold shadow-xs transition hover:scale-105 hover:shadow-md active:cursor-grabbing ${template.color}`}
+                  title={`Kéo ô này thả xuống sơ đồ để tạo kho ${template.label} (${template.w}x${template.h})`}
+                >
+                  <GripVertical size={13} className="opacity-60" />
+                  <span>{template.label}</span>
+                  <span className="rounded bg-white/70 px-1 py-0.5 text-[9px] font-mono">
+                    {template.w}x{template.h}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
           {loadingLayout ? (
             <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-[11px] text-[#8996a9]">Rendering floor plan...</div>
@@ -536,7 +812,20 @@ function ManagerUnits() {
                     return (
                       <div
                         key={area.areaId || area.code}
-                        className="absolute top-14 rounded-xl border border-dashed border-[#7896ba]/60 bg-white/35 shadow-xs"
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "copy";
+                          if (activeDropZone !== (area.code || area.name)) setActiveDropZone(area.code || area.name);
+                        }}
+                        onDragLeave={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget)) setActiveDropZone(null);
+                        }}
+                        onDrop={(e) => handleDropOnZone(e, area)}
+                        className={`absolute top-14 rounded-xl border transition-all ${
+                          activeDropZone === (area.code || area.name)
+                            ? "border-2 border-blue-600 bg-blue-100/70 shadow-lg ring-4 ring-blue-400/40 z-30"
+                            : "border-dashed border-[#7896ba]/60 bg-white/35 shadow-xs"
+                        }`}
                         style={{
                           left: `${3 + areaIdx * 32.5}%`,
                           width: "31%",
@@ -548,6 +837,18 @@ function ManagerUnits() {
                           <span>{area.code} · {area.name}</span>
                           <span className="text-[9px] font-medium text-slate-500">{zoneUnits.length} units</span>
                         </div>
+
+                        {/* Drop Zone Visual Feedback */}
+                        {activeDropZone === (area.code || area.name) && (
+                          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl bg-blue-600/15 backdrop-blur-[1px] pointer-events-none">
+                            <span className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-extrabold text-white shadow-lg animate-bounce">
+                              + Thả vào đây để tạo kho
+                            </span>
+                            <span className="mt-1 text-[10px] font-bold text-blue-900 bg-white/80 px-2 py-0.5 rounded">
+                              Khu vực {area.code} ({area.name})
+                            </span>
+                          </div>
+                        )}
 
                         {/* Relative Canvas inside this Zone */}
                         <div className="relative w-full h-[calc(100%-28px)] overflow-visible">
@@ -567,7 +868,14 @@ function ManagerUnits() {
                               <button
                                 key={pos.unitId}
                                 type="button"
-                                onClick={() => setSelectedMapUnitId(pos.unitId)}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData(
+                                      "application/json",
+                                      JSON.stringify({ type: "move-unit", unitId: pos.unitId })
+                                    );
+                                  }}
+                                  onClick={() => setSelectedMapUnitId(pos.unitId)}
                                 title={`${pos.unitCode} (${rawW}x${rawH}) · ${pos.physicalStatus}`}
                                 className={`absolute flex items-center justify-center rounded-md border text-[10px] font-bold tracking-tight transition duration-150 hover:-translate-y-0.5 hover:shadow-md ${mapStatusStyle(pos.physicalStatus)} ${
                                   selected ? "ring-2 ring-[#2563eb] shadow-md -translate-y-0.5 z-20" : "z-10 shadow-xs"
@@ -591,7 +899,84 @@ function ManagerUnits() {
                   })}
                 </div>
               </div>
-              {selectedMapUnitId && <p className="mt-2 text-[10px] font-semibold text-[#1d5fe5]">Selected: {mapPositions.find((position) => position.unitId === selectedMapUnitId)?.unitCode}</p>}
+              {/* Quick Inspector Bar for Selected Unit */}
+              {selectedUnit && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-xs shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white shadow-xs">
+                      ✓
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-500 font-medium">Đang chọn:</span>
+                        <span className="font-bold text-blue-900 text-sm tracking-tight">{selectedUnit.unitCode}</span>
+                        <span className="rounded-md border border-blue-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                          {areaNameById[selectedUnit.areaId] || (selectedUnit.unitCode?.startsWith("A") ? "Floor 1 - Zone A" : "Floor 1 - Zone B")}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${mapStatusStyle(selectedUnit.physicalStatus)}`}>
+                          {selectedUnit.physicalStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-blue-200 shadow-xs">
+                      <label className="text-[11px] font-bold text-slate-700">Rộng (Width):</label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={selectedUnit.width || 18}
+                        onChange={(e) => updatePosition(selectedUnit.unitId, "width", e.target.value)}
+                        className="w-16 rounded border border-blue-300 bg-blue-50/50 px-1.5 py-0.5 text-right text-xs font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-blue-200 shadow-xs">
+                      <label className="text-[11px] font-bold text-slate-700">Cao (Height):</label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={selectedUnit.height || 18}
+                        onChange={(e) => updatePosition(selectedUnit.unitId, "height", e.target.value)}
+                        className="w-16 rounded border border-blue-300 bg-blue-50/50 px-1.5 py-0.5 text-right text-xs font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-xs">
+                      <label className="text-[11px] font-semibold text-slate-600">X:</label>
+                      <input
+                        type="number"
+                        value={selectedUnit.x || 0}
+                        onChange={(e) => updatePosition(selectedUnit.unitId, "x", e.target.value)}
+                        className="w-14 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-right text-xs"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-xs">
+                      <label className="text-[11px] font-semibold text-slate-600">Y:</label>
+                      <input
+                        type="number"
+                        value={selectedUnit.y || 0}
+                        onChange={(e) => updatePosition(selectedUnit.unitId, "y", e.target.value)}
+                        className="w-14 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-right text-xs"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isDeletingUnit}
+                      onClick={() => handleDeleteUnit(selectedUnit.unitId)}
+                      className="flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Xóa kho này</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
           <div className="mt-3 overflow-x-auto">
@@ -605,16 +990,25 @@ function ManagerUnits() {
                   <th className="py-2 pr-2 text-right">Width</th>
                   <th className="py-2 pr-2 text-right">Height</th>
                   <th className="py-2 pr-2 text-right">Rotation</th>
+                  <th className="py-2 pr-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingLayout ? (
-                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">Loading layout...</td></tr>
+                  <tr><td colSpan={8} className="py-4 text-center text-[#8996a9]">Loading layout...</td></tr>
                 ) : !layout?.unitPositions?.length ? (
-                  <tr><td colSpan={7} className="py-4 text-center text-[#8996a9]">No positions established yet.</td></tr>
+                  <tr><td colSpan={8} className="py-4 text-center text-[#8996a9]">No positions established yet.</td></tr>
                 ) : (
-                  layout.unitPositions.map((pos) => (
-                    <tr key={pos.unitId} className="border-b border-[#f2f5fb]">
+                  layout.unitPositions.map((pos) => {
+                    const isSelected = selectedMapUnitId === pos.unitId;
+                    return (
+                      <tr
+                        key={pos.unitId}
+                        onClick={() => setSelectedMapUnitId(pos.unitId)}
+                        className={`border-b border-[#f2f5fb] transition-colors cursor-pointer ${
+                          isSelected ? "bg-blue-50/90 font-semibold text-blue-950 ring-1 ring-blue-400" : "hover:bg-slate-50/70"
+                        }`}
+                      >
                       <td className="py-2 pr-2 font-semibold text-slate-800">{pos.unitCode}</td>
                       <td className="py-2 pr-2 text-[#58657a]">
                         {areaNameById[pos.areaId] ||
@@ -630,12 +1024,35 @@ function ManagerUnits() {
                             type="number"
                             value={pos[field]}
                             onChange={(e) => updatePosition(pos.unitId, field, e.target.value)}
-                            className="w-20 rounded-[6px] border border-[#dfe7f5] px-1.5 py-1 text-right text-[11px]"
+                            min={field === "width" || field === "height" ? 5 : undefined}
+                            max={field === "width" || field === "height" ? 100 : undefined}
+                            className={`w-20 rounded-[6px] border px-1.5 py-1 text-right text-[11px] font-semibold transition ${
+                              field === "width" || field === "height"
+                                ? "border-blue-300 bg-blue-50/60 text-blue-900 focus:bg-white focus:ring-2 focus:ring-blue-400"
+                                : "border-[#dfe7f5] bg-white text-slate-700"
+                            }`}
                           />
                         </td>
                       ))}
-                    </tr>
-                  ))
+                      <td className="py-2 pr-2 text-right">
+                        <button
+                          type="button"
+                          disabled={isDeletingUnit}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUnit(pos.unitId);
+                          }}
+                          title={`Xóa kho ${pos.unitCode}`}
+                          className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-300 transition cursor-pointer"
+                        >
+                          <Trash2 size={11} />
+                          <span>Xóa</span>
+                        </button>
+                      </td>
+
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -690,6 +1107,7 @@ function ManagerUnits() {
                       >
                         Zone {z}
                       </button>
+
                     );
                   })}
                 </div>
@@ -716,6 +1134,7 @@ function ManagerUnits() {
                       >
                         Tầng {f}
                       </button>
+
                     );
                   })}
                 </div>
@@ -754,7 +1173,8 @@ function ManagerUnits() {
                       <option key={type.id} value={type.id}>
                         {type.code} — {type.name}
                       </option>
-                    ))}
+
+                      ))}
                   </select>
                 </div>
               </div>
@@ -784,7 +1204,8 @@ function ManagerUnits() {
                       >
                         {num === 1 ? "1 kho" : `${num} kho`}
                       </button>
-                    ))}
+
+                      ))}
                   </div>
                   {bulkCount > 1 && (
                     <p className="mt-2 text-[11px] text-blue-700 font-medium">
@@ -814,7 +1235,8 @@ function ManagerUnits() {
                   >
                     {STATUS_OPTIONS.map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
-                    ))}
+
+                      ))}
                   </select>
                 </div>
 

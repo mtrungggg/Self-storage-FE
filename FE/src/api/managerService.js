@@ -41,6 +41,13 @@ export const managerService = {
     return res?.data ?? null;
   },
 
+  // STT 15b: DELETE /api/manager/units/{unitId}
+  // Xóa ô kho khỏi cơ sở
+  async deleteUnit(unitId) {
+    const res = await apiClient.delete(`/manager/units/${encodeURIComponent(unitId)}`);
+    return res?.data ?? null;
+  },
+
   // STT 16: GET /api/manager/facilities/{facilityId}/map-layout
   // Lấy dữ liệu sơ đồ bản đồ kho
   async getMapLayout(facilityId) {

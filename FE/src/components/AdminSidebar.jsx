@@ -58,13 +58,18 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
                     to={item.to || "#"}
                     onClick={onClose}
                     aria-current={isActive ? "page" : undefined}
-                    className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                       isActive
                         ? "bg-[#3659df] text-white font-semibold"
                         : "text-slate-300 font-medium hover:bg-slate-800/70 hover:text-white"
                     }`}
                   >
-                    {item.label}
+                    <span className="truncate">{item.label}</span>
+                    {item.badge != null && item.badge > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs animate-pulse">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
