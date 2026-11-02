@@ -47,6 +47,7 @@ export default function AuthScene() {
 
   useEffect(() => {
     prevPathRef.current = location.pathname;
+    setGoogleError("");
   }, [location.pathname]);
 
   // Google OAuth state & hidden button ref
@@ -269,9 +270,19 @@ export default function AuthScene() {
 
             {/* Google error banner */}
             {googleError && (
-              <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-300 bg-red-50/90 p-3 text-[13px] text-red-800 backdrop-blur-sm">
+              <div className="mb-4 flex items-center justify-between gap-2 rounded-[10px] border border-red-300 bg-red-50/90 p-3 text-[13px] text-red-800 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-red-600">error</span>
                 <span>{googleError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGoogleError("")}
+                  className="rounded p-0.5 text-red-500 hover:bg-red-100 hover:text-red-700 transition cursor-pointer"
+                  title="Đóng thông báo"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
               </div>
             )}
 
@@ -334,7 +345,7 @@ export default function AuthScene() {
                   )}
 
                   {/* Form */}
-                  <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                  <form onSubmit={(e) => { setGoogleError(""); handleLoginSubmit(e); }} className="space-y-3.5">
                     <div>
                       <label className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
                         Email or Username
@@ -347,7 +358,7 @@ export default function AuthScene() {
                           type="email"
                           required
                           value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
+                          onChange={(e) => { if (googleError) setGoogleError(""); setLoginEmail(e.target.value); }}
                           className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                         />
                       </div>
@@ -374,7 +385,7 @@ export default function AuthScene() {
                           type={showLoginPassword ? "text" : "password"}
                           required
                           value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
+                          onChange={(e) => { if (googleError) setGoogleError(""); setLoginPassword(e.target.value); }}
                           className="h-11 w-full rounded-[12px] border border-blue-200/80 bg-white/70 pl-10 pr-10 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-[#3b82f6] focus:bg-white focus:ring-2 focus:ring-[#dbeafe]"
                         />
                         <button
