@@ -50,6 +50,7 @@ export const managerTicketService = {
     }
 
     const payload = {
+      employeeId: numericStaffId,
       staffId: numericStaffId,
       assignedEmployeeId: numericStaffId,
       notes: notes?.trim() || "",

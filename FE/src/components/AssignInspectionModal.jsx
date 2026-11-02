@@ -83,6 +83,7 @@ export default function AssignInspectionModal({
 
     try {
       await managerExpiringContractsService.assignInspection(agreement.id, {
+        employeeId: numericStaffId,
         staffId: numericStaffId,
         staffName,
         notes: notes.trim(),

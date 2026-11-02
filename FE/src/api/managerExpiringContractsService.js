@@ -183,10 +183,12 @@ export const managerExpiringContractsService = {
       throw new Error("Vui lòng chọn nhân viên (Staff) để nghiệm thu kho.");
     }
 
+    const targetStaffId = Number(payload.employeeId || payload.staffId);
     const body = {
-      staffId: Number(payload.staffId),
-      assignedStaffId: Number(payload.staffId),
-      assignedEmployeeId: Number(payload.staffId),
+      employeeId: targetStaffId,
+      staffId: targetStaffId,
+      assignedEmployeeId: targetStaffId,
+      assignedStaffId: targetStaffId,
       notes: payload.notes?.trim() || "",
     };
 
@@ -219,3 +221,4 @@ export const managerExpiringContractsService = {
 };
 
 export default managerExpiringContractsService;
+

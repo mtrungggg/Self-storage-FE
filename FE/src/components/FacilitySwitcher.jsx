@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 
+function cleanCity(city) {
+  if (!city) return "Vietnam";
+  return city
+    .replace(/Há»“\s*ChÃ­?\s*Minh/gi, "Hồ Chí Minh")
+    .replace(/HÃ\s*Ná»™i/gi, "Hà Nội")
+    .replace(/Ä\s*Ã\s*Náºµng|Ä\s*Ä\s*Náºµng/gi, "Đà Nẵng")
+    .replace(/BÃ¬nh\s*DÆ°Æ¡ng/gi, "Bình Dương");
+}
+
 /**
  * Top horizontal facility control bar: Minimalist, Text-only, No icons.
  * Left: Facility dropdown.
@@ -21,7 +30,7 @@ export function FacilitySwitcher() {
         ) : facilities.length === 1 ? (
           <div className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-800">
             <span>
-              {facilities[0].code} — {facilities[0].name} ({facilities[0].city || "Vietnam"})
+              {facilities[0].code} — {facilities[0].name} ({cleanCity(facilities[0].city)})
             </span>
             <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
               Assigned
@@ -35,7 +44,7 @@ export function FacilitySwitcher() {
           >
             {facilities.map((facility) => (
               <option key={facility.id} value={facility.id}>
-                {facility.code} — {facility.name} ({facility.city || "Vietnam"})
+                {facility.code} — {facility.name} ({cleanCity(facility.city)})
               </option>
             ))}
           </select>

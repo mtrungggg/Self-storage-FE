@@ -71,6 +71,7 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
 
     try {
       const result = await managerTicketService.assignStaff(ticket.id, {
+        employeeId: numericStaffId,
         staffId: numericStaffId,
         notes: notes.trim(),
         facilityId: facilityId || ticket.facilityId,

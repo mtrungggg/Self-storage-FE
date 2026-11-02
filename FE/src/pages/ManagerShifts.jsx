@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { DUTY_ROLES } from "../constants/managerConstants";
@@ -104,7 +104,7 @@ const computeWeekDays = (baseDate) => {
   return days;
 };
 
-// Component: Individual Shift Card
+// Component: Individual Shift Card (Compact Mode)
 function ShiftCard({ shift, onDelete }) {
   const DeleteButton = () => (
     <button
@@ -113,28 +113,32 @@ function ShiftCard({ shift, onDelete }) {
         e.stopPropagation();
         onDelete?.();
       }}
-      className="absolute -top-1.5 -right-1.5 z-10 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#d92d20] shadow-sm border border-[#fda29b] hover:bg-[#fee4e2] transition"
-      title="Remove this shift"
+      className="absolute -top-1 -right-1 z-10 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#d92d20] shadow-sm border border-[#fda29b] hover:bg-[#fee4e2] transition cursor-pointer"
+      title="Xóa ca này"
     >
-      <span className="text-[12px] font-bold leading-none">✕</span>
+      <span className="text-[10px] font-bold leading-none">✕</span>
     </button>
   );
 
   // 1. Morning Shift (MS)
   if (shift.type === "morning") {
     return (
-      <div className="group relative rounded-[12px] border border-[#a6f4c5] bg-[#eefdf5] p-2 transition hover:shadow-xs">
+      <div className="group relative rounded-lg border border-[#a6f4c5] bg-[#eefdf5] py-1 px-2 transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
-            <span>{shift.name}</span>
-          </div>
-          <span className="rounded bg-[#d1fadf] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#027a48]">
+          <span className="truncate text-[11px] font-bold text-[#027a48]">{shift.name}</span>
+          <span className="shrink-0 rounded bg-[#d1fadf] px-1 py-0.2 text-[9px] font-black uppercase text-[#027a48]">
             {shift.code || "MS"}
           </span>
         </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#054f31]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-medium text-[#027a48]">{shift.location}</div>
+        <div className="mt-0.5 flex items-center justify-between font-mono text-[10px] font-extrabold text-[#054f31]">
+          <span>{shift.time}</span>
+          {shift.location && (
+            <span className="truncate text-[9px] font-medium text-[#027a48] max-w-[75px]" title={shift.location}>
+              {shift.location.replace(/^Role:\s*/, "")}
+            </span>
+          )}
+        </div>
       </div>
     );
   }
@@ -142,18 +146,22 @@ function ShiftCard({ shift, onDelete }) {
   // 2. Afternoon Shift (AS)
   if (shift.type === "afternoon") {
     return (
-      <div className="group relative rounded-[12px] border border-[#fedf89] bg-[#fef9ee] p-2 transition hover:shadow-xs">
+      <div className="group relative rounded-lg border border-[#fedf89] bg-[#fef9ee] py-1 px-2 transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#b54708]">
-            <span>{shift.name}</span>
-          </div>
-          <span className="rounded bg-[#fef0c7] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#b54708]">
+          <span className="truncate text-[11px] font-bold text-[#b54708]">{shift.name}</span>
+          <span className="shrink-0 rounded bg-[#fef0c7] px-1 py-0.2 text-[9px] font-black uppercase text-[#b54708]">
             {shift.code || "AS"}
           </span>
         </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#7a2e05]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-medium text-[#b54708]">{shift.location}</div>
+        <div className="mt-0.5 flex items-center justify-between font-mono text-[10px] font-extrabold text-[#7a2e05]">
+          <span>{shift.time}</span>
+          {shift.location && (
+            <span className="truncate text-[9px] font-medium text-[#b54708] max-w-[75px]" title={shift.location}>
+              {shift.location.replace(/^Role:\s*/, "")}
+            </span>
+          )}
+        </div>
       </div>
     );
   }
@@ -161,18 +169,22 @@ function ShiftCard({ shift, onDelete }) {
   // 3. Night Shift (NS)
   if (shift.type === "night") {
     return (
-      <div className="group relative rounded-[12px] border border-[#c7d7fe] bg-[#f5f6ff] p-2 transition hover:shadow-xs">
+      <div className="group relative rounded-lg border border-[#c7d7fe] bg-[#f5f6ff] py-1 px-2 transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#3538cd]">
-            <span>{shift.name}</span>
-          </div>
-          <span className="rounded bg-[#e0eaff] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#3538cd]">
+          <span className="truncate text-[11px] font-bold text-[#3538cd]">{shift.name}</span>
+          <span className="shrink-0 rounded bg-[#e0eaff] px-1 py-0.2 text-[9px] font-black uppercase text-[#3538cd]">
             {shift.code || "NS"}
           </span>
         </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#282d97]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-medium text-[#444ce7]">{shift.location}</div>
+        <div className="mt-0.5 flex items-center justify-between font-mono text-[10px] font-extrabold text-[#282d97]">
+          <span>{shift.time}</span>
+          {shift.location && (
+            <span className="truncate text-[9px] font-medium text-[#444ce7] max-w-[75px]" title={shift.location}>
+              {shift.location.replace(/^Role:\s*/, "")}
+            </span>
+          )}
+        </div>
       </div>
     );
   }
@@ -180,18 +192,22 @@ function ShiftCard({ shift, onDelete }) {
   // 4. Night Shift - Conflict / Warning
   if (shift.type === "night_conflict" || shift.warning) {
     return (
-      <div className="group relative rounded-[12px] border border-[#fecdca] bg-[#fff1f3] p-2 transition hover:shadow-xs">
+      <div className="group relative rounded-lg border border-[#fecdca] bg-[#fff1f3] py-1 px-2 transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#b42318]">
-            <span>{shift.name}</span>
-          </div>
-          <span className="inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1.5 py-0.5 text-[9px] font-extrabold text-[#d92d20]">
+          <span className="truncate text-[11px] font-bold text-[#b42318]">{shift.name}</span>
+          <span className="shrink-0 inline-flex items-center gap-0.5 rounded bg-[#fee4e2] px-1 py-0.2 text-[9px] font-extrabold text-[#d92d20]">
             <span>{shift.warning || "Conflict"}</span>
           </span>
         </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#912018]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-semibold text-[#b42318]">{shift.location}</div>
+        <div className="mt-0.5 flex items-center justify-between font-mono text-[10px] font-extrabold text-[#912018]">
+          <span>{shift.time}</span>
+          {shift.location && (
+            <span className="truncate text-[9px] font-medium text-[#b42318] max-w-[75px]" title={shift.location}>
+              {shift.location.replace(/^Role:\s*/, "")}
+            </span>
+          )}
+        </div>
       </div>
     );
   }
@@ -199,14 +215,10 @@ function ShiftCard({ shift, onDelete }) {
   // 5. Leave
   if (shift.type === "leave") {
     return (
-      <div className="group relative flex min-h-[70px] flex-col items-center justify-center rounded-[12px] border border-[#e9d7fe] bg-[#faf5ff] p-2 text-center transition hover:shadow-xs">
+      <div className="group relative flex min-h-[44px] flex-col items-center justify-center rounded-lg border border-[#e9d7fe] bg-[#faf5ff] py-1 px-2 text-center transition hover:shadow-xs">
         <DeleteButton />
-        <div className="flex items-center gap-1 text-[11px] font-extrabold text-[#6941c6]">
-          <span>{shift.name}</span>
-        </div>
-        <div className="mt-0.5 text-[10px] font-medium text-[#7f56d9]">
-          {shift.location || "Annual Leave"}
-        </div>
+        <div className="text-[11px] font-extrabold text-[#6941c6]">{shift.name}</div>
+        <div className="text-[9px] font-medium text-[#7f56d9]">{shift.location || "Annual Leave"}</div>
       </div>
     );
   }
@@ -214,14 +226,10 @@ function ShiftCard({ shift, onDelete }) {
   // 6. Rest Day / REST
   if (shift.type === "rest") {
     return (
-      <div className="group relative flex min-h-[70px] flex-col items-center justify-center rounded-[12px] border border-[#e4e7ec] bg-[#f8f9fc] p-2 text-center transition hover:shadow-xs">
+      <div className="group relative flex min-h-[44px] flex-col items-center justify-center rounded-lg border border-[#e4e7ec] bg-[#f8f9fc] py-1 px-2 text-center transition hover:shadow-xs">
         <DeleteButton />
-        <div className="text-[11px] font-black uppercase tracking-wider text-[#475467]">
-          {shift.name}
-        </div>
-        <div className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-[#98a2b3]">
-          {shift.code || "REST"}
-        </div>
+        <div className="text-[11px] font-black uppercase tracking-wider text-[#475467]">{shift.name}</div>
+        <div className="text-[9px] font-bold uppercase tracking-widest text-[#98a2b3]">{shift.code || "REST"}</div>
       </div>
     );
   }
@@ -229,25 +237,29 @@ function ShiftCard({ shift, onDelete }) {
   // 7. 24h Shift
   if (shift.type === "duty24h") {
     return (
-      <div className="group relative rounded-[12px] border border-[#99f6e4] bg-[#f0fdf9] p-2 transition hover:shadow-xs">
+      <div className="group relative rounded-lg border border-[#99f6e4] bg-[#f0fdf9] py-1 px-2 transition hover:shadow-xs">
         <DeleteButton />
         <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-[#0f766e]">
-            <span>{shift.name}</span>
-          </div>
-          <span className="rounded bg-[#ccfbf1] px-1.5 py-0.5 text-[9px] font-black text-[#0f766e]">24H</span>
+          <span className="truncate text-[11px] font-bold text-[#0f766e]">{shift.name}</span>
+          <span className="shrink-0 rounded bg-[#ccfbf1] px-1 py-0.2 text-[9px] font-black text-[#0f766e]">24H</span>
         </div>
-        <div className="mt-0.5 font-mono text-[11px] font-extrabold text-[#115e59]">{shift.time}</div>
-        <div className="mt-0.5 truncate text-[10px] font-medium text-[#0f766e]">{shift.location}</div>
+        <div className="mt-0.5 flex items-center justify-between font-mono text-[10px] font-extrabold text-[#115e59]">
+          <span>{shift.time}</span>
+          {shift.location && (
+            <span className="truncate text-[9px] font-medium text-[#0f766e] max-w-[75px]" title={shift.location}>
+              {shift.location.replace(/^Role:\s*/, "")}
+            </span>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="group relative rounded-[12px] border border-[#dfe7f5] bg-white p-2 text-xs text-[#0b1c30] hover:shadow-xs transition">
+    <div className="group relative rounded-lg border border-[#dfe7f5] bg-white py-1 px-2 text-xs text-[#0b1c30] hover:shadow-xs transition">
       <DeleteButton />
-      <div className="font-bold">{shift.name}</div>
-      <div className="text-[10px] text-[#8996a9]">{shift.time}</div>
+      <div className="font-bold text-[11px]">{shift.name}</div>
+      <div className="text-[9px] text-[#8996a9]">{shift.time}</div>
     </div>
   );
 }
@@ -273,6 +285,21 @@ function ManagerShifts() {
   const [selectedBrush, setSelectedBrush] = useState(null);
   const [activeCellPopover, setActiveCellPopover] = useState(null); // { staffId, dayKey }
   const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const popoverRef = useRef(null);
+
+  // Close floating quick-assign popover when clicking outside
+  useEffect(() => {
+    if (!activeCellPopover) return;
+    const handleOutsideClick = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        setActiveCellPopover(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [activeCellPopover]);
 
   // Formatted week title
   const weekLabel = useMemo(() => {
@@ -731,41 +758,222 @@ function ManagerShifts() {
 
   const handleAutoFillWeek = async () => {
     if (staffList.length === 0) {
-      setError("No operations staff found to assign shifts.");
+      setError("Không tìm thấy nhân viên vận hành nào để phân ca.");
       return;
     }
+    if (!facilityId) {
+      setError("Vui lòng chọn cơ sở kho trước khi phân ca.");
+      return;
+    }
+
     setIsAutoFilling(true);
-    setNotice("⚡ Đang tự động điền lịch trực tối ưu cho cả tuần...");
+    setNotice("⚡ Đang tính toán phân bổ tối ưu 7 ngày (Sáng, Chiều, Đêm)...");
     setError("");
 
     try {
-      const presets = [
+      // 1. Chuẩn bị bản sao dữ liệu staff và shifts
+      let updatedStaffList = staffList.map((s) => ({
+        ...s,
+        shifts: { ...(s.shifts || {}) },
+      }));
+      let newShiftsPool = [...shifts];
+      const shiftCache = new Map();
+
+      // Tính tổng số giờ làm việc hiện tại của từng nhân viên trong tuần
+      const hoursMap = {};
+      updatedStaffList.forEach((s) => {
+        let h = 0;
+        Object.values(s.shifts || {}).forEach((shList) => {
+          if (Array.isArray(shList)) {
+            shList.forEach((sh) => {
+              h += sh.hours || 0;
+            });
+          }
+        });
+        hoursMap[s.id] = h;
+      });
+
+      // Đếm số ca đêm đã được gán để xoay tua công bằng
+      const countNights = (staff) => {
+        let n = 0;
+        Object.values(staff.shifts || {}).forEach((shList) => {
+          if (Array.isArray(shList)) {
+            shList.forEach((sh) => {
+              if (sh.type === "night" || sh.type === "duty24h") n++;
+            });
+          }
+        });
+        return n;
+      };
+
+      // 3 ca chính bắt buộc cho mỗi ngày
+      // ƯU TIÊN SỐ 1: Phân ca Đêm (Night) trước để triệt tiêu cảnh báo "Night Shortage"
+      const targetShiftPresets = [
+        SHIFT_PRESETS.find((p) => p.type === "night") || SHIFT_PRESETS[2],
         SHIFT_PRESETS.find((p) => p.type === "morning") || SHIFT_PRESETS[0],
         SHIFT_PRESETS.find((p) => p.type === "afternoon") || SHIFT_PRESETS[1],
-        SHIFT_PRESETS.find((p) => p.type === "night") || SHIFT_PRESETS[2],
       ];
 
-      const workDays = weekDays.slice(0, 5); // Monday - Friday
+      let autoFilledCount = 0;
+      const assignmentsToPersist = [];
 
-      for (let sIdx = 0; sIdx < staffList.length; sIdx++) {
-        const staff = staffList[sIdx];
-        const assignedPreset = presets[sIdx % presets.length];
+      // 2. Duyệt qua toàn bộ 7 ngày trong tuần (Thứ Hai -> Chủ Nhật)
+      for (let dayIdx = 0; dayIdx < weekDays.length; dayIdx++) {
+        const day = weekDays[dayIdx];
+        const dayKey = day.key;
 
-        for (const day of workDays) {
-          const currentShifts = Array.isArray(staff.shifts?.[day.key]) ? staff.shifts[day.key] : [];
-          const alreadyAssigned = currentShifts.some(
-            (s) => s.type === assignedPreset.type || s.name?.toLowerCase() === assignedPreset.name?.toLowerCase()
-          );
-          if (!alreadyAssigned) {
-            await assignPresetToCell(staff, day.key, assignedPreset);
+        for (const preset of targetShiftPresets) {
+          // Kiểm tra xem ca này trong ngày đã có nhân viên nào trực chưa
+          const alreadyCovered = updatedStaffList.some((s) => {
+            const curShifts = s.shifts[dayKey] || [];
+            return curShifts.some(
+              (sh) => sh.type === preset.type || sh.name?.toLowerCase() === preset.name?.toLowerCase()
+            );
+          });
+          if (alreadyCovered) continue;
+
+          // Tìm ứng viên phù hợp:
+          // Tiêu chí 1: Chưa được gán ca này trong ngày
+          let candidates = updatedStaffList.filter((s) => {
+            const curShifts = s.shifts[dayKey] || [];
+            return !curShifts.some((sh) => sh.type === preset.type);
+          });
+
+          if (candidates.length === 0) continue;
+
+          // Tiêu chí 2: Ưu tiên người CHƯA CÓ CA NÀO trong ngày hôm nay (tránh 2 ca/ngày)
+          const noShiftInDay = candidates.filter((s) => {
+            const curShifts = s.shifts[dayKey] || [];
+            return curShifts.length === 0;
+          });
+          if (noShiftInDay.length > 0) {
+            candidates = noShiftInDay;
           }
+
+          // Tiêu chí 3: Tránh gán ca Sáng nếu đêm hôm trước người đó trực ca Đêm (kết thúc 06:00)
+          if (preset.type === "morning" && dayIdx > 0) {
+            const prevDayKey = weekDays[dayIdx - 1].key;
+            const notWorkedNightBefore = candidates.filter((s) => {
+              const prevShifts = s.shifts[prevDayKey] || [];
+              return !prevShifts.some((sh) => sh.type === "night");
+            });
+            if (notWorkedNightBefore.length > 0) {
+              candidates = notWorkedNightBefore;
+            }
+          }
+
+          // Tiêu chí 4: Sắp xếp theo:
+          // - Giờ làm việc hiện tại thấp nhất (Công bằng định mức 40h)
+          // - Ưu tiên người chưa đạt 40h
+          // - Nếu là ca đêm: ưu tiên người có số ca đêm ít hơn (xoay tua trực đêm)
+          candidates.sort((a, b) => {
+            const aHours = hoursMap[a.id] || 0;
+            const bHours = hoursMap[b.id] || 0;
+            if (aHours !== bHours) return aHours - bHours;
+
+            if (preset.type === "night") {
+              const aNights = countNights(a);
+              const bNights = countNights(b);
+              if (aNights !== bNights) return aNights - bNights;
+            }
+            return 0;
+          });
+
+          const chosen = candidates[0];
+          if (!chosen) continue;
+
+          // Gán ca vào in-memory state
+          const tempShiftId = Date.now() + Math.floor(Math.random() * 100000) + autoFilledCount;
+          const newShiftItem = {
+            shiftId: tempShiftId,
+            type: preset.type,
+            name: preset.name,
+            code: preset.code,
+            time: preset.time,
+            location: preset.defaultLocation || "Operations Area",
+            hours: preset.hours || 8,
+          };
+
+          const staffIdx = updatedStaffList.findIndex((s) => s.id === chosen.id);
+          const currentDayShifts = Array.isArray(updatedStaffList[staffIdx].shifts[dayKey])
+            ? [...updatedStaffList[staffIdx].shifts[dayKey]]
+            : [];
+          updatedStaffList[staffIdx].shifts[dayKey] = [...currentDayShifts, newShiftItem];
+
+          // Cập nhật giờ làm tích lũy
+          hoursMap[chosen.id] = (hoursMap[chosen.id] || 0) + (preset.hours || 8);
+          autoFilledCount++;
+
+          assignmentsToPersist.push({
+            staffId: chosen.id,
+            dayKey,
+            preset,
+          });
         }
       }
 
-      setNotice("⚡ Đã tự động điền lịch trực cả tuần thành công cho toàn bộ nhân viên!");
-      setTimeout(() => setNotice(""), 4000);
+      // Cập nhật state ngay lập tức (Roster & Summary đổi màu xanh tức thì!)
+      setStaffList(updatedStaffList);
+
+      if (autoFilledCount === 0) {
+        setNotice("Tất cả các ca (Sáng, Chiều, Đêm) trong 7 ngày đã được phân bổ đầy đủ!");
+        setIsAutoFilling(false);
+        setTimeout(() => setNotice(""), 3500);
+        return;
+      }
+
+      setNotice(`⚡ Đã phân bổ tối ưu ${autoFilledCount} ca trực. Đang đồng bộ lên máy chủ...`);
+
+      // 3. Đồng bộ các ca mới tạo lên backend
+      for (const item of assignmentsToPersist) {
+        try {
+          const [year, month, day] = item.dayKey.split("-").map(Number);
+          const startHour = item.preset.startHour || 6;
+          const endHour = item.preset.endHour || 14;
+          const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
+          const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
+          if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
+
+          const cacheKey = `${item.preset.name.toLowerCase()}_${item.dayKey}`;
+          let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
+            (sh) =>
+              sh.shiftName?.toLowerCase() === item.preset.name.toLowerCase() &&
+              new Date(sh.startsAt).toISOString().slice(0, 10) === item.dayKey
+          );
+
+          if (!matchingShift) {
+            const created = await managerService.createShift(facilityId, {
+              shiftName: item.preset.name,
+              startsAt: startDate.toISOString(),
+              endsAt: endDate.toISOString(),
+              status: "open",
+              allowPast: true,
+            });
+            matchingShift = created;
+            if (created) {
+              shiftCache.set(cacheKey, created);
+              newShiftsPool.push(created);
+            }
+          }
+
+          if (matchingShift?.id) {
+            await managerService.createShiftAssignment(facilityId, {
+              shiftId: matchingShift.id,
+              employeeId: item.staffId,
+              dutyRole: DUTY_ROLES[0].value,
+              allowPast: true,
+            });
+          }
+        } catch {
+          // Bỏ qua lỗi lẻ nếu ca đã tồn tại
+        }
+      }
+
+      setShifts(newShiftsPool);
+      setNotice(`⚡ Đã tự động phân ca tối ưu 7 ngày (Sáng, Chiều, Đêm) cho toàn bộ nhân viên! (${autoFilledCount} ca đã tạo)`);
+      setTimeout(() => setNotice(""), 4500);
     } catch (err) {
-      setError(err?.message || "Failed to auto-fill week schedule.");
+      setError(err?.message || "Không thể tự động phân ca cho cả tuần.");
     } finally {
       setIsAutoFilling(false);
     }
@@ -773,33 +981,157 @@ function ManagerShifts() {
 
   const handleCopyPreviousWeek = async () => {
     if (staffList.length === 0) {
-      setError("No operations staff found to copy shifts.");
+      setError("Không tìm thấy nhân viên vận hành nào để sao chép lịch.");
       return;
     }
+    if (!facilityId) {
+      setError("Vui lòng chọn cơ sở kho trước khi sao chép lịch.");
+      return;
+    }
+
     setIsAutoFilling(true);
-    setNotice("✨ Đang sao chép lịch trực cho các ngày trong tuần...");
+    setNotice("✨ Đang kiểm tra lịch phân ca của tuần trước...");
     setError("");
 
     try {
-      const monday = weekDays[0];
-      const otherDays = weekDays.slice(1, 5);
+      // 1. Xác định chính xác ngày bắt đầu & kết thúc của tuần trước (-7 ngày)
+      const currentMonday = weekDays[0].dateObj;
+      const prevMonday = new Date(currentMonday);
+      prevMonday.setDate(currentMonday.getDate() - 7);
+      prevMonday.setHours(0, 0, 0, 0);
 
-      for (const staff of staffList) {
-        const monShifts = Array.isArray(staff.shifts?.[monday.key]) ? staff.shifts[monday.key] : [];
-        if (monShifts.length > 0) {
-          const preset = SHIFT_PRESETS.find((p) => p.type === monShifts[0].type) || SHIFT_PRESETS[0];
-          for (const day of otherDays) {
-            const dayShifts = Array.isArray(staff.shifts?.[day.key]) ? staff.shifts[day.key] : [];
-            if (dayShifts.length === 0) {
-              await assignPresetToCell(staff, day.key, preset);
+      const prevSunday = new Date(prevMonday);
+      prevSunday.setDate(prevMonday.getDate() + 6);
+      prevSunday.setHours(23, 59, 59, 999);
+
+      // 2. Gọi API lấy roster của tuần trước
+      const prevRoster = await managerService.getShiftRoster(facilityId, {
+        fromDate: prevMonday.toISOString(),
+        toDate: prevSunday.toISOString(),
+      });
+
+      if (!Array.isArray(prevRoster) || prevRoster.length === 0) {
+        setNotice("Tuần trước không có lịch phân ca để sao chép.");
+        setIsAutoFilling(false);
+        setTimeout(() => setNotice(""), 4000);
+        return;
+      }
+
+      setNotice("✨ Đang sao chép các ca làm việc sang tuần hiện tại...");
+
+      // 3. Phân tích các ca tuần trước và ánh xạ sang tuần hiện tại
+      let copiedCount = 0;
+      let newShiftsPool = [...shifts];
+      let updatedStaffList = staffList.map((s) => ({
+        ...s,
+        shifts: { ...(s.shifts || {}) },
+      }));
+
+      const shiftCache = new Map();
+
+      for (const item of prevRoster) {
+        // Tìm staff tương ứng
+        const staffIndex = updatedStaffList.findIndex((s) => s.id === item.employeeId);
+        if (staffIndex === -1) continue;
+
+        // Tính ngày trong tuần hiện tại dựa trên thứ tương ứng
+        const itemStartDate = new Date(item.startsAt);
+        const itemDayOfWeek = itemStartDate.getUTCDay(); // 0 is Sunday, 1 is Monday...
+        const dayIdx = itemDayOfWeek === 0 ? 6 : itemDayOfWeek - 1;
+        if (dayIdx < 0 || dayIdx >= weekDays.length) continue;
+
+        const targetDay = weekDays[dayIdx];
+        const targetDayKey = targetDay.key;
+
+        // Nhận diện preset
+        const nameLower = (item.shiftName || "").toLowerCase();
+        let presetType = "morning";
+        if (nameLower.includes("chiều") || nameLower.includes("afternoon")) presetType = "afternoon";
+        else if (nameLower.includes("đêm") || nameLower.includes("night")) presetType = "night";
+        else if (nameLower.includes("24h") || nameLower.includes("24")) presetType = "duty24h";
+        else if (nameLower.includes("phép") || nameLower.includes("leave")) presetType = "leave";
+        else if (nameLower.includes("bù") || nameLower.includes("rest")) presetType = "rest";
+
+        const preset = SHIFT_PRESETS.find((p) => p.type === presetType) || SHIFT_PRESETS[0];
+
+        // Bỏ qua nếu nhân viên đó ở ngày đó đã có ca này rồi
+        const staffObj = updatedStaffList[staffIndex];
+        const existingShifts = Array.isArray(staffObj.shifts[targetDayKey]) ? staffObj.shifts[targetDayKey] : [];
+        const alreadyHasThisShift = existingShifts.some(
+          (s) => s.type === preset.type || s.name?.toLowerCase() === preset.name?.toLowerCase()
+        );
+        if (alreadyHasThisShift) continue;
+
+        // Thêm vào state
+        const tempShiftId = Date.now() + Math.floor(Math.random() * 100000) + copiedCount;
+        const newShiftItem = {
+          shiftId: tempShiftId,
+          type: preset.type,
+          name: preset.name,
+          code: preset.code,
+          time: preset.time,
+          location: item.dutyRole ? `Role: ${item.dutyRole}` : preset.defaultLocation || "Operations Area",
+          hours: preset.hours || 8,
+        };
+
+        updatedStaffList[staffIndex].shifts[targetDayKey] = [...existingShifts, newShiftItem];
+        copiedCount++;
+
+        // Đồng bộ lên backend
+        try {
+          const [year, month, day] = targetDayKey.split("-").map(Number);
+          const startHour = preset.startHour || 6;
+          const endHour = preset.endHour || 14;
+          const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
+          const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
+          if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
+
+          const cacheKey = `${preset.name.toLowerCase()}_${targetDayKey}`;
+          let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
+            (sh) =>
+              sh.shiftName?.toLowerCase() === preset.name.toLowerCase() &&
+              new Date(sh.startsAt).toISOString().slice(0, 10) === targetDayKey
+          );
+
+          if (!matchingShift) {
+            const created = await managerService.createShift(facilityId, {
+              shiftName: preset.name,
+              startsAt: startDate.toISOString(),
+              endsAt: endDate.toISOString(),
+              status: "open",
+              allowPast: true,
+            });
+            matchingShift = created;
+            if (created) {
+              shiftCache.set(cacheKey, created);
+              newShiftsPool.push(created);
             }
           }
+
+          if (matchingShift?.id) {
+            await managerService.createShiftAssignment(facilityId, {
+              shiftId: matchingShift.id,
+              employeeId: staffObj.id,
+              dutyRole: item.dutyRole || DUTY_ROLES[0].value,
+              allowPast: true,
+            });
+          }
+        } catch {
+          // Bỏ qua lỗi lẻ
         }
       }
-      setNotice("✨ Đã sao chép lịch trực thành công!");
+
+      setShifts(newShiftsPool);
+      setStaffList(updatedStaffList);
+
+      if (copiedCount === 0) {
+        setNotice("Tất cả các ca của tuần trước đã có sẵn trong tuần hiện tại.");
+      } else {
+        setNotice(`✨ Đã sao chép thành công ${copiedCount} ca làm việc từ tuần trước!`);
+      }
       setTimeout(() => setNotice(""), 4000);
     } catch (err) {
-      setError(err?.message || "Failed to copy shift schedule.");
+      setError(err?.message || "Không thể sao chép lịch phân ca của tuần trước.");
     } finally {
       setIsAutoFilling(false);
     }
@@ -1068,94 +1400,118 @@ function ManagerShifts() {
                       const isDropTarget =
                         dragOverCell?.employeeId === staff.id && dragOverCell?.dayKey === day.key;
 
+                      const isPopoverOpen =
+                        activeCellPopover?.staffId === staff.id && activeCellPopover?.dayKey === day.key;
+
                       return (
                         <td
                           key={day.key}
                           onDragOver={(e) => handleDragOver(e, staff.id, day.key)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, staff, day.key)}
-                          className={`min-w-[175px] p-2 align-top border-r border-[#eaecf0] transition-colors ${
+                          className={`group relative min-w-[170px] max-w-[190px] p-2 align-top border-r border-[#eaecf0] transition-colors ${
                             day.isToday ? "bg-[#f8faff]/50" : ""
                           } ${isDropTarget ? "bg-[#eef4ff]/70" : ""}`}
                         >
-                          <div className="flex flex-col gap-1.5 min-h-[92px]">
-                            {/* Render all shifts assigned for this employee on this day */}
-                            {dayShifts.map((sh, idx) => (
-                              <ShiftCard
-                                key={sh.shiftId || idx}
-                                shift={sh}
-                                onDelete={() => handleDeleteShift(staff, day.key, idx, sh)}
-                              />
-                            ))}
+                          {/* Quick Add '+' Button for Cell with >= 1 shift (Hover only) */}
+                          {dayShifts.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => handlePlusClick(e, staff, day.key)}
+                              className="absolute top-1.5 right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-2xs opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                              title="Thêm ca trực khác cho ngày này"
+                            >
+                              <span className="text-xs font-bold leading-none">+</span>
+                            </button>
+                          )}
 
-                            {/* 1-Click Shift Assignment Popover / '+' Quick Trigger */}
-                            {activeCellPopover?.staffId === staff.id &&
-                            activeCellPopover?.dayKey === day.key ? (
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="rounded-xl border border-blue-200 bg-white p-2 shadow-lg z-20 space-y-1.5 animate-in fade-in zoom-in-95 duration-150"
-                              >
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                                  <span className="text-[10px] font-bold text-slate-700">Gán nhanh ca:</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setActiveCellPopover(null)}
-                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-1"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                                <div className="grid grid-cols-1 gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "morning")}
-                                    className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-left text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs"
-                                  >
-                                    <span>🌅 Morning</span>
-                                    <span className="font-mono text-[9px] font-semibold text-emerald-600">06:00 - 14:00</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "afternoon")}
-                                    className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-left text-[10px] font-bold text-amber-800 hover:bg-amber-100 transition shadow-2xs"
-                                  >
-                                    <span>☀️ Afternoon</span>
-                                    <span className="font-mono text-[9px] font-semibold text-amber-600">14:00 - 22:00</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleQuickAssignFromPopover(staff, day.key, "night")}
-                                    className="flex items-center justify-between rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-left text-[10px] font-bold text-indigo-800 hover:bg-indigo-100 transition shadow-2xs"
-                                  >
-                                    <span>🌙 Night</span>
-                                    <span className="font-mono text-[9px] font-semibold text-indigo-600">22:00 - 06:00</span>
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
+                          {/* Shifts container with min-h-[88px] */}
+                          <div className="flex flex-col gap-1.5 min-h-[88px]">
+                            {dayShifts.length === 0 ? (
+                              /* Empty Cell: Clean subtle drop target, '+' appears on hover */
                               <div
                                 onClick={(e) => handlePlusClick(e, staff, day.key)}
-                                className={`group flex items-center justify-center rounded-[12px] border border-dashed transition cursor-pointer ${
-                                  dayShifts.length > 0
-                                    ? "h-8 hover:border-[#1d5fe5] hover:bg-[#eef4ff]/40"
-                                    : "flex-1 min-h-[92px]"
-                                } ${
+                                className={`group/btn flex flex-1 min-h-[88px] w-full flex-col items-center justify-center rounded-xl border border-dashed transition-all cursor-pointer ${
                                   isDropTarget
-                                    ? "border-2 border-[#1d5fe5] bg-[#eef4ff] shadow-inner scale-[1.01]"
-                                    : "border-[#2b64e3] border-[1.5px] bg-[#fafcff] hover:bg-[#eef4ff]/40"
+                                    ? "border-2 border-blue-600 bg-blue-50/80 shadow-inner scale-[1.01]"
+                                    : "border-slate-200/80 bg-slate-50/30 hover:border-blue-400 hover:bg-blue-50/30"
                                 }`}
                                 title={
                                   selectedBrush
-                                    ? `Click to assign ${selectedBrush.name}`
-                                    : "Click for 1-Click Shift Selector (Morning, Afternoon, Night)"
+                                    ? `Nhấp để gán ${selectedBrush.name}`
+                                    : "Nhấp để gán nhanh ca trực (Sáng, Chiều, Đêm)"
                                 }
                               >
-                                <span className="text-lg font-bold text-[#2062eb] group-hover:scale-125 transition">
+                                <span className="text-base font-bold text-slate-300 group-hover/btn:text-blue-600 group-hover/btn:scale-110 transition-all opacity-0 group-hover/btn:opacity-100 group-hover:opacity-100">
                                   +
                                 </span>
                               </div>
+                            ) : (
+                              /* Cell with >= 1 shift: Only Compact Shift Cards, NO big dashed '+' button */
+                              dayShifts.map((sh, idx) => (
+                                <ShiftCard
+                                  key={sh.shiftId || idx}
+                                  shift={sh}
+                                  onDelete={() => handleDeleteShift(staff, day.key, idx, sh)}
+                                />
+                              ))
                             )}
                           </div>
+
+                          {/* Floating Popover: Absolute positioning, z-50, shadow-2xl, DOES NOT STRETCH TABLE HEIGHT */}
+                          {isPopoverOpen && (
+                            <div
+                              ref={popoverRef}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute top-2 right-2 z-50 w-52 rounded-xl border border-blue-100 bg-white p-2.5 shadow-2xl space-y-1.5 animate-in fade-in zoom-in-95 duration-150"
+                            >
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-[11px] font-bold text-slate-800">Gán nhanh ca trực</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveCellPopover(null)}
+                                  className="h-5 w-5 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                                  title="Đóng"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAssignFromPopover(staff, day.key, "morning")}
+                                  className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-1.5 text-left text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
+                                >
+                                  <span>🌅 Morning</span>
+                                  <span className="font-mono text-[9px] font-semibold text-emerald-600">06:00 - 14:00</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAssignFromPopover(staff, day.key, "afternoon")}
+                                  className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/80 px-2.5 py-1.5 text-left text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition shadow-2xs cursor-pointer"
+                                >
+                                  <span>☀️ Afternoon</span>
+                                  <span className="font-mono text-[9px] font-semibold text-amber-600">14:00 - 22:00</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAssignFromPopover(staff, day.key, "night")}
+                                  className="flex items-center justify-between rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1.5 text-left text-[11px] font-bold text-indigo-800 hover:bg-indigo-100 transition shadow-2xs cursor-pointer"
+                                >
+                                  <span>🌙 Night</span>
+                                  <span className="font-mono text-[9px] font-semibold text-indigo-600">22:00 - 06:00</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAssignFromPopover(staff, day.key, "duty24h")}
+                                  className="flex items-center justify-between rounded-lg border border-teal-200 bg-teal-50/80 px-2.5 py-1.5 text-left text-[11px] font-bold text-teal-800 hover:bg-teal-100 transition shadow-2xs cursor-pointer"
+                                >
+                                  <span>🛡️ 24h Shift</span>
+                                  <span className="font-mono text-[9px] font-semibold text-teal-600">08:00 - 08:00</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </td>
                       );
                     })}
