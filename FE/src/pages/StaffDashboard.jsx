@@ -52,7 +52,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
         staffReservationService.lookup("", facilityId),
         staffTaskService.getTasks(facilityId),
         staffAgreementService.getOverdueAgreements(facilityId),
-        staffSupportService.getTickets({ facilityId: Number(facilityId) }),
+        staffSupportService.getTickets({ facilityId: Number(facilityId), onlyAssignedToMe: true }),
         facilityService.getFacilities(),
       ]);
 
@@ -112,9 +112,18 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
   const lockedAccessCount = overdueAgreements.filter((a) => a.accessLocked).length;
 
-  const openTickets = supportTickets.filter(
-    (t) => t.status === TICKET_STATUS.OPEN || t.status === TICKET_STATUS.IN_PROGRESS
-  );
+  // Bộ lọc: chỉ hiển thị Ticket do Manager phân công cho Staff đang đăng nhập
+  const openTickets = supportTickets.filter((t) => {
+    const isOpen = t.status === TICKET_STATUS.OPEN || t.status === TICKET_STATUS.IN_PROGRESS;
+    if (!isOpen) return false;
+    if (t.isAssignedToMe) return true;
+    const uid = user?.id || user?.userId || user?.employeeId;
+    if (uid && (t.assignedEmployeeId === uid || t.assignedToId === uid || String(t.assignedEmployeeId) === String(uid))) return true;
+    if (user?.employeeId && (t.assignedEmployeeId === user.employeeId || String(t.assignedEmployeeId) === String(user.employeeId))) return true;
+    const staffName = (user?.fullName || user?.name || "").trim().toLowerCase();
+    if (staffName && t.assignedEmployeeName && t.assignedEmployeeName.trim().toLowerCase() === staffName) return true;
+    return false;
+  });
   const openIssuesCount = pendingTasks + openTickets.length;
 
   const staffFacility = useMemo(() => {
@@ -148,15 +157,6 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     setTasks((current) =>
       current.map((task) => (task.id === updated.id ? updated : task))
     );
-  };
-
-  const handleClaimTicket = async (ticketId) => {
-    try {
-      await staffSupportService.assignTicket(ticketId);
-      loadDashboardData(selectedFacilityId);
-    } catch (err) {
-      alert(err.message || "Unable to claim ticket.");
-    }
   };
 
   return (
@@ -428,18 +428,18 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             {/* Active Support Tickets Live Feed */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tickets</h2>
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tickets phân công</h2>
                 <Link
                   to="/staff-support-tickets"
                   className="text-xs font-semibold text-[#1d5fe5] hover:text-[#1550c7]"
                 >
-                  All →
+                  Tất cả →
                 </Link>
               </div>
 
               {openTickets.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                  No open tickets.
+                  Không có ticket nào được Manager phân công cho bạn.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -458,18 +458,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleClaimTicket(ticket.id)}
-                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-2.5 py-1 rounded transition-colors"
-                          >
-                            Claim
-                          </button>
                           <Link
                             to="/staff-support-tickets"
-                            className="text-xs font-semibold border border-slate-200 text-slate-600 px-2 py-1 rounded hover:bg-slate-100"
+                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-2.5 py-1 rounded transition-colors"
                           >
-                            View
+                            Xử lý
                           </Link>
                         </div>
                       </div>

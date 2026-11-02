@@ -1,6 +1,30 @@
-﻿import apiClient from "./apiClient";
+import apiClient from "./apiClient";
 
 export default {
+  /**
+   * Báo cáo kết quả xử lý ticket
+   * POST /api/staff/tickets/{id}/report
+   * @param {string|number} id
+   * @param {{ result: 'Resolved' | 'Severe_Need_Relocation', note: string, evidenceUrls?: string[] }} payload
+   */
+  async reportTicket(id, { result, note, evidenceUrls = [] }) {
+    const payload = {
+      result, // 'Resolved' | 'Severe_Need_Relocation'
+      note: note?.trim() || "",
+      evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : evidenceUrls ? [evidenceUrls] : [],
+    };
+    try {
+      const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/report`, payload);
+      if (response?.success === true) return response.data;
+    } catch (err) {
+      if (err.status !== 404) throw err;
+    }
+    const response = await apiClient.post(`/staff/support-tickets/${encodeURIComponent(id)}/report`, payload);
+    if (response?.success !== true) {
+      throw new Error(response?.message || response?.errors?.join(", ") || "Unable to submit ticket report.");
+    }
+    return response.data;
+  },
   /**
    * Complete / resolve ticket
    * STT 6: PUT /api/staff/tickets/{id}/complete
