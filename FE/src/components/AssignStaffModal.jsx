@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import managerTicketService from "../api/managerTicketService";
 import managerUserService from "../api/managerUserService";
 
+function getStaffId(s) {
+  if (!s) return "";
+  return s.employeeId ?? s.userId ?? s.id ?? s.employeeUserId ?? "";
+}
+
+function getStaffName(s) {
+  if (!s) return "";
+  return s.fullName || s.name || s.employeeName || s.employeeCode || `Staff #${getStaffId(s)}`;
+}
+
 export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, onSuccess }) {
   const [staffList, setStaffList] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -23,9 +33,12 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
         const list = Array.isArray(data) ? data : [];
         setStaffList(list);
         if (list.length > 0) {
-          // Preselect first active staff or first staff
-          const firstActive = list.find((s) => s.isActive ?? true);
-          setSelectedStaffId(String(firstActive ? firstActive.id : list[0].id));
+          // Preselect first active staff or first staff in list
+          const firstActive = list.find((s) => s.isActive !== false && s.employmentStatus !== "terminated");
+          const defaultStaff = firstActive || list[0];
+          if (defaultStaff) {
+            setSelectedStaffId(String(getStaffId(defaultStaff)));
+          }
         }
       })
       .catch((err) => {
@@ -44,25 +57,31 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!selectedStaffId) {
-      setError("Vui lòng chọn nhân viên xử lý.");
+    const numericStaffId = Number(selectedStaffId);
+    if (!selectedStaffId || isNaN(numericStaffId) || numericStaffId <= 0) {
+      setError("Vui lòng chọn một nhân viên hợp lệ.");
       return;
     }
 
     setSubmitting(true);
     setError("");
 
+    const chosenStaff = staffList.find((s) => String(getStaffId(s)) === String(selectedStaffId));
+    const staffName = getStaffName(chosenStaff);
+
     try {
       const result = await managerTicketService.assignStaff(ticket.id, {
-        staffId: Number(selectedStaffId),
+        staffId: numericStaffId,
         notes: notes.trim(),
+        facilityId: facilityId || ticket.facilityId,
+        ticket,
+        staffName,
       });
 
-      const staffObj = staffList.find((s) => String(s.id) === String(selectedStaffId));
       if (onSuccess) {
         onSuccess(result || {
-          assignedEmployeeId: Number(selectedStaffId),
-          assignedEmployeeName: staffObj?.fullName || staffObj?.name || `Staff #${selectedStaffId}`,
+          assignedEmployeeId: numericStaffId,
+          assignedEmployeeName: staffName,
           notes: notes.trim(),
         });
       }
@@ -125,11 +144,14 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
                 onChange={(e) => setSelectedStaffId(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
               >
-                {staffList.map((staff) => (
-                  <option key={staff.id} value={staff.id}>
-                    {staff.fullName || staff.name || `Staff #${staff.id}`} ({staff.position || "Nhân viên"}) {staff.isActive === false ? "· [Inactive]" : ""}
-                  </option>
-                ))}
+                {staffList.map((staff) => {
+                  const sid = getStaffId(staff);
+                  return (
+                    <option key={sid} value={sid}>
+                      {getStaffName(staff)} ({staff.assignmentRole || staff.position || "Nhân viên"}) {staff.isActive === false ? "· [Inactive]" : ""}
+                    </option>
+                  );
+                })}
               </select>
             )}
           </div>
@@ -163,14 +185,14 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
               type="button"
               disabled={submitting}
               onClick={onClose}
-              className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting || !selectedStaffId || staffList.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">send</span>
               <span>{submitting ? "Đang giao việc..." : "Xác nhận giao việc"}</span>

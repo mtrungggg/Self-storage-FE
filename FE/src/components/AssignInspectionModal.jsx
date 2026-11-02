@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { managerUserService } from "../api/managerUserService";
 import managerExpiringContractsService from "../api/managerExpiringContractsService";
 
+function getStaffId(s) {
+  if (!s) return "";
+  return s.employeeId ?? s.userId ?? s.id ?? s.employeeUserId ?? "";
+}
+
+function getStaffName(s) {
+  if (!s) return "";
+  return s.fullName || s.name || s.employeeName || s.employeeCode || `Staff #${getStaffId(s)}`;
+}
+
 export default function AssignInspectionModal({
   isOpen,
   onClose,
@@ -30,7 +40,8 @@ export default function AssignInspectionModal({
         const activeStaff = list.filter((s) => s.status === undefined || s.status === "active" || s.isActive !== false);
         setStaffList(activeStaff);
         if (activeStaff.length > 0) {
-          setSelectedStaffId(String(activeStaff[0].id || activeStaff[0].userId));
+          const firstId = getStaffId(activeStaff[0]);
+          setSelectedStaffId(String(firstId));
         }
       })
       .catch((err) => {
@@ -56,7 +67,8 @@ export default function AssignInspectionModal({
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!selectedStaffId) {
+    const numericStaffId = Number(selectedStaffId);
+    if (!selectedStaffId || isNaN(numericStaffId) || numericStaffId <= 0) {
       setError("Vui lòng chọn một nhân viên để phân công nghiệm thu kho.");
       return;
     }
@@ -65,13 +77,13 @@ export default function AssignInspectionModal({
     setError("");
 
     const chosenStaff = staffList.find(
-      (s) => String(s.id || s.userId) === String(selectedStaffId)
+      (s) => String(getStaffId(s)) === String(selectedStaffId)
     );
-    const staffName = chosenStaff?.fullName || chosenStaff?.name || `Staff #${selectedStaffId}`;
+    const staffName = getStaffName(chosenStaff);
 
     try {
       await managerExpiringContractsService.assignInspection(agreement.id, {
-        staffId: Number(selectedStaffId),
+        staffId: numericStaffId,
         staffName,
         notes: notes.trim(),
       });
@@ -114,7 +126,7 @@ export default function AssignInspectionModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -161,11 +173,14 @@ export default function AssignInspectionModal({
                 onChange={(e) => setSelectedStaffId(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
               >
-                {staffList.map((staff) => (
-                  <option key={staff.id || staff.userId} value={staff.id || staff.userId}>
-                    {staff.fullName || staff.name} ({staff.role || "Staff"}) - {staff.email || staff.phone || ""}
-                  </option>
-                ))}
+                {staffList.map((staff) => {
+                  const sid = getStaffId(staff);
+                  return (
+                    <option key={sid} value={sid}>
+                      {getStaffName(staff)} ({staff.assignmentRole || staff.role || "Staff"}) - {staff.email || staff.phoneNumber || ""}
+                    </option>
+                  );
+                })}
               </select>
             )}
             <span className="text-[10px] text-slate-400 block mt-1">
@@ -199,7 +214,7 @@ export default function AssignInspectionModal({
               type="button"
               disabled={submitting}
               onClick={onClose}
-              className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               Hủy
             </button>
