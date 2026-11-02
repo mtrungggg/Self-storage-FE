@@ -36,6 +36,7 @@ const ManagerRefundApprovals = lazy(() => import("../pages/ManagerRefundApproval
 const ManagerAgreements = lazy(() => import("../pages/ManagerAgreements"));
 const ManagerDelinquentCases = lazy(() => import("../pages/ManagerDelinquentCases"));
 const ManagerFacilityUsersPage = lazy(() => import("../pages/ManagerFacilityUsersPage"));
+const ManagerTicketsPage = lazy(() => import("../pages/ManagerTicketsPage"));
 
 // Lazy-loaded admin governance portal
 const AdminDashboard = lazy(() => import("../pages/AdminDashboard"));
@@ -116,7 +117,7 @@ function AppRoutes() {
               <Route path="/manager-units" element={<ManagerUnits />} />
               <Route path="/manager-transfer-requests" element={<ManagerTransferRequests />} />
               <Route path="/manager-shifts" element={<ManagerShifts />} />
-              <Route path="/manager-tickets" element={<StaffSupportTickets />} />
+              <Route path="/manager-tickets" element={<ManagerTicketsPage />} />
               <Route path="/manager-move-outs" element={<StaffMoveOuts />} />
               <Route path="/manager-charge-proposals" element={<ManagerChargeProposals />} />
               <Route path="/manager-refund-approvals" element={<ManagerRefundApprovals />} />

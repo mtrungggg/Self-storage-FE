@@ -4,11 +4,13 @@
 
 export const TICKET_STATUS = {
   OPEN: "open",
+  PENDING_MANAGER_REVIEW: "pending_manager_review",
   IN_PROGRESS: "in_progress",
   WAITING_FOR_CUSTOMER: "waiting_for_customer",
   WAITING_FOR_MAINTENANCE: "waiting_for_maintenance",
   ASSESSED: "assessed",
   RESOLVED: "resolved",
+  SEVERE_NEED_RELOCATION: "severe_need_relocation",
   CLOSED: "closed",
   CANCELLED: "cancelled",
   // UI normalized aliases
