@@ -75,6 +75,7 @@ export function useManagementShell() {
       },
       { id: "manager-shifts", label: "Shifts", to: "/manager-shifts" },
       { id: "manager-tickets", label: "Tickets", to: "/manager-tickets" },
+      { id: "manager-expiring-contracts", label: "Hết hạn & Trả kho", to: "/manager-expiring-contracts" },
       { id: "manager-users", label: "Staff & Customers", to: "/manager-users" },
     ],
   };
