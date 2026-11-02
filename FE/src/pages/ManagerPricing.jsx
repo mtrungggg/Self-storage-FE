@@ -3,6 +3,8 @@ import { X } from "lucide-react";
 // facilities loaded via ManagerFacilityContext
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { useAuth } from "../context/AuthContext";
+import { ADMIN_ROLES, hasAnyRole } from "../constants/roles";
 import { FacilityBarActions } from "../components/FacilitySwitcher";
 import { formatVnd } from "../lib/utils";
 import PAGINATION from "../constants/pagination";
@@ -102,6 +104,9 @@ const initialFeeForm = {
 
 export default function ManagerPricing() {
   const { facilityId, facilities } = useManagerFacility();
+  const { user } = useAuth();
+  const userRoles = (user?.roles || []).map((r) => r.toLowerCase());
+  const isAdmin = hasAnyRole(userRoles, ADMIN_ROLES);
 
   // Active Tab: "fees" | "rates" | "promotions"
   const [activeTab, setActiveTab] = useState("fees");
@@ -253,6 +258,10 @@ export default function ManagerPricing() {
 
   const handleSaveFee = async (e) => {
     e.preventDefault();
+    if (!isAdmin) {
+      setError("Chỉ Quản trị viên hệ thống (Admin) mới có quyền chỉnh sửa quy tắc phí.");
+      return;
+    }
     setSavingFee(true);
     setError("");
 
@@ -290,6 +299,10 @@ export default function ManagerPricing() {
   };
 
   const handleToggleFeeStatus = async (fee) => {
+    if (!isAdmin) {
+      setError("Chỉ Quản trị viên hệ thống (Admin) mới có quyền chỉnh sửa quy tắc phí.");
+      return;
+    }
     const nextStatus = !fee.isActive;
     const payload = {
       id: fee.id,
@@ -318,6 +331,7 @@ export default function ManagerPricing() {
 
   // Rates handlers
   const handleRateChange = (id, field, value) => {
+    if (!isAdmin) return;
     const num = Number(value) || 0;
     setEditedRates((prev) => ({
       ...prev,
@@ -330,6 +344,10 @@ export default function ManagerPricing() {
   };
 
   const handleSaveRates = async () => {
+    if (!isAdmin) {
+      setError("Chỉ Quản trị viên hệ thống (Admin) mới có quyền chỉnh sửa biểu giá.");
+      return;
+    }
     if (dirtyIds.size === 0) return;
     setSaving(true);
     setError("");
@@ -478,7 +496,7 @@ export default function ManagerPricing() {
         </div>
 
         <div>
-          {activeTab === "fees" && (
+          {isAdmin && activeTab === "fees" && (
             <button
               type="button"
               onClick={openCreateFeeModal}
@@ -488,7 +506,13 @@ export default function ManagerPricing() {
             </button>
           )}
 
-          {activeTab === "rates" && dirtyIds.size > 0 && (
+          {!isAdmin && (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 mr-2">
+              🔒 Chế độ xem (Manager)
+            </span>
+          )}
+
+          {isAdmin && activeTab === "rates" && dirtyIds.size > 0 && (
             <button
               type="button"
               onClick={handleSaveRates}
@@ -632,27 +656,43 @@ export default function ManagerPricing() {
                           {fee.validTo ? ` → ${fee.validTo.split("T")[0]}` : " → Ongoing"}
                         </td>
                         <td className="px-4 py-2.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleFeeStatus(fee)}
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold transition ${
-                              fee.isActive
-                                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                            }`}
-                            title="Click to toggle status"
-                          >
-                            {fee.isActive ? "Active" : "Inactive"}
-                          </button>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleFeeStatus(fee)}
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold transition ${
+                                fee.isActive
+                                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                              title="Click to toggle status"
+                            >
+                              {fee.isActive ? "Active" : "Inactive"}
+                            </button>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                fee.isActive
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {fee.isActive ? "Active" : "Inactive"}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => openEditFeeModal(fee)}
-                            className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                          >
-                            Edit
-                          </button>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => openEditFeeModal(fee)}
+                              className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">View only</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -735,23 +775,35 @@ export default function ManagerPricing() {
                       </td>
 
                       <td className="px-4 py-2.5 text-right">
-                        <input
-                          type="number"
-                          step="1000"
-                          value={edited.monthlyRate ?? rate.monthlyRate}
-                          onChange={(e) => handleRateChange(rate.id, "monthlyRate", e.target.value)}
-                          className="w-32 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-400"
-                        />
+                        {isAdmin ? (
+                          <input
+                            type="number"
+                            step="1000"
+                            value={edited.monthlyRate ?? rate.monthlyRate}
+                            onChange={(e) => handleRateChange(rate.id, "monthlyRate", e.target.value)}
+                            className="w-32 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-400"
+                          />
+                        ) : (
+                          <span className="text-xs font-bold text-slate-900">
+                            {formatVnd(rate.monthlyRate)}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-4 py-2.5 text-right">
-                        <input
-                          type="number"
-                          step="1000"
-                          value={edited.depositAmount ?? rate.depositAmount}
-                          onChange={(e) => handleRateChange(rate.id, "depositAmount", e.target.value)}
-                          className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-medium text-slate-700 focus:outline-none focus:border-slate-400"
-                        />
+                        {isAdmin ? (
+                          <input
+                            type="number"
+                            step="1000"
+                            value={edited.depositAmount ?? rate.depositAmount}
+                            onChange={(e) => handleRateChange(rate.id, "depositAmount", e.target.value)}
+                            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-medium text-slate-700 focus:outline-none focus:border-slate-400"
+                          />
+                        ) : (
+                          <span className="text-xs font-medium text-slate-700">
+                            {formatVnd(rate.depositAmount)}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-4 py-2.5 text-right font-medium text-slate-700">
