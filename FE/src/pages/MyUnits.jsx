@@ -324,6 +324,7 @@ export default function MyUnits() {
                         <UnitTransferRequest
                           agreementId={activeGalleryUnit.agreementId}
                           facilityId={activeGalleryUnit.facilityId}
+                          currentFacilityName={activeGalleryUnit.facilityName}
                         />
                       </div>
                     </div>
