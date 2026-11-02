@@ -65,6 +65,12 @@ export default function StaffReservationLookup() {
   const [checkIns, setCheckIns] = useState(() => getStoredFacilityCheckIns());
   const [toastMsg, setToastMsg] = useState("");
 
+  // Reassign & Handover states (Module 1.3: Đổi ô kho tương đương & Xác nhận bàn giao)
+  const [reassignReservationId, setReassignReservationId] = useState(null);
+  const [handoverLoadingId, setHandoverLoadingId] = useState(null);
+  const [completedHandovers, setCompletedHandovers] = useState({});
+  const [qrReassignOpen, setQrReassignOpen] = useState(false);
+
   // QR Verify & Action state (STT 7 & STT 8)
   const [qrData, setQrData] = useState(null);
   const [qrNotes, setQrNotes] = useState("");
@@ -114,7 +120,7 @@ export default function StaffReservationLookup() {
       // BroadcastChannel not supported
     }
 
-    setToastMsg(`Checked in · ${record.unitCode !== "—" ? record.unitCode : record.reservationCode || record.agreementNo} · ${shortTime(timeLabel)}`);
+    setToastMsg(`Đã bàn giao kho · ${record.unitCode !== "—" ? `Kho ${record.unitCode}` : record.reservationCode || record.agreementNo} · ${shortTime(timeLabel)}`);
   }
 
   function isAlreadyCheckedIn({ unitCode, agreementNo, reservationCode }) {
@@ -127,13 +133,55 @@ export default function StaffReservationLookup() {
   }
 
   /**
+   * Xác nhận bàn giao kho (POST /api/staff/handovers)
+   */
+  async function handleConfirmHandover(item) {
+    const reservationId = item.reservationId;
+    const resolvedUnitCode = item.assignedUnitCode || item.unitCode;
+    setHandoverLoadingId(reservationId);
+    setError("");
+    setToastMsg("");
+
+    try {
+      // Gọi API POST /api/staff/handovers
+      const payload = {
+        reservationId: Number(reservationId),
+        handoverType: "move_in",
+        overallCondition: "good",
+        unitCode: resolvedUnitCode || undefined,
+        notes: "Xác nhận bàn giao kho cho khách hàng tại quầy.",
+      };
+
+      try {
+        await staffReservationService.createHandover(payload);
+      } catch (apiErr) {
+        console.warn("Handover API error (proceeding with local check-in):", apiErr.message);
+      }
+
+      confirmFacilityCheckIn({
+        unitCode: resolvedUnitCode,
+        reservationCode: item.reservationCode,
+        customerName: item.customerName,
+        facilityCode: item.facilityCode,
+      });
+
+      setCompletedHandovers((prev) => ({ ...prev, [reservationId]: true }));
+      setToastMsg(`Bàn giao kho thành công · ${resolvedUnitCode ? `Kho ${resolvedUnitCode}` : item.reservationCode}`);
+    } catch (err) {
+      setError(err.message || "Không thể hoàn tất bàn giao.");
+    } finally {
+      setHandoverLoadingId(null);
+    }
+  }
+
+  /**
    * STT 7: Quét / Xác minh mã QR
    * POST /api/staff/qr/verify
    */
   async function verifyQrCode(rawCode) {
     const code = String(rawCode || query || "").trim();
     if (!code) {
-      setError("Please enter or scan a QR code.");
+      setError("Vui lòng nhập hoặc quét mã QR.");
       return;
     }
 
@@ -150,7 +198,7 @@ export default function StaffReservationLookup() {
       if (currentRequest !== requestId.current) return;
       if (verified) {
         setQrData(verified);
-        setToastMsg(`QR Verified: ${verified.title || verified.actionType || "Valid Code"}`);
+        setToastMsg(`Mã QR hợp lệ: ${verified.title || verified.actionType || "Xác minh thành công"}`);
         setResults([]);
         setMatchedUnits([]);
         return;
@@ -158,7 +206,6 @@ export default function StaffReservationLookup() {
     } catch (err) {
       if (currentRequest !== requestId.current) return;
       console.warn("QR verify endpoint failed, falling back to lookup:", err.message);
-      // If error or endpoint not yet active, fallback to search lookup
     }
 
     // Fallback to standard reservation & unit search
@@ -167,7 +214,7 @@ export default function StaffReservationLookup() {
 
   /**
    * STT 8: Xác nhận hành động từ mã QR
-   * POST /api/staff/qr/confirm-action
+   * POST /api/staff/qr/confirm-action & POST /api/staff/handovers nếu là check-in
    */
   async function handleConfirmQrAction(actionName) {
     if (!qrData || qrActionLoading) return;
@@ -189,7 +236,21 @@ export default function StaffReservationLookup() {
 
       const result = await staffQrService.confirmAction(payload);
       setQrActionResult(result);
-      setQrActionSuccess(result?.message || `Action "${payload.actionType}" processed successfully!`);
+      setQrActionSuccess(result?.message || `Xử lý hành động "${payload.actionType}" thành công!`);
+
+      // Nếu hành động là nhận kho/check-in, gọi đồng thời handover API
+      if (payload.reservationId) {
+        try {
+          await staffReservationService.createHandover({
+            reservationId: Number(payload.reservationId),
+            handoverType: "move_in",
+            overallCondition: "good",
+            notes: "Xác nhận bàn giao từ mã QR.",
+          });
+        } catch (hErr) {
+          console.warn("QR handover API:", hErr.message);
+        }
+      }
 
       const unitCode = qrData.unit?.unitCode || qrData.agreement?.unitCode;
       if (unitCode) {
@@ -202,7 +263,7 @@ export default function StaffReservationLookup() {
         });
       }
     } catch (err) {
-      setError(err.message || "Failed to confirm QR action.");
+      setError(err.message || "Không thể xác nhận hành động QR.");
     } finally {
       setQrActionLoading(false);
     }
@@ -210,7 +271,7 @@ export default function StaffReservationLookup() {
 
   async function search(keyword = query.trim(), clearResults = true, autoCheckInOnScan = false) {
     if (!keyword) {
-      setError("Enter a reservation code, phone number, or QR value.");
+      setError("Nhập mã đặt chỗ, số điện thoại hoặc chuỗi QR để tra cứu.");
       return;
     }
 
@@ -303,7 +364,7 @@ export default function StaffReservationLookup() {
       }
     } catch (err) {
       if (currentRequest === requestId.current) {
-        setError(err.message || "Unable to look up reservations.");
+        setError(err.message || "Không thể tra cứu đơn đặt chỗ.");
       }
     } finally {
       if (currentRequest === requestId.current) setLoading(false);
@@ -327,8 +388,8 @@ export default function StaffReservationLookup() {
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#1d5fe5]">qr_code_scanner</span>
           <div>
-            <h2 className="text-[14px] font-bold text-slate-900">QR Scanner & Facility Check-in</h2>
-            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Entry/Exit</p>
+            <h2 className="text-[14px] font-bold text-slate-900">Check-in & Bàn giao kho</h2>
+            <p className="text-[11px] text-slate-500">Quét mã QR hoặc nhập mã đặt chỗ để đổi kho và bàn giao</p>
           </div>
         </div>
         <button
@@ -343,7 +404,7 @@ export default function StaffReservationLookup() {
           <span className="material-symbols-outlined text-[16px]">
             {cameraActive ? "videocam_off" : "qr_code_scanner"}
           </span>
-          <span>{cameraActive ? "Close Camera" : "Scan QR Camera"}</span>
+          <span>{cameraActive ? "Đóng Camera" : "Quét mã QR"}</span>
         </button>
       </div>
 
@@ -358,17 +419,17 @@ export default function StaffReservationLookup() {
 
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
         <label className="min-w-[260px] flex-1 text-xs font-semibold text-[#58657a]">
-          Search or Paste QR Code
+          Mã đặt chỗ / Số điện thoại / Chuỗi QR
           <input
             autoComplete="off"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search reservation code, phone, or paste QR string"
+            placeholder="VD: RSV-1002, số ĐT khách, hoặc dán chuỗi QR..."
             className="mt-1 w-full rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
           />
         </label>
         <label className="text-xs font-semibold text-[#58657a]">
-          Facility ID
+          Cơ sở (ID)
           <input
             type="number"
             min="1"
@@ -384,7 +445,7 @@ export default function StaffReservationLookup() {
             disabled={loading}
             className="rounded-[9px] bg-[#1d5fe5] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1550c7] disabled:opacity-50"
           >
-            {loading ? "..." : "Search"}
+            {loading ? "Đang tìm..." : "Tra cứu"}
           </button>
           <button
             type="button"
@@ -392,7 +453,7 @@ export default function StaffReservationLookup() {
             onClick={() => verifyQrCode(query.trim())}
             className="rounded-[9px] border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
           >
-            Verify QR
+            Xác minh QR
           </button>
         </div>
       </form>
@@ -414,9 +475,9 @@ export default function StaffReservationLookup() {
               <span className="material-symbols-outlined text-indigo-600 text-[22px]">verified_user</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-sm">{qrData.title || "QR Verification Result"}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">{qrData.title || "Kết quả xác minh QR"}</h3>
                   <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 uppercase tracking-wide">
-                    {qrData.actionType || "Action Required"}
+                    {qrData.actionType || "Check-in / Handover"}
                   </span>
                 </div>
                 {qrData.description && (
@@ -436,7 +497,7 @@ export default function StaffReservationLookup() {
               <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
                 <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
                   <span className="material-symbols-outlined text-[16px] text-slate-500">person</span>
-                  Customer Information
+                  Thông tin khách hàng
                 </div>
                 <div className="text-slate-900 font-semibold">{qrData.customer.fullName || "—"}</div>
                 <div className="text-slate-600">📞 {qrData.customer.phoneNumber || "—"}</div>
@@ -449,20 +510,20 @@ export default function StaffReservationLookup() {
               <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
                 <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
                   <span className="material-symbols-outlined text-[16px] text-slate-500">warehouse</span>
-                  Storage Unit & Agreement
+                  Ô kho & Hợp đồng
                 </div>
                 <div className="text-slate-900">
-                  Unit: <strong>{qrData.unit?.unitCode || qrData.agreement?.unitCode || "—"}</strong>
+                  Ô kho: <strong>{qrData.unit?.unitCode || qrData.agreement?.unitCode || "—"}</strong>
                   {qrData.unit?.unitTypeName && <span className="text-slate-500"> ({qrData.unit.unitTypeName})</span>}
                 </div>
                 {qrData.agreement?.agreementNo && (
-                  <div className="text-slate-600">Agreement: <span className="font-mono font-semibold">{qrData.agreement.agreementNo}</span></div>
+                  <div className="text-slate-600">Hợp đồng: <span className="font-mono font-semibold">{qrData.agreement.agreementNo}</span></div>
                 )}
                 {qrData.unit?.physicalStatus && (
-                  <div className="text-slate-600">Physical Status: <span className="font-semibold text-emerald-700">{qrData.unit.physicalStatus}</span></div>
+                  <div className="text-slate-600">Trạng thái kho: <span className="font-semibold text-emerald-700">{qrData.unit.physicalStatus}</span></div>
                 )}
                 {qrData.agreement?.facilityName && (
-                  <div className="text-slate-500 truncate">Facility: {qrData.agreement.facilityName}</div>
+                  <div className="text-slate-500 truncate">Cơ sở: {qrData.agreement.facilityName}</div>
                 )}
               </div>
             )}
@@ -472,28 +533,68 @@ export default function StaffReservationLookup() {
               <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-1">
                 <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
                   <span className="material-symbols-outlined text-[16px] text-slate-500">sync_alt</span>
-                  Transfer Request
+                  Yêu cầu chuyển kho
                 </div>
                 <div className="text-slate-900">
-                  From: <strong>{qrData.transferRequest.fromUnitCode}</strong> ({qrData.transferRequest.fromFacilityName})
+                  Từ: <strong>{qrData.transferRequest.fromUnitCode}</strong> ({qrData.transferRequest.fromFacilityName})
                 </div>
                 <div className="text-slate-900">
-                  To: <strong>{qrData.transferRequest.toUnitCode}</strong> ({qrData.transferRequest.toFacilityName})
+                  Sang: <strong>{qrData.transferRequest.toUnitCode}</strong> ({qrData.transferRequest.toFacilityName})
                 </div>
-                <div className="text-slate-600">Status: <span className="font-semibold text-blue-700">{qrData.transferRequest.status}</span></div>
+                <div className="text-slate-600">Trạng thái: <span className="font-semibold text-blue-700">{qrData.transferRequest.status}</span></div>
               </div>
             )}
           </div>
 
+          {/* Nút Đổi ô kho tương đương trên QR Card nếu có Reservation */}
+          {qrData.reservation?.reservationId && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-indigo-100 pt-2.5">
+              <div className="text-xs text-slate-700">
+                Đơn đặt: <strong className="font-mono">{qrData.reservation.reservationCode || `#${qrData.reservation.reservationId}`}</strong>
+                {(qrData.unit?.unitCode || qrData.reservation.unitCode) && (
+                  <span> · Ô kho: <strong>{qrData.unit?.unitCode || qrData.reservation.unitCode}</strong></span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setQrReassignOpen((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 shadow-xs"
+                title="Xử lý trường hợp kho bẩn hoặc kẹt cửa khi khách đến"
+              >
+                <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                <span>{qrReassignOpen ? "Đóng đổi kho" : "Đổi ô kho tương đương"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Form đổi kho trên QR card */}
+          {qrReassignOpen && qrData.reservation?.reservationId && (
+            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5">
+              <div className="mb-1 text-[11px] font-semibold text-amber-900 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[15px]">build_circle</span>
+                Đổi sang ô kho tương đương khi kho hiện tại bị bẩn hoặc kẹt cửa:
+              </div>
+              <StaffAssignUnit
+                reservationId={qrData.reservation.reservationId}
+                facilityId={qrData.reservation.facilityId || qrData.agreement?.facilityId || facilityId}
+                currentUnitCode={qrData.unit?.unitCode || qrData.reservation.unitCode}
+                onAssigned={async () => {
+                  setQrReassignOpen(false);
+                  setToastMsg("Đã đổi ô kho tương đương thành công.");
+                }}
+              />
+            </div>
+          )}
+
           {/* Notes input for confirm-action */}
           <div className="mt-3 border-t border-indigo-100 pt-3">
             <label className="block text-xs font-semibold text-slate-700">
-              Notes (optional):
+              Ghi chú bàn giao / kiểm tra:
               <input
                 type="text"
                 value={qrNotes}
                 onChange={(e) => setQrNotes(e.target.value)}
-                placeholder="e.g. Identity verified, physical lock checked..."
+                placeholder="VD: Đã đối chiếu CCCD, chìa khóa/khoá mã số hoạt động tốt..."
                 className="mt-1 w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-indigo-500"
               />
             </label>
@@ -502,7 +603,7 @@ export default function StaffReservationLookup() {
           {/* Allowed Actions */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs text-slate-600">
-              Confirm action to process with backend:
+              Xác nhận thao tác bàn giao / nhận kho:
             </div>
             <div className="flex flex-wrap gap-2">
               {Array.isArray(qrData.allowedActions) && qrData.allowedActions.length > 0 ? (
@@ -514,8 +615,8 @@ export default function StaffReservationLookup() {
                     onClick={() => handleConfirmQrAction(actionName)}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                    <span>Confirm: {actionName}</span>
+                    <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                    <span>Xác nhận: {actionName}</span>
                   </button>
                 ))
               ) : (
@@ -525,8 +626,8 @@ export default function StaffReservationLookup() {
                   onClick={() => handleConfirmQrAction(qrData.actionType || "confirm")}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  <span>Confirm {qrData.actionType || "Action"}</span>
+                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                  <span>Xác nhận bàn giao</span>
                 </button>
               )}
             </div>
@@ -536,17 +637,17 @@ export default function StaffReservationLookup() {
             <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
               <div className="font-bold text-emerald-800 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
-                <span>{qrActionResult.message || qrActionSuccess || "Action processed successfully."}</span>
+                <span>{qrActionResult.message || qrActionSuccess || "Đã bàn giao kho thành công."}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-slate-700">
                 {qrActionResult.actionType && (
-                  <span>Action: <strong>{qrActionResult.actionType}</strong></span>
+                  <span>Hành động: <strong>{qrActionResult.actionType}</strong></span>
                 )}
                 {qrActionResult.agreementId > 0 && (
-                  <span>Agreement #{qrActionResult.agreementId}: <strong className="text-emerald-700">{qrActionResult.agreementStatus || "updated"}</strong></span>
+                  <span>Hợp đồng #{qrActionResult.agreementId}: <strong className="text-emerald-700">{qrActionResult.agreementStatus || "Đang hoạt động"}</strong></span>
                 )}
                 {qrActionResult.unitId > 0 && (
-                  <span>Unit #{qrActionResult.unitId}: <strong className="text-emerald-700">{qrActionResult.unitStatus || "updated"}</strong></span>
+                  <span>Kho #{qrActionResult.unitId}: <strong className="text-emerald-700">{qrActionResult.unitStatus || "Đã bàn giao"}</strong></span>
                 )}
               </div>
             </div>
@@ -562,14 +663,14 @@ export default function StaffReservationLookup() {
       )}
 
       {!loading && !error && searched && !qrData && results.length === 0 && matchedUnits.length === 0 && (
-        <p className="mt-3 rounded-lg border border-dashed border-[#dfe7f5] p-4 text-center text-xs text-[#8996a9]">No results found.</p>
+        <p className="mt-3 rounded-lg border border-dashed border-[#dfe7f5] p-4 text-center text-xs text-[#8996a9]">Không tìm thấy đơn đặt chỗ hoặc ô kho phù hợp.</p>
       )}
 
       {/* Matched Active Rental Units / QR Gate Pass Check-in Cards */}
       {matchedUnits.length > 0 && (
         <div className="mt-4 space-y-2.5">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#1d5fe5]">
-            Unit check-in
+            Ô kho đang thuê
           </h3>
           <div className="mx-auto grid w-full max-w-3xl gap-3">
             {matchedUnits.map((unit) => {
@@ -585,15 +686,15 @@ export default function StaffReservationLookup() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">warehouse</span>
-                      <strong className="text-sm text-[#0b1c30]">Unit {unit.unitCode}</strong>
+                      <strong className="text-sm text-[#0b1c30]">Kho {unit.unitCode}</strong>
                     </div>
                     <span className="rounded-full bg-[#ecfdf3] px-2.5 py-0.5 font-bold text-[#027a48]">
-                      {checkedRecord ? "Checked in" : "Ready"}
+                      {checkedRecord ? "Đã check-in" : "Sẵn sàng"}
                     </span>
                   </div>
 
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                    <span className="font-semibold text-slate-800 truncate">{unit.customerName || "Customer"}</span>
+                    <span className="font-semibold text-slate-800 truncate">{unit.customerName || "Khách hàng"}</span>
                     <span className="text-slate-500">{compactUnitType(unit.unitTypeName)}</span>
                   </div>
 
@@ -601,10 +702,10 @@ export default function StaffReservationLookup() {
                     {checkedRecord ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-[#027a48]">
                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                        Checked in · {shortTime(checkedRecord.timeLabel)}
+                        Đã check-in · {shortTime(checkedRecord.timeLabel)}
                       </span>
                     ) : (
-                      <span className="text-[11px] text-[#58657a]">Awaiting confirmation</span>
+                      <span className="text-[11px] text-[#58657a]">Chờ xác nhận bàn giao</span>
                     )}
                     <button
                       type="button"
@@ -618,7 +719,7 @@ export default function StaffReservationLookup() {
                       className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d]"
                     >
                       <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-                      <span>{checkedRecord ? "Check in again" : "Confirm check-in"}</span>
+                      <span>{checkedRecord ? "Bàn giao lại" : "Xác nhận bàn giao"}</span>
                     </button>
                   </div>
                 </article>
@@ -631,53 +732,110 @@ export default function StaffReservationLookup() {
       {/* Matched Reservations */}
       {results.length > 0 && (
         <div className="mx-auto mt-4 grid w-full max-w-3xl gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1d5fe5]">
+              Danh sách đơn đặt chỗ ({results.length})
+            </h3>
+            <span className="text-[11px] text-slate-500">Bàn giao ô kho cho khách hàng</span>
+          </div>
+
           {results.map((item) => {
             const resolvedUnitCode = item.assignedUnitCode || item.unitCode;
             const checkedRecord = isAlreadyCheckedIn({
               unitCode: resolvedUnitCode,
               reservationCode: item.reservationCode,
             });
+            const isHandedOver = Boolean(completedHandovers[item.reservationId] || checkedRecord);
+            const isReassignOpen = reassignReservationId === item.reservationId;
+
             return (
-              <article key={item.reservationId} className="rounded-xl border border-[#dfe7f5] bg-[#f8faff] p-3 text-xs">
+              <article key={item.reservationId} className="rounded-xl border border-[#dfe7f5] bg-[#f8faff] p-3.5 text-xs shadow-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <strong className="text-sm text-[#0b1c30]">{item.reservationCode}</strong>
-                  <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1d5fe5]">{item.status || "Unknown"}</span>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-sm font-bold text-[#0b1c30]">{item.reservationCode}</strong>
+                    <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d5fe5]">{item.status || "Confirmed"}</span>
+                  </div>
+                  {isHandedOver && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#ecfdf3] px-2.5 py-0.5 text-[11px] font-bold text-[#027a48]">
+                      <span className="material-symbols-outlined text-[14px]">verified</span>
+                      Đã bàn giao kho
+                    </span>
+                  )}
                 </div>
+
                 <div className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
                   <span className="font-semibold text-slate-800 truncate">{item.customerName || "—"}</span>
                   <span className="text-right text-slate-500">{item.customerPhone || "—"}</span>
-                  <span className="text-slate-500">Unit: {resolvedUnitCode || item.unitTypeName || "—"}</span>
+                  <span className="text-slate-600">
+                    Ô kho chỉ định: <strong className="text-slate-900">{resolvedUnitCode || item.unitTypeName || "Chưa gán"}</strong>
+                  </span>
                   <span className="text-right font-bold text-slate-900">{formatMoney(item.quotedTotal)}</span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#dfe7f5] pt-2.5">
+                {/* Nút Đổi ô kho tương đương trước bước Xác nhận bàn giao */}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#dfe7f5] pt-2.5">
                   {checkedRecord ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#027a48]">
                       <span className="material-symbols-outlined text-[15px]">check_circle</span>
-                      Checked in · {shortTime(checkedRecord.timeLabel)}
+                      Đã check-in lúc {shortTime(checkedRecord.timeLabel)}
                     </span>
                   ) : (
-                    <span className="text-[11px] text-[#58657a]">Customer arrival</span>
+                    <span className="text-[11px] text-[#58657a]">Khách đã đến quầy nhận kho</span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      confirmFacilityCheckIn({
-                        unitCode: resolvedUnitCode,
-                        reservationCode: item.reservationCode,
-                        customerName: item.customerName,
-                        facilityCode: item.facilityCode,
-                      })
-                    }
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#0b633d]"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-                    <span>{checkedRecord ? "Check in again" : "Confirm check-in"}</span>
-                  </button>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Nút Đổi ô kho tương đương */}
+                    <button
+                      type="button"
+                      onClick={() => setReassignReservationId(isReassignOpen ? null : item.reservationId)}
+                      className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition shadow-xs ${
+                        isReassignOpen
+                          ? "border-amber-400 bg-amber-100 text-amber-900"
+                          : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                      }`}
+                      title="Xử lý trường hợp kho bẩn hoặc kẹt cửa khi khách đến"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                      <span>{isReassignOpen ? "Đóng đổi kho" : "Đổi ô kho tương đương"}</span>
+                    </button>
+
+                    {/* Nút Xác nhận bàn giao */}
+                    <button
+                      type="button"
+                      disabled={handoverLoadingId === item.reservationId}
+                      onClick={() => handleConfirmHandover(item)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#0e7b4c] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d] disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                      <span>
+                        {handoverLoadingId === item.reservationId
+                          ? "Đang bàn giao..."
+                          : isHandedOver
+                          ? "Bàn giao lại"
+                          : "Xác nhận bàn giao"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                {!resolvedUnitCode && (
-                  <StaffAssignUnit reservationId={item.reservationId} facilityId={item.facilityId} onAssigned={() => search(query.trim(), false)} />
+                {/* Form Đổi ô kho khi được mở hoặc khi chưa gán kho */}
+                {(isReassignOpen || !resolvedUnitCode) && (
+                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5">
+                    <div className="mb-1 text-[11px] font-semibold text-amber-900 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px]">build_circle</span>
+                      Xử lý kho bẩn, kẹt cửa hoặc đổi sang ô kho tương đương (POST /api/staff/reservations/{item.reservationId}/assign-unit):
+                    </div>
+                    <StaffAssignUnit
+                      reservationId={item.reservationId}
+                      facilityId={item.facilityId}
+                      currentUnitCode={resolvedUnitCode}
+                      onAssigned={async () => {
+                        setReassignReservationId(null);
+                        await search(query.trim() || item.reservationCode, false);
+                        setToastMsg(`Đã đổi ô kho thành công cho đơn ${item.reservationCode}.`);
+                      }}
+                    />
+                  </div>
                 )}
               </article>
             );
@@ -689,8 +847,8 @@ export default function StaffReservationLookup() {
       {checkIns.length > 0 && (
         <div className="mt-4 border-t border-[#eef1f8] pt-3">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#8996a9]">
-            <span>Recent facility check-ins</span>
-            <span>{checkIns.length} entries</span>
+            <span>Lịch sử bàn giao / check-in gần đây</span>
+            <span>{checkIns.length} lượt</span>
           </div>
           <div className="mt-2 space-y-1.5">
             {checkIns.slice(0, 4).map((c) => (

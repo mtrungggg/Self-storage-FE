@@ -185,7 +185,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             <div>
               <div className="flex items-center gap-1.5">
                 <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-[#1d5fe5] transition-colors">
-                  Check-in
+                  Check-in & Bàn giao
                 </p>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-[#1d5fe5] border border-blue-200 group-hover:bg-[#1d5fe5] group-hover:text-white transition-colors">
                   Scan QR
@@ -281,7 +281,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  Check-in
+                  Check-in & Bàn giao
                 </button>
 
                 <button
