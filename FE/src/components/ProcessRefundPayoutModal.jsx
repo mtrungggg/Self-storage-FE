@@ -35,20 +35,36 @@ export default function ProcessRefundPayoutModal({
 
   if (!isOpen || !refund) return null;
 
-  // Extract bank details with resilient fallbacks
+  // Extract bank details with resilient fallbacks (including customer submitted bank info)
+  let savedBankInfo = null;
+  try {
+    const key = refund.agreementId || refund.agreementNo;
+    if (key) {
+      const raw = localStorage.getItem(`refund_bank_info_${key}`);
+      if (raw) savedBankInfo = JSON.parse(raw);
+    }
+  } catch {
+    savedBankInfo = null;
+  }
+
   const bankName =
+    savedBankInfo?.bankName ||
     refund.bankName ||
     refund.customerBankName ||
     "MBBank (Napas 247)";
   const bankCode =
+    savedBankInfo?.bankCode ||
     refund.bankCode ||
+    BANK_CODE_MAP[bankName] ||
     "MB";
   const accountNumber =
+    savedBankInfo?.accountNumber ||
     refund.bankAccountNumber ||
     refund.accountNo ||
     refund.customerAccountNumber ||
     "0987654321";
   const accountHolder = (
+    savedBankInfo?.accountHolder ||
     refund.bankAccountHolder ||
     refund.accountHolder ||
     refund.customerName ||
@@ -125,11 +141,13 @@ export default function ProcessRefundPayoutModal({
         }
       }
 
+      const finalProofUrl = uploadedProofUrl || filePreview || "";
+
       // 2. Submit refund payout / approval
       const payload = {
         amount: refundAmount,
         transactionRef: transactionRef.trim(),
-        proofUrl: uploadedProofUrl,
+        proofUrl: finalProofUrl,
         notes: notes.trim(),
         bankName,
         accountNumber,
@@ -138,12 +156,43 @@ export default function ProcessRefundPayoutModal({
 
       await managerService.processRefundPayout(refund.refundId, payload);
 
+      // Persist completed payout status for Customer UI sync
+      const completedData = {
+        refundId: refund.refundId,
+        agreementId: refund.agreementId,
+        agreementNo: refund.agreementNo,
+        customerName: refund.customerName,
+        amount: refundAmount,
+        transactionRef: transactionRef.trim(),
+        proofUrl: finalProofUrl,
+        notes: notes.trim(),
+        bankName,
+        accountNumber,
+        accountHolder,
+        completedAt: new Date().toISOString(),
+        status: "completed",
+      };
+
+      try {
+        if (refund.agreementId) {
+          localStorage.setItem(`refund_payout_completed_${refund.agreementId}`, JSON.stringify(completedData));
+        }
+        if (refund.agreementNo) {
+          localStorage.setItem(`refund_payout_completed_${refund.agreementNo}`, JSON.stringify(completedData));
+        }
+        localStorage.setItem(`refund_payout_completed_ref_${refund.refundId}`, JSON.stringify(completedData));
+        window.dispatchEvent(new Event("storage"));
+      } catch (storageErr) {
+        console.warn("Storage sync error:", storageErr);
+      }
+
       if (onSuccess) {
         onSuccess({
           refundId: refund.refundId,
           customerName: refund.customerName,
           amount: refundAmount,
           transactionRef: transactionRef.trim(),
+          proofUrl: finalProofUrl,
         });
       }
 
