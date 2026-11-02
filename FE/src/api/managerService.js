@@ -20,6 +20,13 @@ export const managerService = {
     return res?.data ?? null;
   },
 
+  // POST /api/manager/agreements/{agreementId}/reassign-unit
+  // Đổi kho trực tiếp/khẩn cấp cho khách (khi kho hư hỏng, sự cố)
+  async reassignAgreementUnit(agreementId, payload) {
+    const res = await apiClient.post("/manager/agreements/" + encodeURIComponent(agreementId) + "/reassign-unit", payload);
+    return res?.data ?? null;
+  },
+
   // STT 13: GET /api/manager/facilities/{facilityId}/units
   // Danh mục thông số kỹ thuật ô kho
   async getUnits(facilityId, params = {}) {
