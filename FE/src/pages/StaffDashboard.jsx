@@ -350,7 +350,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
               {/* Dynamic Module Based on Active Tab */}
               <div className="pt-2 border-t border-slate-100">
                 {activeTab === "checkin" && (
-                  <StaffReservationLookup />
+                  <StaffReservationLookup initialFacilityId={selectedFacilityId} />
                 )}
 
                 {activeTab === "moveout" && (

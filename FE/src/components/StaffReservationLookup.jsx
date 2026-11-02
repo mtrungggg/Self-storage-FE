@@ -4,7 +4,6 @@ import staffFacilityService from "../api/staffFacilityService";
 import staffQrService from "../api/staffQrService";
 import StaffAssignUnit from "./StaffAssignUnit";
 import QrCameraScanner from "./QrCameraScanner";
-import STORAGE_KEYS from "../constants/storageKeys";
 
 function formatMoney(value) {
   if (value == null) return "—";
@@ -13,7 +12,7 @@ function formatMoney(value) {
 
 function getStoredFacilityCheckIns() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.FACILITY_CHECKINS);
+    const raw = localStorage.getItem("g1_facility_checkins");
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -53,9 +52,9 @@ function compactUnitType(unitTypeName) {
   return [size, condition, area].filter(Boolean).join(" · ");
 }
 
-export default function StaffReservationLookup() {
+export default function StaffReservationLookup({ initialFacilityId = '1' }) {
   const [query, setQuery] = useState("");
-  const [facilityId, setFacilityId] = useState("");
+  const [facilityId, setFacilityId] = useState(initialFacilityId || '1');
   const [results, setResults] = useState([]);
   const [matchedUnits, setMatchedUnits] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +72,10 @@ export default function StaffReservationLookup() {
   const [qrActionResult, setQrActionResult] = useState(null);
 
   const requestId = useRef(0);
+
+  useEffect(() => {
+    if (initialFacilityId) setFacilityId(initialFacilityId);
+  }, [initialFacilityId]);
 
   useEffect(() => {
     const onStorage = () => setCheckIns(getStoredFacilityCheckIns());
@@ -102,7 +105,7 @@ export default function StaffReservationLookup() {
         )
     );
     const updated = [record, ...existing].slice(0, 30);
-    localStorage.setItem(STORAGE_KEYS.FACILITY_CHECKINS, JSON.stringify(updated));
+    localStorage.setItem("g1_facility_checkins", JSON.stringify(updated));
     setCheckIns(updated);
     setQuery("");
 
@@ -179,11 +182,11 @@ export default function StaffReservationLookup() {
     try {
       const payload = {
         actionType: actionName || qrData.actionType || "",
-        reservationId: qrData.reservation?.reservationId || null,
-        agreementId: qrData.agreement?.agreementId || null,
-        transferRequestId: qrData.transferRequest?.transferRequestId || null,
-        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || null,
-        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || null,
+        reservationId: qrData.reservation?.reservationId || 0,
+        agreementId: qrData.agreement?.agreementId || 0,
+        transferRequestId: qrData.transferRequest?.transferRequestId || 0,
+        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || 0,
+        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || 0,
         notes: qrNotes.trim(),
       };
 
@@ -328,22 +331,22 @@ export default function StaffReservationLookup() {
           <span className="material-symbols-outlined text-[#1d5fe5]">qr_code_scanner</span>
           <div>
             <h2 className="text-[14px] font-bold text-slate-900">QR Scanner & Facility Check-in</h2>
-            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Entry/Exit</p>
+            <p className="text-[11px] text-slate-500">Scan QR for Check-in, Transfer Out/In, Move Out or Ra/Vào</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setCameraActive((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-[9px] px-3.5 py-1.5 text-xs font-bold transition shadow-xs ${
+          className={`inline-flex items-center gap-1.5 rounded-[9px] border px-3 py-1.5 text-xs font-bold transition ${
             cameraActive
-              ? "border border-emerald-500 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-              : "bg-[#1d5fe5] text-white hover:bg-[#1550c7] shadow-sm hover:shadow"
+              ? "border-[#2dd4a0] bg-[#effcf6] text-[#0e7b4c]"
+              : "border-[#dfe7f5] bg-[#f8faff] text-[#3a475a] hover:border-[#1d5fe5] hover:text-[#1d5fe5]"
           }`}
         >
           <span className="material-symbols-outlined text-[16px]">
-            {cameraActive ? "videocam_off" : "qr_code_scanner"}
+            {cameraActive ? "videocam_off" : "photo_camera"}
           </span>
-          <span>{cameraActive ? "Close Camera" : "Scan QR Camera"}</span>
+          <span>{cameraActive ? "Close Camera" : "Scan QR"}</span>
         </button>
       </div>
 
@@ -365,17 +368,6 @@ export default function StaffReservationLookup() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search reservation code, phone, or paste QR string"
             className="mt-1 w-full rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
-          />
-        </label>
-        <label className="text-xs font-semibold text-[#58657a]">
-          Facility ID
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={facilityId}
-            onChange={(event) => setFacilityId(event.target.value)}
-            className="mt-1 block w-24 rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
           />
         </label>
         <div className="flex gap-2">
@@ -488,7 +480,7 @@ export default function StaffReservationLookup() {
           {/* Notes input for confirm-action */}
           <div className="mt-3 border-t border-indigo-100 pt-3">
             <label className="block text-xs font-semibold text-slate-700">
-              Notes (optional):
+              Notes / Ghi chú xử lý (optional):
               <input
                 type="text"
                 value={qrNotes}
@@ -536,7 +528,7 @@ export default function StaffReservationLookup() {
             <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
               <div className="font-bold text-emerald-800 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
-                <span>{qrActionResult.message || qrActionSuccess || "Action processed successfully."}</span>
+                <span>{qrActionResult.message || qrActionSuccess || "Hành động đã được xử lý thành công!"}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-slate-700">
                 {qrActionResult.actionType && (
