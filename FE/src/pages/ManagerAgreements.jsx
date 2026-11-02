@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
 import PAGINATION from "../constants/pagination";
+import EmergencyReassignModal from "../components/EmergencyReassignModal";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -31,6 +33,7 @@ function ManagerAgreements() {
   const [detailId, setDetailId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
   async function load() {
     if (!facilityId) {
@@ -117,7 +120,7 @@ function ManagerAgreements() {
                 <th className="px-4 py-3 w-[13%] text-right">Rent / Mo</th>
                 <th className="px-4 py-3 w-[13%] text-right">Balance</th>
                 <th className="px-4 py-3 w-[8%] text-center">Status</th>
-                <th className="px-4 py-3 w-[8%] text-right">Actions</th>
+                <th className="px-4 py-3 w-[12%] text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -146,13 +149,22 @@ function ManagerAgreements() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openDetail(agreement.id)}
-                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                      >
-                        Details
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openDetail(agreement.id)}
+                          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                        >
+                          Quick View
+                        </button>
+                        <Link
+                          to={`/manager-agreements/${agreement.id}`}
+                          className="rounded-md bg-blue-50 border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 transition"
+                          title="Trang chi tiết hợp đồng"
+                        >
+                          Chi tiết
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -170,17 +182,28 @@ function ManagerAgreements() {
                 <h2 className="text-base font-bold text-slate-900">Agreement Details: {detail?.agreementNo || ""}</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Lease term, payment schedule, and customer item inventory.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setDetailId(null);
-                  setDetail(null);
-                }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEmergencyModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                  title="Đổi sang ô kho tương đương 0 VNĐ"
+                >
+                  <span className="material-symbols-outlined text-[16px]">published_with_changes</span>
+                  <span>Đổi kho khẩn cấp (0đ)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailId(null);
+                    setDetail(null);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
           {loadingDetail ? (
@@ -253,6 +276,25 @@ function ManagerAgreements() {
           )}
           </div>
         </div>
+      )}
+
+      {/* Emergency Reassign Modal */}
+      {detail && (
+        <EmergencyReassignModal
+          isOpen={isEmergencyModalOpen}
+          agreement={detail}
+          facilityId={facilityId || detail.facilityId}
+          oldUnitCode={detail.unitCode}
+          unitTypeId={detail.unitTypeId}
+          onClose={() => setIsEmergencyModalOpen(false)}
+          onSuccess={async () => {
+            setIsEmergencyModalOpen(false);
+            if (detailId) {
+              setDetail(await managerService.getAgreementDetail(detailId));
+            }
+            load();
+          }}
+        />
       )}
     </div>
   );
