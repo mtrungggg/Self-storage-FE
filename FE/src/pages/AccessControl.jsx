@@ -286,93 +286,6 @@ function AccessControl() {
           </div>
 
         </div>
-
-
-
-        {/* Awaiting Check-in Notice */}
-
-        {isAwaitingCheckIn && !isSuspended && (
-
-          <div className="mt-4 rounded-[14px] border border-[#b2ddff] bg-[#f0f8ff] p-5 shadow-[0_4px_16px_rgba(29,95,229,0.06)]">
-
-            <div className="flex items-start gap-3.5">
-
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dbeafe] text-[#1d5fe5]">
-
-                <span className="material-symbols-outlined text-[24px]">qr_code_2</span>
-
-              </div>
-
-              <div className="flex-1">
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-
-                  <h2 className="text-[15px] font-bold text-[#0a3d91]">
-
-                    Kho đã đặt thành công &bull; Đang chờ nhận kho tại cơ sở (Awaiting Check-in)
-
-                  </h2>
-
-                  <span className="rounded-full border border-[#b2ddff] bg-[#e0f2fe] px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0284c7]">
-
-                    Awaiting Check-in
-
-                  </span>
-
-                </div>
-
-                <p className="mt-1.5 text-[13px] leading-relaxed text-[#3a475a]">
-
-                  Đơn đặt kho <strong>Unit {activeUnitCode}</strong> của bạn đã được xác nhận. Theo quy chuẩn an toàn kho (BR-RSV-04), mã PIN mở khóa 6 số sẽ được kích hoạt ngay khi nhân viên tại cơ sở quét mã nhận kho (Storage Pass) của bạn.
-
-                </p>
-
-                <div className="mt-3.5 flex flex-wrap items-center gap-3">
-
-                  <button
-
-                    type="button"
-
-                    onClick={handleOpenCheckInQr}
-
-                    className="inline-flex items-center gap-2 rounded-[9px] bg-[#1d5fe5] px-4 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
-
-                  >
-
-                    <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
-
-                    <span>Mở Thẻ Nhận Kho (Storage Pass)</span>
-
-                  </button>
-
-                  <button
-
-                    type="button"
-
-                    onClick={() => navigate("/support")}
-
-                    className="inline-flex items-center gap-2 rounded-[9px] border border-[#dfe7f5] bg-white px-4 py-2.5 text-[13px] font-bold text-[#58657a] hover:bg-[#f8faff]"
-
-                  >
-
-                    <span className="material-symbols-outlined text-[18px]">help</span>
-
-                    <span>Hướng dẫn nhận kho</span>
-
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )}
-
-
-
         {/* Lockout Warning Banner when agreement/credentials are suspended */}
 
         {isSuspended && (
@@ -657,45 +570,7 @@ function AccessControl() {
 
                         </button>
 
-                      </div>
-
-                    ) : isAwaitingCheckIn ? (
-
-                      <div className="mt-4 rounded-[12px] border border-[#b2ddff] bg-[#f0f8ff] p-5 text-center">
-
-                        <div className="flex items-center justify-center gap-2 text-[15px] font-bold text-[#0a3d91]">
-
-                          <span className="material-symbols-outlined text-[22px] text-[#1d5fe5]">hourglass_top</span>
-
-                          <span>MÃ PIN SẼ KÍCH HOẠT KHI CHECK-IN TẠI CƠ SỞ</span>
-
-                        </div>
-
-                        <p className="mt-2 text-[12px] leading-relaxed text-[#3a475a]">
-
-                          Vui lòng xuất trình mã QR Check-in trên Thẻ Nhận Kho khi đến cơ sở để nhân viên bàn giao ô kho <strong>{activeUnitCode}</strong> và kích hoạt mã PIN mở cửa.
-
-                        </p>
-
-                        <button
-
-                          type="button"
-
-                          onClick={handleOpenCheckInQr}
-
-                          className="mt-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-[#1d5fe5] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#154ec1]"
-
-                        >
-
-                          <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-
-                          <span>Mở Mã QR Check-in</span>
-
-                        </button>
-
-                      </div>
-
-                    ) : (
+                      </div>) : (
 
                       <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">
 
@@ -790,62 +665,6 @@ function AccessControl() {
                 {/* RIGHT: Access log + Check in QR button */}
 
                 <aside>
-
-                  <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)] transition-all duration-300">
-
-                    <div className="flex items-center justify-between text-[13px] font-bold text-[#0b1c30]">
-
-                      Access Activity Log
-
-                    </div>
-
-
-
-                    <div className="mt-3 space-y-2.5">
-
-                      {accessLogs.length > 0 ? (
-
-                        accessLogs.map((log, idx) => (
-
-                          <div key={log.id || `${log.title}-${log.time}-${idx}`} className="flex items-center justify-between gap-2">
-
-                            <div className="flex items-center gap-2 truncate">
-
-                              <span
-
-                                className="h-2 w-2 shrink-0 rounded-full"
-
-                                style={{ backgroundColor: log.dot }}
-
-                              />
-
-                              <span className="truncate text-[12px] font-semibold text-[#0b1c30]">
-
-                                {log.title}
-
-                              </span>
-
-                            </div>
-
-                            <span className="shrink-0 text-[10px] text-[#8996a9]">{log.time}</span>
-
-                          </div>
-
-                        ))
-
-                      ) : (
-
-                        <div className="py-4 text-center text-[12px] text-[#8996a9]">
-
-                          No access activity logs yet.
-
-                        </div>
-
-                      )}
-
-                    </div>
-
-                  </div>
 
 
 
