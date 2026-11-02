@@ -5,6 +5,7 @@ import { ADMIN_ROLES, CUSTOMER_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } f
 
 const NAV_ITEMS = [
   { key: "rent", label: "Rent a Unit", to: "/home", style: "soft" },
+  { key: "my-units", label: "My Units", to: "/my-units", style: "soft" },
   { key: "access", label: "PIN Code", to: "/access-control", style: "hard" },
 ];
 
@@ -120,14 +121,24 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
 
                   <div className="py-1 border-b border-[#f0f3f8]">
                     {isCustomerOnly && (
-                      <Link
-                        to="/billing"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
-                      >
-                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">receipt_long</span>
-                        Invoices &amp; payments
-                      </Link>
+                      <>
+                        <Link
+                          to="/my-units"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">warehouse</span>
+                          My Units
+                        </Link>
+                        <Link
+                          to="/billing"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">receipt_long</span>
+                          Invoices &amp; payments
+                        </Link>
+                      </>
                     )}
                     {hasAnyRole(user?.roles || [], ADMIN_ROLES) && (
                       <Link

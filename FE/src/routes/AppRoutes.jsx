@@ -19,6 +19,7 @@ const ReservationDetail = lazy(() => import("../pages/ReservationDetail"));
 const AccessControl = lazy(() => import("../pages/AccessControl"));
 const StoragePass = lazy(() => import("../pages/StoragePass"));
 const Support = lazy(() => import("../pages/Support"));
+const MyUnits = lazy(() => import("../pages/MyUnits"));
 
 // Lazy-loaded staff portal
 const StaffDashboard = lazy(() => import("../pages/StaffDashboard"));
@@ -82,6 +83,8 @@ function AppRoutes() {
 
             {/* Protected customer routes: require login */}
             <Route element={<RequireAuth />}>
+              <Route path="/my-units" element={<MyUnits />} />
+              <Route path="/my-storages" element={<Navigate to="/my-units" replace />} />
               <Route path="/access-control" element={<AccessControl />} />
               <Route path="/storage-pass" element={<StoragePass />} />
               <Route path="/storage-management" element={<StoragePass />} />
