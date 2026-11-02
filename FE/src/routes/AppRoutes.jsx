@@ -96,6 +96,11 @@ function AppRoutes() {
               <Route path="/staff-shifts" element={<StaffDashboard initialTab="shifts" />} />
               <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
               <Route path="/staff-move-outs" element={<StaffMoveOuts />} />
+              {/* Đóng/Vô hiệu hóa toàn bộ route dẫn tới trang tạo đơn tại quầy (Walk-in Booking) */}
+              <Route path="/walk-in" element={<Navigate to="/staff-dashboard" replace />} />
+              <Route path="/walk-in-booking" element={<Navigate to="/staff-dashboard" replace />} />
+              <Route path="/staff-walk-in" element={<Navigate to="/staff-dashboard" replace />} />
+              <Route path="/staff-booking" element={<Navigate to="/staff-dashboard" replace />} />
             </Route>
           </Route>
 
