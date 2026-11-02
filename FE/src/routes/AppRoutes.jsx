@@ -24,6 +24,7 @@ const Support = lazy(() => import("../pages/Support"));
 const StaffDashboard = lazy(() => import("../pages/StaffDashboard"));
 const StaffSupportTickets = lazy(() => import("../pages/StaffSupportTickets"));
 const StaffMoveOuts = lazy(() => import("../pages/StaffMoveOuts"));
+const StaffInspectionsPage = lazy(() => import("../pages/StaffInspectionsPage"));
 
 // Lazy-loaded management & operations portal
 const ManagerUnits = lazy(() => import("../pages/ManagerUnits"));
@@ -96,7 +97,8 @@ function AppRoutes() {
               <Route path="/staff-shifts" element={<StaffDashboard initialTab="shifts" />} />
               <Route path="/staff-support-tickets" element={<StaffSupportTickets />} />
               <Route path="/staff-tickets" element={<StaffSupportTickets />} />
-              <Route path="/staff-move-outs" element={<StaffMoveOuts />} />
+              <Route path="/staff-move-outs" element={<StaffInspectionsPage />} />
+              <Route path="/staff-inspections" element={<StaffInspectionsPage />} />
               {/* Đóng/Vô hiệu hóa toàn bộ route dẫn tới trang tạo đơn tại quầy (Walk-in Booking) */}
               <Route path="/walk-in" element={<Navigate to="/staff-dashboard" replace />} />
               <Route path="/walk-in-booking" element={<Navigate to="/staff-dashboard" replace />} />

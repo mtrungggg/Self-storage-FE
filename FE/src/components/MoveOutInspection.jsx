@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import staffMoveOutService from "../api/staffMoveOutService";
 import MediaUpload from "./MediaUpload";
+import InspectionFormModal from "./InspectionFormModal";
 
 const blankItem = () => ({ itemName: "", condition: "good", notes: "", photoUrl: "", chargeAmount: "0" });
 
@@ -13,6 +14,7 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Refund preference at counter: "cash" (Khách có mặt trực tiếp & muốn lấy tiền mặt ngay) vs "bank" (Khách chọn nhận qua ngân hàng)
   const [refundPreference, setRefundPreference] = useState(
@@ -110,7 +112,39 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
   if (moveOut.status === "cancelled") return null;
 
   return (
-    <details className="mt-4 border-t pt-3">
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition"
+      >
+        <span className="material-symbols-outlined text-[16px]">fact_check</span>
+        <span>Biên bản kiểm tra trả kho</span>
+      </button>
+
+      {modalOpen && (
+        <InspectionFormModal
+          inspection={moveOut}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSuccess={(data) => {
+            setResult({
+              inspectionId: data.id || "M-" + Date.now(),
+              totalDamageCharges: data.damageCost || 0,
+              unitStatus: data.hasDamage ? "under_maintenance" : "available",
+            });
+            if (onCompleted) {
+              onCompleted(moveOut.id, {
+                status: "completed",
+                refundMethod: refundPreference === "cash" ? "cash" : "bank_transfer",
+                payoutStatus: refundPreference === "cash" ? "paid_cash" : "pending_manager_transfer",
+              });
+            }
+          }}
+        />
+      )}
+
+      <details className="mt-3 border-t pt-2.5">
       <summary className="cursor-pointer font-semibold text-[#1d5fe5]">Inspect move-out</summary>
       <form onSubmit={submit} aria-busy={busy} className="mt-3 text-sm">
         <fieldset disabled={busy} className="space-y-3">
@@ -234,6 +268,7 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
           </div>
         </fieldset>
       </form>
-    </details>
+      </details>
+    </div>
   );
 }

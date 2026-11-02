@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import staffMoveOutService from "../api/staffMoveOutService";
 import MoveOutInspection from "./MoveOutInspection";
 
@@ -62,8 +63,14 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
   return (
     <section className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-bold text-slate-900">Move-out</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold text-slate-900">Kiểm tra trả kho</h2>
+          <Link
+            to="/staff-inspections"
+            className="text-xs font-semibold text-[#1d5fe5] hover:underline"
+          >
+            Mở trang kiểm tra đầy đủ →
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
