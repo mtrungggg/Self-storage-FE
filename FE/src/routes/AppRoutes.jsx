@@ -130,7 +130,7 @@ function AppRoutes() {
               <Route path="/manager-agreements" element={<ManagerAgreements />} />
               <Route path="/manager-agreements/:id" element={<ManagerAgreementDetailPage />} />
               <Route path="/manager-delinquent-cases" element={<ManagerDelinquentCases />} />
-              <Route path="/manager-pricing" element={<ManagerPricing />} />
+              <Route path="/manager-pricing" element={<Navigate to="/manager-dashboard" replace />} />
               <Route path="/manager-users" element={<ManagerFacilityUsersPage />} />
               <Route path="/manager-facility-users" element={<ManagerFacilityUsersPage />} />
             </Route>
@@ -143,7 +143,7 @@ function AppRoutes() {
               <Route path="/admin-users" element={<AdminUsers />} />
               <Route path="/admin-users/:id" element={<AdminUserDetail />} />
               <Route path="/admin-audit-log" element={<AdminAuditLog />} />
-
+              <Route path="/admin-pricing" element={<ManagerPricing />} />
             </Route>
           </Route>
 
