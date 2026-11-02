@@ -230,6 +230,7 @@ export default function ManagerPricing() {
   };
 
   const openCreateFeeModal = () => {
+    if (!isAdmin) return;
     setFeeFormData({
       ...initialFeeForm,
       facilityId: facilityId ? String(facilityId) : "",
@@ -239,6 +240,7 @@ export default function ManagerPricing() {
   };
 
   const openEditFeeModal = (fee) => {
+    if (!isAdmin) return;
     setFeeFormData({
       id: fee.id,
       facilityId: fee.facilityId ? String(fee.facilityId) : "",
@@ -458,6 +460,19 @@ export default function ManagerPricing() {
       )}
 
       {/* Tab Navigation Pill Bar with Right-side Primary Action */}
+      {!isAdmin && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-950 flex items-center gap-2.5 shadow-xs">
+          <span className="material-symbols-outlined text-amber-600 text-[20px]">lock</span>
+          <div>
+            <p className="font-bold text-amber-900">
+              Khóa quyền chỉnh sửa: Chế độ chỉ xem biểu giá (Read-only)
+            </p>
+            <p className="text-[11px] text-amber-700 mt-0.5">
+              Theo quy định phân quyền, chức năng thêm giá, chỉnh sửa giá và cập nhật bậc giá chỉ dành riêng cho Quản trị viên hệ thống (System Administrator). Quản lý cơ sở (Manager) chỉ có quyền xem biểu giá hiện hành.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <button
@@ -523,7 +538,7 @@ export default function ManagerPricing() {
             </button>
           )}
 
-          {activeTab === "promotions" && (
+          {isAdmin && activeTab === "promotions" && (
             <button
               type="button"
               onClick={() => setShowPromoModal(true)}
@@ -859,7 +874,8 @@ export default function ManagerPricing() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleTogglePromo(promo.id, promo.isActive)}
+                    disabled={!isAdmin}
+                    onClick={() => isAdmin && handleTogglePromo(promo.id, promo.isActive)}
                     className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold transition ${
                       promo.isActive
                         ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
@@ -877,7 +893,7 @@ export default function ManagerPricing() {
       )}
 
       {/* Modal: Create / Edit Fee Policy */}
-      {showFeeModal && (
+      {isAdmin && showFeeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1110,7 +1126,7 @@ export default function ManagerPricing() {
       )}
 
       {/* Modal: Create Promotion */}
-      {showPromoModal && (
+      {isAdmin && showPromoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">

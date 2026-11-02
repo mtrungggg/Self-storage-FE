@@ -55,6 +55,7 @@ export function useManagementShell() {
       { id: "admin-facilities", label: "Facilities Management", icon: "warehouse", to: "/admin-facilities" },
       { id: "admin-users", label: "Users & Permissions", icon: "manage_accounts", to: "/admin-users" },
       { id: "admin-audit-log", label: "Audit & Logs", icon: "history", to: "/admin-audit-log" },
+      { id: "admin-pricing", label: "Bảng giá & Biểu phí", icon: "payments", to: "/manager-pricing" },
     ],
   };
 
@@ -87,7 +88,7 @@ export function useManagementShell() {
       { id: "manager-refund-approvals", label: "Refund Approvals", to: "/manager-refund-approvals" },
       { id: "manager-agreements", label: "Agreements", to: "/manager-agreements" },
       { id: "manager-delinquent-cases", label: "Overdue", to: "/manager-delinquent-cases" },
-      { id: "manager-pricing", label: "Pricing", to: "/manager-pricing" },
+      { id: "manager-pricing", label: "Biểu giá (Chỉ xem)", to: "/manager-pricing" },
     ],
   };
 
