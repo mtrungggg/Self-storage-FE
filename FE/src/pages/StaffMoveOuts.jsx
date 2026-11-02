@@ -62,7 +62,31 @@ export default function StaffMoveOuts() {
                   {[["Customer", item.customerName || item.customerId], ["Agreement", item.agreementNo || item.agreementId], ["Facility ID", item.facilityId], ["Requested move-out", item.requestedMoveOutDate]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
                 </dl>
                 <p className="mt-3 whitespace-pre-wrap break-words border-t pt-3">{item.reason || "No reason provided."}</p>
-                <MoveOutInspection moveOut={item} onCompleted={(id) => setItems((current) => current.map((entry) => entry.id === id ? { ...entry, status: MOVE_OUT_STATUS.COMPLETED } : entry))} />
+                {item.status === MOVE_OUT_STATUS.COMPLETED && (
+                  <div className="mt-2">
+                    {item.refundMethod === "cash" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                        <span className="material-symbols-outlined text-[14px]">payments</span>
+                        Đã chi trả tiền mặt tại quầy
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
+                        <span className="material-symbols-outlined text-[14px]">schedule</span>
+                        Đang chờ Quản lý (Manager) chuyển khoản
+                      </span>
+                    )}
+                  </div>
+                )}
+                <MoveOutInspection
+                  moveOut={item}
+                  onCompleted={(id, extra) =>
+                    setItems((current) =>
+                      current.map((entry) =>
+                        entry.id === id ? { ...entry, status: MOVE_OUT_STATUS.COMPLETED, ...extra } : entry
+                      )
+                    )
+                  }
+                />
               </article>)}
             </div>
           </>}
