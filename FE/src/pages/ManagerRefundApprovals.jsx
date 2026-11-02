@@ -29,6 +29,10 @@ const STATUS_BADGE = {
   [DECISION_STATUS.PENDING]: "bg-amber-50 text-amber-700 border border-amber-200",
   [DECISION_STATUS.APPROVED]: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   [DECISION_STATUS.REJECTED]: "bg-rose-50 text-rose-700 border border-rose-200",
+  pending_manager_payout: "bg-blue-50 text-blue-700 border border-blue-200",
+  pending_counter_payout: "bg-amber-50 text-amber-700 border border-amber-200",
+  completed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  processing: "bg-sky-50 text-sky-700 border border-sky-200",
 };
 
 export default function ManagerRefundApprovals() {
@@ -102,9 +106,23 @@ export default function ManagerRefundApprovals() {
     const draft = drafts[refund.refundId] || {};
     const overrideAmount = draft.overrideAmount ? Number(draft.overrideAmount) : undefined;
 
+    let rBank = null;
+    if (refund.reason && typeof refund.reason === "string" && refund.reason.trim().startsWith("{")) {
+      try {
+        rBank = JSON.parse(refund.reason);
+      } catch {}
+    }
+
+    const bName = refund.bankName || refund.customerBankName || rBank?.bank || "MBBank (Napas 247)";
+    const bAcc = refund.bankAccountNumber || refund.accountNo || refund.customerAccountNumber || rBank?.acc || "0987654321";
+    const bHolder = (refund.bankAccountHolder || refund.accountHolder || refund.customerName || rBank?.holder || "KHACH HANG").toUpperCase();
+
     // Pass enriched refund item into payout modal
     const enrichedRefund = {
       ...refund,
+      bankName: bName,
+      bankAccountNumber: bAcc,
+      bankAccountHolder: bHolder,
       recommendedRefundAmount: overrideAmount || refund.recommendedRefundAmount || refund.amount,
       notes: draft.reason || "",
     };
@@ -217,12 +235,38 @@ export default function ManagerRefundApprovals() {
         ) : (
           filteredRefunds.map((refund) => {
             const draft = drafts[refund.refundId] || {};
-            const isPending = refund.status === DECISION_STATUS.PENDING;
+            const normalizedStatus = (refund.status || "").toLowerCase();
+            const isPending = [
+              DECISION_STATUS.PENDING,
+              "pending",
+              "pending_manager_payout",
+              "pending_counter_payout",
+              "requested",
+              "approved",
+              "processing",
+            ].includes(normalizedStatus);
+            const isCompleted = normalizedStatus === "completed" || normalizedStatus === "paid";
 
             // Bank details for customer payout
-            const bankName = refund.bankName || refund.customerBankName || "MBBank (Napas 247)";
-            const accountNumber = refund.bankAccountNumber || refund.accountNo || refund.customerAccountNumber || "0987654321";
-            const accountHolder = (refund.bankAccountHolder || refund.accountHolder || refund.customerName || "KHACH HANG").toUpperCase();
+            let bankName = refund.bankName || refund.customerBankName;
+            let accountNumber = refund.bankAccountNumber || refund.accountNo || refund.customerAccountNumber;
+            let accountHolder = refund.bankAccountHolder || refund.accountHolder;
+            let displayReason = refund.reason;
+
+            if (displayReason && typeof displayReason === "string" && displayReason.trim().startsWith("{")) {
+              try {
+                const parsed = JSON.parse(displayReason);
+                if (!bankName && parsed.bank) bankName = parsed.bank;
+                if (!accountNumber && parsed.acc) accountNumber = parsed.acc;
+                if (!accountHolder && parsed.holder) accountHolder = parsed.holder;
+                displayReason = parsed.note || "Khách yêu cầu hoàn cọc qua chuyển khoản ngân hàng.";
+              } catch {}
+            }
+
+            bankName = bankName || "MBBank (Napas 247)";
+            accountNumber = accountNumber || "0987654321";
+            accountHolder = (accountHolder || refund.customerName || "KHACH HANG").toUpperCase();
+
             const refundAmount = draft.overrideAmount
               ? Number(draft.overrideAmount)
               : refund.recommendedRefundAmount ?? refund.amount ?? refund.originalDeposit;
@@ -254,7 +298,7 @@ export default function ManagerRefundApprovals() {
 
                 {/* Reason description */}
                 <div className="mt-2.5 text-xs text-slate-600 italic">
-                  &ldquo;{refund.reason || "Yêu cầu thanh lý trả kho & hoàn tiền cọc giữ chỗ."}&rdquo;
+                  &ldquo;{displayReason || "Yêu cầu thanh lý trả kho & hoàn tiền cọc giữ chỗ."}&rdquo;
                 </div>
 
                 {/* Financial Summary Calculation Breakdown */}
@@ -353,7 +397,7 @@ export default function ManagerRefundApprovals() {
                 </div>
 
                 {/* Action Section for Pending Refund */}
-                {isPending && (
+                {isPending ? (
                   <div className="mt-3.5 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
@@ -400,7 +444,29 @@ export default function ManagerRefundApprovals() {
                       </button>
                     </div>
                   </div>
-                )}
+                ) : isCompleted ? (
+                  <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3.5 text-xs">
+                    <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      Đã hoàn tất thanh toán chuyển khoản ngân hàng
+                      {refund.transactionReference && (
+                        <span className="font-mono bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[11px] ml-1">
+                          Mã GD: {refund.transactionReference}
+                        </span>
+                      )}
+                    </span>
+                    {refund.proofImageUrl && (
+                      <a
+                        href={refund.proofImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        Xem chứng từ UNC
+                      </a>
+                    )}
+                  </div>
+                ) : null}
               </div>
             );
           })

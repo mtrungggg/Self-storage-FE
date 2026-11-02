@@ -47,14 +47,24 @@ export default function ProcessRefundPayoutModal({
     savedBankInfo = null;
   }
 
+  // Parse if reason is JSON
+  let reasonBank = null;
+  if (refund.reason && typeof refund.reason === 'string' && refund.reason.trim().startsWith('{')) {
+    try {
+      reasonBank = JSON.parse(refund.reason);
+    } catch {}
+  }
+
   const bankName =
     savedBankInfo?.bankName ||
     refund.bankName ||
     refund.customerBankName ||
+    reasonBank?.bank ||
     "MBBank (Napas 247)";
   const bankCode =
     savedBankInfo?.bankCode ||
     refund.bankCode ||
+    reasonBank?.bankCode ||
     BANK_CODE_MAP[bankName] ||
     "MB";
   const accountNumber =
@@ -62,12 +72,14 @@ export default function ProcessRefundPayoutModal({
     refund.bankAccountNumber ||
     refund.accountNo ||
     refund.customerAccountNumber ||
+    reasonBank?.acc ||
     "0987654321";
   const accountHolder = (
     savedBankInfo?.accountHolder ||
     refund.bankAccountHolder ||
     refund.accountHolder ||
     refund.customerName ||
+    reasonBank?.holder ||
     "KHACH HANG"
   ).toUpperCase();
 
@@ -143,12 +155,18 @@ export default function ProcessRefundPayoutModal({
 
       const finalProofUrl = uploadedProofUrl || filePreview || "";
 
+      const ref = transactionRef.trim() || `FT${Date.now()}`;
+      const finalNote = notes.trim() || "Quản lý cơ sở xác nhận đã chuyển khoản hoàn cọc cho khách hàng.";
+
       // 2. Submit refund payout / approval
       const payload = {
         amount: refundAmount,
-        transactionRef: transactionRef.trim(),
+        transactionRef: ref,
+        transactionReference: ref,
         proofUrl: finalProofUrl,
-        notes: notes.trim(),
+        proofImageUrl: finalProofUrl,
+        notes: finalNote,
+        note: finalNote,
         bankName,
         accountNumber,
         accountHolder,
