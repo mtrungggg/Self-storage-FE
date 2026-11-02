@@ -126,6 +126,27 @@ export const managerService = {
     return res?.data ?? null;
   },
 
+  // Manager xác nhận đã chuyển khoản hoàn tất hoàn cọc (kèm mã giao dịch, ảnh UNC/bill)
+  async processRefundPayout(id, payload) {
+    try {
+      const res = await apiClient.post(`/manager/refund-approvals/${encodeURIComponent(id)}/payout`, payload);
+      return res?.data ?? res;
+    } catch {
+      const notes = [
+        payload.transactionRef ? `Mã GD: ${payload.transactionRef}` : '',
+        payload.notes || '',
+        payload.proofUrl ? `UNC: ${payload.proofUrl}` : ''
+      ].filter(Boolean).join(' | ');
+
+      return this.decideRefundApproval(id, {
+        decision: 'approved',
+        reason: notes || 'Xác nhận đã chuyển khoản hoàn cọc cho khách hàng',
+        overrideAmount: payload.amount,
+        ...payload
+      });
+    }
+  },
+
   // STT 25: GET /api/manager/facilities/{facilityId}/pricing/rates
   // Xem biểu giá thuê cơ sở (Kiểm tra quyền cơ sở)
   async getPricingRates(facilityId, params = {}) {
