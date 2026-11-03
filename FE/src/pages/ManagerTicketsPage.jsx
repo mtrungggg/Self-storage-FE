@@ -138,7 +138,6 @@ export default function ManagerTicketsPage() {
   }
 
   function handleEmergencyReassignSuccess(reassignData) {
-    setEmergencyTicket(null);
     setToastMsg(
       `Đã đổi kho khẩn cấp sang kho ${reassignData.newUnitCode || "mới"} thành công (Chi phí: 0 VNĐ).`
     );
