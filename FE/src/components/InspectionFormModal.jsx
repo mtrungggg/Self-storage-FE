@@ -205,7 +205,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                 fact_check
               </span>
               <h2 id="inspection-modal-title" className="text-base font-bold text-slate-900">
-                Biên bản kiểm tra trả kho · Kho {inspection.unitCode || "—"}
+                Biên bản kiểm tra trả kho · Kho {inspection.unitCode && inspection.unitCode !== "N/A" ? inspection.unitCode : (inspection.storageUnitCode || "—")}
               </h2>
             </div>
             <p className="mt-1 text-xs text-slate-500">

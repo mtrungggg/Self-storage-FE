@@ -6,6 +6,7 @@ import { useAccessControl } from "../hooks/useAccessControl";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import ReportCheckInIssueModal from "../components/ReportCheckInIssueModal";
 
 const ITEM_CATEGORIES = [
   { value: "household", label: "Household Items" },
@@ -71,6 +72,7 @@ export default function StoragePass() {
   const [declareRows, setDeclareRows] = useState([createEmptyItemRow()]);
   const [declareSaving, setDeclareSaving] = useState(false);
   const [declareError, setDeclareError] = useState("");
+  const [reportIssueModalOpen, setReportIssueModalOpen] = useState(false);
 
   // Sync agreementId from query string
   useEffect(() => {
@@ -307,7 +309,16 @@ export default function StoragePass() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setReportIssueModalOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-xs cursor-pointer"
+                      title="Báo cáo sự cố kho cho Ban quản lý (dơ, hỏng...)"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">report_problem</span>
+                      Báo sự cố kho
+                    </button>
                     <button
                       type="button"
                       onClick={handleOpenDeclareModal}
@@ -327,15 +338,26 @@ export default function StoragePass() {
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleOpenUnlockModal}
-                  disabled={!selectedRentalId || credentialsLoading || isSuspended}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d5fe5] px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#1550c7] transition disabled:opacity-50"
-                >
-                  <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                  Unlock Unit Now
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenUnlockModal}
+                    disabled={!selectedRentalId || credentialsLoading || isSuspended}
+                    className="flex flex-1 w-full items-center justify-center gap-2 rounded-xl bg-[#1d5fe5] px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#1550c7] transition disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                    Unlock Unit Now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportIssueModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition whitespace-nowrap cursor-pointer shadow-xs"
+                    title="Báo cáo sự cố kho cho Ban quản lý khi kho bẩn hoặc hỏng"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">report_problem</span>
+                    Báo sự cố kho
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -678,6 +700,21 @@ export default function StoragePass() {
           </div>,
           document.body
         )}
+
+      {/* Report Check-In Issue Modal */}
+      <ReportCheckInIssueModal
+        target={{
+          unitCode: activeUnitCode,
+          agreementNo: selectedRental?.agreementNo,
+          customerName: selectedRental?.customerName,
+          storageUnitId: selectedRental?.storageUnitId || selectedRental?.unitId,
+          agreementId: selectedRental?.agreementId,
+          facilityId: selectedRental?.facilityId || 1,
+        }}
+        isOpen={reportIssueModalOpen}
+        onClose={() => setReportIssueModalOpen(false)}
+        isStaff={false}
+      />
     </div>
   );
 }

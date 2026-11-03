@@ -48,6 +48,11 @@ export default function StaffSupportTickets() {
   const [error, setError] = useState("");
   const [reportSuccess, setReportSuccess] = useState("");
   const [reportingTicket, setReportingTicket] = useState(null);
+  const [showChargeForm, setShowChargeForm] = useState({});
+
+  const toggleChargeForm = (ticketId) => {
+    setShowChargeForm((prev) => ({ ...prev, [ticketId]: !prev[ticketId] }));
+  };
 
   const requestId = useRef(0);
 
@@ -450,15 +455,51 @@ export default function StaffSupportTickets() {
                         </button>
                       </div>
 
-                      {/* Mở rộng chi tiết phụ: Trả lời & Đề xuất phụ phí */}
+                      {/* Mở rộng chi tiết phụ: Trao đổi tin nhắn nội bộ & Đề xuất phụ phí */}
                       <details className="group mt-3 overflow-hidden rounded-xl border border-[#dfe7f5] bg-[#f8faff]">
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-bold text-[#0b1c30] transition hover:bg-[#eef4ff] [&::-webkit-details-marker]:hidden">
-                          <span>Trao đổi tin nhắn &amp; Đề xuất phụ phí</span>
+                          <span>Trao đổi tin nhắn nội bộ &amp; Phụ phí</span>
                           <span className="text-xs text-[#58657a] transition-transform duration-200 group-open:rotate-180">▼</span>
                         </summary>
-                        <div className="border-t border-[#dfe7f5] bg-white px-4 pb-4">
-                          <StaffTicketReply ticketId={ticket.id} />
-                          <StaffTicketCharge ticketId={ticket.id} />
+                        <div className="border-t border-[#dfe7f5] bg-white p-3 space-y-3">
+                          <StaffTicketReply
+                            ticketId={ticket.id}
+                            readOnly={isResolved || isClosed}
+                          />
+
+                          {!isResolved && !isClosed && (
+                            <div className="pt-2 border-t border-slate-200/70">
+                              {showChargeForm[ticket.id] ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-amber-900">
+                                      Đề xuất phụ phí bồi thường do khách hàng gây ra
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleChargeForm(ticket.id)}
+                                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                                    >
+                                      ✕ Thu gọn
+                                    </button>
+                                  </div>
+                                  <StaffTicketCharge
+                                    ticketId={ticket.id}
+                                    onChargeProposed={() => toggleChargeForm(ticket.id)}
+                                  />
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleChargeForm(ticket.id)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100/70 px-3 py-1.5 text-xs font-bold text-amber-900 transition shadow-2xs cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[15px] text-amber-700">add_circle</span>
+                                  <span>+ Đề xuất thu phụ phí / bồi thường</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </details>
                     </article>

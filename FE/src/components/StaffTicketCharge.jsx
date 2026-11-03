@@ -4,10 +4,10 @@ import mediaService from "../api/mediaService";
 
 function formatCurrency(val) {
   if (val == null || isNaN(val)) return "0 ₫";
-  return `${Number(val).toLocaleString("en-US")} ₫`;
+  return `${Number(val).toLocaleString("vi-VN")} ₫`;
 }
 
-export default function StaffTicketCharge({ ticketId }) {
+export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
   const fieldId = useId();
   const lock = useRef(false);
   const [reason, setReason] = useState("");
@@ -25,12 +25,12 @@ export default function StaffTicketCharge({ ticketId }) {
     setUploadingPhoto(true);
     setError("");
     try {
-      const res = await mediaService.uploadImage(file);
+      const res = await mediaService.upload(file);
       if (res?.url) {
         setPhotoUrl(res.url);
       }
     } catch (err) {
-      setError(err.message || "Failed to upload photo.");
+      setError(err.message || "Tải ảnh bằng chứng thất bại.");
     } finally {
       setUploadingPhoto(false);
     }
@@ -42,13 +42,14 @@ export default function StaffTicketCharge({ ticketId }) {
     setError("");
     const numericAmount = Number(amount);
     if (!amount.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setError("Please enter a valid amount greater than zero.");
+      setError("Vui lòng nhập số tiền phụ phí hợp lệ lớn hơn 0 đ.");
       return;
     }
     if (!reason.trim() && !description.trim()) {
-      setError("Please enter a reason or description for the proposed charge.");
+      setError("Vui lòng nhập lý do hoặc mô tả chi tiết cho khoản phụ phí đề xuất.");
       return;
     }
+
     lock.current = true;
     setSubmitting(true);
     setCharge(null);
@@ -59,13 +60,19 @@ export default function StaffTicketCharge({ ticketId }) {
         description: description.trim() || reason.trim(),
         photoUrl: photoUrl.trim() || undefined,
       });
-      setCharge(result || { amount: numericAmount, description: description.trim() || reason.trim(), status: "pending" });
+      const createdProposal = result || {
+        amount: numericAmount,
+        description: description.trim() || reason.trim(),
+        status: "pending",
+      };
+      setCharge(createdProposal);
       setReason("");
       setDescription("");
       setAmount("");
       setPhotoUrl("");
+      onChargeProposed?.(createdProposal);
     } catch (err) {
-      setError(err.message || "Unable to submit charge proposal. Please try again.");
+      setError(err.message || "Không thể gửi đề xuất phụ phí. Vui lòng thử lại.");
     } finally {
       lock.current = false;
       setSubmitting(false);
@@ -73,18 +80,21 @@ export default function StaffTicketCharge({ ticketId }) {
   }
 
   return (
-    <section className="mt-4 border-t border-[#dfe7f5] pt-4 text-sm">
-      <h3 className="font-semibold text-slate-900">Propose Incident / Damage Surcharge</h3>
-      <p className="text-xs text-[#767679] mt-0.5">
-        Submit a charge proposal for customer damages, key loss, or special cleaning.
+    <section className="mt-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-xs">
+      <div className="flex items-center gap-1.5 font-bold text-amber-900 mb-1">
+        <span className="material-symbols-outlined text-amber-700 text-[18px]">receipt_long</span>
+        <span>Đề xuất thu phụ phí / Bồi thường (Staff Proposal)</span>
+      </div>
+      <p className="text-[11px] text-amber-800 mb-3">
+        Gửi đề xuất thu phụ phí phát sinh (khách làm hỏng ổ khóa, trầy xước, xả rác...) để Quản lý cơ sở (Facility Manager) xem xét phê duyệt.
       </p>
 
-      <form onSubmit={handleSubmit} aria-busy={submitting} className="mt-3">
+      <form onSubmit={handleSubmit} aria-busy={submitting} className="space-y-3">
         <fieldset disabled={submitting} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor={`${fieldId}-amount`} className="mb-1 block text-xs font-semibold">
-                Amount (₫) *
+              <label htmlFor={`${fieldId}-amount`} className="mb-1 block text-xs font-semibold text-slate-700">
+                Số tiền phụ phí đề xuất (₫) *
               </label>
               <input
                 id={`${fieldId}-amount`}
@@ -92,117 +102,98 @@ export default function StaffTicketCharge({ ticketId }) {
                 min="1000"
                 step="1000"
                 required
-                placeholder="e.g. 150000"
+                placeholder="Ví dụ: 200000"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2 text-sm font-bold"
+                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-900 focus:border-[#1d5fe5] focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor={`${fieldId}-reason`} className="mb-1 block text-xs font-semibold">
-                Reason / Cause *
+              <label htmlFor={`${fieldId}-reason`} className="mb-1 block text-xs font-semibold text-slate-700">
+                Lý do / Phân loại hư hại *
               </label>
               <input
                 id={`${fieldId}-reason`}
                 type="text"
                 required
-                placeholder="e.g. Broken padlock, heavy trash left"
+                placeholder="Ví dụ: Hỏng ổ khóa cửa cuốn, xả rác tồn..."
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2 text-sm"
+                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor={`${fieldId}-description`} className="mb-1 block text-xs font-semibold">
-              Detailed Description
+            <label htmlFor={`${fieldId}-desc`} className="mb-1 block text-xs font-semibold text-slate-700">
+              Mô tả chi tiết nguyên nhân &amp; hiện trạng *
             </label>
             <textarea
-              id={`${fieldId}-description`}
+              id={`${fieldId}-desc`}
               rows={2}
-              placeholder="Describe the condition, location of damage, or specific cleanup needed..."
+              required
+              placeholder="Ghi rõ chi tiết hư hại do khách hàng gây ra và căn cứ tính phí..."
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2.5 text-xs"
+              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none resize-none"
             />
           </div>
 
           <div>
-            <label htmlFor={`${fieldId}-photo`} className="mb-1 block text-xs font-semibold">
-              Evidence Photo (Photo URL or Upload)
-            </label>
-            <div className="flex gap-2">
-              <input
-                id={`${fieldId}-photo`}
-                type="url"
-                placeholder="https://... or choose file below"
-                value={photoUrl}
-                onChange={(event) => setPhotoUrl(event.target.value)}
-                className="flex-1 rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2 text-xs"
-              />
-              <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium hover:bg-slate-50">
-                {uploadingPhoto ? "Uploading..." : "Upload File"}
+            <span className="mb-1 block text-xs font-semibold text-slate-700">Ảnh bằng chứng hiện trường (tùy chọn)</span>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer transition shadow-2xs">
+                <span className="material-symbols-outlined text-[16px] text-blue-600">upload_file</span>
+                <span>{uploadingPhoto ? "Đang tải ảnh..." : "Chọn ảnh chụp hiện trường"}</span>
                 <input
                   type="file"
                   accept="image/*"
+                  disabled={uploadingPhoto}
                   onChange={handlePhotoFileChange}
                   className="hidden"
-                  disabled={uploadingPhoto}
                 />
               </label>
+              {photoUrl && (
+                <div className="flex items-center gap-2">
+                  <img src={photoUrl} alt="Bằng chứng" className="h-8 w-8 rounded object-cover border border-slate-300" />
+                  <span className="text-[11px] text-emerald-700 font-medium">✓ Đã tải ảnh lên</span>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoUrl("")}
+                    className="text-[11px] text-rose-600 hover:underline cursor-pointer"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              )}
             </div>
-            {photoUrl && (
-              <div className="mt-2">
-                <img
-                  src={photoUrl}
-                  alt="Evidence preview"
-                  className="h-20 w-auto rounded border border-slate-200 object-cover"
-                />
-              </div>
-            )}
           </div>
 
-          {error && <p role="alert" className="text-xs font-semibold text-red-600">{error}</p>}
+          {error && <p className="text-rose-600 text-[11px] font-semibold">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={!amount.trim() || (!reason.trim() && !description.trim()) || submitting}
-            className="rounded-lg bg-[#1d5fe5] px-4 py-2 text-xs font-semibold text-white hover:bg-[#174fc7] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? "Submitting Proposal..." : "Submit Charge Proposal"}
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting || !amount.trim() || !reason.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">send</span>
+              <span>{submitting ? "Đang gửi đề xuất..." : "Nộp đề xuất phụ phí cho Manager duyệt"}</span>
+            </button>
+          </div>
         </fieldset>
       </form>
 
       {charge && (
-        <div className="mt-3 rounded-xl bg-green-50 p-3.5 border border-green-200 text-xs text-green-900">
-          <p role="status" className="font-bold text-green-800 flex items-center gap-1.5">
-            ✓ Charge proposal #{charge.id || ""} submitted for manager approval.
-          </p>
-          <div className="mt-2 space-y-1">
-            <div>
-              <span className="font-semibold">Amount: </span>
-              <strong>{formatCurrency(charge.amount)}</strong>
-            </div>
-            <div>
-              <span className="font-semibold">Reason / Description: </span>
-              <span>{charge.description || charge.reason || "—"}</span>
-            </div>
-            <div>
-              <span className="font-semibold">Status: </span>
-              <span className="font-mono uppercase font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-                {charge.status || "pending"}
-              </span>
-            </div>
-            {charge.proposedByName && (
-              <div>
-                <span className="font-semibold">Proposed by: </span>
-                <span>{charge.proposedByName}</span>
-              </div>
-            )}
+        <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-950 space-y-1">
+          <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+            <span className="material-symbols-outlined text-[17px] text-emerald-600">check_circle</span>
+            <span>Đã gửi đề xuất thu phụ phí thành công!</span>
           </div>
+          <p className="text-[11px] text-emerald-900">
+            Số tiền đề xuất: <strong>{formatCurrency(charge.amount)}</strong>. Trạng thái: <em>Chờ Quản lý (Manager) phê duyệt</em>.
+          </p>
         </div>
       )}
     </section>

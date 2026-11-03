@@ -93,6 +93,21 @@ export default {
   },
 
   /**
+   * Get ticket messages history
+   * GET /api/staff/tickets/{id}/messages
+   */
+  async getMessages(id) {
+    if (!id) return [];
+    try {
+      const response = await apiClient.get(`/staff/tickets/${encodeURIComponent(id)}/messages`);
+      if (response?.success === true && Array.isArray(response.data)) return response.data;
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  /**
    * Staff accepts / claims assignment
    * STT 4: PUT /api/staff/tickets/{id}/assign
    */

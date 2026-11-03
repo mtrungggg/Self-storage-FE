@@ -6,14 +6,13 @@ import PageBackground from "../components/PageBackground";
 import StaffReservationLookup from "../components/StaffReservationLookup";
 import StaffMoveOutTab from "../components/StaffMoveOutTab";
 import StaffFacilityUnits from "../components/StaffFacilityUnits";
-import StaffOverdueAgreements from "../components/StaffOverdueAgreements";
 import StaffTaskStatus from "../components/StaffTaskStatus";
 import StaffShiftSchedule from "../components/StaffShiftSchedule";
+import StaffAssignedTicketModal from "../components/StaffAssignedTicketModal";
 import { hasCapability, CAPABILITIES } from "../constants/roles";
 import { useAuth } from "../hooks/useAuth";
 import staffFacilityService from "../api/staffFacilityService";
 import staffReservationService from "../api/staffReservationService";
-import staffAgreementService from "../api/staffAgreementService";
 import staffSupportService from "../api/staffSupportService";
 import staffTaskService from "../api/staffTaskService";
 import facilityService from "../api/facilityService";
@@ -23,20 +22,23 @@ import { useSignalR } from "../context/SignalRContext";
 
 export default function StaffDashboard({ initialTab = "checkin" }) {
   const { user } = useAuth();
-  const { subscribe, joinFacility } = useSignalR();
+  const { subscribe, joinFacility, recentEvent } = useSignalR();
 
   // Selected operational facility (1 = HCM-TD, 2 = HCM-D7)
   const [selectedFacilityId, setSelectedFacilityId] = useState("1");
-  const [activeTab, setActiveTab] = useState(initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'overdue' | 'issues'
+  const [activeTab, setActiveTab] = useState(initialTab === "overdue" ? "checkin" : initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'issues'
 
   // Dynamic Metrics State
   const [facilities, setFacilities] = useState([]);
   const [units, setUnits] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [overdueAgreements, setOverdueAgreements] = useState([]);
   const [supportTickets, setSupportTickets] = useState([]);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  // Sub-tabs & selected ticket for assigned tickets modal
+  const [ticketSubTab, setTicketSubTab] = useState("active"); // 'active' | 'completed'
+  const [selectedStaffTicket, setSelectedStaffTicket] = useState(null);
 
   // Active task type filter inside Issues tab
   const [activeTaskType, setActiveTaskType] = useState("all");
@@ -49,11 +51,10 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     setLoadingMetrics(true);
 
     try {
-      const [unitsRes, rsvRes, tasksRes, overdueRes, ticketsRes, facilitiesRes] = await Promise.allSettled([
+      const [unitsRes, rsvRes, tasksRes, ticketsRes, facilitiesRes] = await Promise.allSettled([
         staffFacilityService.getUnits(Number(facilityId)),
         staffReservationService.lookup("", facilityId),
         staffTaskService.getTasks(facilityId),
-        staffAgreementService.getOverdueAgreements(facilityId),
         staffSupportService.getTickets({ facilityId: Number(facilityId), onlyAssignedToMe: true }),
         facilityService.getFacilities(),
       ]);
@@ -63,7 +64,6 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
       if (unitsRes.status === "fulfilled") setUnits(unitsRes.value || []);
       if (rsvRes.status === "fulfilled") setReservations(rsvRes.value || []);
       if (tasksRes.status === "fulfilled") setTasks(tasksRes.value || []);
-      if (overdueRes.status === "fulfilled") setOverdueAgreements(overdueRes.value || []);
       if (ticketsRes.status === "fulfilled") setSupportTickets(ticketsRes.value || []);
       if (facilitiesRes.status === "fulfilled") setFacilities(facilitiesRes.value || []);
     } catch (err) {
@@ -81,6 +81,28 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
       requestId.current++;
     };
   }, [selectedFacilityId]);
+
+  // Real-time synchronization via SignalR
+  useEffect(() => {
+    if (!recentEvent) return;
+    const t = recentEvent.type;
+    if (t === "ticket" || t === "task" || t === "notification" || t === "unit") {
+      loadDashboardData(selectedFacilityId);
+    }
+  }, [recentEvent, selectedFacilityId]);
+
+  useEffect(() => {
+    const unsubTicket = subscribe("TicketUpdated", () => {
+      loadDashboardData(selectedFacilityId);
+    });
+    const unsubTask = subscribe("TaskAssigned", () => {
+      loadDashboardData(selectedFacilityId);
+    });
+    return () => {
+      unsubTicket();
+      unsubTask();
+    };
+  }, [subscribe, selectedFacilityId]);
 
   // Derived real KPI statistics
   const totalUnits = units.length;
@@ -112,21 +134,33 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     (r) => r.status === RESERVATION_STATUS.CONFIRMED || r.status === RESERVATION_STATUS.PENDING
   ).length;
 
-  const lockedAccessCount = overdueAgreements.filter((a) => a.accessLocked).length;
-
   // Bộ lọc: chỉ hiển thị Ticket do Manager phân công cho Staff đang đăng nhập
-  const openTickets = supportTickets.filter((t) => {
-    const isOpen = t.status === TICKET_STATUS.OPEN || t.status === TICKET_STATUS.IN_PROGRESS;
-    if (!isOpen) return false;
-    if (t.isAssignedToMe) return true;
+  const myAssignedTickets = useMemo(() => {
     const uid = user?.id || user?.userId || user?.employeeId;
-    if (uid && (t.assignedEmployeeId === uid || t.assignedToId === uid || String(t.assignedEmployeeId) === String(uid))) return true;
-    if (user?.employeeId && (t.assignedEmployeeId === user.employeeId || String(t.assignedEmployeeId) === String(user.employeeId))) return true;
     const staffName = (user?.fullName || user?.name || "").trim().toLowerCase();
-    if (staffName && t.assignedEmployeeName && t.assignedEmployeeName.trim().toLowerCase() === staffName) return true;
-    return false;
-  });
-  const openIssuesCount = pendingTasks + openTickets.length;
+    return supportTickets.filter((t) => {
+      if (t.isAssignedToMe) return true;
+      if (uid && (t.assignedEmployeeId === uid || t.assignedToId === uid || String(t.assignedEmployeeId) === String(uid))) return true;
+      if (user?.employeeId && (t.assignedEmployeeId === user.employeeId || String(t.assignedEmployeeId) === String(user.employeeId))) return true;
+      if (staffName && t.assignedEmployeeName && t.assignedEmployeeName.trim().toLowerCase() === staffName) return true;
+      return false;
+    });
+  }, [supportTickets, user]);
+
+  const activeTickets = useMemo(() => {
+    return myAssignedTickets.filter((t) =>
+      t.status !== "resolved" && t.status !== "closed" && t.status !== "completed"
+    );
+  }, [myAssignedTickets]);
+
+  const completedTickets = useMemo(() => {
+    return myAssignedTickets.filter((t) =>
+      t.status === "resolved" || t.status === "closed" || t.status === "completed"
+    );
+  }, [myAssignedTickets]);
+
+  const openTickets = activeTickets;
+  const openIssuesCount = pendingTasks + activeTickets.length;
 
   const staffFacility = useMemo(() => {
     const fId = tasks[0]?.facilityId || user?.facilityId || selectedFacilityId || 1;
@@ -225,23 +259,35 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             </div>
           </div>
 
-          {/* KPI 3: Security & Overdue */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+          {/* KPI 3: Assigned Tickets */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("issues");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-[#1d5fe5] hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#1d5fe5]"
+            title="Bấm để xem danh sách công việc & sự cố"
+          >
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Overdue</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-[#1d5fe5] transition-colors">
+                Tickets việc làm
+              </p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-red-600">
-                  {loadingMetrics ? "..." : String(overdueAgreements.length).padStart(2, "0")}
+                <span className="text-2xl font-extrabold text-blue-600 group-hover:text-[#1d5fe5] transition-colors">
+                  {loadingMetrics ? "..." : String(activeTickets.length).padStart(2, "0")}
                 </span>
-                <span className="text-xs font-semibold text-slate-500">{lockedAccessCount} locked</span>
+                <span className="text-xs font-semibold text-slate-500">
+                  {completedTickets.length} đã xong
+                </span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-[#1d5fe5] text-[#1d5fe5] group-hover:text-white flex items-center justify-center transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-          </div>
+          </button>
 
           {/* KPI 4: Occupancy */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
@@ -326,18 +372,6 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab("overdue")}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-                    activeTab === "overdue"
-                      ? "bg-[#1d5fe5] text-white shadow-xs"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  Overdue
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setActiveTab("issues")}
                   className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                     activeTab === "issues"
@@ -365,10 +399,6 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                 {activeTab === "shifts" && (
                   <StaffShiftSchedule facilityId={selectedFacilityId} />
-                )}
-
-                {activeTab === "overdue" && (
-                  <StaffOverdueAgreements initialFacilityId={selectedFacilityId} />
                 )}
 
                 {activeTab === "issues" && (
@@ -430,49 +460,158 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             {/* Active Support Tickets Live Feed */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tickets phân công</h2>
-                <Link
-                  to="/staff-support-tickets"
-                  className="text-xs font-semibold text-[#1d5fe5] hover:text-[#1550c7]"
-                >
-                  Tất cả →
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">
+                    assignment_late
+                  </span>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Tickets phân công
+                  </h2>
+                </div>
+
+                {/* Sub-tabs: Việc cần làm vs Đã hoàn thành */}
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setTicketSubTab("active")}
+                    className={`px-2.5 py-1 rounded transition cursor-pointer ${
+                      ticketSubTab === "active"
+                        ? "bg-white text-blue-700 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Việc cần làm ({activeTickets.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTicketSubTab("completed")}
+                    className={`px-2.5 py-1 rounded transition cursor-pointer ${
+                      ticketSubTab === "completed"
+                        ? "bg-white text-emerald-700 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Đã xong ({completedTickets.length})
+                  </button>
+                </div>
               </div>
 
-              {openTickets.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                  Không có ticket nào được Manager phân công cho bạn.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {openTickets.slice(0, 3).map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 shrink-0">
-                            {ticket.ticketNo || `#${ticket.id}`}
-                          </span>
-                          <span className="text-xs font-medium text-slate-800 truncate">
-                            {ticket.subject || ticket.description || "Support"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <Link
-                            to="/staff-support-tickets"
-                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-2.5 py-1 rounded transition-colors"
+              {/* Ticket List */}
+              {ticketSubTab === "active" ? (
+                activeTickets.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                    ✓ Hiện không có ticket nào cần xử lý.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {activeTickets.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        onClick={() => setSelectedStaffTicket(ticket)}
+                        className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-300 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 shrink-0 border border-amber-200">
+                                {ticket.ticketNo || `#${ticket.id}`}
+                              </span>
+                              {ticket.unitCode && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0 border border-blue-200">
+                                  Kho {ticket.unitCode}
+                                </span>
+                              )}
+                              {ticket.priority === "urgent" && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 shrink-0">
+                                  Khẩn cấp
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-700 transition">
+                              {ticket.subject || ticket.description || "Công việc sự cố kho"}
+                            </p>
+                            {ticket.customerName && (
+                              <p className="text-[11px] text-slate-500">
+                                Khách hàng: {ticket.customerName}
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedStaffTicket(ticket);
+                            }}
+                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-3 py-1.5 rounded-lg transition-colors shrink-0 shadow-xs cursor-pointer"
                           >
-                            Xử lý
-                          </Link>
+                            Xử lý →
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                completedTickets.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                    Chưa có công việc nào được hoàn thành gần đây.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {completedTickets.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        onClick={() => setSelectedStaffTicket(ticket)}
+                        className="p-3 rounded-xl border border-slate-100 bg-emerald-50/30 hover:bg-emerald-50/60 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0 border border-emerald-200">
+                                {ticket.ticketNo || `#${ticket.id}`}
+                              </span>
+                              {ticket.unitCode && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 shrink-0">
+                                  Kho {ticket.unitCode}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-bold text-emerald-700">
+                                ✓ Đã xong
+                              </span>
+                            </div>
+                            <p className="text-xs font-semibold text-slate-800 truncate">
+                              {ticket.subject || ticket.description || "Support"}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedStaffTicket(ticket);
+                            }}
+                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer"
+                          >
+                            Xem lại
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
+
+            {/* Staff Assigned Ticket Modal */}
+            <StaffAssignedTicketModal
+              ticket={selectedStaffTicket}
+              isOpen={Boolean(selectedStaffTicket)}
+              onClose={() => setSelectedStaffTicket(null)}
+              onSuccess={() => {
+                loadDashboardData(selectedFacilityId);
+              }}
+            />
 
           </div>
 

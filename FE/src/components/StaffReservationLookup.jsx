@@ -4,6 +4,7 @@ import staffFacilityService from "../api/staffFacilityService";
 import staffQrService from "../api/staffQrService";
 import StaffAssignUnit from "./StaffAssignUnit";
 import QrCameraScanner from "./QrCameraScanner";
+import ReportCheckInIssueModal from "./ReportCheckInIssueModal";
 import STORAGE_KEYS from "../constants/storageKeys";
 
 function formatMoney(value) {
@@ -77,6 +78,7 @@ export default function StaffReservationLookup() {
   const [qrActionLoading, setQrActionLoading] = useState(false);
   const [qrActionSuccess, setQrActionSuccess] = useState("");
   const [qrActionResult, setQrActionResult] = useState(null);
+  const [issueModalTarget, setIssueModalTarget] = useState(null);
 
   const requestId = useRef(0);
 
@@ -555,15 +557,35 @@ export default function StaffReservationLookup() {
                   <span> · Ô kho: <strong>{qrData.unit?.unitCode || qrData.reservation.unitCode}</strong></span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setQrReassignOpen((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 shadow-xs"
-                title="Xử lý trường hợp kho bẩn hoặc kẹt cửa khi khách đến"
-              >
-                <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
-                <span>{qrReassignOpen ? "Đóng đổi kho" : "Đổi ô kho tương đương"}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIssueModalTarget({
+                      unitCode: qrData.unit?.unitCode || qrData.reservation?.unitCode,
+                      agreementNo: qrData.agreement?.agreementNo,
+                      customerName: qrData.customer?.fullName,
+                      storageUnitId: qrData.unit?.storageUnitId || qrData.unit?.unitId,
+                      agreementId: qrData.agreement?.id || qrData.agreement?.agreementId,
+                      facilityId: qrData.agreement?.facilityId || qrData.unit?.facilityId || facilityId,
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
+                  title="Báo cáo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
+                >
+                  <span className="material-symbols-outlined text-[15px]">report_problem</span>
+                  <span>Báo sự cố kho</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrReassignOpen((v) => !v)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 shadow-xs"
+                  title="Xử lý trường hợp kho bẩn hoặc kẹt cửa khi khách đến"
+                >
+                  <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                  <span>{qrReassignOpen ? "Đóng đổi kho" : "Đổi ô kho tương đương"}</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -707,20 +729,39 @@ export default function StaffReservationLookup() {
                     ) : (
                       <span className="text-[11px] text-[#58657a]">Chờ xác nhận bàn giao</span>
                     )}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        confirmFacilityCheckIn({
-                          unitCode: unit.unitCode,
-                          agreementNo: unit.currentAgreementNo,
-                          customerName: unit.customerName,
-                        })
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d]"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-                      <span>{checkedRecord ? "Bàn giao lại" : "Xác nhận bàn giao"}</span>
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setIssueModalTarget({
+                            unitCode: unit.unitCode,
+                            agreementNo: unit.currentAgreementNo,
+                            customerName: unit.customerName,
+                            storageUnitId: unit.unitId,
+                            facilityId: facilityId || 1,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
+                        title="Báo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">report_problem</span>
+                        <span>Báo sự cố</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          confirmFacilityCheckIn({
+                            unitCode: unit.unitCode,
+                            agreementNo: unit.currentAgreementNo,
+                            customerName: unit.customerName,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d] cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
+                        <span>{checkedRecord ? "Bàn giao lại" : "Xác nhận bàn giao"}</span>
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
@@ -784,6 +825,26 @@ export default function StaffReservationLookup() {
                   )}
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Nút Báo sự cố kho */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIssueModalTarget({
+                          unitCode: resolvedUnitCode,
+                          reservationCode: item.reservationCode,
+                          agreementNo: item.agreementNo,
+                          customerName: item.customerName,
+                          storageUnitId: item.storageUnitId,
+                          facilityId: item.facilityId || facilityId,
+                        })
+                      }
+                      className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
+                      title="Báo cáo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">report_problem</span>
+                      <span>Báo sự cố kho</span>
+                    </button>
+
                     {/* Nút Đổi ô kho tương đương */}
                     <button
                       type="button"
@@ -872,6 +933,17 @@ export default function StaffReservationLookup() {
           </div>
         </div>
       )}
+
+      {/* Modal Báo sự cố kho lúc Check-in */}
+      <ReportCheckInIssueModal
+        target={issueModalTarget}
+        isOpen={Boolean(issueModalTarget)}
+        onClose={() => setIssueModalTarget(null)}
+        onSuccess={(tgt) => {
+          setToastMsg(`Đã tạo Ticket sự cố kho ${tgt.unitCode || ""} và gửi khẩn cấp lên Quản lý cơ sở.`);
+        }}
+        isStaff={true}
+      />
     </section>
   );
 }

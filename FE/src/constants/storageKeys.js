@@ -17,6 +17,10 @@ export const STORAGE_KEYS = Object.freeze({
   // Keypad PIN prefix generator
   PIN_PREFIX: "g1_pin_",
   getPinKey: (rentalId) => `g1_pin_${rentalId}`,
+
+  // Move-out inspection owner lock
+  MOVEOUT_LOCK_PREFIX: "g1_moveout_lock_",
+  getMoveOutLockKey: (moveOutId) => `g1_moveout_lock_${moveOutId}`,
 });
 
 export default STORAGE_KEYS;

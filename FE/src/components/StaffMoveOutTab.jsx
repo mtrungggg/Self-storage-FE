@@ -149,7 +149,7 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-bold text-slate-900">
-                  Unit {item.unitCode || `#${item.storageUnitId}`}
+                  Unit {item.unitCode && item.unitCode !== "N/A" ? item.unitCode : item.storageUnitCode || "—"}
                 </span>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${

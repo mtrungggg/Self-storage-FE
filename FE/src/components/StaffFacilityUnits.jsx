@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import staffFacilityService from "../api/staffFacilityService";
 import StaffUnitStatus from "./StaffUnitStatus";
-import StaffMaintenanceOrder from "./StaffMaintenanceOrder";
 
 const STATUS_CONFIG = {
   available: {
@@ -272,19 +271,19 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                   <button
                     type="button"
                     onClick={() => setExpandedUnitId(null)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
                   >
                     ✕ Close
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Status Change Module */}
-                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
+                <div>
+                  {/* Status Change & Task Ownership Lock Module */}
+                  <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">
                         tune
                       </span>
-                      <span>Unit status</span>
+                      <span>Điều phối trạng thái kho (Unit status &amp; Task Lock)</span>
                     </h4>
                     <StaffUnitStatus
                       unit={{ ...unit, facilityId: unit.facilityId || facilityId }}
@@ -295,20 +294,6 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                           )
                         )
                       }
-                    />
-                  </div>
-
-                  {/* Maintenance Order Module */}
-                  <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px] text-rose-600">
-                        build
-                      </span>
-                      <span>Maintenance</span>
-                    </h4>
-                    <StaffMaintenanceOrder
-                      unitId={unit.unitId}
-                      onCreated={() => loadUnits(Number(facilityId), false)}
                     />
                   </div>
                 </div>

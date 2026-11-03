@@ -6,22 +6,109 @@ import managerTicketService from "../api/managerTicketService";
 import AssignStaffModal from "../components/AssignStaffModal";
 import EmergencyReassignModal from "../components/EmergencyReassignModal";
 import StaffTicketReply from "../components/StaffTicketReply";
-import StaffTicketCharge from "../components/StaffTicketCharge";
+import ManagerTicketChargeSection from "../components/ManagerTicketChargeSection";
+import ManagerCreateTicketModal from "../components/ManagerCreateTicketModal";
+
+// Helper: Tách mã ô kho và hậu tố trạng thái (vd: "A-901-OCCUPIED" -> "A-901" kèm badge "Đang thuê")
+function formatUnitCodeDisplay(rawCode) {
+  if (!rawCode) return { code: "—", badge: null };
+  const str = String(rawCode).trim();
+  const match = str.match(/^(.*?)(?:-(PENDING-INSPECT|OCCUPIED|AVAILABLE|MAINTENANCE|CLEANING))$/i);
+  if (match) {
+    const code = match[1];
+    const suffix = match[2].toUpperCase();
+    let badgeLabel = suffix;
+    let badgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+    if (suffix === "PENDING-INSPECT") {
+      badgeLabel = "Chờ kiểm tra";
+      badgeClass = "bg-amber-100 text-amber-800 border-amber-300";
+    } else if (suffix === "OCCUPIED") {
+      badgeLabel = "Đang thuê";
+      badgeClass = "bg-blue-100 text-blue-800 border-blue-300";
+    } else if (suffix === "AVAILABLE") {
+      badgeLabel = "Khả dụng";
+      badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+    } else if (suffix === "MAINTENANCE") {
+      badgeLabel = "Bảo trì";
+      badgeClass = "bg-rose-100 text-rose-800 border-rose-300";
+    } else if (suffix === "CLEANING") {
+      badgeLabel = "Đang dọn dẹp";
+      badgeClass = "bg-sky-100 text-sky-800 border-sky-300";
+    }
+    return { code, badge: { label: badgeLabel, className: badgeClass } };
+  }
+  return { code: str, badge: null };
+}
+
+// Helper: Phân tích trạng thái duy nhất của Ticket để tránh hiển thị nhiều badge mâu thuẫn
+function getTicketStage(ticket) {
+  const rawStatus = String(ticket.status || "").toLowerCase();
+  const isClosed = rawStatus === "closed" || rawStatus === "cancelled";
+  const isResolved =
+    !isClosed &&
+    (rawStatus === "resolved" ||
+      rawStatus === "completed" ||
+      ticket.reportResult === "Resolved");
+  const isSevere =
+    !isClosed &&
+    !isResolved &&
+    (ticket.reportResult === "Severe_Need_Relocation" ||
+      rawStatus.includes("severe") ||
+      rawStatus.includes("relocation"));
+  const isAssigned =
+    !isClosed &&
+    !isResolved &&
+    !isSevere &&
+    (rawStatus === "assigned" ||
+      rawStatus === "in_progress" ||
+      Boolean(ticket.assignedEmployeeId || ticket.assignedEmployeeName));
+  const isPendingReview = !isClosed && !isResolved && !isSevere && !isAssigned;
+
+  return {
+    isClosed,
+    isResolved,
+    isSevere,
+    isAssigned,
+    isPendingReview,
+  };
+}
+
+// Helper: Trọng số sắp xếp ưu tiên hiển thị công việc (Hư hỏng nặng -> Chờ duyệt -> Đang xử lý -> Xong -> Đóng)
+function getTicketPriorityScore(ticket) {
+  const stage = getTicketStage(ticket);
+  if (stage.isSevere) return 1;
+  if (stage.isPendingReview) return 2;
+  if (stage.isAssigned) return 3;
+  if (stage.isResolved) return 4;
+  if (stage.isClosed) return 5;
+  return 6;
+}
+
+// Helper: Tìm tên nhân viên phụ trách từ thuộc tính hoặc nội dung báo cáo
+function resolveAssignedStaffName(ticket) {
+  if (ticket.assignedEmployeeName) return ticket.assignedEmployeeName;
+  const text = `${ticket.resolution || ""} ${ticket.reportNote || ""} ${ticket.notes || ""} ${ticket.description || ""}`;
+  const match = text.match(/\[(?:Staff Inspection Report -|Báo cáo Staff)\s*([^\]]+)\]/i);
+  if (match) return match[1].trim();
+  return null;
+}
 
 export default function ManagerTicketsPage() {
   const { activeFacility, facilityId } = useManagerFacility();
   const { t, formatDate } = useLanguage();
-  const { subscribe, joinFacility } = useSignalR();
+  const { subscribe, joinFacility, recentEvent } = useSignalR();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState("");
   const [toastMsg, setToastMsg] = useState("");
+  const [closingTicketId, setClosingTicketId] = useState(null);
 
   // Modals state
   const [assigningTicket, setAssigningTicket] = useState(null);
   const [emergencyTicket, setEmergencyTicket] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const requestId = useRef(0);
 
@@ -78,6 +165,13 @@ export default function ManagerTicketsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facilityId]);
 
+  useEffect(() => {
+    if (!recentEvent) return;
+    if (recentEvent.type === "ticket" || recentEvent.type === "task") {
+      loadTickets();
+    }
+  }, [recentEvent]);
+
   // Client-side filtering & sorting
   const filteredTickets = useMemo(() => {
     let list = [...tickets];
@@ -97,38 +191,38 @@ export default function ManagerTicketsPage() {
 
     if (statusFilter) {
       list = list.filter((t) => {
-        const s = String(t.status || t.reportResult || "").toLowerCase();
-        if (statusFilter === "pending_manager_review") {
-          return s.includes("pending") || s.includes("review") || !t.assignedEmployeeId;
-        }
-        if (statusFilter === "severe_need_relocation") {
-          return s.includes("severe") || s.includes("relocation") || t.reportResult === "Severe_Need_Relocation";
-        }
-        if (statusFilter === "resolved") {
-          return s.includes("resolved") || s.includes("completed") || t.reportResult === "Resolved";
-        }
-        return s === statusFilter.toLowerCase();
+        const stage = getTicketStage(t);
+        if (statusFilter === "pending_manager_review") return stage.isPendingReview;
+        if (statusFilter === "in_progress") return stage.isAssigned;
+        if (statusFilter === "severe_need_relocation") return stage.isSevere;
+        if (statusFilter === "resolved") return stage.isResolved;
+        if (statusFilter === "closed") return stage.isClosed;
+        return true;
       });
     }
+
+    // Sắp xếp ưu tiên: Vé cần hành động lên đầu, vé Đã xong/Đã đóng đẩy xuống cuối
+    list.sort((a, b) => {
+      const scoreA = getTicketPriorityScore(a);
+      const scoreB = getTicketPriorityScore(b);
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
 
     return list;
   }, [tickets, searchQuery, statusFilter]);
 
   // Counters
   const pendingReviewCount = useMemo(() => {
-    return tickets.filter((t) => {
-      const s = String(t.status || "").toLowerCase();
-      return (s.includes("pending") || s.includes("review") || !t.assignedEmployeeId) && t.status !== "resolved" && t.status !== "closed";
-    }).length;
+    return tickets.filter((t) => getTicketStage(t).isPendingReview).length;
   }, [tickets]);
 
   const severeRelocationCount = useMemo(() => {
-    return tickets.filter(
-      (t) =>
-        (t.reportResult === "Severe_Need_Relocation" || String(t.status || "").toLowerCase().includes("severe")) &&
-        t.status !== "resolved" &&
-        t.status !== "closed"
-    ).length;
+    return tickets.filter((t) => getTicketStage(t).isSevere).length;
   }, [tickets]);
 
   function handleAssignSuccess(assignedStaff) {
@@ -142,6 +236,21 @@ export default function ManagerTicketsPage() {
       `Đã đổi kho khẩn cấp sang kho ${reassignData.newUnitCode || "mới"} thành công (Chi phí: 0 VNĐ).`
     );
     loadTickets();
+  }
+
+  async function handleCloseTicket(ticketId) {
+    if (!ticketId || closingTicketId) return;
+    setClosingTicketId(ticketId);
+    setError("");
+    try {
+      await managerTicketService.closeTicket(ticketId);
+      setToastMsg(`Đã đóng Ticket #${ticketId} thành công.`);
+      loadTickets();
+    } catch (err) {
+      setError(err.message || "Không thể đóng ticket.");
+    } finally {
+      setClosingTicketId(null);
+    }
   }
 
   return (
@@ -172,14 +281,25 @@ export default function ManagerTicketsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={loadTickets}
-          disabled={loading}
-          className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer"
-        >
-          {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>+ Tạo sự cố / Ticket mới</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={loadTickets}
+            disabled={loading}
+            className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+          >
+            {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
+          </button>
+        </div>
       </div>
 
       {toastMsg && (
@@ -269,55 +389,63 @@ export default function ManagerTicketsPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {filteredTickets.map((ticket) => {
-              const isPendingReview =
-                String(ticket.status || "").toLowerCase().includes("pending") ||
-                String(ticket.status || "").toLowerCase().includes("review") ||
-                !ticket.assignedEmployeeId;
-              const isSevere =
-                ticket.reportResult === "Severe_Need_Relocation" ||
-                String(ticket.status || "").toLowerCase().includes("severe");
-              const isResolved =
-                ticket.reportResult === "Resolved" ||
-                ticket.status === "completed" ||
-                ticket.status === "resolved";
+              const stage = getTicketStage(ticket);
+              const staffName = resolveAssignedStaffName(ticket);
+              const formattedUnit = formatUnitCodeDisplay(ticket.unitCode);
 
               return (
                 <article
                   key={ticket.id}
                   className={`rounded-2xl border p-5 shadow-xs transition hover:shadow-sm flex flex-col justify-between ${
-                    isSevere
+                    stage.isSevere
                       ? "border-rose-400 bg-rose-50/20 ring-1 ring-rose-200"
-                      : isPendingReview
+                      : stage.isPendingReview
                       ? "border-amber-300 bg-amber-50/15"
+                      : stage.isClosed
+                      ? "border-slate-200 bg-slate-50/30 opacity-90"
                       : "border-slate-200 bg-white"
                   }`}
                 >
                   <div>
-                    {/* Header */}
+                    {/* Header: Chỉ hiển thị DUY NHẤT 1 Badge trạng thái chính */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[#1d5fe5]">
                           {ticket.ticketNo || `#${ticket.id}`}
                         </span>
 
-                        {isPendingReview && (
+                        {stage.isClosed && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-300">
+                            <span className="material-symbols-outlined text-[12px] text-slate-500">lock</span>
+                            <span>{t("status.closed", "Đã đóng")}</span>
+                          </span>
+                        )}
+
+                        {stage.isResolved && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300">
+                            <span className="material-symbols-outlined text-[12px] text-emerald-600">check_circle</span>
+                            <span>{t("status.resolved", "Đã xử lý xong (Hoàn thành)")}</span>
+                          </span>
+                        )}
+
+                        {stage.isSevere && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-800 border border-rose-300 animate-pulse">
+                            <span className="material-symbols-outlined text-[12px] text-rose-600">warning</span>
+                            <span>{t("status.severe_need_relocation", "Hư hỏng nặng (Cần đổi kho)")}</span>
+                          </span>
+                        )}
+
+                        {stage.isAssigned && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800 border border-blue-300">
+                            <span className="material-symbols-outlined text-[12px] text-blue-600">pending</span>
+                            <span>{t("status.in_progress", "Đang xử lý")}</span>
+                          </span>
+                        )}
+
+                        {stage.isPendingReview && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300 animate-pulse">
                             <span className="material-symbols-outlined text-[12px] text-amber-700">schedule</span>
-                            {t("status.pending_manager_review", "Pending_Manager_Review")}
-                          </span>
-                        )}
-
-                        {isSevere && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-800 border border-rose-300">
-                            <span className="material-symbols-outlined text-[12px] text-rose-600">warning</span>
-                            {t("status.severe_need_relocation", "Severe_Need_Relocation")}
-                          </span>
-                        )}
-
-                        {isResolved && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                            <span className="material-symbols-outlined text-[12px] text-emerald-600">check_circle</span>
-                            {t("status.completed", "Resolved")}
+                            <span>{t("status.pending_manager_review", "Chờ Manager duyệt")}</span>
                           </span>
                         )}
                       </div>
@@ -349,8 +477,13 @@ export default function ManagerTicketsPage() {
                       </div>
                       <div>
                         <dt className="text-[11px] text-slate-400">{t("tickets.current_unit", "Ô kho hiện tại")}</dt>
-                        <dd className="font-bold text-slate-900 truncate">
-                          {ticket.unitCode ? `${t("common.unit", "Kho")} ${ticket.unitCode}` : "—"}
+                        <dd className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                          <span>{ticket.unitCode ? `Kho ${formattedUnit.code}` : "—"}</span>
+                          {formattedUnit.badge && (
+                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${formattedUnit.badge.className}`}>
+                              {formattedUnit.badge.label}
+                            </span>
+                          )}
                         </dd>
                       </div>
                       <div>
@@ -360,8 +493,17 @@ export default function ManagerTicketsPage() {
                       <div>
                         <dt className="text-[11px] text-slate-400">{t("tickets.assigned_staff", "Nhân viên phụ trách")}</dt>
                         <dd className="font-semibold text-slate-800 truncate">
-                          {ticket.assignedEmployeeName ? (
-                            <span className="text-blue-700 font-bold">{ticket.assignedEmployeeName}</span>
+                          {staffName ? (
+                            <span className="text-blue-700 font-bold">
+                              {staffName}
+                              {stage.isResolved || stage.isClosed ? (
+                                <span className="ml-1 text-[11px] text-emerald-700 font-semibold">(Đã xử lý)</span>
+                              ) : (
+                                <span className="ml-1 text-[11px] text-blue-600 font-normal">(Đang phụ trách)</span>
+                              )}
+                            </span>
+                          ) : stage.isResolved || stage.isClosed ? (
+                            <span className="text-emerald-700 font-medium italic">Tự động hoàn tất</span>
                           ) : (
                             <span className="text-amber-700 font-bold italic">{t("tickets.not_assigned", "Chưa giao Staff")}</span>
                           )}
@@ -374,7 +516,7 @@ export default function ManagerTicketsPage() {
                     </dl>
 
                     {/* BÁO CÁO TỪ STAFF (NẾU ĐÃ CÓ BÁO CÁO) */}
-                    {isSevere && (
+                    {stage.isSevere && (
                       <div className="mt-3 rounded-xl bg-rose-50 border-2 border-rose-400 p-3 text-xs text-rose-950 space-y-1.5 shadow-2xs">
                         <div className="flex items-center gap-1.5 font-extrabold text-rose-800 text-sm">
                           <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
@@ -389,7 +531,7 @@ export default function ManagerTicketsPage() {
                       </div>
                     )}
 
-                    {isResolved && !isSevere && (
+                    {stage.isResolved && (
                       <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-xs text-emerald-950 space-y-1">
                         <div className="flex items-center gap-1.5 font-bold text-emerald-800">
                           <span className="material-symbols-outlined text-[16px] text-emerald-600">done_all</span>
@@ -422,44 +564,84 @@ export default function ManagerTicketsPage() {
                     )}
                   </div>
 
-                  {/* ACTION BAR */}
+                  {/* ACTION BAR: Ẩn hoàn toàn nút giao việc khi đã resolved hoặc closed */}
                   <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    {/* Nút Giao việc Staff */}
-                    <button
-                      type="button"
-                      onClick={() => setAssigningTicket(ticket)}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${
-                        isPendingReview
-                          ? "bg-[#1d5fe5] hover:bg-[#1550c7] text-white"
-                          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[16px]">assignment_ind</span>
-                      <span>{ticket.assignedEmployeeId ? t("common.assign_staff_change", "Đổi Staff khác") : t("common.assign_staff", "Giao việc cho Staff")}</span>
-                    </button>
+                    {stage.isClosed ? (
+                      <div className="text-xs text-slate-500 font-semibold italic flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-slate-400">lock</span>
+                        <span>Ticket đã đóng — Không cần điều phối thêm</span>
+                      </div>
+                    ) : stage.isResolved ? (
+                      <>
+                        <div className="text-xs text-emerald-800 font-bold flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[18px] text-emerald-600">task_alt</span>
+                          <span>Sự cố đã hoàn tất xử lý</span>
+                        </div>
 
-                    {/* NÚT LÀM NỔI BẬT: Đổi kho khẩn cấp (0đ) khi Severe_Need_Relocation */}
-                    {isSevere && (
-                      <button
-                        type="button"
-                        onClick={() => setEmergencyTicket(ticket)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 px-4 py-2 text-xs font-extrabold text-white shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
-                        <span>{t("common.emergency_reassign", "Đổi kho khẩn cấp (0đ)")}</span>
-                      </button>
+                        <button
+                          type="button"
+                          disabled={closingTicketId === ticket.id}
+                          onClick={() => handleCloseTicket(ticket.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+                          title="Đóng Ticket lưu trữ hồ sơ"
+                        >
+                          <span className="material-symbols-outlined text-[16px] text-slate-500">check</span>
+                          <span>{closingTicketId === ticket.id ? "Đang đóng..." : "Đóng Ticket (Close)"}</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* Nút Giao việc / Đổi Staff */}
+                        <button
+                          type="button"
+                          onClick={() => setAssigningTicket(ticket)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${
+                            stage.isPendingReview
+                              ? "bg-[#1d5fe5] hover:bg-[#1550c7] text-white"
+                              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">assignment_ind</span>
+                          <span>
+                            {ticket.assignedEmployeeId || staffName
+                              ? t("common.assign_staff_change", "Đổi Staff khác")
+                              : t("common.assign_staff", "Giao việc cho Staff")}
+                          </span>
+                        </button>
+
+                        {/* NÚT LÀM NỔI BẬT: Đổi kho khẩn cấp (0đ) khi Severe_Need_Relocation */}
+                        {stage.isSevere && (
+                          <button
+                            type="button"
+                            onClick={() => setEmergencyTicket(ticket)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 px-4 py-2 text-xs font-extrabold text-white shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+                            <span>{t("common.emergency_reassign", "Đổi kho khẩn cấp (0đ)")}</span>
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
 
-                  {/* Mở rộng chi tiết trao đổi tin nhắn */}
+                  {/* Mở rộng chi tiết trao đổi tin nhắn & phụ phí: Khóa form khi Ticket đã resolved/closed */}
                   <details className="group mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
                       <span>{t("tickets.chat_fees", "Trao đổi tin nhắn nội bộ & Phụ phí")}</span>
                       <span className="text-[10px] text-slate-500 transition-transform duration-200 group-open:rotate-180">▼</span>
                     </summary>
-                    <div className="border-t border-slate-200 bg-white p-3">
-                      <StaffTicketReply ticketId={ticket.id} />
-                      <StaffTicketCharge ticketId={ticket.id} />
+                    <div className="border-t border-slate-200 bg-white p-3 space-y-4">
+                      {/* Lịch sử trao đổi & Gửi phản hồi / ghi chú */}
+                      <StaffTicketReply
+                        ticketId={ticket.id}
+                        readOnly={stage.isResolved || stage.isClosed}
+                      />
+
+                      {/* Khung tóm tắt Phụ phí & Nút Duyệt/Từ chối cho Manager */}
+                      <ManagerTicketChargeSection
+                        ticketId={ticket.id}
+                        isClosedOrResolved={stage.isResolved || stage.isClosed}
+                      />
                     </div>
                   </details>
                 </article>
@@ -488,6 +670,20 @@ export default function ManagerTicketsPage() {
           isOpen={Boolean(emergencyTicket)}
           onClose={() => setEmergencyTicket(null)}
           onSuccess={handleEmergencyReassignSuccess}
+        />
+      )}
+
+      {/* MODAL 3: TẠO SỰ CỐ / TICKET MỚI */}
+      {showCreateModal && (
+        <ManagerCreateTicketModal
+          isOpen={showCreateModal}
+          facilityId={facilityId}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            loadTickets();
+            setToastMsg("Tạo sự cố / ticket mới thành công!");
+            setTimeout(() => setToastMsg(""), 4000);
+          }}
         />
       )}
     </div>

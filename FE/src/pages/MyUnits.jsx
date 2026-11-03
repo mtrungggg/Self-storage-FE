@@ -10,6 +10,7 @@ import { CoverflowCarousel } from "@/components/ui/coverflow-carousel";
 import RentalRenewal from "../components/RentalRenewal";
 import MoveOutRequest from "../components/MoveOutRequest";
 import UnitTransferRequest from "../components/UnitTransferRequest";
+import ReportCheckInIssueModal from "../components/ReportCheckInIssueModal";
 
 const UNIT_CARD_IMAGES = [
   "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
@@ -32,6 +33,7 @@ export default function MyUnits() {
   const [activeTab, setActiveTab] = useState("all"); // 'all' | 'active' | 'renew'
   const [selectedGalleryUnitId, setSelectedGalleryUnitId] = useState(null);
   const [renewalUnit, setRenewalUnit] = useState(null);
+  const [reportIssueUnit, setReportIssueUnit] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -308,6 +310,16 @@ export default function MyUnits() {
                         <span className="material-symbols-outlined text-[16px]">autorenew</span>
                         Gia hạn hợp đồng
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setReportIssueUnit(activeGalleryUnit)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 shadow-xs transition hover:bg-rose-100 cursor-pointer"
+                        title="Báo cáo kho bị bẩn hoặc hư hỏng lúc nhận kho để được hỗ trợ/đổi kho ngay"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">report_problem</span>
+                        Báo sự cố kho
+                      </button>
                     </div>
                   </div>
 
@@ -344,6 +356,25 @@ export default function MyUnits() {
           onClose={() => setRenewalUnit(null)}
         />
       )}
+
+      {/* Report Check-in Issue Modal */}
+      <ReportCheckInIssueModal
+        target={
+          reportIssueUnit
+            ? {
+                unitCode: reportIssueUnit.unitCode,
+                agreementNo: reportIssueUnit.agreementNo,
+                customerName: user?.fullName || user?.name || "Customer",
+                storageUnitId: reportIssueUnit.storageUnitId || reportIssueUnit.unitId,
+                agreementId: reportIssueUnit.agreementId,
+                facilityId: reportIssueUnit.facilityId || 1,
+              }
+            : null
+        }
+        isOpen={Boolean(reportIssueUnit)}
+        onClose={() => setReportIssueUnit(null)}
+        isStaff={false}
+      />
 
       <Footer />
     </div>

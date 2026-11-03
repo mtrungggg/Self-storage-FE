@@ -159,6 +159,80 @@ export const managerTicketService = {
       newPin: String(Math.floor(100000 + Math.random() * 900000)),
     };
   },
+
+  /**
+   * Hủy hợp đồng và hoàn tiền 100% khi kho gặp sự cố và cơ sở hết kho thay thế
+   * POST /api/manager/agreements/{agreementId}/emergency-cancel-refund
+   */
+  async emergencyCancelAndRefund(agreementId, payload) {
+    if (!agreementId) {
+      throw new Error("Mã hợp đồng là bắt buộc để hủy hợp đồng và hoàn tiền.");
+    }
+    const res = await apiClient.post(
+      `/manager/agreements/${encodeURIComponent(agreementId)}/emergency-cancel-refund`,
+      payload
+    );
+    if (res?.success === true) return res.data;
+    return res?.data ?? res;
+  },
+
+  /**
+   * Manager đóng Ticket sự cố sau khi đã giải quyết xong
+   * POST /api/manager/tickets/{ticketId}/close
+   */
+  async closeTicket(ticketId) {
+    if (!ticketId) {
+      throw new Error("Mã ticket là bắt buộc để đóng ticket.");
+    }
+    const res = await apiClient.post(`/manager/tickets/${encodeURIComponent(ticketId)}/close`);
+    if (res?.success === true) return res.data;
+    return res?.data ?? res;
+  },
+
+  /**
+   * Lấy lịch sử tin nhắn / trao đổi nội bộ của ticket
+   * GET /api/manager/tickets/{ticketId}/messages
+   */
+  async getTicketMessages(ticketId) {
+    if (!ticketId) return [];
+    try {
+      const res = await apiClient.get(`/manager/tickets/${encodeURIComponent(ticketId)}/messages`);
+      if (res?.success === true && Array.isArray(res.data)) return res.data;
+    } catch {
+      try {
+        const fallback = await apiClient.get(`/staff/tickets/${encodeURIComponent(ticketId)}/messages`);
+        if (fallback?.success === true && Array.isArray(fallback.data)) return fallback.data;
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  },
+
+  /**
+   * Lấy danh sách đề xuất phụ phí của một ticket cụ thể
+   * GET /api/manager/tickets/{ticketId}/charge-proposals
+   */
+  async getTicketChargeProposals(ticketId) {
+    if (!ticketId) return [];
+    try {
+      const res = await apiClient.get(`/manager/tickets/${encodeURIComponent(ticketId)}/charge-proposals`);
+      if (res?.success === true && Array.isArray(res.data)) return res.data;
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  /**
+   * Manager tạo mới Ticket sự cố tại cơ sở (vd: khách báo tại quầy)
+   * POST /api/manager/tickets
+   */
+  async createTicket(payload) {
+    const res = await apiClient.post("/manager/tickets", payload);
+    if (res?.success === true) return res.data;
+    return res?.data ?? res;
+  },
 };
 
 export default managerTicketService;
