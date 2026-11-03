@@ -1,29 +1,21 @@
 import { useEffect, useState } from "react";
 import {
   Building2,
-  CreditCard,
   User,
   DollarSign,
   Copy,
   Check,
   CheckCircle2,
-  AlertCircle,
-  FileCheck2,
   RefreshCw,
   Search,
-  ExternalLink,
 } from "lucide-react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
-import { formatStatusToEnglish, formatVnd } from "../lib/utils";
+import { useLanguage } from "../context/LanguageContext";
+import { useSignalR } from "../context/SignalRContext";
+import { formatStatusToEnglish } from "../lib/utils";
 import { DECISION_STATUS } from "../constants/managerConstants";
 import ProcessRefundPayoutModal from "../components/ProcessRefundPayoutModal";
-
-function formatDateTime(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-US");
-}
 
 const STATUS_BADGE = {
   [DECISION_STATUS.PENDING]: "bg-amber-50 text-amber-700 border border-amber-200",
@@ -37,6 +29,8 @@ const STATUS_BADGE = {
 
 export default function ManagerRefundApprovals() {
   const { facilityId, loading: facilityLoading } = useManagerFacility();
+  const { t, formatCurrency, formatDate } = useLanguage();
+  const { subscribe } = useSignalR();
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,7 +55,7 @@ export default function ManagerRefundApprovals() {
       const data = await managerService.getRefundApprovals(facilityId);
       setRefunds(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.message || "Không thể tải danh sách yêu cầu hoàn cọc.");
+      setError(err?.message || t("common.no_data", "Không thể tải danh sách yêu cầu hoàn cọc."));
     } finally {
       setLoading(false);
     }
@@ -75,6 +69,15 @@ export default function ManagerRefundApprovals() {
       load();
     }
   }, [facilityId, facilityLoading]);
+
+  // Real-time SignalR listening
+  useEffect(() => {
+    const unsub = subscribe("RefundUpdated", () => {
+      load();
+    });
+    return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facilityId]);
 
   function updateDraft(id, field, value) {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
@@ -102,135 +105,96 @@ export default function ManagerRefundApprovals() {
     }
   }
 
-  const handleOpenPayoutModal = (refund) => {
-    const draft = drafts[refund.refundId] || {};
-    const overrideAmount = draft.overrideAmount ? Number(draft.overrideAmount) : undefined;
-
-    let rBank = null;
-    if (refund.reason && typeof refund.reason === "string" && refund.reason.trim().startsWith("{")) {
-      try {
-        rBank = JSON.parse(refund.reason);
-      } catch {}
-    }
-
-    const bName = refund.bankName || refund.customerBankName || rBank?.bank || "MBBank (Napas 247)";
-    const bAcc = refund.bankAccountNumber || refund.accountNo || refund.customerAccountNumber || rBank?.acc || "0987654321";
-    const bHolder = (refund.bankAccountHolder || refund.accountHolder || refund.customerName || rBank?.holder || "KHACH HANG").toUpperCase();
-
-    // Pass enriched refund item into payout modal
-    const enrichedRefund = {
-      ...refund,
-      bankName: bName,
-      bankAccountNumber: bAcc,
-      bankAccountHolder: bHolder,
-      recommendedRefundAmount: overrideAmount || refund.recommendedRefundAmount || refund.amount,
-      notes: draft.reason || "",
-    };
-
-    setSelectedRefundForPayout(enrichedRefund);
+  function handleOpenPayoutModal(refund) {
+    setSelectedRefundForPayout(refund);
     setPayoutModalOpen(true);
-  };
+  }
 
-  const handlePayoutSuccess = (result) => {
-    setNotice(
-      `Xác nhận hoàn cọc thành công cho khách hàng ${result.customerName} số tiền ${formatVnd(
-        result.amount
-      )}${result.transactionRef ? ` (Mã GD: ${result.transactionRef})` : ""}.`
-    );
+  function handlePayoutSuccess(updatedRefund) {
+    setPayoutModalOpen(false);
+    setSelectedRefundForPayout(null);
+    setNotice(`Đã xác nhận hoàn cọc thành công cho hợp đồng ${updatedRefund?.agreementNo || ""}.`);
     load();
     setTimeout(() => setNotice(""), 5000);
-  };
+  }
 
-  const handleCopyAccount = (accountNo, id) => {
-    navigator.clipboard?.writeText(accountNo);
+  function handleCopyAccount(text, id) {
+    if (!text) return;
+    navigator.clipboard?.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(""), 2000);
-  };
+  }
 
   const filteredRefunds = refunds.filter((r) => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (
-      (r.customerName || "").toLowerCase().includes(term) ||
-      (r.agreementNo || "").toLowerCase().includes(term) ||
-      String(r.refundId).includes(term)
+      (r.customerName && r.customerName.toLowerCase().includes(term)) ||
+      (r.agreementNo && r.agreementNo.toLowerCase().includes(term)) ||
+      (r.refundId && String(r.refundId).includes(term))
     );
   });
 
   return (
-    <div className="space-y-4">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <FileCheck2 size={20} className="text-emerald-600" />
-            Quản lý Trả kho &amp; Hoàn cọc (Refund Approvals)
+          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#1d5fe5] text-[24px]">assignment_return</span>
+            {t("refunds.title", "Quản lý Trả kho & Hoàn cọc (Refund Approvals)")}
           </h1>
-          <p className="text-xs text-slate-500">
-            Duyệt cấn trừ hư hại, kiểm tra thông tin ngân hàng của khách và xác nhận chuyển khoản hoàn cọc trực tiếp.
+          <p className="mt-1 text-xs text-slate-500">
+            {t("refunds.desc", "Duyệt cấn trừ hư hại, kiểm tra thông tin ngân hàng của khách và xác nhận chuyển khoản hoàn cọc trực tiếp.")}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={load}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Làm mới
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          {t("common.refresh", "Làm mới")}
+        </button>
       </div>
 
-      {/* Notice Alert */}
       {notice && (
-        <div role="status" className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 animate-in fade-in">
-          <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-900 shadow-xs">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
-      {/* Error Alert */}
       {error && (
-        <div role="alert" className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 animate-in fade-in">
-          <AlertCircle size={16} className="shrink-0 text-rose-600" />
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">
+          <span className="material-symbols-outlined text-rose-600 text-[18px]">error</span>
           <span>{error}</span>
         </div>
       )}
 
-      {/* Search Filter Bar */}
-      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2">
-        <Search size={16} className="text-slate-400 ml-1.5 shrink-0" />
+      {/* Search Filter */}
+      <div className="relative max-w-md">
+        <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
         <input
-          type="text"
+          type="search"
+          placeholder={t("common.search", "Tìm theo tên khách hàng, số hợp đồng, mã hoàn cọc...")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Tìm theo tên khách hàng, số hợp đồng, mã hoàn cọc..."
-          className="w-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+          className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:outline-none shadow-xs"
         />
-        {searchTerm && (
-          <button
-            type="button"
-            onClick={() => setSearchTerm("")}
-            className="text-xs text-slate-400 hover:text-slate-600 px-2"
-          >
-            Xóa
-          </button>
-        )}
       </div>
 
-      {/* Refunds Cards List */}
-      <div className="grid grid-cols-1 gap-4">
+      {/* Refunds List */}
+      <div className="space-y-4">
         {loading ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-2">
-            <RefreshCw size={20} className="animate-spin text-slate-400" />
-            Đang tải danh sách hoàn cọc...
+          <div className="flex justify-center p-12">
+            <RefreshCw size={24} className="animate-spin text-blue-600" />
           </div>
         ) : filteredRefunds.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
-            {searchTerm ? "Không tìm thấy yêu cầu hoàn cọc phù hợp." : "Không có yêu cầu hoàn cọc nào cho cơ sở này."}
+            {searchTerm ? t("common.no_data", "Không tìm thấy yêu cầu hoàn cọc phù hợp.") : t("common.no_data", "Không có yêu cầu hoàn cọc nào cho cơ sở này.")}
           </div>
         ) : (
           filteredRefunds.map((refund) => {
@@ -282,8 +246,8 @@ export default function ManagerRefundApprovals() {
                     <User size={16} className="text-slate-400" />
                     <span>{refund.customerName}</span>
                     {refund.agreementNo && (
-                      <span className="font-normal text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        Hợp đồng #{refund.agreementNo}
+                      <span className="font-normal text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                        #{refund.agreementNo}
                       </span>
                     )}
                   </div>
@@ -305,47 +269,47 @@ export default function ManagerRefundApprovals() {
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
                   <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      Tiền cọc ban đầu (Deposit)
+                      {t("common.deposit", "Tiền cọc ban đầu (Deposit)")}
                     </div>
                     <div className="mt-0.5 text-xs font-bold text-slate-800">
-                      {formatVnd(refund.originalDeposit)}
+                      {formatCurrency(refund.originalDeposit)}
                     </div>
                   </div>
 
                   <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      Khấu trừ hư hại / Công nợ
+                      {t("common.deductions", "Khấu trừ hư hại / Công nợ")}
                     </div>
                     <div className="mt-0.5 text-xs font-bold text-rose-600">
-                      -{formatVnd(refund.estimatedDeductions)}
+                      -{formatCurrency(refund.estimatedDeductions)}
                     </div>
                   </div>
 
                   <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-2.5">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
-                      Số tiền thực nhận (Net Refund)
+                      {t("common.net_refund", "Số tiền thực nhận (Net Refund)")}
                     </div>
                     <div className="mt-0.5 text-sm font-extrabold text-emerald-700">
-                      {formatVnd(refund.recommendedRefundAmount)}
+                      {formatCurrency(refund.recommendedRefundAmount)}
                     </div>
                   </div>
                 </div>
 
-                {/* Customer Bank Information Block - SPEC REQUIREMENT */}
+                {/* Customer Bank Information Block */}
                 <div className="mt-3.5 rounded-xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/80 via-emerald-50/30 to-white p-3.5">
                   <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2 mb-2.5">
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
                       <Building2 size={15} className="text-emerald-700" />
-                      Thông tin tài khoản nhận hoàn cọc của khách hàng
+                      {t("common.bank_info", "Thông tin tài khoản nhận hoàn cọc của khách hàng")}
                     </span>
                     <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded">
-                      Cần hoàn: {formatVnd(refundAmount)}
+                      {t("common.refund", "Cần hoàn")}: {formatCurrency(refundAmount)}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                     <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Ngân hàng:</span>
+                      <span className="text-[11px] text-slate-500 block mb-0.5">{t("common.bank_name", "Ngân hàng")}:</span>
                       <span className="font-bold text-slate-800 flex items-center gap-1">
                         <Building2 size={13} className="text-emerald-600" />
                         {bankName}
@@ -353,7 +317,7 @@ export default function ManagerRefundApprovals() {
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Số tài khoản:</span>
+                      <span className="text-[11px] text-slate-500 block mb-0.5">{t("common.account_number", "Số tài khoản")}:</span>
                       <div className="flex items-center gap-1.5">
                         <span className="font-mono font-extrabold text-slate-900 text-sm">
                           {accountNumber}
@@ -361,7 +325,7 @@ export default function ManagerRefundApprovals() {
                         <button
                           type="button"
                           onClick={() => handleCopyAccount(accountNumber, refund.refundId)}
-                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
                           title="Sao chép số tài khoản"
                         >
                           {copiedId === refund.refundId ? (
@@ -374,7 +338,7 @@ export default function ManagerRefundApprovals() {
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Chủ tài khoản:</span>
+                      <span className="text-[11px] text-slate-500 block mb-0.5">{t("common.account_holder", "Chủ tài khoản")}:</span>
                       <span className="font-bold text-slate-800 flex items-center gap-1">
                         <User size={13} className="text-slate-400" />
                         {accountHolder}
@@ -382,10 +346,10 @@ export default function ManagerRefundApprovals() {
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-slate-500 block mb-0.5">Số tiền cần hoàn:</span>
+                      <span className="text-[11px] text-slate-500 block mb-0.5">{t("common.amount", "Số tiền cần hoàn")}:</span>
                       <span className="font-extrabold text-emerald-700 text-sm flex items-center gap-0.5">
                         <DollarSign size={13} className="text-emerald-600" />
-                        {formatVnd(refundAmount)}
+                        {formatCurrency(refundAmount)}
                       </span>
                     </div>
                   </div>
@@ -393,7 +357,7 @@ export default function ManagerRefundApprovals() {
 
                 {/* Timestamp */}
                 <div className="mt-2.5 text-[11px] text-slate-400">
-                  Thời gian gửi yêu cầu: {formatDateTime(refund.createdAt)}
+                  {t("tickets.created_at", "Thời gian gửi yêu cầu")}: {formatDate(refund.createdAt)}
                 </div>
 
                 {/* Action Section for Pending Refund */}
@@ -401,7 +365,7 @@ export default function ManagerRefundApprovals() {
                   <div className="mt-3.5 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
-                        Điều chỉnh số tiền hoàn (Tùy chọn)
+                        {t("common.adjust_amount", "Điều chỉnh số tiền hoàn (Tùy chọn)")}
                         <input
                           type="number"
                           min="0"
@@ -413,7 +377,7 @@ export default function ManagerRefundApprovals() {
                       </label>
 
                       <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
-                        Ghi chú quyết định
+                        {t("common.notes", "Ghi chú quyết định")}
                         <input
                           placeholder="Thêm ghi chú phê duyệt..."
                           value={draft.reason || ""}
@@ -423,24 +387,24 @@ export default function ManagerRefundApprovals() {
                       </label>
                     </div>
 
-                    {/* ACTION BUTTONS: NO 'Giao Staff thanh toán', PROMINENT 'Xác nhận đã chuyển khoản' */}
+                    {/* ACTION BUTTONS */}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleOpenPayoutModal(refund)}
-                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm"
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm cursor-pointer"
                       >
                         <CheckCircle2 size={15} />
-                        Xác nhận đã chuyển khoản
+                        {t("common.payout_transfer", "Xác nhận đã chuyển khoản")}
                       </button>
 
                       <button
                         type="button"
                         disabled={decidingId === refund.refundId}
                         onClick={() => handleReject(refund.refundId)}
-                        className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition disabled:opacity-50"
+                        className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 transition disabled:opacity-50 cursor-pointer"
                       >
-                        Từ chối
+                        {t("common.cancel", "Từ chối")}
                       </button>
                     </div>
                   </div>
@@ -448,7 +412,7 @@ export default function ManagerRefundApprovals() {
                   <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3.5 text-xs">
                     <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
                       <CheckCircle2 size={16} className="text-emerald-600" />
-                      Đã hoàn tất thanh toán chuyển khoản ngân hàng
+                      {t("common.refund_success", "Đã hoàn tất thanh toán chuyển khoản ngân hàng")}
                       {refund.transactionReference && (
                         <span className="font-mono bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[11px] ml-1">
                           Mã GD: {refund.transactionReference}
@@ -462,7 +426,7 @@ export default function ManagerRefundApprovals() {
                         rel="noopener noreferrer"
                         className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1"
                       >
-                        Xem chứng từ UNC
+                        {t("common.upload_proof", "Xem chứng từ UNC")}
                       </a>
                     )}
                   </div>

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import RefundPreview from "./RefundPreview";
 import rentalService from "../api/rentalService";
+import { useLanguage } from "../context/LanguageContext";
 
 const POPULAR_BANKS = [
   "Vietcombank (VCB)",
@@ -17,14 +18,10 @@ const POPULAR_BANKS = [
   "VIB",
 ];
 
-function formatVnd(amount) {
-  if (amount == null) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
-
 export default function MoveOutRequest({ agreementId }) {
   const id = useId();
   const lock = useRef(false);
+  const { t, formatCurrency, formatDate } = useLanguage();
 
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
@@ -117,7 +114,6 @@ export default function MoveOutRequest({ agreementId }) {
       setBankSubmitted(true);
     } catch (err) {
       if (err.message && (err.message.includes("already requested") || err.message.includes("409"))) {
-        // If request is already open on backend, still mark bank info submitted
         setBankSubmitted(true);
       } else {
         setError(err.message || "Không thể gửi yêu cầu trả kho. Vui lòng thử lại.");
@@ -131,28 +127,28 @@ export default function MoveOutRequest({ agreementId }) {
   return (
     <details className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
       <summary className="cursor-pointer font-semibold text-[#1d5fe5] hover:underline">
-        Move-out & Refund Preview
+        {t("moveout.preview", "Move-out & Refund Preview")}
       </summary>
       <RefundPreview agreementId={agreementId} />
 
-      {/* Case 1: Khi Manager bấm hoàn tất -> Hiển thị trạng thái "Đã hoàn cọc thành công" kèm ảnh biên lai chuyển khoản của Manager */}
+      {/* Case 1: Khi Manager bấm hoàn tất -> Hiển thị trạng thái "Đã hoàn cọc thành công" */}
       {payoutCompleted ? (
         <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 space-y-3 shadow-xs">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-emerald-600 text-[22px]">verified</span>
             <div>
-              <h4 className="font-bold text-sm text-emerald-900">Đã hoàn cọc thành công</h4>
+              <h4 className="font-bold text-sm text-emerald-900">{t("common.refund_success", "Đã hoàn cọc thành công")}</h4>
               <p className="text-[11px] text-emerald-700">
-                Quản lý cơ sở đã hoàn tất chuyển khoản tiền hoàn cọc cho bạn.
+                {t("common.refund_success_desc", "Quản lý cơ sở đã hoàn tất chuyển khoản tiền hoàn cọc cho bạn.")}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-white/90 p-2.5 border border-emerald-200">
             <div>
-              <span className="text-[10px] text-slate-500 block">Số tiền đã hoàn:</span>
+              <span className="text-[10px] text-slate-500 block">{t("common.net_refund", "Số tiền đã hoàn")}:</span>
               <span className="font-bold text-emerald-700 text-xs">
-                {formatVnd(payoutCompleted.amount)}
+                {formatCurrency(payoutCompleted.amount)}
               </span>
             </div>
             {payoutCompleted.transactionRef && (
@@ -163,14 +159,14 @@ export default function MoveOutRequest({ agreementId }) {
             )}
             {payoutCompleted.bankName && (
               <div>
-                <span className="text-[10px] text-slate-500 block">Tài khoản nhận:</span>
+                <span className="text-[10px] text-slate-500 block">{t("common.account_number", "Tài khoản nhận")}:</span>
                 <span className="font-semibold text-slate-700 text-xs">{payoutCompleted.bankName} - {payoutCompleted.accountNumber}</span>
               </div>
             )}
             {payoutCompleted.completedAt && (
               <div>
-                <span className="text-[10px] text-slate-500 block">Thời gian xử lý:</span>
-                <span className="text-slate-600 text-xs">{new Date(payoutCompleted.completedAt).toLocaleString("vi-VN")}</span>
+                <span className="text-[10px] text-slate-500 block">{t("common.date", "Thời gian xử lý")}:</span>
+                <span className="text-slate-600 text-xs">{formatDate(payoutCompleted.completedAt)}</span>
               </div>
             )}
           </div>
@@ -180,12 +176,12 @@ export default function MoveOutRequest({ agreementId }) {
             <div className="space-y-1.5 border-t border-emerald-200 pt-2.5">
               <span className="font-bold text-emerald-900 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-                Ảnh biên lai chuyển khoản của Manager:
+                {t("common.upload_proof", "Ảnh biên lai chuyển khoản của Manager")}:
               </span>
               <div className="overflow-hidden rounded-lg border border-emerald-200 bg-white p-1 max-w-sm">
                 <img
                   src={payoutCompleted.proofUrl}
-                  alt="Biên lai chuyển khoản của Manager"
+                  alt="Biên lai chuyển khoản"
                   className="max-h-56 w-full object-contain rounded-md"
                 />
                 <div className="mt-1 flex items-center justify-between px-1">
@@ -205,30 +201,30 @@ export default function MoveOutRequest({ agreementId }) {
           )}
         </div>
       ) : bankSubmitted ? (
-        /* Case 2: Khi khách nhập xong thông tin tài khoản ngân hàng -> Hiển thị trạng thái "Đã gửi thông tin tài khoản cho Quản lý cơ sở. Quản lý sẽ thực hiện chuyển khoản hoàn cọc cho bạn." */
+        /* Case 2: Đã gửi thông tin tài khoản cho Quản lý cơ sở */
         <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 text-xs text-blue-950 space-y-2.5">
           <div className="flex items-start gap-2.5">
             <span className="material-symbols-outlined text-blue-600 text-[20px] mt-0.5">mark_email_read</span>
             <div>
               <p className="font-bold text-blue-950 text-xs leading-snug">
-                Đã gửi thông tin tài khoản cho Quản lý cơ sở. Quản lý sẽ thực hiện chuyển khoản hoàn cọc cho bạn.
+                {t("moveout.sent_bank_notice", "Đã gửi thông tin tài khoản cho Quản lý cơ sở. Quản lý sẽ thực hiện chuyển khoản hoàn cọc cho bạn.")}
               </p>
             </div>
           </div>
 
           <div className="rounded-lg bg-white/90 p-2.5 border border-blue-100 space-y-1.5 text-slate-700">
-            <p className="font-semibold text-slate-800 text-[11px]">Thông tin tài khoản thụ hưởng đã gửi:</p>
+            <p className="font-semibold text-slate-800 text-[11px]">{t("common.bank_info", "Thông tin tài khoản thụ hưởng đã gửi")}:</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               <div>
-                <span className="text-slate-400 block text-[10px]">Ngân hàng:</span>
+                <span className="text-slate-400 block text-[10px]">{t("common.bank_name", "Ngân hàng")}:</span>
                 <strong className="text-slate-800">{bankName || "—"}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Số tài khoản:</span>
+                <span className="text-slate-400 block text-[10px]">{t("common.account_number", "Số tài khoản")}:</span>
                 <strong className="text-slate-800 font-mono">{accountNumber || "—"}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Chủ tài khoản:</span>
+                <span className="text-slate-400 block text-[10px]">{t("common.account_holder", "Chủ tài khoản")}:</span>
                 <strong className="text-slate-800 uppercase">{accountHolder || "—"}</strong>
               </div>
             </div>
@@ -237,14 +233,14 @@ export default function MoveOutRequest({ agreementId }) {
           <div className="flex items-center justify-between border-t border-blue-200/60 pt-2 text-[11px]">
             <span className="text-blue-700 font-medium flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">schedule</span>
-              Trạng thái: Đang chờ Quản lý cơ sở kiểm tra và chuyển khoản
+              {t("status.pending_manager_payout", "Trạng thái: Đang chờ Quản lý cơ sở kiểm tra và chuyển khoản")}
             </span>
             <button
               type="button"
               onClick={() => setBankSubmitted(false)}
               className="text-[#1d5fe5] font-semibold underline hover:text-blue-800 cursor-pointer"
             >
-              Chỉnh sửa STK
+              {t("common.edit", "Chỉnh sửa")}
             </button>
           </div>
         </div>
@@ -254,7 +250,7 @@ export default function MoveOutRequest({ agreementId }) {
           <fieldset disabled={sending} className="space-y-3 text-xs">
             <div>
               <label htmlFor={`${id}-date`} className="mb-1 block font-semibold text-slate-700">
-                Ngày dự kiến trả kho *
+                {t("moveout.expected_date", "Ngày dự kiến trả kho")} *
               </label>
               <input
                 id={`${id}-date`}
@@ -268,14 +264,14 @@ export default function MoveOutRequest({ agreementId }) {
 
             <div>
               <label htmlFor={`${id}-reason`} className="mb-1 block font-semibold text-slate-700">
-                Lý do trả kho (tùy chọn)
+                {t("moveout.reason", "Lý do trả kho (tùy chọn)")}
               </label>
               <textarea
                 id={`${id}-reason`}
                 rows={2}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="Lý do kết thúc thuê kho..."
+                placeholder={t("moveout.reason_placeholder", "Lý do kết thúc thuê kho...")}
                 className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2 text-xs outline-none focus:border-[#1d5fe5]"
               />
             </div>
@@ -284,16 +280,16 @@ export default function MoveOutRequest({ agreementId }) {
             <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 space-y-2.5">
               <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
                 <span className="material-symbols-outlined text-[#1d5fe5] text-[18px]">account_balance</span>
-                <span>Thông tin tài khoản ngân hàng nhận hoàn cọc *</span>
+                <span>{t("common.bank_info", "Thông tin tài khoản ngân hàng nhận hoàn cọc")} *</span>
               </div>
               <p className="text-[11px] text-[#58657a]">
-                Quản lý cơ sở sẽ căn cứ thông tin này để chuyển khoản tiền hoàn cọc sau khi kiểm tra kho.
+                {t("moveout.bank_desc", "Quản lý cơ sở sẽ căn cứ thông tin này để chuyển khoản tiền hoàn cọc sau khi kiểm tra kho.")}
               </p>
 
               <div className="space-y-2 pt-1">
                 <div>
                   <label htmlFor={`${id}-bank`} className="mb-1 block text-[11px] font-semibold text-slate-700">
-                    Ngân hàng thụ hưởng *
+                    {t("common.bank_name", "Ngân hàng thụ hưởng")} *
                   </label>
                   <input
                     id={`${id}-bank`}
@@ -302,7 +298,7 @@ export default function MoveOutRequest({ agreementId }) {
                     list={`${id}-bank-list`}
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
-                    placeholder="Chọn hoặc nhập tên ngân hàng (VD: Vietcombank)"
+                    placeholder="VD: Vietcombank, Techcombank, MBBank..."
                     className="w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-xs outline-none focus:border-[#1d5fe5]"
                   />
                   <datalist id={`${id}-bank-list`}>
@@ -315,7 +311,7 @@ export default function MoveOutRequest({ agreementId }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label htmlFor={`${id}-acc`} className="mb-1 block text-[11px] font-semibold text-slate-700">
-                      Số tài khoản *
+                      {t("common.account_number", "Số tài khoản")} *
                     </label>
                     <input
                       id={`${id}-acc`}
@@ -330,7 +326,7 @@ export default function MoveOutRequest({ agreementId }) {
 
                   <div>
                     <label htmlFor={`${id}-holder`} className="mb-1 block text-[11px] font-semibold text-slate-700">
-                      Tên chủ tài khoản *
+                      {t("common.account_holder", "Tên chủ tài khoản")} *
                     </label>
                     <input
                       id={`${id}-holder`}
@@ -351,9 +347,9 @@ export default function MoveOutRequest({ agreementId }) {
             <button
               type="submit"
               disabled={sending || !date || !bankName || !accountNumber || !accountHolder}
-              className="w-full rounded-lg bg-[#1d5fe5] hover:bg-blue-700 p-2.5 font-bold text-white transition disabled:opacity-50 text-xs shadow-xs"
+              className="w-full rounded-lg bg-[#1d5fe5] hover:bg-blue-700 p-2.5 font-bold text-white transition disabled:opacity-50 text-xs shadow-xs cursor-pointer"
             >
-              {sending ? "Đang gửi thông tin..." : "Gửi thông tin tài khoản nhận hoàn cọc"}
+              {sending ? t("common.loading", "Đang gửi thông tin...") : t("moveout.send_bank", "Gửi thông tin tài khoản nhận hoàn cọc")}
             </button>
           </fieldset>
         </form>

@@ -1,27 +1,17 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { useLanguage } from "../context/LanguageContext";
+import { useSignalR } from "../context/SignalRContext";
 import managerTicketService from "../api/managerTicketService";
 import AssignStaffModal from "../components/AssignStaffModal";
 import EmergencyReassignModal from "../components/EmergencyReassignModal";
 import StaffTicketReply from "../components/StaffTicketReply";
 import StaffTicketCharge from "../components/StaffTicketCharge";
 
-function formatDate(val) {
-  const d = val ? new Date(val) : null;
-  return d && !isNaN(d.getTime()) ? d.toLocaleString("vi-VN") : "—";
-}
-
-const STATUS_FILTERS = [
-  { key: "", label: "Tất cả" },
-  { key: "pending_manager_review", label: "Chờ Manager duyệt" },
-  { key: "in_progress", label: "Đang xử lý / Đã giao Staff" },
-  { key: "severe_need_relocation", label: "Hư hỏng nặng (Đổi kho)" },
-  { key: "resolved", label: "Đã xử lý xong" },
-  { key: "closed", label: "Đã đóng" },
-];
-
 export default function ManagerTicketsPage() {
   const { activeFacility, facilityId } = useManagerFacility();
+  const { t, formatDate } = useLanguage();
+  const { subscribe, joinFacility } = useSignalR();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -34,6 +24,18 @@ export default function ManagerTicketsPage() {
   const [emergencyTicket, setEmergencyTicket] = useState(null);
 
   const requestId = useRef(0);
+
+  const statusFilters = useMemo(
+    () => [
+      { key: "", label: t("tickets.tab_all", "Tất cả") },
+      { key: "pending_manager_review", label: t("tickets.tab_pending", "Chờ Manager duyệt") },
+      { key: "in_progress", label: t("tickets.tab_assigned", "Đang xử lý / Đã giao Staff") },
+      { key: "severe_need_relocation", label: t("tickets.tab_severe", "Hư hỏng nặng (Đổi kho)") },
+      { key: "resolved", label: t("tickets.tab_resolved", "Đã xử lý xong") },
+      { key: "closed", label: t("tickets.tab_closed", "Đã đóng") },
+    ],
+    [t]
+  );
 
   const loadTickets = async () => {
     const cur = ++requestId.current;
@@ -52,7 +54,7 @@ export default function ManagerTicketsPage() {
       }
     } catch (err) {
       if (cur === requestId.current) {
-        setError(err.message || "Không thể tải danh sách ticket cơ sở.");
+        setError(err.message || t("common.no_data", "Không thể tải danh sách ticket cơ sở."));
       }
     } finally {
       if (cur === requestId.current) setLoading(false);
@@ -63,6 +65,18 @@ export default function ManagerTicketsPage() {
     loadTickets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facilityId, statusFilter]);
+
+  // Join facility group and listen to SignalR updates
+  useEffect(() => {
+    if (facilityId) {
+      joinFacility(facilityId);
+    }
+    const unsub = subscribe("TicketUpdated", () => {
+      loadTickets();
+    });
+    return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facilityId]);
 
   // Client-side filtering & sorting
   const filteredTickets = useMemo(() => {
@@ -100,58 +114,35 @@ export default function ManagerTicketsPage() {
     return list;
   }, [tickets, searchQuery, statusFilter]);
 
-  // Đếm số lượng ticket cần Manager duyệt
+  // Counters
   const pendingReviewCount = useMemo(() => {
     return tickets.filter((t) => {
       const s = String(t.status || "").toLowerCase();
-      return s.includes("pending") || s.includes("review") || !t.assignedEmployeeId;
+      return (s.includes("pending") || s.includes("review") || !t.assignedEmployeeId) && t.status !== "resolved" && t.status !== "closed";
     }).length;
   }, [tickets]);
 
-  // Đếm số lượng ticket hư hại nặng cần đổi kho
   const severeRelocationCount = useMemo(() => {
-    return tickets.filter((t) => {
-      const s = String(t.status || t.reportResult || "").toLowerCase();
-      return s.includes("severe") || s.includes("relocation") || t.reportResult === "Severe_Need_Relocation";
-    }).length;
+    return tickets.filter(
+      (t) =>
+        (t.reportResult === "Severe_Need_Relocation" || String(t.status || "").toLowerCase().includes("severe")) &&
+        t.status !== "resolved" &&
+        t.status !== "closed"
+    ).length;
   }, [tickets]);
 
-  function handleAssignSuccess(assignedData) {
-    const tNo = assigningTicket?.ticketNo || `#${assigningTicket?.id}`;
-    setToastMsg(`Đã giao Ticket ${tNo} cho nhân viên ${assignedData.assignedEmployeeName} thành công.`);
-
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === assigningTicket.id
-          ? {
-              ...t,
-              status: "in_progress",
-              assignedEmployeeId: assignedData.assignedEmployeeId,
-              assignedEmployeeName: assignedData.assignedEmployeeName,
-            }
-          : t
-      )
-    );
+  function handleAssignSuccess(assignedStaff) {
+    setAssigningTicket(null);
+    setToastMsg(`Giao việc thành công cho ${assignedStaff?.fullName || "nhân viên"}.`);
+    loadTickets();
   }
 
   function handleEmergencyReassignSuccess(reassignData) {
-    const tNo = emergencyTicket?.ticketNo || `#${emergencyTicket?.id}`;
+    setEmergencyTicket(null);
     setToastMsg(
-      `Đã hoàn tất đổi kho khẩn cấp cho Ticket ${tNo}! Kho cũ ${reassignData.oldUnitCode} chuyển sang bảo trì, kho mới ${reassignData.newUnitCode} đã cấp cho khách (Mã PIN mới: ${reassignData.newPin}).`
+      `Đã đổi kho khẩn cấp sang kho ${reassignData.newUnitCode || "mới"} thành công (Chi phí: 0 VNĐ).`
     );
-
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === emergencyTicket.id
-          ? {
-              ...t,
-              status: "resolved",
-              reportResult: "Resolved_Relocated",
-              reassignedUnitCode: reassignData.newUnitCode,
-            }
-          : t
-      )
-    );
+    loadTickets();
   }
 
   return (
@@ -161,21 +152,24 @@ export default function ManagerTicketsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900">
-              Điều phối Ticket sự cố &amp; Đổi kho khẩn cấp
+              {t("tickets.title", "Điều phối Ticket sự cố & Đổi kho khẩn cấp")}
             </h1>
             {pendingReviewCount > 0 && (
               <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-extrabold text-white animate-pulse">
-                {pendingReviewCount} cần duyệt
+                {pendingReviewCount} {t("tickets.need_review", "cần duyệt")}
               </span>
             )}
             {severeRelocationCount > 0 && (
               <span className="rounded-full bg-rose-600 px-2.5 py-0.5 text-[11px] font-extrabold text-white">
-                {severeRelocationCount} đổi kho khẩn cấp
+                {severeRelocationCount} {t("tickets.urgent_relocation", "đổi kho khẩn cấp")}
               </span>
             )}
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            Cơ sở: <strong className="text-slate-800">{activeFacility?.name ? `${activeFacility.name} (${activeFacility.code || `ID: ${facilityId}`})` : facilityId ? `Cơ sở #${facilityId}` : "Tất cả cơ sở"}</strong>
+            {t("common.facility", "Cơ sở")}:{" "}
+            <strong className="text-slate-800">
+              {activeFacility?.name ? `${activeFacility.name} (${activeFacility.code || `ID: ${facilityId}`})` : facilityId ? `Cơ sở #${facilityId}` : t("common.all", "Tất cả cơ sở")}
+            </strong>
           </p>
         </div>
 
@@ -183,9 +177,9 @@ export default function ManagerTicketsPage() {
           type="button"
           onClick={loadTickets}
           disabled={loading}
-          className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+          className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer"
         >
-          {loading ? "Đang tải..." : "Làm mới"}
+          {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
         </button>
       </div>
 
@@ -208,10 +202,10 @@ export default function ManagerTicketsPage() {
         {/* Status Pills */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-24">
-            Trạng thái:
+            {t("common.status", "Trạng thái")}:
           </span>
           <div className="flex flex-wrap gap-1.5">
-            {STATUS_FILTERS.map((pill) => {
+            {statusFilters.map((pill) => {
               const isSelected = statusFilter === pill.key;
               const isPending = pill.key === "pending_manager_review";
               const isSevere = pill.key === "severe_need_relocation";
@@ -221,7 +215,7 @@ export default function ManagerTicketsPage() {
                   key={pill.key}
                   type="button"
                   onClick={() => setStatusFilter(pill.key)}
-                  className={`relative rounded-full px-3.5 py-1 text-xs font-semibold transition ${
+                  className={`relative rounded-full px-3.5 py-1 text-xs font-semibold transition cursor-pointer ${
                     isSelected
                       ? "bg-[#1d5fe5] text-white shadow-xs ring-2 ring-blue-200"
                       : isPending && pendingReviewCount > 0
@@ -255,7 +249,7 @@ export default function ManagerTicketsPage() {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo mã ticket, tên khách, số điện thoại, kho, hợp đồng..."
+            placeholder={t("common.search", "Tìm theo mã ticket, tên khách, số điện thoại, kho, hợp đồng...")}
             className="w-full text-xs text-slate-900 outline-none bg-transparent placeholder-slate-400"
           />
         </div>
@@ -264,13 +258,13 @@ export default function ManagerTicketsPage() {
       {/* Tickets List */}
       <section aria-label="Manager tickets list" className="space-y-4">
         {loading ? (
-          <p className="p-8 text-center text-xs text-slate-400">Đang tải danh sách ticket...</p>
+          <p className="p-8 text-center text-xs text-slate-400">{t("common.loading", "Đang tải danh sách ticket...")}</p>
         ) : filteredTickets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500 space-y-2">
             <span className="material-symbols-outlined text-4xl text-slate-300">inbox</span>
-            <p className="font-semibold text-slate-700">Không có ticket nào cần xử lý.</p>
+            <p className="font-semibold text-slate-700">{t("common.no_data", "Không có ticket nào cần xử lý.")}</p>
             <p className="text-xs text-slate-400">
-              Các sự cố do khách hàng báo lên hoặc yêu cầu đổi kho sẽ hiển thị tại đây.
+              {t("tickets.desc_empty", "Các sự cố do khách hàng báo lên hoặc yêu cầu đổi kho sẽ hiển thị tại đây.")}
             </p>
           </div>
         ) : (
@@ -310,72 +304,72 @@ export default function ManagerTicketsPage() {
                         {isPendingReview && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300 animate-pulse">
                             <span className="material-symbols-outlined text-[12px] text-amber-700">schedule</span>
-                            Pending_Manager_Review
+                            {t("status.pending_manager_review", "Pending_Manager_Review")}
                           </span>
                         )}
 
                         {isSevere && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-800 border border-rose-300">
                             <span className="material-symbols-outlined text-[12px] text-rose-600">warning</span>
-                            Severe_Need_Relocation
+                            {t("status.severe_need_relocation", "Severe_Need_Relocation")}
                           </span>
                         )}
 
                         {isResolved && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
                             <span className="material-symbols-outlined text-[12px] text-emerald-600">check_circle</span>
-                            Resolved
+                            {t("status.completed", "Resolved")}
                           </span>
                         )}
                       </div>
 
                       <span className="text-[11px] font-semibold text-slate-500 capitalize">
-                        {ticket.category || "Sự cố thiết bị"}
+                        {ticket.category || t("tickets.category_default", "Sự cố thiết bị")}
                       </span>
                     </div>
 
                     {/* Subject & Description */}
                     <div className="mt-3">
                       <h2 className="text-sm font-bold text-slate-900">
-                        {ticket.subject || "Sự cố phản ánh từ khách hàng"}
+                        {ticket.subject || t("tickets.subject_default", "Sự cố phản ánh từ khách hàng")}
                       </h2>
                       <p className="mt-1 text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
-                        {ticket.description || "Không có mô tả chi tiết."}
+                        {ticket.description || t("common.no_data", "Không có mô tả chi tiết.")}
                       </p>
                     </div>
 
                     {/* Meta info */}
                     <dl className="mt-3 grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-2.5">
                       <div>
-                        <dt className="text-[11px] text-slate-400">Khách hàng</dt>
+                        <dt className="text-[11px] text-slate-400">{t("common.customer", "Khách hàng")}</dt>
                         <dd className="font-semibold text-slate-800 truncate">{ticket.customerName || "—"}</dd>
                       </div>
                       <div>
-                        <dt className="text-[11px] text-slate-400">Số điện thoại</dt>
+                        <dt className="text-[11px] text-slate-400">{t("common.phone", "Số điện thoại")}</dt>
                         <dd className="font-semibold text-slate-800 truncate">{ticket.customerPhone || "—"}</dd>
                       </div>
                       <div>
-                        <dt className="text-[11px] text-slate-400">Ô kho hiện tại</dt>
+                        <dt className="text-[11px] text-slate-400">{t("tickets.current_unit", "Ô kho hiện tại")}</dt>
                         <dd className="font-bold text-slate-900 truncate">
-                          {ticket.unitCode ? `Kho ${ticket.unitCode}` : "—"}
+                          {ticket.unitCode ? `${t("common.unit", "Kho")} ${ticket.unitCode}` : "—"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-[11px] text-slate-400">Hợp đồng</dt>
+                        <dt className="text-[11px] text-slate-400">{t("common.agreement", "Hợp đồng")}</dt>
                         <dd className="font-mono text-slate-700 truncate">{ticket.agreementNo || `#${ticket.id}`}</dd>
                       </div>
                       <div>
-                        <dt className="text-[11px] text-slate-400">Nhân viên phụ trách</dt>
+                        <dt className="text-[11px] text-slate-400">{t("tickets.assigned_staff", "Nhân viên phụ trách")}</dt>
                         <dd className="font-semibold text-slate-800 truncate">
                           {ticket.assignedEmployeeName ? (
                             <span className="text-blue-700 font-bold">{ticket.assignedEmployeeName}</span>
                           ) : (
-                            <span className="text-amber-700 font-bold italic">Chưa giao Staff</span>
+                            <span className="text-amber-700 font-bold italic">{t("tickets.not_assigned", "Chưa giao Staff")}</span>
                           )}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-[11px] text-slate-400">Thời gian tạo</dt>
+                        <dt className="text-[11px] text-slate-400">{t("tickets.created_at", "Thời gian tạo")}</dt>
                         <dd className="text-slate-600 truncate">{formatDate(ticket.createdAt)}</dd>
                       </div>
                     </dl>
@@ -435,14 +429,14 @@ export default function ManagerTicketsPage() {
                     <button
                       type="button"
                       onClick={() => setAssigningTicket(ticket)}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-xs ${
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${
                         isPendingReview
                           ? "bg-[#1d5fe5] hover:bg-[#1550c7] text-white"
                           : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       <span className="material-symbols-outlined text-[16px]">assignment_ind</span>
-                      <span>{ticket.assignedEmployeeId ? "Đổi Staff khác" : "Giao việc cho Staff"}</span>
+                      <span>{ticket.assignedEmployeeId ? t("common.assign_staff_change", "Đổi Staff khác") : t("common.assign_staff", "Giao việc cho Staff")}</span>
                     </button>
 
                     {/* NÚT LÀM NỔI BẬT: Đổi kho khẩn cấp (0đ) khi Severe_Need_Relocation */}
@@ -450,10 +444,10 @@ export default function ManagerTicketsPage() {
                       <button
                         type="button"
                         onClick={() => setEmergencyTicket(ticket)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 px-4 py-2 text-xs font-extrabold text-white shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 animate-bounce-short"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 px-4 py-2 text-xs font-extrabold text-white shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
-                        <span>Đổi kho khẩn cấp (0đ)</span>
+                        <span>{t("common.emergency_reassign", "Đổi kho khẩn cấp (0đ)")}</span>
                       </button>
                     )}
                   </div>
@@ -461,7 +455,7 @@ export default function ManagerTicketsPage() {
                   {/* Mở rộng chi tiết trao đổi tin nhắn */}
                   <details className="group mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
-                      <span>Trao đổi tin nhắn nội bộ &amp; Phụ phí</span>
+                      <span>{t("tickets.chat_fees", "Trao đổi tin nhắn nội bộ & Phụ phí")}</span>
                       <span className="text-[10px] text-slate-500 transition-transform duration-200 group-open:rotate-180">▼</span>
                     </summary>
                     <div className="border-t border-slate-200 bg-white p-3">

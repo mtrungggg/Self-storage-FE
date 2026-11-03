@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useLanguage } from "../context/LanguageContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { ADMIN_ROLES, CUSTOMER_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
 
-const NAV_ITEMS = [
-  { key: "rent", label: "Rent a Unit", to: "/home", style: "soft" },
-  { key: "my-units", label: "My Units", to: "/my-units", style: "soft" },
-  { key: "access", label: "PIN Code", to: "/access-control", style: "hard" },
+const NAV_DEFINITIONS = [
+  { key: "rent", labelKey: "nav.rent", fallback: "Rent a Unit", to: "/home", style: "soft" },
+  { key: "my-units", labelKey: "nav.my_units", fallback: "My Units", to: "/my-units", style: "soft" },
+  { key: "access", labelKey: "nav.pin_code", fallback: "PIN Code", to: "/access-control", style: "hard" },
 ];
 
 const ACTIVE_CLASS = {
@@ -14,9 +16,10 @@ const ACTIVE_CLASS = {
   hard: "bg-[#0b1c30] text-white",
 };
 
-// Shared top navigation bar used by every authenticated portal page.
+// Shared top navigation bar used by customer and staff portals.
 function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,15 +50,16 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
           {shouldHideCustomerNav && (
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1d5fe5]"></span>
-              Ops Hub
+              {t("nav.ops_hub", "Ops Hub")}
             </span>
           )}
         </div>
 
         {!shouldHideCustomerNav && (
           <nav className="hidden items-center gap-1 lg:flex">
-            {NAV_ITEMS.map((item) => {
+            {NAV_DEFINITIONS.map((item) => {
               const isProtected = item.key !== "rent";
+              const label = t(item.labelKey, item.fallback);
               const handleItemClick = (e) => {
                 if (isProtected && !user) {
                   e.preventDefault();
@@ -68,7 +72,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                   key={item.key}
                   className={`rounded-md px-3 py-2 text-[13px] font-bold ${ACTIVE_CLASS[item.style]}`}
                 >
-                  {item.label}
+                  {label}
                 </button>
               ) : (
                 <Link
@@ -77,7 +81,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                   onClick={handleItemClick}
                   className="rounded-md px-3 py-2 text-[13px] font-semibold text-[#58657a] hover:text-[#0b1c30] transition"
                 >
-                  {item.label}
+                  {label}
                 </Link>
               );
             })}
@@ -88,16 +92,19 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
           {!shouldHideCustomerNav && (
             <Link to="/support" aria-current={active === "support" ? "page" : undefined} className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>
-              Support
+              {t("nav.support", "Support")}
             </Link>
           )}
+
+          {/* Central Language Switcher [ VIE | ENG ] */}
+          <LanguageSwitcher className="mx-1" />
 
           {user ? (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full border border-[#dfe7f5] bg-white py-1 pl-1 pr-2.5 transition hover:bg-[#f8faff]"
+                className="flex items-center gap-2 rounded-full border border-[#dfe7f5] bg-white py-1 pl-1 pr-2.5 transition hover:bg-[#f8faff] cursor-pointer"
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1c30] text-[12px] font-bold text-white">
                   {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
@@ -113,7 +120,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-[12px] border border-[#dfe7f5] bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.1)] z-50">
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-[12px] border border-[#dfe7f5] bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.1)] z-50">
                   <div className="border-b border-[#f0f3f8] px-3 py-2">
                     <div className="truncate text-[12px] font-bold text-[#0b1c30]">{user.fullName || "Account"}</div>
                     <div className="truncate text-[11px] text-[#8996a9]">{user.email}</div>
@@ -128,7 +135,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                           className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                         >
                           <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">warehouse</span>
-                          My Units
+                          {t("nav.my_units", "My Units")}
                         </Link>
                         <Link
                           to="/billing"
@@ -136,7 +143,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                           className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                         >
                           <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">receipt_long</span>
-                          Invoices &amp; payments
+                          {t("nav.billing", "Invoices & Payments")}
                         </Link>
                       </>
                     )}
@@ -147,7 +154,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                       >
                         <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">dashboard</span>
-                        Dashboard Admin
+                        {t("nav.admin_dashboard", "Admin Dashboard")}
                       </Link>
                     )}
                     {!hasAnyRole(user?.roles || [], ADMIN_ROLES) && hasAnyRole(user?.roles || [], MANAGER_ROLES) && (
@@ -157,7 +164,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                       >
                         <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">space_dashboard</span>
-                        Vận hành kho (Manager)
+                        {t("nav.manager_ops", "Facility Operations")}
                       </Link>
                     )}
                     {hasAnyRole(user?.roles || [], STAFF_ROLES) && (
@@ -168,7 +175,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                           className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                         >
                           <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
-                          Ops Hub Dashboard
+                          {t("nav.staff_ops", "Staff Ops Dashboard")}
                         </Link>
                         <Link
                           to="/staff-shifts"
@@ -176,7 +183,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                           className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
                         >
                           <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">calendar_month</span>
-                          My Shifts
+                          {t("nav.my_shifts", "My Shifts")}
                         </Link>
                       </>
                     )}
@@ -185,10 +192,10 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 rounded-[8px] px-3 py-2 text-left text-[12px] font-semibold text-red-600 hover:bg-red-50"
+                    className="flex w-full items-center gap-2 rounded-[8px] px-3 py-2 text-left text-[12px] font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[16px]">logout</span>
-                    Sign out
+                    {t("nav.sign_out", "Sign out")}
                   </button>
                 </div>
               )}
@@ -199,13 +206,13 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                 to="/login"
                 className="rounded-[8px] px-3 py-1.5 text-[12px] font-bold text-[#0b1c30] hover:bg-[#f0f4fc]"
               >
-                Sign in
+                {t("nav.sign_in", "Sign in")}
               </Link>
               <Link
                 to="/register"
                 className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[12px] font-bold text-white shadow-sm hover:bg-[#174fc7]"
               >
-                Register
+                {t("nav.register", "Register")}
               </Link>
             </div>
           )}

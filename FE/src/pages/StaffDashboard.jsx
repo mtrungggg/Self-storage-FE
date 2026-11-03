@@ -19,9 +19,11 @@ import staffTaskService from "../api/staffTaskService";
 import facilityService from "../api/facilityService";
 import { STORAGE_UNIT_STATUS, RESERVATION_STATUS } from "../constants/rentalConstants";
 import { TICKET_STATUS } from "../constants/ticketConstants";
+import { useSignalR } from "../context/SignalRContext";
 
 export default function StaffDashboard({ initialTab = "checkin" }) {
   const { user } = useAuth();
+  const { subscribe, joinFacility } = useSignalR();
 
   // Selected operational facility (1 = HCM-TD, 2 = HCM-D7)
   const [selectedFacilityId, setSelectedFacilityId] = useState("1");

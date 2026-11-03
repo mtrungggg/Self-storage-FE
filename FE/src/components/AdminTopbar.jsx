@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, ChevronDown, Box, Boxes, Users, History, Bell } from "lucide-react";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
+import { useLanguage } from "../context/LanguageContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const adminNavigation = {
   "admin-overview": ["Dashboard", Box],
@@ -12,6 +14,7 @@ const adminNavigation = {
 
 export default function AdminTopbar({ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
+  const { t, formatDate } = useLanguage();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -78,7 +81,8 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
       {profile?.isAdmin && (
         <nav className="reference-nav" aria-label="Admin navigation">
           {navGroups.flatMap((group) => group.items).map((item) => {
-            const [label, Icon] = adminNavigation[item.id] || [item.label, Box];
+            const [fallbackLabel, Icon] = adminNavigation[item.id] || [item.label, Box];
+            const label = item.label || fallbackLabel;
             return (
               <Link key={item.id} to={item.to} aria-current={activeId === item.id ? "page" : undefined}>
                 <Icon size={19} strokeWidth={1.5} />
@@ -89,12 +93,15 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
         </nav>
       )}
 
-      <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {!profile?.isAdmin && (
           <span className="hidden text-xs font-medium text-slate-500 xl:inline">
-            {new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date())}
+            {formatDate(new Date(), { dateStyle: "long" })}
           </span>
         )}
+
+        {/* Central Language Switcher [ VIE | ENG ] */}
+        <LanguageSwitcher className="mx-1" />
 
         {/* Notification Bell for Facility Manager */}
         {!profile?.isAdmin && (
@@ -103,8 +110,8 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
               type="button"
               onClick={() => setNotifyOpen((prev) => !prev)}
               className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition shadow-xs cursor-pointer"
-              title="Thông báo yêu cầu chuyển kho"
-              aria-label="Thông báo yêu cầu chuyển kho"
+              title={t("nav.transfers", "Transfers")}
+              aria-label={t("nav.transfers", "Transfers")}
             >
               <Bell size={16} />
               {pendingTransferCount > 0 && (
@@ -119,15 +126,15 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
                   <div className="flex items-center gap-1.5 font-bold text-slate-900">
                     <Bell size={14} className="text-amber-500" />
-                    <span>Yêu cầu chuyển kho</span>
+                    <span>{t("nav.transfers", "Transfers")}</span>
                   </div>
                   <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 border border-amber-200">
-                    {pendingTransferCount} chờ duyệt
+                    {pendingTransferCount} {t("status.pending", "Pending")}
                   </span>
                 </div>
 
                 {pendingTransfers.length === 0 ? (
-                  <p className="py-4 text-center text-slate-400 text-xs">Không có yêu cầu chuyển kho nào đang chờ.</p>
+                  <p className="py-4 text-center text-slate-400 text-xs">{t("common.no_data", "No data available")}</p>
                 ) : (
                   <div className="max-h-60 overflow-y-auto space-y-2">
                     {pendingTransfers.slice(0, 5).map((req) => (
@@ -138,11 +145,11 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                         className="block rounded-lg border border-amber-100 bg-amber-50/50 p-2.5 transition hover:bg-amber-100/60"
                       >
                         <div className="flex items-center justify-between font-bold text-slate-900 text-xs">
-                          <span>{req.customerName || `Khách hàng #${req.customerId}`}</span>
-                          <span className="text-[10px] text-amber-700 font-bold">Chờ duyệt</span>
+                          <span>{req.customerName || `${t("common.customer", "Customer")} #${req.customerId}`}</span>
+                          <span className="text-[10px] text-amber-700 font-bold">{t("status.pending", "Pending")}</span>
                         </div>
                         <p className="mt-1 text-[11px] text-slate-600">
-                          HĐ <span className="font-mono font-semibold">{req.agreementNo}</span>: Kho <span className="font-mono font-bold text-blue-700">{req.fromUnitCode}</span> ➔ {req.requestedUnitTypeName}
+                          {t("common.agreement", "Agreement")} <span className="font-mono font-semibold">{req.agreementNo}</span>: {t("common.unit", "Unit")} <span className="font-mono font-bold text-blue-700">{req.fromUnitCode}</span> ➔ {req.requestedUnitTypeName}
                         </p>
                       </Link>
                     ))}
@@ -154,7 +161,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                   onClick={() => setNotifyOpen(false)}
                   className="mt-2.5 block text-center rounded-lg bg-blue-50 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
                 >
-                  Xem tất cả yêu cầu chuyển kho &rarr;
+                  {t("nav.transfers", "Transfers")} &rarr;
                 </Link>
               </div>
             )}
@@ -174,7 +181,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
             aria-expanded={profileOpen}
             aria-controls="admin-profile-menu"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="admin-profile-trigger"
+            className="admin-profile-trigger cursor-pointer"
           >
             <span className="admin-avatar">{initial}</span>
             <span className="hidden text-left sm:block">
@@ -193,10 +200,10 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                 onClick={() => setProfileOpen(false)}
                 to={profile?.isAdmin ? "/admin-overview" : "/manager-dashboard"}
               >
-                Dashboard
+                {t("nav.dashboard", "Dashboard")}
               </Link>
               <Link onClick={() => setProfileOpen(false)} to="/staff-dashboard">
-                Staff Ops Hub
+                {t("nav.staff_ops", "Staff Ops Hub")}
               </Link>
               <button
                 type="button"
@@ -205,7 +212,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                   navigate("/login");
                 }}
               >
-                Sign out
+                {t("nav.sign_out", "Sign out")}
               </button>
             </div>
           )}
