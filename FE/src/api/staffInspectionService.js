@@ -36,6 +36,7 @@ const staffInspectionService = {
       penaltyAmount: payload.penaltyAmount,
       inspectionItems: (payload.damageItems || []).map((item) => ({
         itemName: item.itemName,
+        condition: item.condition || "damaged",
         chargeAmount: Number(item.cost || 0),
         notes: item.notes || "",
       })),

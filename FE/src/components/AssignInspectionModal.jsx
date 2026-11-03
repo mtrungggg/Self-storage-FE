@@ -2,6 +2,23 @@ import { useEffect, useState } from "react";
 import { managerUserService } from "../api/managerUserService";
 import managerExpiringContractsService from "../api/managerExpiringContractsService";
 
+function formatAssignErrorMessage(err) {
+  if (!err) return "Không thể phân công kiểm tra kho. Vui lòng thử lại.";
+  const msg = typeof err === "string" ? err : err.message || "";
+  const lower = msg.toLowerCase();
+
+  if (lower.includes("not assigned to this facility") || lower.includes("staffnotassignedtofacility")) {
+    return "Nhân viên được chọn chưa được gán hoặc đã hết hạn nhiệm vụ tại cơ sở này. Vui lòng chọn nhân viên khác.";
+  }
+  if (lower.includes("ck__inspections") || lower.includes("inspections")) {
+    return "Lỗi khởi tạo biên bản nghiệm thu: Không tìm thấy ô kho hợp lệ trên hợp đồng.";
+  }
+  if (lower.includes("status transition") || lower.includes("51052")) {
+    return "Hợp đồng đã được phân công hoặc đã hoàn tất thủ tục trước đó.";
+  }
+  return msg || "Không thể phân công kiểm tra kho. Vui lòng thử lại.";
+}
+
 function getStaffId(s) {
   if (!s) return "";
   return s.employeeId ?? s.userId ?? s.id ?? s.employeeUserId ?? "";
@@ -94,7 +111,7 @@ export default function AssignInspectionModal({
       }
       onClose();
     } catch (err) {
-      setError(err.message || "Không thể phân công kiểm tra kho. Vui lòng thử lại.");
+      setError(formatAssignErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

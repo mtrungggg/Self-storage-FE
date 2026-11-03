@@ -349,14 +349,22 @@ export default function ManagerRefundApprovals() {
             let accountHolder = refund.bankAccountHolder || refund.accountHolder;
             let displayReason = refund.reason;
 
-            if (displayReason && typeof displayReason === "string" && displayReason.trim().startsWith("{")) {
-              try {
-                const parsed = JSON.parse(displayReason);
-                if (!bankName && parsed.bank) bankName = parsed.bank;
-                if (!accountNumber && parsed.acc) accountNumber = parsed.acc;
-                if (!accountHolder && parsed.holder) accountHolder = parsed.holder;
-                displayReason = parsed.note || "Khách yêu cầu hoàn cọc qua chuyển khoản ngân hàng.";
-              } catch {}
+            if (displayReason && typeof displayReason === "string") {
+              let trimmed = displayReason.trim();
+              if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                trimmed = trimmed.slice(1, -1).trim();
+              }
+              if (trimmed.startsWith("{")) {
+                try {
+                  const parsed = JSON.parse(trimmed.replace(/\\"/g, '"'));
+                  if (!bankName && parsed.bank) bankName = parsed.bank;
+                  if (!accountNumber && parsed.acc) accountNumber = parsed.acc;
+                  if (!accountHolder && parsed.holder) accountHolder = parsed.holder;
+                  displayReason = parsed.note || "Khách yêu cầu hoàn cọc qua chuyển khoản ngân hàng.";
+                } catch {
+                  displayReason = "Khách yêu cầu hoàn cọc qua chuyển khoản ngân hàng.";
+                }
+              }
             }
 
             bankName = bankName || "MBBank (Napas 247)";

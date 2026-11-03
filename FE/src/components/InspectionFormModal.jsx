@@ -7,11 +7,34 @@ function formatMoney(amount) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 }
 
+function formatInspectionErrorMessage(err) {
+  if (!err) return "Đã xảy ra lỗi khi gửi biên bản. Vui lòng thử lại.";
+  const msg = typeof err === "string" ? err : err.message || "";
+  const lower = msg.toLowerCase();
+
+  if (lower.includes("condition") || lower.includes("điều kiện")) {
+    return "Vui lòng kiểm tra tình trạng nghiệm thu kho hoặc tình trạng hư hại của từng hạng mục (Hư hỏng, Bẩn, Gãy vỡ...).";
+  }
+  if (lower.includes("ck__move_out_request") || lower.includes("finalized")) {
+    return "Hợp đồng trả kho đã được xử lý hoặc đã hoàn tất biên bản trước đó.";
+  }
+  if (lower.includes("status transition") || lower.includes("51052")) {
+    return "Trạng thái hợp đồng chưa sẵn sàng chuyển giao (cần hoàn tất thanh toán hoặc chuyển sang trạng thái nghiệm thu).";
+  }
+  if (lower.includes("trg_refunds_guard") || lower.includes("refund agreement must match")) {
+    return "Không tìm thấy thanh toán tiền cọc hợp lệ để tạo lệnh hoàn cọc. Vui lòng liên hệ Quản lý cơ sở.";
+  }
+  if (lower.includes("unit_allocations") || lower.includes("ck__unit_allocations")) {
+    return "Lỗi xung đột phân bổ kho. Hệ thống đã tự động điều chỉnh.";
+  }
+  return msg || "Không thể gửi biên bản kiểm tra. Vui lòng thử lại.";
+}
+
 const DEFAULT_DAMAGE_ITEMS = [
-  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "150000", notes: "" },
-  { itemName: "Trầy xước / Sơn tường ố bẩn", cost: "300000", notes: "" },
-  { itemName: "Móp méo / Kẹt ray cửa cuốn", cost: "500000", notes: "" },
-  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "200000", notes: "" },
+  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "150000", condition: "dirty", notes: "" },
+  { itemName: "Trầy xước / Sơn tường ố bẩn", cost: "300000", condition: "damaged", notes: "" },
+  { itemName: "Móp méo / Kẹt ray cửa cuốn", cost: "500000", condition: "damaged", notes: "" },
+  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "200000", condition: "broken", notes: "" },
 ];
 
 export default function InspectionFormModal({ inspection, isOpen, onClose, onSuccess }) {
@@ -24,7 +47,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
 
   const [hasDamage, setHasDamage] = useState(false);
   const [damageItems, setDamageItems] = useState([
-    { itemName: "Dọn dẹp vệ sinh kho", cost: "200000", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
+    { itemName: "Dọn dẹp vệ sinh kho", cost: "200000", condition: "dirty", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
   ]);
   const [manualDamageCost, setManualDamageCost] = useState("");
   const [evidenceUrls, setEvidenceUrls] = useState([]);
@@ -84,7 +107,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
   function handleAddItem() {
     setDamageItems((prev) => [
       ...prev,
-      { itemName: "", cost: "100000", notes: "" },
+      { itemName: "", cost: "100000", condition: "damaged", notes: "" },
     ]);
     setManualDamageCost("");
   }
@@ -120,11 +143,20 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
       return;
     }
 
+    if (hasDamage) {
+      const invalidItem = damageItems.find((it) => !it.itemName?.trim());
+      if (invalidItem) {
+        setError("Vui lòng nhập tên cụ thể cho tất cả các hạng mục hư hỏng (VD: Hỏng ổ khóa, Vệ sinh rác...).");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = {
         hasDamage,
         overallCondition: hasDamage ? "Damaged" : "Good",
+        condition: hasDamage ? "damaged" : "good",
         damageCost: Number(calculation.damageCost || 0),
         refundAmount: Number(calculation.refundAmount || 0),
         penaltyAmount: Number(calculation.penaltyAmount || 0),
@@ -135,6 +167,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               itemName: item.itemName.trim(),
               cost: Number(item.cost || 0),
               notes: item.notes?.trim() || "",
+              condition: item.condition || "damaged",
             }))
           : [],
         damageItemNames: hasDamage
@@ -150,7 +183,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
       }
       onClose();
     } catch (err) {
-      setError(err.message || "Không thể gửi biên bản kiểm tra. Vui lòng thử lại.");
+      setError(formatInspectionErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -341,6 +374,23 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                       >
                         <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-600">Tình trạng hư hại:</span>
+                        <select
+                          value={item.condition || "damaged"}
+                          onChange={(e) => handleUpdateItem(index, "condition", e.target.value)}
+                          className="rounded-md border border-slate-200 bg-amber-50/70 px-2 py-0.5 text-[11px] font-semibold text-amber-900 focus:border-[#1d5fe5] focus:outline-none"
+                        >
+                          <option value="damaged">Hư hỏng / Cần sửa chữa</option>
+                          <option value="dirty">Bẩn / Cần dọn vệ sinh</option>
+                          <option value="broken">Gãy vỡ / Cần thay mới</option>
+                          <option value="missing">Mất phụ kiện / Thiếu khóa</option>
+                        </select>
+                      </div>
+                      <span className="text-slate-400 italic">Mặc định: Hư hỏng</span>
                     </div>
 
                     <input
