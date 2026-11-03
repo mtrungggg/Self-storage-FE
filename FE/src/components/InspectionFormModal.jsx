@@ -124,10 +124,12 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
     try {
       const payload = {
         hasDamage,
-        damageCost: calculation.damageCost,
-        refundAmount: calculation.refundAmount,
-        penaltyAmount: calculation.penaltyAmount,
+        overallCondition: hasDamage ? "Damaged" : "Good",
+        damageCost: Number(calculation.damageCost || 0),
+        refundAmount: Number(calculation.refundAmount || 0),
+        penaltyAmount: Number(calculation.penaltyAmount || 0),
         notes: notes.trim(),
+        summary: notes.trim() || (hasDamage ? "Kho có hư hại / cần xử lý" : "Kho sạch sẽ, không hư hại"),
         damageItems: hasDamage
           ? damageItems.map((item) => ({
               itemName: item.itemName.trim(),
@@ -135,7 +137,11 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               notes: item.notes?.trim() || "",
             }))
           : [],
+        damageItemNames: hasDamage
+          ? damageItems.map((item) => item.itemName.trim()).filter(Boolean)
+          : [],
         evidenceUrls,
+        photoUrls: evidenceUrls,
       };
 
       const result = await staffInspectionService.submitInspection(inspection.id, payload);
