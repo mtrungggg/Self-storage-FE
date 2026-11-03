@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Building2,
@@ -18,16 +18,65 @@ import { formatVnd } from "../lib/utils";
 import managerService from "../api/managerService";
 import mediaService from "../api/mediaService";
 
+
+const BANK_CODE_MAP = {
+  "Vietcombank (VCB)": "VCB",
+  "Vietcombank": "VCB",
+  "Techcombank (TCB)": "TCB",
+  "Techcombank": "TCB",
+  "MBBank (MB)": "MB",
+  "MBBank (Napas 247)": "MB",
+  "MBBank": "MB",
+  "MB": "MB",
+  "VietinBank (CTG)": "ICB",
+  "VietinBank": "ICB",
+  "BIDV": "BIDV",
+  "ACB": "ACB",
+  "VPBank": "VPB",
+  "TPBank": "TPB",
+  "Sacombank": "STB",
+  "Agribank": "VBA",
+  "HDBank": "HDB",
+  "VIB": "VIB",
+  "SHB": "SHB",
+  "MSB": "MSB",
+  "OCB": "OCB",
+  "SeABank": "SEAB",
+};
+
+function resolveBankCode(bankName) {
+  if (!bankName) return "MB";
+  if (BANK_CODE_MAP[bankName]) return BANK_CODE_MAP[bankName];
+  const upper = bankName.toUpperCase();
+  for (const [key, code] of Object.entries(BANK_CODE_MAP)) {
+    if (upper.includes(key.toUpperCase()) || upper.includes(code)) return code;
+  }
+  return "MB";
+}
+
 export default function ProcessRefundPayoutModal({
   isOpen,
   onClose,
   refund,
   onSuccess,
+  initialFile = null,
+  initialPreviewUrl = "",
+  initialTxRef = "",
+  initialNotes = "",
 }) {
-  const [transactionRef, setTransactionRef] = useState("");
-  const [notes, setNotes] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [filePreview, setFilePreview] = useState("");
+  const [transactionRef, setTransactionRef] = useState(initialTxRef || "");
+  const [notes, setNotes] = useState(initialNotes || "");
+  const [selectedFile, setSelectedFile] = useState(initialFile || null);
+  const [filePreview, setFilePreview] = useState(initialPreviewUrl || "");
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialFile) setSelectedFile(initialFile);
+      if (initialPreviewUrl) setFilePreview(initialPreviewUrl);
+      if (initialTxRef) setTransactionRef(initialTxRef);
+      if (initialNotes) setNotes(initialNotes);
+    }
+  }, [isOpen, initialFile, initialPreviewUrl, initialTxRef, initialNotes]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -65,7 +114,7 @@ export default function ProcessRefundPayoutModal({
     savedBankInfo?.bankCode ||
     refund.bankCode ||
     reasonBank?.bankCode ||
-    BANK_CODE_MAP[bankName] ||
+    resolveBankCode(bankName) ||
     "MB";
   const accountNumber =
     savedBankInfo?.accountNumber ||
