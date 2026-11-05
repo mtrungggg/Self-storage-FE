@@ -2,6 +2,18 @@ import apiClient from "./apiClient";
 
 const staffFacilityService = {
   /**
+   * Lấy cơ sở mà nhân viên đang đăng nhập được phân công làm việc
+   * GET /api/staff/my-facility
+   */
+  async getMyFacility() {
+    const response = await apiClient.get("/staff/my-facility");
+    if (response?.success !== true) {
+      throw new Error(response?.message || "Unable to load your assigned facility.");
+    }
+    return response.data ?? null;
+  },
+
+  /**
    * STT 9: Danh sách ô kho và hiện trạng vật lý tại cơ sở
    * GET /api/staff/facilities/{facilityId}/units
    */

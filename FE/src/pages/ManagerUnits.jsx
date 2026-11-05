@@ -86,6 +86,19 @@ function resolveUnitTypeId(unitTypes, storageType, size) {
   return match ? String(match.id) : String(unitTypes[0].id);
 }
 
+// Tách nhãn Loại kho & Kích thước từ unitTypeId để hiển thị thành 2 cột riêng trong bảng
+function getUnitTypeAndSizeLabels(unitTypes, unit) {
+  const typeObj = unitTypes.find((t) => String(t.id) === String(unit.unitTypeId));
+  if (!typeObj) {
+    return { typeLabel: unit.unitTypeName || "—", sizeLabel: "—" };
+  }
+  const { storageType, size } = parseTypeAndSizeFromUnitType(typeObj);
+  const typeLabel = STORAGE_TYPES.find((st) => st.id === storageType)?.label.split(" (")[0] || unit.unitTypeName || "—";
+  const sizeBase = UNIT_SIZES.find((sz) => sz.id === size)?.label.split(" (")[0] || size;
+  const sizeLabel = typeObj.areaM2 ? `${sizeBase} (${typeObj.areaM2} m²)` : sizeBase;
+  return { typeLabel, sizeLabel };
+}
+
 function mapStatusStyle(status) {
   const key = String(status || "").toLowerCase();
   if (key === "available") return "border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs";
@@ -571,24 +584,28 @@ export default function ManagerUnits() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-2.5 w-[16%]">{t("common.unit", "Mã kho")}</th>
-                  <th className="px-4 py-2.5 w-[20%]">{t("table.type", "Loại")}</th>
-                  <th className="px-4 py-2.5 w-[16%]">{t("table.zone", "Khu vực / Tầng")}</th>
-                  <th className="px-4 py-2.5 w-[20%]">{t("common.status", "Trạng thái")}</th>
+                  <th className="px-4 py-2.5 w-[13%]">{t("common.unit", "Mã kho")}</th>
+                  <th className="px-4 py-2.5 w-[14%]">{t("table.type", "Loại kho")}</th>
+                  <th className="px-4 py-2.5 w-[14%]">{t("table.size", "Kích thước")}</th>
+                  <th className="px-4 py-2.5 w-[14%]">{t("table.zone", "Khu vực / Tầng")}</th>
+                  <th className="px-4 py-2.5 w-[17%]">{t("common.status", "Trạng thái")}</th>
                   <th className="px-4 py-2.5 w-[14%]">Hiển thị khách thuê</th>
                   <th className="px-4 py-2.5 w-[14%] text-right">{t("manager.actions", "Thao tác")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loadingUnits ? (
-                  <tr><td colSpan={6} className="py-6 text-center text-slate-400">{t("manager.loading_units", "Đang tải danh sách ô kho...")}</td></tr>
+                  <tr><td colSpan={7} className="py-6 text-center text-slate-400">{t("manager.loading_units", "Đang tải danh sách ô kho...")}</td></tr>
                 ) : units.length === 0 ? (
-                  <tr><td colSpan={6} className="py-6 text-center text-slate-400">{t("manager.no_units_found", "Không tìm thấy ô kho nào.")}</td></tr>
+                  <tr><td colSpan={7} className="py-6 text-center text-slate-400">{t("manager.no_units_found", "Không tìm thấy ô kho nào.")}</td></tr>
                 ) : (
-                  units.map((unit) => (
+                  units.map((unit) => {
+                    const { typeLabel, sizeLabel } = getUnitTypeAndSizeLabels(unitTypes, unit);
+                    return (
                     <tr key={unit.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="px-4 py-2.5 font-bold text-slate-900">{unit.unitCode}</td>
-                      <td className="px-4 py-2.5 text-slate-600">{unit.unitTypeName}</td>
+                      <td className="px-4 py-2.5 text-slate-600" title={typeLabel}>{typeLabel}</td>
+                      <td className="px-4 py-2.5 text-slate-600" title={sizeLabel}>{sizeLabel}</td>
                       <td className="px-4 py-2.5 text-slate-600">
                         <span className="font-semibold text-slate-800">{unit.zoneLabel || "A"}</span> / Tầng {unit.floorLabel || "1"}
                       </td>
@@ -635,7 +652,8 @@ export default function ManagerUnits() {
                         </button>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>

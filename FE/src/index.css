@@ -542,6 +542,7 @@ html.lenis, html.lenis body { height: auto; }
 .dark .bg-\[\#f5f7fd\],
 .dark .bg-\[\#f0f4fc\],
 .dark .bg-\[\#f0f3f8\],
+.dark .bg-\[\#f5f9ff\],
 .dark .bg-\[\#F2F3F5\] {
   background-color: #18181b !important;
 }
@@ -586,6 +587,7 @@ html.lenis, html.lenis body { height: auto; }
 .dark h6,
 .dark strong,
 .dark .text-\[\#0b1c30\],
+.dark .text-\[\#0f172a\],
 .dark .text-\[\#18181b\],
 .dark .text-\[\#122033\],
 .dark .text-slate-900,
@@ -607,6 +609,8 @@ html.lenis, html.lenis body { height: auto; }
 /* Muted & Meta Text -> Neutral Gray #a1a1aa */
 .dark .text-\[\#58657a\],
 .dark .text-\[\#8996a9\],
+.dark .text-\[\#687586\],
+.dark .text-\[\#718299\],
 .dark .text-\[\#71717a\],
 .dark .text-slate-500,
 .dark .text-zinc-500,
@@ -666,6 +670,10 @@ html.lenis, html.lenis body { height: auto; }
   background-color: #27272a !important;
   color: #f4f4f5 !important;
 }
+
+.dark .hover\:text-\[\#0f172a\]:hover {
+  color: #f4f4f5 !important;
+}
 /* Shift Preset Cards & Badges in Dark Mode */
 .dark .bg-\[\#eefdf5\],
 .dark .bg-\[\#d1fadf\] {
@@ -682,7 +690,8 @@ html.lenis, html.lenis body { height: auto; }
 }
 
 .dark .bg-\[\#f5f6ff\],
-.dark .bg-\[\#e0eaff\] {
+.dark .bg-\[\#e0eaff\],
+.dark .bg-\[\#eef4ff\] {
   background-color: rgba(49, 46, 129, 0.4) !important;
   border-color: #3730a3 !important;
   color: #a5b4fc !important;
@@ -818,6 +827,13 @@ html.lenis, html.lenis body { height: auto; }
   background-color: rgba(49, 46, 129, 0.6) !important;
   border-color: #3730a3 !important;
   color: #a5b4fc !important;
+}
+
+.dark .bg-purple-50,
+.dark .bg-purple-100 {
+  background-color: rgba(88, 28, 135, 0.6) !important;
+  border-color: #6b21a8 !important;
+  color: #d8b4fe !important;
 }
 
 /* High Contrast Input & Select Carets and Focus */

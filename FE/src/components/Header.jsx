@@ -164,19 +164,6 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         {t("nav.manager_ops", "Facility Operations")}
                       </Link>
                     )}
-                    {hasAnyRole(user?.roles || [], STAFF_ROLES) && (
-                      <>
-
-                        <Link
-                          to="/staff-shifts"
-                          onClick={() => setMenuOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
-                        >
-                          <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">calendar_month</span>
-                          {t("nav.my_shifts", "My Shifts")}
-                        </Link>
-                      </>
-                    )}
                   </div>
 
                   <button

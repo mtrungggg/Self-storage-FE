@@ -27,6 +27,7 @@ export default function ManagerFacilityUsersPage() {
     fullName: "",
     email: "",
     phoneNumber: "",
+    password: "",
     position: STAFF_POSITIONS[0],
     isActive: true,
   });
@@ -123,6 +124,7 @@ export default function ManagerFacilityUsersPage() {
       fullName: "",
       email: "",
       phoneNumber: "",
+      password: "",
       position: STAFF_POSITIONS[0],
       isActive: true,
     });
@@ -151,6 +153,12 @@ export default function ManagerFacilityUsersPage() {
 
   async function handleSaveStaff(e) {
     e.preventDefault();
+
+    if (staffModalMode === "create" && staffFormData.password.trim().length < 6) {
+      setErrorMsg("Mật khẩu ban đầu phải có ít nhất 6 ký tự.");
+      return;
+    }
+
     setStaffSubmitting(true);
     setErrorMsg("");
 
@@ -575,6 +583,25 @@ export default function ManagerFacilityUsersPage() {
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 disabled:bg-slate-50 disabled:text-slate-500"
                 />
               </div>
+
+              {staffModalMode === "create" && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Mật khẩu ban đầu *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    minLength={6}
+                    placeholder="Tối thiểu 6 ký tự"
+                    autoComplete="new-password"
+                    value={staffFormData.password}
+                    onChange={(e) => setStaffFormData({ ...staffFormData, password: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">Nhân viên sẽ dùng mật khẩu này để đăng nhập lần đầu.</p>
+                </div>
+              )}
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">

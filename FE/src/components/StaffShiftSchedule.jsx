@@ -31,9 +31,9 @@ function isToday(isoString) {
   const d = new Date(isoString);
   const now = new Date();
   return (
-    d.getUTCDate() === now.getDate() &&
-    d.getUTCMonth() === now.getMonth() &&
-    d.getUTCFullYear() === now.getFullYear()
+    d.getUTCDate() === now.getUTCDate() &&
+    d.getUTCMonth() === now.getUTCMonth() &&
+    d.getUTCFullYear() === now.getUTCFullYear()
   );
 }
 

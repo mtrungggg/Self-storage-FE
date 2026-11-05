@@ -5,8 +5,9 @@ import CustomerLayouts from "../layouts/CustomerLayouts";
 import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
 import RequireAuth from "../components/RequireAuth";
-import { STAFF_ROLES, MANAGER_ROLES, ADMIN_ROLES, CUSTOMER_ROLES } from "../constants/roles";
+import { STAFF_ROLES, MANAGER_ROLES, ADMIN_ROLES, CUSTOMER_ROLES, getDefaultRouteForUser } from "../constants/roles";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../hooks/useAuth";
 
 // Eagerly loaded critical guest routes for instant response
 import Home from "../pages/Home";
@@ -64,6 +65,20 @@ function RouteSuspenseFallback() {
   );
 }
 
+// Nhân viên/Quản lý/Admin đã đăng nhập không xem giao diện khách hàng ở "/home";
+// tự động điều hướng về đúng dashboard theo role. Khách/Customer vẫn thấy Home bình thường.
+function RoleAwareHome() {
+  const { user, loading } = useAuth();
+  if (loading) return <RouteSuspenseFallback />;
+  if (user) {
+    const dest = getDefaultRouteForUser(user);
+    if (dest !== "/home") {
+      return <Navigate to={dest} replace />;
+    }
+  }
+  return <Home />;
+}
+
 // Central route table: public guest exploration (/home) plus protected routes.
 function AppRoutes() {
   const location = useLocation();
@@ -79,7 +94,7 @@ function AppRoutes() {
 
           {/* Public customer browsing */}
           <Route element={<CustomerLayouts />}>
-            <Route path="/home" element={<Home />} />
+            <Route path="/home" element={<RoleAwareHome />} />
             <Route path="/storage-detail" element={<StorageDetail />} />
             <Route path="/support" element={<Support />} />
 

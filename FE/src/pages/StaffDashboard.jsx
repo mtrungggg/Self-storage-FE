@@ -26,10 +26,12 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const { t, translateStatus } = useLanguage();
   const { subscribe, joinFacility, recentEvent } = useSignalR();
 
-  // Selected operational facility (1 = HCM-TD, 2 = HCM-D7, 5 = HCM-TB)
+  // Cơ sở vận hành đang chọn — được xác định từ API /staff/my-facility (phân công thật của nhân viên),
+  // chỉ dùng giá trị lưu ở localStorage nếu đã từng được xác định trước đó trong phiên này.
   const [selectedFacilityId, setSelectedFacilityId] = useState(
-    () => localStorage.getItem("staff_selected_facility_id") || "5"
+    () => localStorage.getItem("staff_selected_facility_id") || null
   );
+  const [myFacilityInfo, setMyFacilityInfo] = useState(null);
   const [activeTab, setActiveTab] = useState(initialTab === "overdue" ? "checkin" : initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'issues'
 
   // Dynamic Metrics State
@@ -79,7 +81,28 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     }
   };
 
+  // Xác định cơ sở nhân viên thực sự được phân công (chỉ chạy khi chưa có facilityId nào được chọn)
   useEffect(() => {
+    if (selectedFacilityId) return;
+    let cancelled = false;
+    staffFacilityService
+      .getMyFacility()
+      .then((info) => {
+        if (cancelled || !info?.facilityId) return;
+        setMyFacilityInfo(info);
+        setSelectedFacilityId(String(info.facilityId));
+        localStorage.setItem("staff_selected_facility_id", String(info.facilityId));
+      })
+      .catch((err) => {
+        console.error("Failed to resolve staff's assigned facility:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFacilityId]);
+
+  useEffect(() => {
+    if (!selectedFacilityId) return;
     loadDashboardData(selectedFacilityId);
     return () => {
       requestId.current++;
@@ -168,6 +191,14 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const openIssuesCount = pendingTasks + activeTickets.length;
 
   const staffFacility = useMemo(() => {
+    if (myFacilityInfo?.facilityId) {
+      return {
+        id: myFacilityInfo.facilityId,
+        facilityCode: myFacilityInfo.facilityCode,
+        facilityName: myFacilityInfo.facilityName,
+        address: myFacilityInfo.address || myFacilityInfo.city || "",
+      };
+    }
     const fId = tasks[0]?.facilityId || user?.facilityId || selectedFacilityId || 1;
     return (
       facilities.find((f) => String(f.id) === String(fId)) || {
@@ -177,7 +208,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
         address: "Ho Chi Minh City",
       }
     );
-  }, [facilities, tasks, user, selectedFacilityId]);
+  }, [myFacilityInfo, facilities, tasks, user, selectedFacilityId]);
 
   // Task categories filter
   const taskTabs = useMemo(() => [
