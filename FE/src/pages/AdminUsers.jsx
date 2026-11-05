@@ -443,30 +443,26 @@ export default function AdminUsers() {
                       <td className="max-w-[220px]">
                         {isStaffOrManager ? (
                           <div className="flex items-center gap-1.5">
-                            <SelectDropdown
-                              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 max-w-[190px] truncate hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                              value={user.assignedFacilityIds?.[0] || ""}
-                              onChange={(e) => handleReassignFacility(user, e.target.value)}
-                              disabled={reassigningUserId === user.id}
-                              title={
-                                user.assignedFacilityNames?.length
-                                  ? `Current: ${user.assignedFacilityNames.join(", ")} (Click to switch)`
-                                  : "Select branch to assign"
-                              }
-                            >
-                              <option value="" disabled>Select Branch...</option>
-                              {facilities.map((fac) => (
-                                <option key={fac.id} value={fac.id}>
-                                  {fac.code} — {fac.name}
-                                </option>
-                              ))}
-                            </SelectDropdown>
-                            {reassigningUserId === user.id && (
-                              <RefreshCw size={12} className="animate-spin text-blue-600 shrink-0" />
+                            {user.assignedFacilityNames?.length || user.assignedFacilityIds?.length ? (
+                              <input
+                                type="text"
+                                readOnly
+                                value={
+                                  user.assignedFacilityNames?.length
+                                    ? user.assignedFacilityNames.join(", ")
+                                    : facilities.find((f) => f.id === user.assignedFacilityIds?.[0])
+                                    ? `${facilities.find((f) => f.id === user.assignedFacilityIds?.[0]).code} — ${facilities.find((f) => f.id === user.assignedFacilityIds?.[0]).name}`
+                                    : "—"
+                                }
+                                title={user.assignedFacilityNames?.join(", ") || ""}
+                                className="w-full max-w-[190px] text-xs bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-zinc-200 truncate cursor-default select-none focus:outline-none"
+                              />
+                            ) : (
+                              <span className="text-xs text-slate-400 dark:text-zinc-500">—</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400">—</span>
+                          <span className="text-xs text-slate-400 dark:text-zinc-500">—</span>
                         )}
                       </td>
                       <td>

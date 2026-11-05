@@ -490,9 +490,6 @@ export default function AdminUserDetail() {
                       <tr>
                         <th scope="col">Facility Name</th>
                         <th scope="col">Code</th>
-                        <th scope="col">Role</th>
-                        <th scope="col">Starts At</th>
-                        <th scope="col">Ends At</th>
                         <th scope="col">Status</th>
                         <th scope="col" className="text-right pr-5">Actions</th>
                       </tr>
@@ -501,16 +498,11 @@ export default function AdminUserDetail() {
                       {employee.facilityAssignments.map((r) => (
                         <tr key={r.id}>
                           <td>
-                            <strong className="font-semibold text-slate-900">{r.facilityName || r.facilityCode}</strong>
+                            <strong className="font-semibold text-slate-900 dark:text-zinc-100">{r.facilityName || r.facilityCode}</strong>
                           </td>
                           <td>
-                            <span className="font-mono text-xs text-slate-500">{r.facilityCode || `#${r.facilityId}`}</span>
+                            <span className="font-mono text-xs text-slate-500 dark:text-zinc-400">{r.facilityCode || `#${r.facilityId}`}</span>
                           </td>
-                          <td>
-                            <span className="reference-pill !py-0.5 !px-2">{r.assignmentRole}</span>
-                          </td>
-                          <td className="text-xs text-slate-600">{date(r.startsAt)}</td>
-                          <td className="text-xs text-slate-600">{date(r.endsAt)}</td>
                           <td>
                             <span className={`reference-status ${r.isActive ? "active" : "inactive"}`}>
                               {r.isActive ? "Active Duty" : "Ended"}

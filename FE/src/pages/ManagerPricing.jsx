@@ -12,6 +12,55 @@ import { FacilityBarActions } from "../components/FacilitySwitcher";
 import { formatVnd } from "../lib/utils";
 import PAGINATION from "../constants/pagination";
 
+
+function getCleanCondition(raw) {
+  if (!raw) return "";
+  if (typeof raw === "string" && raw.trim().startsWith("{")) {
+    try {
+      const obj = JSON.parse(raw);
+      return obj.description || obj.notes || obj.reason || raw;
+    } catch {
+      return raw;
+    }
+  }
+  return raw;
+}
+
+const FEE_TYPE_TRANSLATIONS = {
+  vi: {
+    late_fee: "Phí trễ hạn thanh toán",
+    late_payment: "Phí trễ hạn thanh toán",
+    damage_fee: "Phí hư hỏng / Vệ sinh",
+    damage: "Bồi thường hư hại ô kho",
+    cleaning: "Phí dọn dẹp vệ sinh kho",
+    lost_key_fee: "Phí mất chìa / thẻ từ",
+    key_replacement: "Cấp lại chìa khóa / thẻ",
+    lock_cut: "Phí cắt khóa khẩn cấp",
+    maintenance_fee: "Phí bảo trì định kỳ",
+    other: "Phí dịch vụ / Chuyển kho",
+    booking_fee: "Phí giữ chỗ đặt kho",
+    admin: "Phí thủ tục hành chính",
+    overstay: "Phí quá hạn lưu kho",
+    service: "Phí dịch vụ hỗ trợ",
+  },
+  en: {
+    late_fee: "Late Payment Fee",
+    late_payment: "Late Payment Fee",
+    damage_fee: "Damage & Cleaning Fee",
+    damage: "Damage Compensation",
+    cleaning: "Unit Cleaning Fee",
+    lost_key_fee: "Lost Key / RFID Card Fee",
+    key_replacement: "Key Replacement",
+    lock_cut: "Emergency Lock Cut",
+    maintenance_fee: "Maintenance Fee",
+    other: "Administrative / Transfer Fee",
+    booking_fee: "Storage Reservation Fee",
+    admin: "Administrative Fee",
+    overstay: "Overstay Storage Fee",
+    service: "Customer Service Fee",
+  },
+};
+
 const feeTypes = [
   ["late_fee", "Late Fee (Phí trễ hạn)"],
   ["damage_fee", "Damage / Cleaning Fee (Phí hỏng / vệ sinh)"],
@@ -110,7 +159,7 @@ const initialFeeForm = {
 };
 
 export default function ManagerPricing() {
-  const { t, formatCurrency } = useLanguage();
+  const { t, lang, formatCurrency } = useLanguage();
   const { facilityId, facilities } = useManagerFacility();
   const { user } = useAuth();
   const userRoles = (user?.roles || []).map((r) => r.toLowerCase());
@@ -646,28 +695,30 @@ export default function ManagerPricing() {
                   </tr>
                 ) : (
                   feesList.map((fee) => {
-                    const feeTypeLabel = feeTypes.find(([val]) => val === fee.feeType)?.[1] || fee.feeType;
+                    const langKey = lang === "vi" ? "vi" : "en";
+                    const feeTypeLabel = FEE_TYPE_TRANSLATIONS[langKey]?.[fee.feeType] || feeTypes.find(([val]) => val === fee.feeType)?.[1] || fee.feeType;
                     const calcMethodLabel = calculationMethods.find(([val]) => val === fee.calculationMethod)?.[1] || fee.calculationMethod;
+                    const cleanCondition = getCleanCondition(fee.conditions);
 
                     return (
                       <tr key={fee.id} className="hover:bg-slate-50/60 transition">
-                        <td className="px-4 py-2.5 font-mono font-semibold text-slate-800">
+                        <td className="px-4 py-2.5 font-sans font-semibold tracking-wide text-slate-800 dark:text-zinc-100">
                           {fee.code}
                         </td>
                         <td className="px-4 py-2.5">
                           {fee.facilityName ? (
-                            <span className="font-medium text-slate-800">{fee.facilityName}</span>
+                            <span className="font-medium text-slate-800 dark:text-zinc-200">{fee.facilityName}</span>
                           ) : (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                            <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
                               Global
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5">
-                          <span className="font-medium text-slate-800">{feeTypeLabel}</span>
-                          {fee.conditions && (
-                            <p className="max-w-[200px] truncate text-[10px] text-slate-500" title={fee.conditions}>
-                              {fee.conditions}
+                        <td className="px-4 py-2.5 font-sans">
+                          <span className="font-medium text-slate-800 dark:text-zinc-100">{feeTypeLabel}</span>
+                          {cleanCondition && (
+                            <p className="max-w-[240px] truncate text-[11px] text-slate-500 dark:text-zinc-400 font-sans mt-0.5" title={cleanCondition}>
+                              {cleanCondition}
                             </p>
                           )}
                         </td>

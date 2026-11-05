@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, ChevronDown, Box, Boxes, Users, History } from "lucide-react";
+import { Menu, ChevronDown, Box, Boxes, Users, History, CircleDollarSign } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -10,10 +10,11 @@ const adminNavigation = {
   "admin-facilities": ["Facilities", Boxes],
   "admin-users": ["Users & Roles", Users],
   "admin-audit-log": ["Audit & Logs", History],
+  "admin-pricing": ["Pricing", CircleDollarSign],
 };
 
 export default function AdminTopbar({
- profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
+  profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
   const { t, formatDate } = useLanguage();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -46,14 +47,16 @@ export default function AdminTopbar({
   return (
     <header className="admin-topbar">
       <div className="flex min-w-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={onToggleMobileSidebar}
-          className="admin-icon-button lg:hidden"
-          aria-label="Toggle navigation menu"
-        >
-          <Menu size={21} />
-        </button>
+        {!profile?.isAdmin && (
+          <button
+            type="button"
+            onClick={onToggleMobileSidebar}
+            className="admin-icon-button lg:hidden"
+            aria-label="Toggle navigation menu"
+          >
+            <Menu size={21} />
+          </button>
+        )}
         {profile?.isAdmin ? (
           <Link to="/admin-overview" className="reference-brand">
             <Box size={24} strokeWidth={2.2} />

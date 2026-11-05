@@ -20,6 +20,72 @@ const emptyUnitForm = {
   imageUrl: "",
 };
 
+
+const STORAGE_TYPES = [
+  { id: "DRY", label: "Kho hàng khô (Dry)" },
+  { id: "SEAFOOD", label: "Kho đông lạnh / Hải sản (Cold/Seafood)" },
+  { id: "WARM", label: "Kho sưởi ấm (Heated Warm)" },
+  { id: "CLIMATE", label: "Kho kiểm soát nhiệt độ (Climate)" },
+  { id: "LOCKER", label: "Tủ khóa thông minh (Smart Locker)" },
+];
+
+const UNIT_SIZES = [
+  { id: "MINI", label: "Mini (1m x 1m - 1m²)" },
+  { id: "S", label: "Nhỏ - S (1.5m x 2m - 3m²)" },
+  { id: "M", label: "Vừa - M (2m x 3m - 6m²)" },
+  { id: "L", label: "Lớn - L (3m x 4m - 10-12m²)" },
+  { id: "XL", label: "Cực lớn - XL (4m x 4m - 16-20m²)" },
+];
+
+function parseTypeAndSizeFromUnitType(typeObj) {
+  if (!typeObj) return { storageType: "DRY", size: "S" };
+  const code = (typeObj.code || "").toUpperCase();
+  const name = (typeObj.name || "").toLowerCase();
+
+  let storageType = "DRY";
+  if (code.includes("SEAFOOD") || name.includes("seafood") || name.includes("cold")) storageType = "SEAFOOD";
+  else if (code.includes("WARM") || name.includes("warm") || name.includes("heat")) storageType = "WARM";
+  else if (code.includes("CLIMATE") || name.includes("climate")) storageType = "CLIMATE";
+  else if (code.includes("LOCKER") || name.includes("locker")) storageType = "LOCKER";
+
+  let size = "S";
+  if (code.includes("MINI") || (typeObj.areaM2 && typeObj.areaM2 <= 1.5)) size = "MINI";
+  else if (code.startsWith("S-") || (typeObj.areaM2 && typeObj.areaM2 <= 3.5)) size = "S";
+  else if (code.startsWith("M-") || (typeObj.areaM2 && typeObj.areaM2 <= 6.5)) size = "M";
+  else if (code.startsWith("L-") || (typeObj.areaM2 && typeObj.areaM2 <= 12)) size = "L";
+  else if (code.startsWith("XL-") || (typeObj.areaM2 && typeObj.areaM2 > 12)) size = "XL";
+
+  return { storageType, size };
+}
+
+function resolveUnitTypeId(unitTypes, storageType, size) {
+  if (!unitTypes || unitTypes.length === 0) return "1";
+
+  // Exact type and size
+  let match = unitTypes.find((t) => {
+    const { storageType: st, size: s } = parseTypeAndSizeFromUnitType(t);
+    return st === storageType && s === size;
+  });
+
+  // Fallback to size
+  if (!match) {
+    match = unitTypes.find((t) => {
+      const { size: s } = parseTypeAndSizeFromUnitType(t);
+      return s === size;
+    });
+  }
+
+  // Fallback to type
+  if (!match) {
+    match = unitTypes.find((t) => {
+      const { storageType: st } = parseTypeAndSizeFromUnitType(t);
+      return st === storageType;
+    });
+  }
+
+  return match ? String(match.id) : String(unitTypes[0].id);
+}
+
 function mapStatusStyle(status) {
   const key = String(status || "").toLowerCase();
   if (key === "available") return "border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs";
@@ -359,8 +425,8 @@ export default function ManagerUnits() {
     let data;
     try { data = JSON.parse(rawData); } catch { return; }
 
-    const unitX = 6 + col * 28;
-    const unitY = 6 + row * 22;
+    const unitX = 5 + col * 27;
+    const unitY = 5 + row * 21;
 
     if (data.type === "move-unit") {
       const unitId = data.unitId;
@@ -671,10 +737,12 @@ export default function ManagerUnits() {
                       return false;
                     });
 
-                    // Grid System: 3 columns x 4 rows = 12 slots per zone
-                    const GRID_COLS = 3;
-                    const GRID_ROWS = 4;
+                    // Grid System: 4 columns x 7 rows = 28 slots per zone (fills entire zone height & width)
+                    const GRID_COLS = 4;
+                    const GRID_ROWS = 7;
                     const scale = 2.2;
+                    const slotW = 22;
+                    const slotH = 16;
 
                     return (
                       <div
@@ -695,7 +763,7 @@ export default function ManagerUnits() {
                         style={{
                           left: `${3 + areaIdx * 32.5}%`,
                           width: "31%",
-                          height: "78%",
+                          height: "82%",
                         }}
                       >
                         {/* Zone Header Label */}
@@ -709,16 +777,14 @@ export default function ManagerUnits() {
                           {/* Render Grid Slots (3 cols x 4 rows) */}
                           {Array.from({ length: GRID_ROWS }).map((_, r) =>
                             Array.from({ length: GRID_COLS }).map((__, c) => {
-                              const slotX = 6 + c * 28;
-                              const slotY = 6 + r * 22;
-                              const slotW = 22;
-                              const slotH = 16;
+                              const slotX = 5 + c * 27;
+                              const slotY = 5 + r * 21;
 
                               // Check if a unit is placed close to this slot
                               const occupyingUnit = zoneUnits.find((u) => {
                                 const ux = Number(u.x) || 0;
                                 const uy = Number(u.y) || 0;
-                                return Math.abs(ux - slotX) < 14 && Math.abs(uy - slotY) < 11;
+                                return Math.abs(ux - slotX) < 14 && Math.abs(uy - slotY) < 12;
                               });
 
                               const isHovered = hoveredSlot === `${area.areaId || area.code}-${r}-${c}`;
@@ -856,45 +922,23 @@ export default function ManagerUnits() {
               </div>
 
               <div className="space-y-3.5 text-xs">
-                {/* Unit Code & Type */}
+                {/* Row 1: Unit Code & Status */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
                       Mã kho *
                     </label>
                     <input
                       required
                       value={unitForm.unitCode}
                       onChange={(e) => setUnitForm((p) => ({ ...p, unitCode: e.target.value.toUpperCase() }))}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-mono font-bold text-slate-900 outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 dark:bg-zinc-800"
                       placeholder="VD: A-101"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Loại kho *
-                    </label>
-                    <SelectDropdown
-                      required
-                      value={unitForm.unitTypeId}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, unitTypeId: e.target.value }))}
-                      className="w-full"
-                    >
-                      <option value="" disabled>Chọn loại kho</option>
-                      {unitTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.code} - {type.name}
-                        </option>
-                      ))}
-                    </SelectDropdown>
-                  </div>
-                </div>
-
-                {/* Status & Listing */}
-                <div className="grid grid-cols-2 gap-3 items-center">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
                       Trạng thái
                     </label>
                     <SelectDropdown
@@ -907,18 +951,80 @@ export default function ManagerUnits() {
                       ))}
                     </SelectDropdown>
                   </div>
+                </div>
 
-                  <div className="pt-4">
-                    <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={unitForm.isListed}
-                        onChange={(e) => setUnitForm((p) => ({ ...p, isListed: e.target.checked }))}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Hiển thị cho khách thuê</span>
+                {/* Row 2: 2 Independent Dropdowns (Loại kho & Kích thước) */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      Loại kho *
                     </label>
+                    <SelectDropdown
+                      value={(() => {
+                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
+                        return parseTypeAndSizeFromUnitType(curObj).storageType;
+                      })()}
+                      onChange={(e) => {
+                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
+                        const { size: curSize } = parseTypeAndSizeFromUnitType(curObj);
+                        const nextId = resolveUnitTypeId(unitTypes, e.target.value, curSize);
+                        setUnitForm((p) => ({ ...p, unitTypeId: nextId }));
+                      }}
+                      className="w-full"
+                    >
+                      {STORAGE_TYPES.map((st) => (
+                        <option key={st.id} value={st.id}>{st.label}</option>
+                      ))}
+                    </SelectDropdown>
                   </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      Kích thước *
+                    </label>
+                    <SelectDropdown
+                      value={(() => {
+                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
+                        return parseTypeAndSizeFromUnitType(curObj).size;
+                      })()}
+                      onChange={(e) => {
+                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
+                        const { storageType: curType } = parseTypeAndSizeFromUnitType(curObj);
+                        const nextId = resolveUnitTypeId(unitTypes, curType, e.target.value);
+                        setUnitForm((p) => ({ ...p, unitTypeId: nextId }));
+                      }}
+                      className="w-full"
+                    >
+                      {UNIT_SIZES.map((sz) => (
+                        <option key={sz.id} value={sz.id}>{sz.label}</option>
+                      ))}
+                    </SelectDropdown>
+                  </div>
+                </div>
+
+                {/* Mapped asset specification tag */}
+                {(() => {
+                  const mapped = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
+                  if (!mapped) return null;
+                  return (
+                    <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 px-2.5 py-1.5 text-[11px] flex items-center justify-between text-blue-900 dark:text-blue-300">
+                      <span className="font-bold">{mapped.code}</span>
+                      <span className="truncate max-w-[260px] opacity-80">{mapped.name}</span>
+                    </div>
+                  );
+                })()}
+
+                {/* Listing checkbox */}
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 dark:text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={unitForm.isListed}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, isListed: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Hiển thị cho khách thuê</span>
+                  </label>
                 </div>
 
                 {/* Image Upload & URL */}

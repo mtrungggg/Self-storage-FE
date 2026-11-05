@@ -19,6 +19,9 @@ function ManagementShell() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
+  // Check if current route is an Admin route or user is Admin
+  const isAdminView = Boolean(profile?.isAdmin || pathname.startsWith("/admin-"));
+
   // Khớp item menu đang kích hoạt: chính xác hoặc tiền tố cho các trang chi tiết
   const activeId = sidebarNav
     .flatMap((group) => group.items)
@@ -32,15 +35,17 @@ function ManagementShell() {
   const isManagerRoute = pathname.startsWith("/manager-");
 
   return (
-    <div className={`admin-shell ${profile?.isAdmin ? "admin-reference" : ""} relative flex min-h-screen bg-white dark:bg-zinc-950 text-[#0b1c30] dark:text-zinc-100`}>
-      <AdminSidebar
-        navGroups={sidebarNav}
-        activeId={activeId}
-        isOpen={mobileSidebarOpen}
-        onClose={closeMobileSidebar}
-        isAdmin={profile?.isAdmin}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
+    <div className={`admin-shell ${isAdminView ? "admin-reference" : ""} relative flex min-h-screen bg-white dark:bg-zinc-950 text-[#0b1c30] dark:text-zinc-100`}>
+      {!isAdminView && (
+        <AdminSidebar
+          navGroups={sidebarNav}
+          activeId={activeId}
+          isOpen={mobileSidebarOpen}
+          onClose={closeMobileSidebar}
+          isAdmin={false}
+        />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col w-full">
         <AdminTopbar
           profile={profile}
           navGroups={sidebarNav}
@@ -50,7 +55,7 @@ function ManagementShell() {
           onToggleMobileSidebar={() => setMobileSidebarOpen((prev) => !prev)}
         />
         {isManagerRoute && <FacilitySwitcher />}
-        <main id="admin-content" className="admin-content min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
+        <main id="admin-content" className="admin-content min-w-0 flex-1 w-full px-4 py-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>

@@ -15,7 +15,7 @@
 }
 
 .admin-reference > .admin-desktop-sidebar {
-  display: block !important;
+  display: none !important;
 }
 
 .admin-reference > .flex {
