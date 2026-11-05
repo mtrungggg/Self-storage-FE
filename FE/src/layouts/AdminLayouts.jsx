@@ -32,7 +32,7 @@ function ManagementShell() {
   const isManagerRoute = pathname.startsWith("/manager-");
 
   return (
-    <div className={`admin-shell ${profile?.isAdmin ? "admin-reference" : ""} relative flex min-h-screen text-[#0b1c30]`}>
+    <div className={`admin-shell ${profile?.isAdmin ? "admin-reference" : ""} relative flex min-h-screen bg-white dark:bg-zinc-950 text-[#0b1c30] dark:text-zinc-100`}>
       <AdminSidebar
         navGroups={sidebarNav}
         activeId={activeId}

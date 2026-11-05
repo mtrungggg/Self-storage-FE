@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Menu, ChevronDown, Box, Boxes, Users, History } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const adminNavigation = {
   "admin-overview": ["Dashboard", Box],
@@ -11,7 +12,8 @@ const adminNavigation = {
   "admin-audit-log": ["Audit & Logs", History],
 };
 
-export default function AdminTopbar({ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
+export default function AdminTopbar({
+ profile, pageTitle, navGroups = [], activeId, onToggleMobileSidebar, logout }) {
   const navigate = useNavigate();
   const { t, formatDate } = useLanguage();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -89,6 +91,7 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
         )}
 
         {/* Central Language Switcher [ VIE | ENG ] */}
+        <ThemeSwitcher />
         <LanguageSwitcher className="mx-1" />
 
         <div
@@ -119,15 +122,6 @@ export default function AdminTopbar({ profile, pageTitle, navGroups = [], active
                 <strong className="block truncate text-xs font-semibold text-slate-900">{profile?.name}</strong>
                 <span className="block truncate text-[11px] text-slate-500">{profile?.email}</span>
               </div>
-              <Link
-                onClick={() => setProfileOpen(false)}
-                to={profile?.isAdmin ? "/admin-overview" : "/manager-dashboard"}
-              >
-                {t("nav.dashboard", "Dashboard")}
-              </Link>
-              <Link onClick={() => setProfileOpen(false)} to="/staff-dashboard">
-                {t("nav.staff_ops", "Staff Ops Hub")}
-              </Link>
               <button
                 type="button"
                 onClick={() => {

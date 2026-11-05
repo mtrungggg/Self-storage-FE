@@ -1,9 +1,13 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import staffReservationService from "../api/staffReservationService";
 import staffFacilityService from "../api/staffFacilityService";
 
-export default function StaffAssignUnit({ reservationId, facilityId, currentUnitCode, onAssigned }) {
+export default function StaffAssignUnit({
+ reservationId, facilityId, currentUnitCode, onAssigned }) {
   const [storageUnitId, setStorageUnitId] = useState("");
+  const { t } = useLanguage();
   const [availableUnits, setAvailableUnits] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(Boolean(facilityId));
   const [loading, setLoading] = useState(false);
@@ -71,12 +75,12 @@ export default function StaffAssignUnit({ reservationId, facilityId, currentUnit
               : "Chọn ô kho khả dụng để gán cho đơn đặt:"}
           </span>
           {facilityId ? (
-            <select
+            <SelectDropdown
               required
               disabled={unitsLoading}
               value={storageUnitId}
               onChange={(event) => setStorageUnitId(event.target.value)}
-              className="mt-0.5 block w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+              className="mt-0.5 block w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-[#0b1c30] outline-none focus:border-zinc-900 dark:border-zinc-100"
             >
               <option value="">
                 {unitsLoading ? "Đang tải danh sách kho..." : "-- Chọn ô kho tương đương khả dụng --"}
@@ -86,7 +90,7 @@ export default function StaffAssignUnit({ reservationId, facilityId, currentUnit
                   Kho {unit.unitCode} · {unit.unitTypeName || "Tiêu chuẩn"} {unit.dimensions ? `(${unit.dimensions})` : ""}
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           ) : (
             <input
               type="number"
@@ -96,21 +100,21 @@ export default function StaffAssignUnit({ reservationId, facilityId, currentUnit
               placeholder="Nhập ID ô kho..."
               value={storageUnitId}
               onChange={(event) => setStorageUnitId(event.target.value)}
-              className="mt-0.5 block w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-[#0b1c30] outline-none focus:border-[#1d5fe5]"
+              className="mt-0.5 block w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-[#0b1c30] outline-none focus:border-zinc-900 dark:border-zinc-100"
             />
           )}
         </label>
         <button
           type="submit"
           disabled={loading || !storageUnitId}
-          className="rounded-lg bg-[#1d5fe5] hover:bg-blue-700 px-3.5 py-1.5 font-bold text-white transition disabled:opacity-50 shadow-xs text-xs whitespace-nowrap"
+          className="rounded-lg bg-zinc-900 text-white hover:bg-blue-700 px-3.5 py-1.5 font-bold text-white transition disabled:opacity-50 shadow-xs text-xs whitespace-nowrap"
         >
           {loading ? "Đang lưu đổi kho..." : "Xác nhận đổi ô kho"}
         </button>
       </div>
       {error && <p role="alert" className="mt-1 text-red-600 font-semibold">{error}</p>}
       {!unitsLoading && facilityId && availableUnits.length === 0 && !error && (
-        <p className="mt-1 text-slate-500 italic">Không có ô kho trống khả dụng tại cơ sở này để đổi.</p>
+        <p className="mt-1 text-slate-500 italic">{t("staff.no_available_units", "Không có ô kho trống khả dụng tại cơ sở này để đổi.")}</p>
       )}
     </form>
   );

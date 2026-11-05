@@ -6,6 +6,7 @@ import StaffLayouts from "../layouts/StaffLayouts";
 import AdminLayouts from "../layouts/AdminLayouts";
 import RequireAuth from "../components/RequireAuth";
 import { STAFF_ROLES, MANAGER_ROLES, ADMIN_ROLES, CUSTOMER_ROLES } from "../constants/roles";
+import { useLanguage } from "../context/LanguageContext";
 
 // Eagerly loaded critical guest routes for instant response
 import Home from "../pages/Home";
@@ -50,13 +51,14 @@ const AdminAuditLog = lazy(() => import("../pages/AdminAuditLog"));
 const ManagerPricing = lazy(() => import("../pages/ManagerPricing"));
 
 function RouteSuspenseFallback() {
+  const { t } = useLanguage();
   return (
     <div className="flex min-h-[50vh] w-full items-center justify-center p-8">
       <div className="flex flex-col items-center gap-3">
         <span className="material-symbols-outlined animate-spin text-[32px] text-[#1d5fe5]">
           progress_activity
         </span>
-        <span className="text-[12px] font-semibold text-[#8996a9]">Đang tải dữ liệu...</span>
+        <span className="text-[12px] font-semibold text-[#8996a9]">{t("common.loading", "Đang tải dữ liệu...")}</span>
       </div>
     </div>
   );
@@ -137,6 +139,7 @@ function AppRoutes() {
 
             {/* Admin governance portal: strictly restricted to System Administrators */}
             <Route element={<RequireAuth allowedRoles={ADMIN_ROLES} />}>
+              <Route path="/admin" element={<Navigate to="/admin-overview" replace />} />
               <Route path="/admin-overview" element={<AdminDashboard />} />
               <Route path="/admin-facilities" element={<AdminCrudPage key="facilities" resource="facilities" />} />
               <Route path="/admin-facilities/:id" element={<AdminCrudPage key="facility-detail" resource="facilities" />} />

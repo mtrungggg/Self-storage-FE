@@ -21,7 +21,7 @@ export default function LanguageSwitcher({ className = "", compact = false }) {
         aria-pressed={lang === "vi"}
         className={`rounded-full px-2 py-0.5 text-[11px] font-bold transition-all cursor-pointer ${
           lang === "vi"
-            ? "bg-[#1d5fe5] text-white shadow-xs"
+            ? "bg-zinc-900 text-white text-white shadow-xs"
             : "text-slate-600 hover:text-slate-900"
         }`}
         title="Tiếng Việt"
@@ -35,7 +35,7 @@ export default function LanguageSwitcher({ className = "", compact = false }) {
         aria-pressed={lang === "en"}
         className={`rounded-full px-2 py-0.5 text-[11px] font-bold transition-all cursor-pointer ${
           lang === "en"
-            ? "bg-[#1d5fe5] text-white shadow-xs"
+            ? "bg-zinc-900 text-white text-white shadow-xs"
             : "text-slate-600 hover:text-slate-900"
         }`}
         title="English"

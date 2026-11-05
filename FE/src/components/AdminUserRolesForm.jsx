@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import adminUserService from "../api/adminUserService";
@@ -11,7 +12,9 @@ const formatDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? "—" : dateFormat.format(parsed);
 };
 
-export default function AdminUserRolesForm({ user, disabled, onSavingChange, onUpdated }) {
+export default function AdminUserRolesForm({
+ user, disabled, onSavingChange, onUpdated }) {
+  const { t } = useLanguage();
   const original = (user.roles || []).map((role) => role.code);
   const [selected, setSelected] = useState(original);
   const [saving, setSaving] = useState(false);
@@ -59,9 +62,9 @@ export default function AdminUserRolesForm({ user, disabled, onSavingChange, onU
     <section className="reference-card mb-5 p-5">
       <div className="reference-card-heading mb-3">
         <div>
-          <h2>Manage System Roles &amp; Permissions</h2>
+          <h2>{t("admin.manage_roles", "Manage System Roles & Permissions")}</h2>
           <p className="reference-muted">
-            Select the roles to grant for this account. Uncheck to revoke system access permissions.
+            {t("admin.user_roles_desc", "Chọn các vai trò phân quyền cho tài khoản này.")}
           </p>
         </div>
       </div>

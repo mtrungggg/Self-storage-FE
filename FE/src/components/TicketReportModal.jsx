@@ -1,8 +1,10 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useState } from "react";
 import staffSupportService from "../api/staffSupportService";
 import MediaUpload from "./MediaUpload";
 
 export default function TicketReportModal({ ticket, isOpen, onClose, onSuccess }) {
+  const { t } = useLanguage();
   const [result, setResult] = useState("Resolved"); // 'Resolved' | 'Severe_Need_Relocation'
   const [note, setNote] = useState("");
   const [evidenceUrls, setEvidenceUrls] = useState([]);
@@ -61,7 +63,7 @@ export default function TicketReportModal({ ticket, isOpen, onClose, onSuccess }
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[22px] text-[#1d5fe5]">
+              <span className="material-symbols-outlined text-[22px] text-zinc-900 dark:text-zinc-100">
                 assignment_turned_in
               </span>
               <h2 id="ticket-report-modal-title" className="text-base font-bold text-slate-900">
@@ -114,7 +116,7 @@ export default function TicketReportModal({ ticket, isOpen, onClose, onSuccess }
                       Resolved (Đã sửa / dọn xong)
                     </span>
                     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                      Hoàn tất
+                      {t("common.done", "Hoàn tất")}
                     </span>
                   </div>
                   <p className="mt-1 text-slate-600">
@@ -146,7 +148,7 @@ export default function TicketReportModal({ ticket, isOpen, onClose, onSuccess }
                       Severe_Need_Relocation (Hư hỏng nặng)
                     </span>
                     <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                      Yêu cầu Manager đổi kho
+                      {t("tickets.request_relocation", "Yêu cầu Manager đổi kho")}
                     </span>
                   </div>
                   <p className="mt-1 text-slate-600">
@@ -171,7 +173,7 @@ export default function TicketReportModal({ ticket, isOpen, onClose, onSuccess }
                 setError("");
               }}
               placeholder="VD: Đã thay ổ khóa mới, lau dọn khử mùi xong / hoặc: Cửa kho kẹt trục ray nặng không kéo lên được, tường ngấm nước..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
             />
           </div>
 

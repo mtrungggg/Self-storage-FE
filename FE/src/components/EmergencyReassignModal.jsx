@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useMemo } from "react";
 import managerTicketService from "../api/managerTicketService";
 import staffFacilityService from "../api/staffFacilityService";
@@ -48,7 +50,9 @@ function extractAreaNumber(unit) {
 }
 
 export default function EmergencyReassignModal({
+
   isOpen,
+
   onClose,
   onSuccess,
   ticket = null,
@@ -58,6 +62,7 @@ export default function EmergencyReassignModal({
   unitTypeId = null,
   oldUnitCode = null,
 }) {
+  const { t, translateStatus, formatCurrency } = useLanguage();
   const [allUnits, setAllUnits] = useState([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [allowCrossType, setAllowCrossType] = useState(false);
@@ -77,20 +82,20 @@ export default function EmergencyReassignModal({
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refundSuccessResult, setRefundSuccessResult] = useState(null);
 
-  // Extract effective data whether opened from Ticket or Agreement
-  const effectiveAgreementId =
+  // Extract strictly numeric agreement ID - NEVER fallback to ticket ID or ticket code
+  const rawAgreementId =
     agreement?.id ||
     agreement?.agreementId ||
     ticket?.agreementId ||
-    agreementId ||
-    ticket?.agreementNo ||
-    ticket?.id;
+    agreementId;
+
+  const parsedId = Number(rawAgreementId);
+  const effectiveAgreementId = !isNaN(parsedId) && parsedId > 0 ? parsedId : null;
 
   const effectiveAgreementNo =
     agreement?.agreementNo ||
     ticket?.agreementNo ||
-    effectiveAgreementId ||
-    "—";
+    (effectiveAgreementId ? `AGR-${effectiveAgreementId}` : "—");
 
   const effectiveFacilityId =
     facilityId ||
@@ -399,10 +404,10 @@ export default function EmergencyReassignModal({
             <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 space-y-2.5 shadow-xs">
               <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
                 <span className="material-symbols-outlined text-amber-600 text-[22px]">assignment_turned_in</span>
-                <span>Hủy hợp đồng &amp; Duyệt hoàn tiền 100% thành công!</span>
+                <span>{t("tickets.cancel_and_refund_success", "Hủy hợp đồng & Duyệt hoàn tiền 100% thành công!")}</span>
               </div>
               <p className="text-amber-900 leading-relaxed">
-                Hệ thống đã hủy hợp đồng <strong>#{refundSuccessResult.agreementNo || effectiveAgreementNo}</strong> và tự động phê duyệt hoàn trả 100% với số tiền <strong>{(refundSuccessResult.totalRefundAmount || 0).toLocaleString("vi-VN")} VNĐ</strong> cho khách hàng.
+                {t("tickets.agreement_cancelled", "Hệ thống đã hủy hợp đồng")} <strong>#{refundSuccessResult.agreementNo || effectiveAgreementNo}</strong> {t("tickets.and_auto_refund_100", "và tự động phê duyệt hoàn trả 100% với số tiền")} <strong>{(refundSuccessResult.totalRefundAmount || 0).toLocaleString("vi-VN")} VNĐ</strong> 
               </p>
 
               <div className="grid grid-cols-2 gap-2 border-t border-amber-200 pt-2.5">
@@ -413,14 +418,12 @@ export default function EmergencyReassignModal({
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[11px]">Trạng thái hợp đồng:</span>
-                  <strong className="text-amber-800 text-sm">CANCELLED</strong>
+                  <strong className="text-amber-800 text-sm">{translateStatus("cancelled")}</strong>
                   <span className="block text-[10px] text-amber-700 font-semibold">→ Đã gửi thông báo cho khách</span>
                 </div>
               </div>
 
-              <div className="mt-2 rounded-xl bg-white p-3 border border-amber-200 text-slate-600 text-[11px] leading-relaxed">
-                Quản lý hoặc bộ phận Kế toán có thể chuyển khoản số tiền hoàn cọc trực tiếp cho khách hàng theo thông tin tài khoản đã đăng ký trên hệ thống.
-              </div>
+              
             </div>
 
             <div className="flex justify-end pt-2">
@@ -439,10 +442,10 @@ export default function EmergencyReassignModal({
             <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950 space-y-2.5 shadow-xs">
               <div className="flex items-center gap-2 font-bold text-emerald-800 text-sm">
                 <span className="material-symbols-outlined text-emerald-600 text-[22px]">task_alt</span>
-                <span>Đổi kho khẩn cấp thành công!</span>
+                <span>{t("tickets.reassign_success", "Đổi kho khẩn cấp thành công!")}</span>
               </div>
               <p className="text-emerald-900 leading-relaxed">
-                Hệ thống đã tự động chuyển giao ô kho mới cho khách hàng với chi phí phát sinh là <strong>0 VNĐ</strong>. Hạn hợp đồng và tiền cọc được giữ nguyên vẹn.
+                {t("modal.new_qr_activated", "Mã QR Gate Pass mới đã được kích hoạt.")}
               </p>
 
               <div className="grid grid-cols-2 gap-2 border-t border-emerald-200 pt-2.5">
@@ -498,7 +501,7 @@ export default function EmergencyReassignModal({
               </p>
               <ul className="list-disc pl-5 space-y-1 text-[11px] text-rose-900">
                 <li>Chuyển ô kho gặp sự cố sang trạng thái <strong>MAINTENANCE</strong> (bảo trì).</li>
-                <li>Hủy hợp đồng <strong>#{effectiveAgreementNo}</strong> (Chuyển sang <strong>CANCELLED</strong>).</li>
+                <li>Hủy hợp đồng <strong>#{effectiveAgreementNo}</strong> (Chuyển sang <strong>{translateStatus("cancelled")}</strong>).</li>
                 <li>Thu hồi toàn bộ mã PIN / QR mở cửa hiện có của khách.</li>
                 <li>Tự động lập và phê duyệt hoàn trả <strong>100% số tiền</strong> đã thanh toán của hợp đồng này.</li>
               </ul>
@@ -531,7 +534,7 @@ export default function EmergencyReassignModal({
               <label className="block font-bold text-slate-800 uppercase tracking-wide mb-1">
                 Lý do hủy hợp đồng &amp; Hoàn cọc 100% *
               </label>
-              <select
+              <SelectDropdown
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-rose-500 mb-2"
@@ -540,7 +543,7 @@ export default function EmergencyReassignModal({
                 <option value="Khách hàng không đồng ý đổi sang loại kho khác do sự cố">Khách hàng không đồng ý đổi sang loại kho khác do sự cố</option>
                 <option value="Kho bị hỏng hóc nghiêm trọng tại thời điểm nhận kho">Kho bị hỏng hóc nghiêm trọng tại thời điểm nhận kho</option>
                 <option value="other">Lý do khác (Nhập chi tiết)...</option>
-              </select>
+              </SelectDropdown>
 
               {refundReason === "other" && (
                 <input
@@ -591,7 +594,7 @@ export default function EmergencyReassignModal({
 
               <button
                 type="submit"
-                disabled={refundSubmitting}
+                disabled={!effectiveAgreementId || refundSubmitting}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-2 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">cancel_presentation</span>
@@ -602,6 +605,16 @@ export default function EmergencyReassignModal({
         ) : (
           /* Reassign Form */
           <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
+            {!effectiveAgreementId && (
+              <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-rose-800 text-xs flex items-start gap-2 shadow-xs">
+                <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-0.5">error</span>
+                <div>
+                  <strong className="block font-bold">Không tìm thấy mã hợp đồng hợp lệ (Missing Agreement ID)</strong>
+                  <span>Ticket sự cố này chưa được liên kết với một Hợp đồng thuê hợp lệ. Vui lòng kiểm tra lại trước khi thực hiện đổi kho khẩn cấp hoặc hủy hoàn tiền.</span>
+                </div>
+              </div>
+            )}
+
             {/* Tóm tắt thông tin hiện tại */}
             <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 space-y-2 text-rose-950">
               <div className="flex items-center gap-1.5 font-bold text-rose-900">
@@ -696,11 +709,11 @@ export default function EmergencyReassignModal({
                       Cơ sở này hiện không còn bất kỳ ô kho trống (Available) nào để thay thế! Vui lòng chọn phương án <strong>Hủy HĐ &amp; Hoàn tiền 100%</strong>.
                     </div>
                   ) : (
-                    <select
+                    <SelectDropdown
                       required
                       value={selectedUnitId}
                       onChange={(e) => setSelectedUnitId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
+                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                     >
                       {displayUnits.map((unit) => {
                         const unitId = unit.unitId || unit.id;
@@ -723,7 +736,7 @@ export default function EmergencyReassignModal({
                           </option>
                         );
                       })}
-                    </select>
+                    </SelectDropdown>
                   )}
                 </>
               )}
@@ -734,17 +747,17 @@ export default function EmergencyReassignModal({
               <label className="block font-bold text-slate-800 uppercase tracking-wide mb-1">
                 Lý do điều chuyển (Reason) *
               </label>
-              <select
+              <SelectDropdown
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] mb-2"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 mb-2"
               >
                 <option value="Sự cố hư hỏng nặng (Severe_Need_Relocation)">Sự cố hư hỏng nặng (Severe_Need_Relocation)</option>
                 <option value="Kho bị ẩm mốc, thấm dột trần / sàn">Kho bị ẩm mốc, thấm dột trần / sàn</option>
                 <option value="Kẹt cửa kho / Hỏng khóa không khắc phục tại chỗ được">Kẹt cửa kho / Hỏng khóa không khắc phục tại chỗ được</option>
                 <option value="Lý do kỹ thuật / bảo trì định kỳ cơ sở">Lý do kỹ thuật / bảo trì định kỳ cơ sở</option>
                 <option value="other">Lý do khác (Nhập chi tiết)...</option>
-              </select>
+              </SelectDropdown>
 
               {reason === "other" && (
                 <input
@@ -753,7 +766,7 @@ export default function EmergencyReassignModal({
                   value={customReason}
                   onChange={(e) => setCustomReason(e.target.value)}
                   placeholder="Nhập lý do điều chuyển cụ thể..."
-                  className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                 />
               )}
             </div>
@@ -768,7 +781,7 @@ export default function EmergencyReassignModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ghi chú thêm về hiện trạng hoặc chỉ dẫn cho khách..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
               />
             </div>
 
@@ -811,6 +824,7 @@ export default function EmergencyReassignModal({
 
               <div className="flex items-center gap-2">
                 <button
+                  id="btn-cancel-emergency-reassign"
                   type="button"
                   disabled={submitting}
                   onClick={onClose}
@@ -819,8 +833,9 @@ export default function EmergencyReassignModal({
                   Hủy
                 </button>
                 <button
+                  id="btn-confirm-emergency-reassign"
                   type="submit"
-                  disabled={submitting || !selectedUnitId || displayUnits.length === 0}
+                  disabled={!effectiveAgreementId || submitting || !selectedUnitId || displayUnits.length === 0}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-2 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[16px]">published_with_changes</span>

@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -63,6 +65,7 @@ const formatDate = (val) => {
 };
 
 export default function AdminCrudPage() {
+  const { t } = useLanguage();
   const { id: paramFacilityId } = useParams();
   const navigate = useNavigate();
 
@@ -371,14 +374,12 @@ export default function AdminCrudPage() {
       <div className="reference-toolbar">
         <div>
           <div className="flex items-center gap-3">
-            <h1>Facility Management</h1>
+            <h1>{t("admin_facilities.title", "Facility Management")}</h1>
             <span className="reference-pill">
               {data ? `${data.totalCount} Facilities` : "Network Hubs"}
             </span>
           </div>
-          <p className="reference-muted mt-1">
-            Manage physical self-storage branches, operating hours, capacity, and active staffing.
-          </p>
+          
         </div>
         <div className="reference-toolbar-actions">
           <button
@@ -386,7 +387,7 @@ export default function AdminCrudPage() {
             onClick={openCreateModal}
             className="reference-button-primary"
           >
-            <Plus size={16} /> Add Facility
+            <Plus size={16} /> {t("admin_facilities.add_facility", "Add Facility")}
           </button>
           <button
             className="reference-refresh"
@@ -446,7 +447,7 @@ export default function AdminCrudPage() {
               }}
               className="reference-pill hover:bg-slate-100 cursor-pointer"
             >
-              <X size={14} className="inline mr-1" /> Cancel
+              <X size={14} className="inline mr-1" /> {t("common.cancel", "Cancel")}
             </button>
           </div>
 
@@ -605,7 +606,7 @@ export default function AdminCrudPage() {
                 <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
                   Status <span className="text-red-500">*</span>
                 </span>
-                <select
+                <SelectDropdown
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="reference-select"
@@ -615,7 +616,7 @@ export default function AdminCrudPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </SelectDropdown>
               </label>
             </div>
 
@@ -737,7 +738,7 @@ export default function AdminCrudPage() {
             <thead>
               <tr>
                 <th scope="col">Code</th>
-                <th scope="col">Facility Name</th>
+                <th scope="col">{t("table.facility", "Tên cơ sở")}</th>
                 <th scope="col">Location</th>
                 <th scope="col">Hours</th>
                 <th scope="col">Units</th>
@@ -1223,7 +1224,7 @@ export default function AdminCrudPage() {
                 <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
                   Target Status <span className="text-red-500">*</span>
                 </span>
-                <select
+                <SelectDropdown
                   value={targetStatus}
                   onChange={(e) => setTargetStatus(e.target.value)}
                   className="reference-select w-full"
@@ -1233,7 +1234,7 @@ export default function AdminCrudPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </SelectDropdown>
               </label>
 
               <label className="block">

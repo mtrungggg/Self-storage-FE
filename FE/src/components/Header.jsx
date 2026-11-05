@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ThemeSwitcher from "./ThemeSwitcher";
 import { ADMIN_ROLES, CUSTOMER_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
 
 const NAV_DEFINITIONS = [
@@ -12,8 +13,8 @@ const NAV_DEFINITIONS = [
 ];
 
 const ACTIVE_CLASS = {
-  soft: "bg-[#eef4ff] text-[#1d5fe5]",
-  hard: "bg-[#0b1c30] text-white",
+  soft: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold",
+  hard: "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold",
 };
 
 // Shared top navigation bar used by customer and staff portals.
@@ -35,24 +36,19 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
   const shouldHideCustomerNav = hideCustomerNav || (isStaffRole && (active === "ops" || active === "staff"));
 
   return (
-    <header className="relative z-50 border-b border-[#e6ebf5] bg-white">
+    <header className="relative z-50 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-6">
           <Link to="/home" className="flex items-center gap-2.5 transition hover:opacity-90">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1d5fe5] text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs">
               <span className="material-symbols-outlined text-[20px]">warehouse</span>
             </div>
             <span className="text-[19px] tracking-tight">
-              <span className="font-black text-[#0a3d91]">G1</span>
-              <span className="font-bold text-[#0b1c30]">SelfStorage</span>
+              <span className="font-black text-zinc-900 dark:text-zinc-100">G1</span>
+              <span className="font-bold text-zinc-600 dark:text-zinc-400">SelfStorage</span>
             </span>
           </Link>
-          {shouldHideCustomerNav && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-[#1d5fe5]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1d5fe5]"></span>
-              {t("nav.ops_hub", "Ops Hub")}
-            </span>
-          )}
+
         </div>
 
         {!shouldHideCustomerNav && (
@@ -88,7 +84,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
           </nav>
         )}
 
-        <div className="flex items-center gap-3 text-[12px] font-semibold text-[#3a475a]">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3 text-[12px] font-semibold text-[#3a475a]">
           {!shouldHideCustomerNav && (
             <Link to="/support" aria-current={active === "support" ? "page" : undefined} className="hidden items-center gap-1 text-[#58657a] hover:text-[#0b1c30] lg:flex">
               <span className="material-symbols-outlined text-[16px]">support_agent</span>
@@ -97,6 +93,7 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
           )}
 
           {/* Central Language Switcher [ VIE | ENG ] */}
+          <ThemeSwitcher />
           <LanguageSwitcher className="mx-1" />
 
           {user ? (
@@ -132,17 +129,17 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                         <Link
                           to="/my-units"
                           onClick={() => setMenuOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
                         >
-                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">warehouse</span>
+                          <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">warehouse</span>
                           {t("nav.my_units", "My Units")}
                         </Link>
                         <Link
                           to="/billing"
                           onClick={() => setMenuOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
                         >
-                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">receipt_long</span>
+                          <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">receipt_long</span>
                           {t("nav.billing", "Invoices & Payments")}
                         </Link>
                       </>
@@ -151,9 +148,9 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                       <Link
                         to="/admin-overview"
                         onClick={() => setMenuOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
                       >
-                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">dashboard</span>
+                        <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">dashboard</span>
                         {t("nav.admin_dashboard", "Admin Dashboard")}
                       </Link>
                     )}
@@ -161,28 +158,21 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                       <Link
                         to="/manager-units"
                         onClick={() => setMenuOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                        className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
                       >
-                        <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">space_dashboard</span>
+                        <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">space_dashboard</span>
                         {t("nav.manager_ops", "Facility Operations")}
                       </Link>
                     )}
                     {hasAnyRole(user?.roles || [], STAFF_ROLES) && (
                       <>
-                        <Link
-                          to="/staff-dashboard"
-                          onClick={() => setMenuOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
-                        >
-                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">badge</span>
-                          {t("nav.staff_ops", "Staff Ops Dashboard")}
-                        </Link>
+
                         <Link
                           to="/staff-shifts"
                           onClick={() => setMenuOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-[#1d5fe5]"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
                         >
-                          <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">calendar_month</span>
+                          <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">calendar_month</span>
                           {t("nav.my_shifts", "My Shifts")}
                         </Link>
                       </>
@@ -201,16 +191,16 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <Link
                 to="/login"
-                className="rounded-[8px] px-3 py-1.5 text-[12px] font-bold text-[#0b1c30] hover:bg-[#f0f4fc]"
+                className="whitespace-nowrap shrink-0 rounded-[8px] px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-[#0b1c30] hover:bg-[#f0f4fc] transition-colors"
               >
                 {t("nav.sign_in", "Sign in")}
               </Link>
               <Link
                 to="/register"
-                className="rounded-[8px] bg-[#1d5fe5] px-3 py-1.5 text-[12px] font-bold text-white shadow-sm hover:bg-[#174fc7]"
+                className="whitespace-nowrap shrink-0 rounded-[8px] bg-zinc-900 text-white px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-white shadow-sm hover:bg-zinc-800 transition-colors"
               >
                 {t("nav.register", "Register")}
               </Link>

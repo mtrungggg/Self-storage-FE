@@ -346,7 +346,7 @@ export function CardHandGallery({
                     className={cn(
                       "group flex flex-col gap-0.5 rounded-lg border p-2.5 text-left transition active:scale-[0.98]",
                       isActive
-                        ? "border-[#1d5fe5] bg-[#1d5fe5] text-white shadow-xs"
+                        ? "border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white text-white shadow-xs"
                         : "border-[#dfe7f5] bg-white/80 hover:bg-white hover:border-[#b9ccf0] text-[#0b1c30]"
                     )}
                   >
@@ -355,7 +355,7 @@ export function CardHandGallery({
                         <span
                           className={cn(
                             "h-1.5 w-1.5 shrink-0 rounded-full",
-                            isActive ? "bg-white" : "bg-[#1d5fe5]"
+                            isActive ? "bg-white" : "bg-zinc-900 text-white"
                           )}
                         />
                         <span className="truncate text-xs font-bold">

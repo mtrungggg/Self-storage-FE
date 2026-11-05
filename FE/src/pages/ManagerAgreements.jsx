@@ -1,4 +1,8 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
+import { TableSkeleton } from "../components/SkeletonLoader";
+import EmptyState from "../components/EmptyState";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import managerService from "../api/managerService";
@@ -23,6 +27,7 @@ function getStatusBadgeClass(status) {
 }
 
 function ManagerAgreements() {
+  const { t, formatCurrency, translateStatus } = useLanguage();
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [agreements, setAgreements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,8 +82,8 @@ function ManagerAgreements() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Rental Agreements</h1>
-        <p className="text-xs text-slate-500">Monitor active lease agreements, outstanding balances, and customer stored inventory.</p>
+        <h1 className="text-lg font-bold text-slate-900">{t("manager.agreements", "Quản lý hợp đồng thuê")}</h1>
+        <p className="text-xs text-slate-500"></p>
       </div>
 
       {error && (
@@ -97,16 +102,16 @@ function ManagerAgreements() {
             placeholder="Search agreement # / customer..."
             className="w-64 rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 placeholder-slate-400 focus:border-blue-500 focus:outline-none"
           />
-          <select
+          <SelectDropdown
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
           >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="overdue">Overdue</option>
-            <option value="terminated">Terminated</option>
-          </select>
+            <option value="">{t("manager.all_statuses", "Tất cả trạng thái")}</option>
+            <option value="active">{t("status.active", "Hiệu lực")}</option>
+            <option value="overdue">{t("status.overdue", "Quá hạn")}</option>
+            <option value="terminated">{t("status.terminated", "Đã thanh lý")}</option>
+          </SelectDropdown>
         </div>
 
         <div className="overflow-x-auto">
@@ -114,8 +119,8 @@ function ManagerAgreements() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3 w-[15%]">Agreement #</th>
-                <th className="px-4 py-3 w-[18%]">Customer</th>
-                <th className="px-4 py-3 w-[10%]">Unit</th>
+                <th className="px-4 py-3 w-[18%]">{t("common.customer", "Khách hàng")}</th>
+                <th className="px-4 py-3 w-[10%]">{t("common.unit", "Ô kho")}</th>
                 <th className="px-4 py-3 w-[18%]">Term</th>
                 <th className="px-4 py-3 w-[13%] text-right">Rent / Mo</th>
                 <th className="px-4 py-3 w-[13%] text-right">Balance</th>
@@ -124,14 +129,22 @@ function ManagerAgreements() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-slate-400">Loading agreements...</td>
-                </tr>
-              ) : agreements.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-slate-400">No rental agreements found.</td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="p-0">
+                      <TableSkeleton rows={5} columns={8} />
+                    </td>
+                  </tr>
+                ) : agreements.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-4">
+                      <EmptyState
+                        icon="description"
+                        title="Không có hợp đồng nào"
+                        description="Hiện chưa có hợp đồng thuê nào phù hợp với bộ lọc tìm kiếm tại cơ sở này."
+                      />
+                    </td>
+                  </tr>
               ) : (
                 agreements.map((agreement) => (
                   <tr key={agreement.id} className="text-slate-700 transition hover:bg-slate-50/60">
@@ -180,7 +193,7 @@ function ManagerAgreements() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Agreement Details: {detail?.agreementNo || ""}</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Lease term, payment schedule, and customer item inventory.</p>
+                <p className="text-xs text-slate-500 mt-0.5"></p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -212,7 +225,7 @@ function ManagerAgreements() {
             <div className="mt-4 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Customer</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">{t("common.customer", "Khách hàng")}</div>
                   <div className="mt-0.5 font-semibold text-slate-800">{detail.customerName}</div>
                 </div>
                 <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
@@ -220,7 +233,7 @@ function ManagerAgreements() {
                   <div className="mt-0.5 font-medium text-slate-700">{detail.customerPhone || "—"} / {detail.customerEmail || "—"}</div>
                 </div>
                 <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Unit</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">{t("common.unit", "Ô kho")}</div>
                   <div className="mt-0.5 font-mono font-bold text-slate-800">{detail.unitCode}</div>
                 </div>
                 <div className="rounded-md border border-slate-100 bg-slate-50/50 p-2.5">

@@ -9,7 +9,7 @@
 */
 
 .admin-reference {
-  background: #f8fafc;
+  background: #ffffff;
   color: #0f172a;
   min-height: 100vh;
 }
@@ -202,7 +202,7 @@
 }
 
 .reference-outline-button:hover:not(:disabled) {
-  background: #f8fafc;
+  background: #ffffff;
   border-color: #94a3b8;
   color: #0f172a;
 }
@@ -522,7 +522,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 11px;
@@ -637,7 +637,7 @@
 
 .reference-table th {
   padding: 10px 16px;
-  background: #f8fafc;
+  background: #ffffff;
   color: #64748b;
   font-size: 11px;
   font-weight: 600;
@@ -660,7 +660,7 @@
 }
 
 .reference-table tbody tr:hover {
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 /* Facility Avatar - Unified Tone for 100% of rows */
@@ -800,7 +800,7 @@
 }
 
 .reference-button-secondary:hover:not(:disabled) {
-  background: #f8fafc;
+  background: #ffffff;
   border-color: #94a3b8;
   color: #0f172a;
 }
@@ -941,4 +941,179 @@
   .reference-summary-stack {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* =========================================================================
+   FULL DARK MODE & HIGH-CONTRAST PALETTE FOR ADMIN & MANAGER SHELL
+   ========================================================================= */
+.dark .admin-shell,
+.dark .admin-reference {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-desktop-sidebar,
+.dark .admin-sidebar {
+  background: #09090b !important;
+  border-right: 1px solid #27272a !important;
+  color: #a1a1aa !important;
+}
+
+.dark .admin-brand,
+.dark .reference-brand {
+  color: #ffffff !important;
+}
+
+.dark .admin-topbar,
+.dark .admin-reference .admin-topbar {
+  background: #09090b !important;
+  border-bottom: 1px solid #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-topbar h1,
+.dark .admin-topbar strong,
+.dark .reference-toolbar h1 {
+  color: #ffffff !important;
+}
+
+.dark .admin-profile-trigger {
+  border-color: #27272a !important;
+  background: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-profile-trigger strong {
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-profile-menu {
+  background: #18181b !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .admin-profile-menu strong {
+  color: #ffffff !important;
+}
+
+.dark .admin-profile-menu span {
+  color: #a1a1aa !important;
+}
+
+.dark .admin-profile-menu button {
+  color: #f87171 !important;
+}
+
+.dark .admin-profile-menu button:hover {
+  background: #27272a !important;
+}
+
+.dark .reference-card,
+.dark .admin-card,
+.dark .admin-stats-card,
+.dark .admin-stat-card,
+.dark .reference-summary-card,
+.dark .reference-table-card,
+.dark .reference-occupancy,
+.dark .reference-card-link {
+  background: #121215 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .reference-card h2,
+.dark .reference-card h3,
+.dark .reference-card strong,
+.dark .admin-card h2,
+.dark .admin-card h3,
+.dark .admin-card strong {
+  color: #ffffff !important;
+}
+
+.dark .reference-muted,
+.dark .admin-muted,
+.dark .reference-meta,
+.dark .reference-subhead {
+  color: #a1a1aa !important;
+}
+
+.dark .reference-search,
+.dark .admin-search,
+.dark .reference-input,
+.dark .admin-input {
+  background: #18181b !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+.dark .reference-search input,
+.dark .admin-search input {
+  color: #ffffff !important;
+}
+
+.dark .reference-outline-button,
+.dark .reference-refresh,
+.dark .admin-btn-secondary,
+.dark .admin-button-secondary {
+  background: #18181b !important;
+  border-color: #27272a !important;
+  color: #e4e4e7 !important;
+}
+
+.dark .reference-outline-button:hover:not(:disabled),
+.dark .reference-refresh:hover:not(:disabled),
+.dark .admin-btn-secondary:hover:not(:disabled) {
+  background: #27272a !important;
+  border-color: #3f3f46 !important;
+  color: #ffffff !important;
+}
+
+.dark .admin-table-container,
+.dark .reference-table-wrap,
+.dark .admin-table,
+.dark .reference-table {
+  background: #121215 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-table th,
+.dark .reference-table th {
+  background: #18181b !important;
+  border-color: #27272a !important;
+  color: #a1a1aa !important;
+}
+
+.dark .admin-table td,
+.dark .reference-table td {
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark .admin-table tbody tr:hover,
+.dark .reference-table tbody tr:hover {
+  background: #18181b !important;
+}
+
+.dark .reference-ring circle:first-child {
+  stroke: #27272a !important;
+}
+
+.dark .reference-pill,
+.dark .admin-pill {
+  background: #27272a !important;
+  border-color: #3f3f46 !important;
+  color: #e4e4e7 !important;
+}
+
+.dark .reference-card-link {
+  border-top-color: #27272a !important;
+  color: #60a5fa !important;
+}
+
+.dark .reference-card-link:hover {
+  background: #18181b !important;
+  color: #93c5fd !important;
 }

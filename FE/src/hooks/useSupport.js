@@ -117,7 +117,7 @@ export function useSupport() {
   const ticketTabs = useMemo(() => {
     const pendingCount = tickets.filter((t) => t.status === "pending").length;
     const assignedCount = tickets.filter((t) => t.status === "assigned").length;
-    const resolvedCount = tickets.filter((t) => t.status === "resolved").length;
+    const resolvedCount = tickets.filter((t) => t.status === "resolved" || t.status === "closed").length;
     return [
       { id: "all", label: `All (${tickets.length})` },
       { id: "pending", label: `Pending (${pendingCount})` },
@@ -133,6 +133,7 @@ export function useSupport() {
 
   const filteredTickets = useMemo(() => {
     if (activeTicketTab === "all") return tickets;
+    if (activeTicketTab === "resolved") return tickets.filter((t) => t.status === "resolved" || t.status === "closed");
     return tickets.filter((t) => t.status === activeTicketTab);
   }, [tickets, activeTicketTab]);
 

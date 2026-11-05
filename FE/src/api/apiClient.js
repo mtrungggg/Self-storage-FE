@@ -8,6 +8,7 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
   timeout: appConfig.api.timeoutMs,
+  withCredentials: true,
 });
 
 // Request Interceptor: Tự động trích xuất Access Token (ưu tiên sessionStorage theo từng tab để hỗ trợ mở song song Customer & Staff)

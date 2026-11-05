@@ -1,13 +1,10 @@
+import DatePicker from "@/components/ui/date-picker";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBackground from "../components/PageBackground";
 import staffInspectionService from "../api/staffInspectionService";
 import InspectionFormModal from "../components/InspectionFormModal";
-
-function formatMoney(amount) {
-  if (amount == null || isNaN(amount)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
+import { useLanguage } from "../context/LanguageContext";
 
 function today() {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -21,6 +18,7 @@ function today() {
 }
 
 export default function StaffInspectionsPage() {
+  const { t, formatCurrency } = useLanguage();
   const [facilityId, setFacilityId] = useState("");
   const [date, setDate] = useState(() => today());
   const [filterAll, setFilterAll] = useState(true);
@@ -70,8 +68,8 @@ export default function StaffInspectionsPage() {
     const isOver = result.penaltyAmount > 0;
     setToastMsg(
       isOver
-        ? `Đã lưu kiểm tra Kho ${unitCode}: Hư hỏng vượt cọc! Đã lập hóa đơn phạt thu thêm ${formatMoney(result.penaltyAmount)}.`
-        : `Đã lưu kiểm tra Kho ${unitCode}: Hoàn cọc ${formatMoney(result.refundAmount)} cho khách.`
+        ? `${t("staff_inspections.over_deposit", "Hư hỏng vượt cọc: Phạt thêm")} ${formatCurrency(result.penaltyAmount)} (${t("common.unit", "Kho")} ${unitCode})`
+        : `${t("staff_inspections.deduct_damage", "Khấu trừ hư hại: Hoàn lại")} ${formatCurrency(result.refundAmount)} (${t("common.unit", "Kho")} ${unitCode})`
     );
 
     // Cập nhật trạng thái item tại local
@@ -97,17 +95,14 @@ export default function StaffInspectionsPage() {
       <main className="mx-auto max-w-[1320px] px-4 py-6 lg:px-6">
         <Link
           to="/staff-dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d5fe5] hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
         >
-          ← Quay lại Bảng điều khiển Nhân viên
+          {t("staff_inspections.back", "← Bảng điều khiển Nhân viên")}
         </Link>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Kiểm tra trả kho &amp; Nghiệm thu cọc</h1>
-            <p className="mt-1 text-xs text-slate-500">
-              Danh sách kho hết hạn hợp đồng / yêu cầu trả kho được Manager giao cho nhân viên kiểm tra
-            </p>
+            <h1 className="text-2xl font-bold">{t("staff_inspections.title", "Kiểm tra trả kho & Nghiệm thu cọc")}</h1>
           </div>
           <button
             type="button"
@@ -115,37 +110,37 @@ export default function StaffInspectionsPage() {
             onClick={loadData}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition disabled:opacity-50"
           >
-            {loading ? "Đang tải..." : "Làm mới"}
+            {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
           </button>
         </div>
 
         {/* Filter bar */}
         <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs text-xs">
           <label className="font-semibold text-slate-600 flex items-center gap-2">
-            Cơ sở:
+            {t("common.facility", "Cơ sở")}:
             <input
               type="number"
               min="1"
               step="1"
               value={facilityId}
               onChange={(e) => setFacilityId(e.target.value)}
-              placeholder="Tất cả cơ sở"
-              className="w-28 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs outline-none focus:border-[#1d5fe5]"
+              placeholder={t("common.all_facilities", "Tất cả cơ sở")}
+              className="w-28 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs outline-none focus:border-zinc-900 dark:border-zinc-100"
             />
           </label>
 
           <label className="font-semibold text-slate-600 flex items-center gap-2">
-            Ngày trả kho:
-            <input
-              type="date"
-              value={date}
-              disabled={filterAll}
-              onChange={(e) => {
-                setFilterAll(false);
-                setDate(e.target.value);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs outline-none focus:border-[#1d5fe5] disabled:opacity-50"
-            />
+            {t("moveout.moveout_date", "Ngày trả kho")}:
+            <div className="w-44">
+              <DatePicker
+                value={date}
+                disabled={filterAll}
+                onChange={(e) => {
+                  setFilterAll(false);
+                  setDate(e.target.value);
+                }}
+              />
+            </div>
           </label>
 
           <div className="flex gap-2 ml-auto">
@@ -157,11 +152,11 @@ export default function StaffInspectionsPage() {
               }}
               className={`rounded-lg border px-3 py-1.5 font-bold transition ${
                 !filterAll && date === today()
-                  ? "bg-[#1d5fe5] text-white border-[#1d5fe5]"
+                  ? "bg-zinc-900 text-white text-white border-zinc-900 dark:border-zinc-100"
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Hôm nay
+              {t("common.today", "Hôm nay")}
             </button>
             <button
               type="button"
@@ -172,7 +167,7 @@ export default function StaffInspectionsPage() {
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              Tất cả ngày
+              {t("common.all_dates", "Tất cả ngày")}
             </button>
           </div>
         </div>
@@ -188,29 +183,26 @@ export default function StaffInspectionsPage() {
         <section aria-label="Inspection list" aria-busy={loading} className="mt-5">
           {loading ? (
             <p role="status" className="p-8 text-center text-sm text-slate-500">
-              Đang tải danh sách kho được giao kiểm tra...
+              {t("common.loading", "Đang tải...")}
             </p>
           ) : error ? (
             <div role="alert" className="rounded-xl bg-white p-6 text-red-600 border border-red-100">
               <p className="font-semibold">{error}</p>
-              <button type="button" onClick={loadData} className="mt-2 text-sm text-[#1d5fe5] underline">
-                Thử lại
+              <button type="button" onClick={loadData} className="mt-2 text-sm text-zinc-900 dark:text-zinc-100 underline">
+                {t("common.refresh", "Thử lại")}
               </button>
             </div>
           ) : inspections.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500 space-y-2">
               <span className="material-symbols-outlined text-4xl text-slate-300">fact_check</span>
               <p className="font-semibold text-slate-700">
-                Không có kho nào cần kiểm tra trong danh sách.
-              </p>
-              <p className="text-xs text-slate-400">
-                Khi có hợp đồng hết hạn hoặc khách yêu cầu trả kho được Manager phân công, thông tin sẽ hiển thị tại đây.
+                {t("common.no_data", "Không có dữ liệu")}
               </p>
             </div>
           ) : (
             <>
               <p className="mb-3 text-xs font-semibold text-slate-500">
-                {inspections.length} kho cần nghiệm thu trả kho
+                {inspections.length} {t("staff_inspections.inspected_units_count", "kho cần nghiệm thu trả kho")}
               </p>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -229,9 +221,9 @@ export default function StaffInspectionsPage() {
                         {/* Header: Unit & Status */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">warehouse</span>
+                            <span className="material-symbols-outlined text-[18px] text-zinc-900 dark:text-zinc-100">warehouse</span>
                             <strong className="text-sm font-bold text-slate-900">
-                              Kho {item.unitCode || "—"}
+                              {t("common.unit", "Kho")} {item.unitCode || "—"}
                             </strong>
                           </div>
                           <span
@@ -241,26 +233,26 @@ export default function StaffInspectionsPage() {
                                 : "bg-amber-100 text-amber-800"
                             }`}
                           >
-                            {isCompleted ? "Đã nghiệm thu" : "Chờ kiểm tra"}
+                            {isCompleted ? t("staff_inspections.inspected", "Đã nghiệm thu") : t("staff_inspections.pending_inspection", "Chờ kiểm tra")}
                           </span>
                         </div>
 
                         {/* Details */}
                         <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div>
-                            <dt className="text-[11px] text-slate-500">Khách hàng</dt>
+                            <dt className="text-[11px] text-slate-500">{t("common.customer", "Khách hàng")}</dt>
                             <dd className="font-semibold text-slate-800 truncate">{item.customerName || "—"}</dd>
                           </div>
                           <div>
-                            <dt className="text-[11px] text-slate-500">Điện thoại</dt>
+                            <dt className="text-[11px] text-slate-500">{t("common.phone", "Điện thoại")}</dt>
                             <dd className="font-semibold text-slate-800 truncate">{item.customerPhone || "—"}</dd>
                           </div>
                           <div>
-                            <dt className="text-[11px] text-slate-500">Hợp đồng</dt>
+                            <dt className="text-[11px] text-slate-500">{t("common.agreement", "Hợp đồng")}</dt>
                             <dd className="font-mono text-slate-700 truncate">{item.agreementNo || `#${item.id}`}</dd>
                           </div>
                           <div>
-                            <dt className="text-[11px] text-slate-500">Ngày hết hạn / Trả</dt>
+                            <dt className="text-[11px] text-slate-500">{t("moveout.end_date", "Ngày hết hạn / Trả")}</dt>
                             <dd className="font-semibold text-slate-800 truncate">
                               {item.expirationDate || item.requestedMoveOutDate || today()}
                             </dd>
@@ -269,8 +261,8 @@ export default function StaffInspectionsPage() {
 
                         {/* Tiền cọc */}
                         <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                          <span className="text-[11px] font-medium text-slate-600">Tiền cọc ban đầu:</span>
-                          <span className="text-xs font-bold text-[#1d5fe5]">{formatMoney(deposit)}</span>
+                          <span className="text-[11px] font-medium text-slate-600">{t("moveout.initial_deposit", "Tiền cọc ban đầu")}:</span>
+                          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{formatCurrency(deposit)}</span>
                         </div>
 
                         {/* Kết quả kiểm tra nếu đã thực hiện */}
@@ -280,18 +272,18 @@ export default function StaffInspectionsPage() {
                               <div className="rounded-lg bg-rose-50 border border-rose-200 p-2 text-rose-900">
                                 <span className="font-bold flex items-center gap-1">
                                   <span className="material-symbols-outlined text-[14px] text-rose-600">warning</span>
-                                  Hư hỏng vượt cọc: Phạt thêm {formatMoney(item.penaltyAmount ?? item.inspectionResult?.penaltyAmount)}
+                                  {t("staff_inspections.over_deposit", "Hư hỏng vượt cọc: Phạt thêm")} {formatCurrency(item.penaltyAmount ?? item.inspectionResult?.penaltyAmount)}
                                 </span>
                               </div>
                             ) : hasDamage ? (
                               <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-amber-900">
                                 <span className="font-bold">
-                                  Khấu trừ hư hại: Hoàn lại {formatMoney(item.refundAmount ?? item.inspectionResult?.refundAmount)}
+                                  {t("staff_inspections.deduct_damage", "Khấu trừ hư hại: Hoàn lại")} {formatCurrency(item.refundAmount ?? item.inspectionResult?.refundAmount)}
                                 </span>
                               </div>
                             ) : (
                               <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2 text-emerald-900">
-                                <span className="font-bold">Kho nguyên vẹn: Hoàn trả 100% cọc</span>
+                                <span className="font-bold">{t("staff_inspections.intact_refund", "Kho nguyên vẹn: Hoàn trả 100% cọc")}</span>
                               </div>
                             )}
 
@@ -300,12 +292,12 @@ export default function StaffInspectionsPage() {
                               {item.refundMethod === "cash" ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-800 text-[10px]">
                                   <span className="material-symbols-outlined text-[12px]">payments</span>
-                                  Đã chi trả tiền mặt tại quầy
+                                  {t("moveout.cash_paid", "Đã chi trả tiền mặt tại quầy")}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-800 text-[10px]">
                                   <span className="material-symbols-outlined text-[12px]">schedule</span>
-                                  Đang chờ Quản lý (Manager) chuyển khoản
+                                  {t("moveout.pending_transfer", "Đang chờ Quản lý chuyển khoản")}
                                 </span>
                               )}
                             </div>
@@ -318,10 +310,10 @@ export default function StaffInspectionsPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedInspection(item)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1d5fe5] hover:bg-[#1550c7] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition"
+                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition"
                         >
                           <span className="material-symbols-outlined text-[16px]">fact_check</span>
-                          <span>{isCompleted ? "Kiểm tra lại / Cập nhật" : "Tiến hành kiểm tra trả kho"}</span>
+                          <span>{isCompleted ? t("staff_inspections.recheck", "Kiểm tra lại / Cập nhật") : t("staff_inspections.do_inspection", "Tiến hành kiểm tra trả kho")}</span>
                         </button>
                       </div>
                     </article>

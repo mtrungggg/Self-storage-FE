@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function QrCameraScanner({ onScan, onClose }) {
+  const { t } = useLanguage();
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
   const scannerRef = useRef(null);
@@ -91,7 +93,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[20px] text-[#2dd4a0]">photo_camera</span>
-          <span className="text-[13px] font-bold">Scan Check-in QR Code</span>
+          <span className="text-[13px] font-bold">{t("common.scan_qr", "Quét mã QR")}</span>
         </div>
         <button
           type="button"
@@ -104,8 +106,8 @@ export default function QrCameraScanner({ onScan, onClose }) {
 
       {starting && (
         <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs text-[#8996a9]">
-          <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5]">progress_activity</span>
-          <span>Starting camera...</span>
+          <span className="material-symbols-outlined animate-spin text-[28px] text-zinc-900 dark:text-zinc-100">progress_activity</span>
+          <span>{t("common.starting_camera", "Đang khởi động camera...")}</span>
         </div>
       )}
 
@@ -118,7 +120,7 @@ export default function QrCameraScanner({ onScan, onClose }) {
             onClick={onClose}
             className="mt-3 rounded-[8px] bg-white/20 px-4 py-1.5 font-bold text-white hover:bg-white/30"
           >
-            Close camera
+            {t("common.close_camera", "Đóng camera")}
           </button>
         </div>
       ) : (

@@ -273,7 +273,7 @@ export default function ManagerRefundApprovals() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#1d5fe5] text-[24px]">assignment_return</span>
+            <span className="material-symbols-outlined text-zinc-900 dark:text-zinc-100 text-[24px]">assignment_return</span>
             {t("refunds.title", "Quản lý Trả kho & Hoàn cọc (Refund Approvals)")}
           </h1>
           <p className="mt-1 text-xs text-slate-500">

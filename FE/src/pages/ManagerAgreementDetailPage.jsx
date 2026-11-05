@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, RefreshCw, AlertTriangle, ShieldCheck } from "lucide-react";
@@ -21,6 +22,7 @@ function getStatusBadgeClass(status) {
 }
 
 export default function ManagerAgreementDetailPage() {
+  const { t, translateStatus, formatCurrency } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const [agreement, setAgreement] = useState(null);
@@ -49,10 +51,10 @@ export default function ManagerAgreementDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
-        <span className="material-symbols-outlined animate-spin text-[32px] text-[#1d5fe5]">
+        <span className="material-symbols-outlined animate-spin text-[32px] text-zinc-900 dark:text-zinc-100">
           progress_activity
         </span>
-        <span className="text-xs font-semibold text-slate-500">Đang tải chi tiết hợp đồng...</span>
+        <span className="text-xs font-semibold text-slate-500">{t("common.loading", "Đang tải chi tiết hợp đồng...")}</span>
       </div>
     );
   }
@@ -66,7 +68,7 @@ export default function ManagerAgreementDetailPage() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
         >
           <ArrowLeft size={16} />
-          <span>Quay lại danh sách hợp đồng</span>
+          <span>{t("common.back", "Quay lại danh sách hợp đồng")}</span>
         </button>
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">
           {error || "Không tìm thấy thông tin hợp đồng."}
@@ -83,7 +85,7 @@ export default function ManagerAgreementDetailPage() {
           <Link
             to="/manager-agreements"
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 transition"
-            title="Quay lại danh sách hợp đồng"
+            title={t("common.back", "Quay lại danh sách hợp đồng")}
           >
             <ArrowLeft size={18} />
           </Link>
@@ -101,7 +103,7 @@ export default function ManagerAgreementDetailPage() {
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Chi tiết hợp đồng thuê kho, tài chính và điều phối ô kho cơ sở.
+              
             </p>
           </div>
         </div>
@@ -114,7 +116,7 @@ export default function ManagerAgreementDetailPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-xs"
           >
             <RefreshCw size={14} />
-            <span>Làm mới</span>
+            <span>{t("common.refresh", "Làm mới")}</span>
           </button>
 
           <button
@@ -130,10 +132,10 @@ export default function ManagerAgreementDetailPage() {
 
       {/* Grid thông tin chính */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Khách hàng */}
+        {/* {t("common.customer", "Khách hàng")} */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Khách hàng
+            {t("common.customer", "Khách hàng")}
           </span>
           <div className="text-sm font-bold text-slate-900">{agreement.customerName || "—"}</div>
           <div className="text-xs text-slate-600 space-y-0.5">
@@ -145,10 +147,10 @@ export default function ManagerAgreementDetailPage() {
         {/* Ô kho hiện tại */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Ô kho đang sử dụng
+            {t("common.unit", "Ô kho đang sử dụng")}
           </span>
           <div className="flex items-center justify-between">
-            <span className="font-mono text-base font-extrabold text-[#1d5fe5]">
+            <span className="font-mono text-base font-extrabold text-zinc-900 dark:text-zinc-100">
               Kho {agreement.unitCode || "—"}
             </span>
             <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">
@@ -163,7 +165,7 @@ export default function ManagerAgreementDetailPage() {
         {/* Thời hạn & Tài chính */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Thời hạn &amp; Tiền cọc
+            {t("common.agreement", "Thời hạn & Tiền cọc")}
           </span>
           <div className="text-xs text-slate-700">
             Thời hạn: <strong className="text-slate-900">{formatDate(agreement.startDate)} → {formatDate(agreement.endDate)}</strong>

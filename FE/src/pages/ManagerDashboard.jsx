@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import managerService from "../api/managerService";
@@ -6,6 +7,7 @@ import { FacilityBarActions } from "../components/FacilitySwitcher";
 import { formatVnd } from "../lib/utils";
 
 export default function ManagerDashboard() {
+  const { t, formatCurrency } = useLanguage();
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function ManagerDashboard() {
           disabled={loading || facilityLoading || !facilityId}
           className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
         >
-          {loading ? "Loading..." : "Refresh"}
+          {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
         </button>
       </FacilityBarActions>
 
@@ -75,7 +77,7 @@ export default function ManagerDashboard() {
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
           <p className="font-semibold">{error}</p>
           <button type="button" onClick={loadDashboard} className="mt-1 font-bold underline hover:no-underline">
-            Retry
+            {t("common.refresh", "Thử lại")}
           </button>
         </div>
       )}
@@ -83,7 +85,7 @@ export default function ManagerDashboard() {
       {/* Loading state */}
       {loading && !data && (
         <div className="rounded-lg border border-slate-200 bg-white py-12 text-center text-xs text-slate-400">
-          Loading dashboard data...
+          {t("common.loading", "Đang tải dữ liệu...")}
         </div>
       )}
 
@@ -92,17 +94,17 @@ export default function ManagerDashboard() {
         <>
           {/* Top 4 Key KPI Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Occupancy Rate */}
+            {/* {t("manager.occupancy_rate", "Tỷ lệ lấp đầy")} */}
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Occupancy Rate
+                {t("manager.occupancy_rate", "Tỷ lệ lấp đầy")}
               </div>
               <div className="mt-2 text-2xl font-bold text-slate-900">
                 {Number(stats.occupancyRate || 0).toFixed(1)}%
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span>Occupied: {stats.occupiedUnits} / {stats.totalUnits}</span>
-                <span className="font-medium text-emerald-600">Available: {stats.availableUnits}</span>
+                <span>{t("status.occupied", "Đang thuê")}: {stats.occupiedUnits} / {stats.totalUnits}</span>
+                <span className="font-medium text-emerald-600">{t("status.available", "Trống")}: {stats.availableUnits}</span>
               </div>
               <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
@@ -112,31 +114,29 @@ export default function ManagerDashboard() {
               </div>
             </div>
 
-            {/* This Month Revenue */}
+            {/* This {t("manager.month_revenue", "Doanh thu kỳ này")} */}
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Month Revenue
+                {t("manager.month_revenue", "Doanh thu kỳ này")}
               </div>
               <div className="mt-2 text-2xl font-bold text-slate-900">
                 {formatVnd(stats.thisMonthRevenue)}
               </div>
-              <div className="mt-2 text-xs text-slate-500">
-                Monthly billed storage revenue
-              </div>
+              
             </div>
 
             {/* Outstanding Debt */}
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Overdue Debt
+                {t("manager.overdue_debt", "Nợ cước quá hạn")}
               </div>
               <div className="mt-2 text-2xl font-bold text-rose-600">
                 {formatVnd(stats.totalOutstandingDebt)}
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span>Action required</span>
+                <span>{t("manager.action_required", "Cần xử lý")}</span>
                 <Link to="/manager-delinquent-cases" className="font-semibold text-rose-600 hover:underline">
-                  Review &rarr;
+                  {t("common.view", "Xem lại")} &rarr;
                 </Link>
               </div>
             </div>
@@ -144,20 +144,20 @@ export default function ManagerDashboard() {
             {/* Open / Urgent Tickets */}
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Open Tickets
+                {t("manager.open_tickets", "Sự cố đang mở")}
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-slate-900">{stats.openTicketsCount}</span>
                 {stats.urgentTicketsCount > 0 && (
                   <span className="rounded bg-rose-50 px-1.5 py-0.5 text-xs font-semibold text-rose-600 border border-rose-200">
-                    {stats.urgentTicketsCount} urgent
+                    {stats.urgentTicketsCount} {t("tickets.urgent", "Khẩn cấp")}
                   </span>
                 )}
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span>Facility tasks</span>
+                <span>{t("staff.tasks", "Nhiệm vụ")}</span>
                 <Link to="/manager-tickets" className="font-semibold text-blue-600 hover:underline">
-                  View tickets &rarr;
+                  {t("common.view", "Xem")} &rarr;
                 </Link>
               </div>
             </div>
@@ -168,17 +168,17 @@ export default function ManagerDashboard() {
             {/* Today's Operational Schedule */}
             <div className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h2 className="text-sm font-bold text-slate-900">Today Schedule</h2>
+                <h2 className="text-sm font-bold text-slate-900">{t("manager.today_schedule", "Lịch trình hôm nay")}</h2>
                 <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                  Real-time
+                  {t("common.realtime", "Trực tiếp")}
                 </span>
               </div>
 
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/70 p-3">
                   <div>
-                    <div className="text-xs font-bold text-slate-800">Check-in Expected</div>
-                    <div className="text-xs text-slate-500">New customer move-in</div>
+                    <div className="text-xs font-bold text-slate-800">{t("manager.expected_checkin", "Khách nhận kho")}</div>
+                    
                   </div>
                   <div className="text-xl font-bold text-slate-900">
                     {stats.dailySchedule.todayCheckInsCount}
@@ -188,7 +188,7 @@ export default function ManagerDashboard() {
                 <div className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/70 p-3">
                   <div>
                     <div className="text-xs font-bold text-slate-800">Check-out</div>
-                    <div className="text-xs text-slate-500">Move-out / Agreement end</div>
+                    
                   </div>
                   <div className="text-xl font-bold text-slate-900">
                     {stats.dailySchedule.todayCheckOutsCount}
@@ -197,7 +197,7 @@ export default function ManagerDashboard() {
 
                 <div className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/70 p-3">
                   <div>
-                    <div className="text-xs font-bold text-slate-800">Unit Inspections</div>
+                    <div className="text-xs font-bold text-slate-800">{t("manager.unit_inspections", "Kiểm tra ô kho")}</div>
                     <div className="text-xs text-slate-500">Maintenance &amp; condition review</div>
                   </div>
                   <div className="text-xl font-bold text-slate-900">

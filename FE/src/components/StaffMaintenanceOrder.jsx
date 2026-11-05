@@ -1,15 +1,19 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useRef, useState } from "react";
 import staffFacilityService from "../api/staffFacilityService";
 
 const PRIORITIES = ["low", "normal", "high", "urgent"];
 
-export default function StaffMaintenanceOrder({ unitId, onCreated }) {
+export default function StaffMaintenanceOrder({
+ unitId, onCreated }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("normal");
   const [blocksBooking, setBlocksBooking] = useState(true);
   const [estimatedCost, setEstimatedCost] = useState("0");
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null);
@@ -49,10 +53,10 @@ export default function StaffMaintenanceOrder({ unitId, onCreated }) {
   return <div className="mt-3 border-t border-current/15 pt-3 text-xs">
     <button type="button" onClick={() => setOpen((value) => !value)} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 font-bold transition ${open ? "border border-[#dfe7f5] bg-white text-[#58657a]" : "bg-[#b42318] text-white hover:bg-[#8f1d13]"}`}><span className="material-symbols-outlined text-[15px]">{open ? "close" : "add"}</span>{open ? "Close form" : "Create order"}</button>
     {open && <form onSubmit={submit} className="mt-3 space-y-2">
-      <label className="block font-semibold">Title<input required maxLength="255" value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
-      <label className="block font-semibold">Description<textarea required rows="3" value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
+      <label className="block font-semibold">{t("table.title", "Tiêu đề")}<input required maxLength="255" value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
+      <label className="block font-semibold">{t("table.description", "Mô tả")}<textarea required rows="3" value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
       <div className="grid grid-cols-2 gap-2">
-        <label className="font-semibold">Priority<select value={priority} onChange={(event) => setPriority(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]">{PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="font-semibold">{t("table.priority", "Mức ưu tiên")}<SelectDropdown value={priority} onChange={(event) => setPriority(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]">{PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</SelectDropdown></label>
         <label className="font-semibold">Estimated cost<input type="number" min="0" step="1000" required value={estimatedCost} onChange={(event) => setEstimatedCost(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
       </div>
       <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={blocksBooking} onChange={(event) => setBlocksBooking(event.target.checked)} /> Block new bookings for this unit</label>

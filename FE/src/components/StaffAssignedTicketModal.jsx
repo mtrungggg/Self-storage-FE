@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useState } from "react";
 import staffSupportService from "../api/staffSupportService";
 import StaffTicketReply from "./StaffTicketReply";
@@ -20,6 +21,7 @@ function formatDate(val) {
 }
 
 export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSuccess }) {
+  const { t, translateStatus } = useLanguage();
   const [activeAction, setActiveAction] = useState("resolve"); // 'resolve' | 'severe' | 'charge'
   const [resolveNote, setResolveNote] = useState("");
   const [severeNote, setSevereNote] = useState("");
@@ -105,7 +107,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
         <div className="flex items-start justify-between border-b border-slate-100 p-4 sm:p-5 bg-gradient-to-r from-slate-50 to-white shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[24px] text-[#1d5fe5]">
+              <span className="material-symbols-outlined text-[24px] text-zinc-900 dark:text-zinc-100">
                 assignment_turned_in
               </span>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
@@ -127,7 +129,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
             <p className="mt-1 text-xs text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
               {ticket.unitCode && (
                 <span className="font-semibold text-slate-800">
-                  Ô kho: <strong className="text-[#1d5fe5]">{ticket.unitCode}</strong>
+                  Ô kho: <strong className="text-zinc-900 dark:text-zinc-100">{ticket.unitCode}</strong>
                 </span>
               )}
               {ticket.customerName && (
@@ -176,7 +178,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
                 <span className="material-symbols-outlined text-[18px] text-emerald-700">
                   check_circle
                 </span>
-                <span>Công việc đã được nghiệm thu hoàn tất</span>
+                <span>{t("staff_tickets.completed_notice", "Công việc đã được nghiệm thu hoàn tất")}</span>
               </div>
               <p className="text-emerald-800">
                 <strong>Kết quả:</strong> {ticket.resolution || "Đã xử lý xong"}
@@ -196,7 +198,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
                 <span className="material-symbols-outlined text-[18px] text-rose-700">
                   warning
                 </span>
-                <span>Đã báo cáo hư hỏng nặng — Cần Manager đổi kho khẩn cấp</span>
+                <span>{t("staff_tickets.severe_notice", "Đã báo cáo hư hỏng nặng — Cần Manager đổi kho")}</span>
               </div>
               <p className="text-rose-800">
                 {ticket.resolution || "Chờ Facility Manager điều phối ô kho mới thay thế cho khách."}
@@ -209,7 +211,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
             <div className="rounded-xl border border-blue-200 bg-blue-50/30 p-4 space-y-3">
               <div className="flex items-center justify-between border-b border-blue-100 pb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">
+                  <span className="material-symbols-outlined text-[16px] text-zinc-900 dark:text-zinc-100">
                     handyman
                   </span>
                   <span>Hành động xử lý của Staff:</span>
@@ -347,6 +349,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
                   <label className="block text-slate-700 font-semibold">
                     Mô tả mức độ hư hỏng nặng: *
                     <textarea
+                      id="staff-ticket-severe-note"
                       rows={2}
                       required
                       value={severeNote}
@@ -427,7 +430,7 @@ export default function StaffAssignedTicketModal({ ticket, isOpen, onClose, onSu
               <span className="material-symbols-outlined text-[16px] text-blue-600">
                 forum
               </span>
-              <span>Trao đổi nội bộ &amp; Ghi chú Ticket</span>
+              <span>{t("staff_tickets.internal_notes", "Ghi chú nội bộ")}</span>
             </span>
 
             <StaffTicketReply

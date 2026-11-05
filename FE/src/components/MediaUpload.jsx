@@ -51,12 +51,12 @@ export default function MediaUpload({
       <label
         className={
           dropzone
-            ? "flex w-full cursor-pointer flex-col items-center justify-center rounded-[10px] border border-dashed border-[#9db5df] bg-[#f8faff] p-5 text-center font-semibold text-[#3a475a] transition hover:border-[#1d5fe5] hover:bg-[#eef4ff]"
-            : "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#9db5df] bg-white px-3 py-2 font-semibold text-[#1d5fe5]"
+            ? "flex w-full cursor-pointer flex-col items-center justify-center rounded-[10px] border border-dashed border-[#9db5df] bg-[#f8faff] p-5 text-center font-semibold text-[#3a475a] transition hover:border-zinc-900 dark:border-zinc-100 hover:bg-[#eef4ff]"
+            : "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#9db5df] bg-white px-3 py-2 font-semibold text-zinc-900 dark:text-zinc-100"
         }
       >
         <span
-          className={`material-symbols-outlined text-[#1d5fe5] ${
+          className={`material-symbols-outlined text-zinc-900 dark:text-zinc-100 ${
             dropzone ? "mb-1 text-3xl" : "text-base"
           }`}
         >

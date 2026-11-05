@@ -6,6 +6,7 @@ const LanguageContext = createContext({
   setLang: () => {},
   toggleLang: () => {},
   t: (key, fallback) => fallback || key,
+  translateStatus: (status) => String(status || ""),
   formatDate: (date) => String(date),
   formatCurrency: (amount) => String(amount),
 });
@@ -23,6 +24,12 @@ export function LanguageProvider({ children }) {
       return "vi";
     }
   });
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
 
   const setLang = useCallback((newLang) => {
     if (newLang === "vi" || newLang === "en") {
@@ -80,8 +87,24 @@ export function LanguageProvider({ children }) {
     [lang]
   );
 
+  const translateStatus = useCallback(
+    (status) => {
+      if (!status) return "";
+      const raw = String(status).trim();
+      const key = raw.toLowerCase().replace(/[-\s]/g, "_");
+      const currentDict = translations[lang] || {};
+      const statusKey = `status.${key}`;
+      if (currentDict[statusKey]) return currentDict[statusKey];
+      const fallbackDict = translations.vi || {};
+      if (fallbackDict[statusKey]) return fallbackDict[statusKey];
+      // Humanize fallback
+      return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    },
+    [lang]
+  );
+
   return (
-    <LanguageContext.Provider value={{ lang, setLang, toggleLang, t, formatDate, formatCurrency }}>
+    <LanguageContext.Provider value={{ lang, language: lang, setLang, toggleLang, t, translateStatus, formatDate, formatCurrency }}>
       {children}
     </LanguageContext.Provider>
   );

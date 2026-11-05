@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { SignalRProvider } from "./context/SignalRContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import SmoothScroll from "./components/SmoothScroll";
+import GlobalShaderBackground from "./components/GlobalShaderBackground";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <AuthProvider>
         <SignalRProvider>
           <LanguageProvider>
+            <GlobalShaderBackground />
             <SmoothScroll>
               <AppRoutes />
             </SmoothScroll>

@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import { managerUserService } from "../api/managerUserService";
 import managerExpiringContractsService from "../api/managerExpiringContractsService";
@@ -30,12 +32,14 @@ function getStaffName(s) {
 }
 
 export default function AssignInspectionModal({
+
   isOpen,
   onClose,
   onSuccess,
   agreement,
   facilityId,
 }) {
+  const { t } = useLanguage();
   const [staffList, setStaffList] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState("");
@@ -129,15 +133,15 @@ export default function AssignInspectionModal({
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[22px] text-[#1d5fe5]">
+              <span className="material-symbols-outlined text-[22px] text-zinc-900 dark:text-zinc-100">
                 fact_check
               </span>
               <h2 id="assign-inspection-title" className="text-base font-extrabold text-slate-900">
-                Phân công kiểm tra kho
+                {t("modal.assign_inspection_title", "Phân công kiểm tra kho")}
               </h2>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Chỉ định nhân viên cùng cơ sở thực hiện kiểm tra hiện trạng trả kho.
+              {t("modal.assign_inspection_desc", "Chỉ định nhân viên cùng cơ sở thực hiện kiểm tra hiện trạng trả kho.")}
             </p>
           </div>
           <button
@@ -159,7 +163,7 @@ export default function AssignInspectionModal({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Ô kho:</span>
-              <span className="font-mono font-bold text-[#1d5fe5]">Kho {agreement.unitCode}</span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">Kho {agreement.unitCode}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Khách hàng:</span>
@@ -179,17 +183,17 @@ export default function AssignInspectionModal({
               Chọn nhân viên nghiệm thu kho *
             </label>
             {loadingStaff ? (
-              <p className="text-slate-400 italic">Đang tải danh sách nhân viên cơ sở...</p>
+              <p className="text-slate-400 italic">{t("common.loading", "Đang tải...")}</p>
             ) : staffList.length === 0 ? (
               <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-800">
-                Không tìm thấy nhân viên đang hoạt động tại cơ sở này.
+                {t("staff.no_active_staff", "Không tìm thấy nhân viên đang hoạt động tại cơ sở này.")}
               </p>
             ) : (
-              <select
+              <SelectDropdown
                 required
                 value={selectedStaffId}
                 onChange={(e) => setSelectedStaffId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
               >
                 {staffList.map((staff) => {
                   const sid = getStaffId(staff);
@@ -199,11 +203,9 @@ export default function AssignInspectionModal({
                     </option>
                   );
                 })}
-              </select>
+              </SelectDropdown>
             )}
-            <span className="text-[10px] text-slate-400 block mt-1">
-              * Nhân viên được phân công sẽ nhận thông báo trên bảng việc và ứng dụng Staff.
-            </span>
+            
           </div>
 
           {/* Hướng dẫn kiểm tra */}
@@ -216,7 +218,7 @@ export default function AssignInspectionModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="VD: Kiểm tra kỹ hiện trạng cửa cuốn, vết ẩm trần, dọn rác và quét dọn kho sạch sẽ..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
             />
           </div>
 
@@ -234,12 +236,12 @@ export default function AssignInspectionModal({
               onClick={onClose}
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
-              Hủy
+              {t("common.cancel", "Hủy")}
             </button>
             <button
               type="submit"
               disabled={submitting || !selectedStaffId || staffList.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-blue-700 px-4 py-2 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-blue-700 px-4 py-2 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">assignment_ind</span>
               <span>{submitting ? "Đang giao việc..." : "Xác nhận phân công"}</span>

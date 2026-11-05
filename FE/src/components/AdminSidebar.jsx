@@ -1,7 +1,10 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
-export default function AdminSidebar({ navGroups = [], activeId, isOpen = false, onClose, isAdmin = false }) {
+export default function AdminSidebar({
+ navGroups = [], activeId, isOpen = false, onClose, isAdmin = false }) {
+  const { t } = useLanguage();
   const drawerRef = useRef(null);
   useEffect(() => {
     if (!isOpen) return;
@@ -23,9 +26,9 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
   }, [isOpen, onClose]);
 
   const content = (
-    <aside className="flex h-screen w-full flex-col bg-[#111e35] text-slate-300">
+    <aside className="flex h-screen w-full flex-col bg-zinc-950 text-slate-300">
       {/* Brand Header */}
-      <div className="shrink-0 px-4 py-4 border-b border-slate-800">
+      <div className="shrink-0 px-4 py-4 border-b border-zinc-900">
         <Link
           to={isAdmin ? "/admin-overview" : "/manager-dashboard"}
           onClick={onClose}
@@ -35,10 +38,10 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
         </Link>
       </div>
 
-      {/* Admin Console indicator - ONLY shown for system_administrator */}
+      {/* {t("admin.console", "Admin Console")} indicator - ONLY shown for system_administrator */}
       {isAdmin && (
-        <div className="shrink-0 mx-3 mt-3 px-3 py-2 rounded-md border border-slate-800 bg-slate-900/60 text-xs font-semibold text-slate-300">
-          Admin Console
+        <div className="shrink-0 mx-3 mt-3 px-3 py-2 rounded-md border border-zinc-900 bg-zinc-900/80 text-xs font-semibold text-slate-300">
+          {t("admin.console", "Admin Console")}
         </div>
       )}
 
@@ -46,7 +49,7 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
       <nav aria-label="Management Navigation" className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-4">
         {navGroups.map((group) => (
           <div key={group.id} className="space-y-1">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -60,8 +63,8 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
                     aria-current={isActive ? "page" : undefined}
                     className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? "bg-[#3659df] text-white font-semibold"
-                        : "text-slate-300 font-medium hover:bg-slate-800/70 hover:text-white"
+                        ? "bg-zinc-800 ring-1 ring-zinc-700/60 text-white font-semibold"
+                        : "text-slate-300 font-medium hover:bg-zinc-900 hover:text-white"
                     }`}
                   >
                     <span className="truncate">{item.label}</span>
@@ -77,18 +80,6 @@ export default function AdminSidebar({ navGroups = [], activeId, isOpen = false,
           </div>
         ))}
       </nav>
-
-      {/* Footer pinned to bottom */}
-      <div className="shrink-0 border-t border-slate-800 p-3">
-        <Link
-          to="/staff-dashboard"
-          onClick={onClose}
-          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-900/40 px-3 py-2 text-center text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-        >
-          <span className="material-symbols-outlined text-[15px]">badge</span>
-          <span>Staff Ops Hub</span>
-        </Link>
-      </div>
     </aside>
   );
 

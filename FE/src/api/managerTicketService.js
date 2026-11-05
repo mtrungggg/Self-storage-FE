@@ -43,7 +43,7 @@ export const managerTicketService = {
    * Manager giao việc cho Staff xử lý ticket
    * POST /api/manager/tickets/{id}/assign-staff
    */
-  async assignStaff(ticketId, { staffId, notes, facilityId, ticket, staffName } = {}) {
+  async assignStaff(ticketId, { staffId, notes } = {}) {
     const numericStaffId = Number(staffId);
     if (!numericStaffId || isNaN(numericStaffId) || numericStaffId <= 0) {
       throw new Error("Mã nhân viên (Staff ID) không hợp lệ.");
@@ -56,61 +56,14 @@ export const managerTicketService = {
       notes: notes?.trim() || "",
     };
 
-    // 1. Thử gọi API POST /manager/tickets/{id}/assign-staff
-    try {
-      const res = await apiClient.post(
-        `/manager/tickets/${encodeURIComponent(ticketId)}/assign-staff`,
-        payload
-      );
-      if (res?.success === true) return res.data;
-    } catch (err) {
-      if (err.status !== 404 && err.status !== 405 && err.status !== 400) {
-        // Continue
-      }
-    }
+    const res = await apiClient.post(
+      `/manager/tickets/${encodeURIComponent(ticketId)}/assign-staff`,
+      payload
+    );
 
-    // 2. Thử gọi API backend có sẵn: POST /manager/facilities/{facilityId}/staff-tasks
-    const effectiveFacilityId = facilityId || ticket?.facilityId || 1;
-    try {
-      const taskPayload = {
-        facilityId: Number(effectiveFacilityId),
-        assignedEmployeeId: numericStaffId,
-        ticketId: Number(ticketId) || undefined,
-        taskType: "support",
-        title: ticket?.subject || `Xử lý Ticket #${ticketId}`,
-        status: "in_progress",
-        notes: notes?.trim() || "",
-      };
-      const taskRes = await apiClient.post(
-        `/manager/facilities/${encodeURIComponent(effectiveFacilityId)}/staff-tasks`,
-        taskPayload
-      );
-      if (taskRes?.success === true) return taskRes.data;
-    } catch {
-      // Continue
-    }
-
-    // 3. Thử gọi PUT /staff/tickets/{id}/assign
-    try {
-      const staffAssignRes = await apiClient.put(
-        `/staff/tickets/${encodeURIComponent(ticketId)}/assign`,
-        payload
-      );
-      if (staffAssignRes?.success === true) return staffAssignRes.data;
-    } catch {
-      // Continue
-    }
-
-    // 4. Fallback phản hồi thành công trên frontend để đảm bảo luồng giao việc mượt mà
-    return {
-      success: true,
-      ticketId,
-      assignedEmployeeId: numericStaffId,
-      assignedEmployeeName: staffName || `Nhân viên #${numericStaffId}`,
-      status: "in_progress",
-      notes: notes?.trim() || "",
-      message: "Đã phân công nhân viên xử lý ticket thành công.",
-    };
+    if (res?.success === true) return res.data;
+    if (res?.data) return res.data;
+    throw new Error(res?.message || "Không thể phân công nhân viên xử lý ticket.");
   },
 
   /**
@@ -120,6 +73,7 @@ export const managerTicketService = {
   async reassignUnit(agreementId, payload) {
     const body = {
       newUnitId: Number(payload.newUnitId),
+      newStorageUnitId: Number(payload.newUnitId),
       reason: payload.reason || "Severe_Need_Relocation - Sự cố kho nghiêm trọng cần đổi kho",
       priceAdjustment: 0, // Đổi kho tương đương 0 VNĐ
       notes: payload.notes || "Đổi kho khẩn cấp 0 VNĐ do hư hỏng nặng tại kho cũ.",
@@ -130,34 +84,14 @@ export const managerTicketService = {
       throw new Error("Mã hợp đồng (agreementId) là bắt buộc để đổi ô kho.");
     }
 
-    try {
-      const res = await apiClient.post(
-        `/manager/agreements/${encodeURIComponent(agreementId)}/reassign-unit`,
-        body
-      );
-      if (res?.success === true) return res.data;
-    } catch (err) {
-      if (err.status !== 404) throw err;
-    }
+    const res = await apiClient.post(
+      `/manager/agreements/${encodeURIComponent(agreementId)}/reassign-unit`,
+      body
+    );
 
-    // Fallback: POST /staff/reservations/{agreementId}/assign-unit
-    try {
-      const fb = await apiClient.post(
-        `/staff/reservations/${encodeURIComponent(agreementId)}/assign-unit`,
-        { unitId: body.newUnitId, reason: body.reason }
-      );
-      if (fb?.success === true) return fb.data;
-    } catch {
-      // Continue
-    }
-
-    // Local fallback success output
-    return {
-      success: true,
-      agreementId,
-      ...body,
-      newPin: String(Math.floor(100000 + Math.random() * 900000)),
-    };
+    if (res?.success === true) return res.data;
+    if (res?.data) return res.data;
+    throw new Error(res?.message || "Không thể thực hiện đổi ô kho khẩn cấp.");
   },
 
   /**

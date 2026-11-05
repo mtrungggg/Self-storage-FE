@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -55,6 +57,7 @@ const STATUS_PILLS = [
 ];
 
 export default function AdminUsers() {
+  const { t, translateStatus } = useLanguage();
   const [filters, setFilters] = useState(initialFilters);
   const [query, setQuery] = useState({ ...initialFilters, PageNumber: 1 });
   const [result, setResult] = useState(null);
@@ -158,12 +161,10 @@ export default function AdminUsers() {
       <div className="reference-toolbar">
         <div>
           <div className="flex items-center gap-3">
-            <h1>Users &amp; Permissions</h1>
+            <h1>{t("admin.users_permissions", "Users & Permissions")}</h1>
             {data && <span className="reference-pill">{data.totalCount} accounts</span>}
           </div>
-          <p className="reference-muted mt-1">
-            System account governance, role-based authorization (Admin, Manager, Staff, Customer), and facility scoping.
-          </p>
+          
         </div>
         <div className="reference-toolbar-actions">
           <button
@@ -197,12 +198,12 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* Action Error feedback */}
+      {/* {t("common.error", "Lỗi thao tác")} feedback */}
       {actionError && (
         <div role="alert" className="reference-error mb-4">
           <AlertTriangle size={20} />
           <div>
-            <strong>Action Error</strong>
+            <strong>{t("common.error", "Lỗi thao tác")}</strong>
             <p>{actionError}</p>
           </div>
         </div>
@@ -241,7 +242,7 @@ export default function AdminUsers() {
                 <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                   <Building2 size={13} /> Facility:
                 </span>
-                <select
+                <SelectDropdown
                   className="reference-select !py-1.5 !text-xs min-w-[210px]"
                   value={query.FacilityId || ""}
                   onChange={(e) => {
@@ -250,19 +251,19 @@ export default function AdminUsers() {
                     setQuery((prev) => ({ ...prev, FacilityId: val, PageNumber: 1 }));
                   }}
                 >
-                  <option value="">All Facilities</option>
+                  <option value="">{t("common.all_facilities", "Tất cả cơ sở")}</option>
                   {facilities.map((fac) => (
                     <option key={fac.id} value={fac.id}>
                       {fac.code} — {fac.name}
                     </option>
                   ))}
-                </select>
+                </SelectDropdown>
               </div>
 
               {/* Rows per page */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-500">Rows:</span>
-                <select
+                <SelectDropdown
                   className="reference-select !py-1.5 !text-xs w-24"
                   value={query.PageSize}
                   onChange={(e) => {
@@ -276,7 +277,7 @@ export default function AdminUsers() {
                       {size} rows
                     </option>
                   ))}
-                </select>
+                </SelectDropdown>
               </div>
             </div>
           </div>
@@ -340,7 +341,7 @@ export default function AdminUsers() {
       <section aria-busy={loading} className="reference-card reference-table-card">
         <div className="reference-card-heading">
           <div>
-            <h2>User Accounts Directory</h2>
+            <h2>{t("admin.users_permissions", "Danh bạ người dùng")}</h2>
             <p className="reference-muted">
               {data ? `Total ${data.totalCount} accounts registered in the system.` : "Loading directory..."}
             </p>
@@ -356,7 +357,7 @@ export default function AdminUsers() {
           <div role="alert" className="reference-error mx-5 my-4">
             <AlertTriangle size={20} />
             <div>
-              <strong>Error Loading User Accounts</strong>
+              <strong>{t("common.error", "Lỗi tải dữ liệu")}</strong>
               <p>{error}</p>
               <button type="button" onClick={() => setQuery({ ...query })}>
                 Retry
@@ -442,7 +443,7 @@ export default function AdminUsers() {
                       <td className="max-w-[220px]">
                         {isStaffOrManager ? (
                           <div className="flex items-center gap-1.5">
-                            <select
+                            <SelectDropdown
                               className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 max-w-[190px] truncate hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                               value={user.assignedFacilityIds?.[0] || ""}
                               onChange={(e) => handleReassignFacility(user, e.target.value)}
@@ -459,7 +460,7 @@ export default function AdminUsers() {
                                   {fac.code} — {fac.name}
                                 </option>
                               ))}
-                            </select>
+                            </SelectDropdown>
                             {reassigningUserId === user.id && (
                               <RefreshCw size={12} className="animate-spin text-blue-600 shrink-0" />
                             )}

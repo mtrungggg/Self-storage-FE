@@ -1,8 +1,10 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useState } from "react";
 import staffFacilityService from "../api/staffFacilityService";
 import { useAuth } from "../context/AuthContext";
 
 export default function StaffUnitStatus({ unit, onUpdated }) {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const currentStatus = String(unit.physicalStatus || unit.status || "").toLowerCase();
   const isOccupiedOrReserved = currentStatus === "occupied" || currentStatus === "reserved";
@@ -124,7 +126,7 @@ export default function StaffUnitStatus({ unit, onUpdated }) {
             <span>Kho đang được thuê/giữ chỗ ({currentStatus === "occupied" ? "Occupied · Đang thuê" : "Reserved · Đã đặt"})</span>
           </div>
           <p className="text-amber-800 leading-relaxed">
-            Kho đang được thuê/giữ chỗ. Vui lòng xử lý qua luồng <strong>Check-in</strong> hoặc <strong>Move-out</strong>.
+            {t("staff.unit_locked_flow", "Kho đang được thuê/giữ chỗ. Vui lòng xử lý qua luồng")} <strong>Check-in</strong> hoặc <strong>Move-out</strong>.
           </p>
         </div>
       )}
@@ -302,7 +304,7 @@ export default function StaffUnitStatus({ unit, onUpdated }) {
             <button
               type="submit"
               disabled={loadingAction != null || !reasonInput.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer disabled:opacity-50"
             >
               <span>{loadingAction ? "Đang lưu..." : "Xác nhận & Giữ khóa"}</span>
             </button>

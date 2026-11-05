@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import adminUserService from "../api/adminUserService";
@@ -8,7 +9,9 @@ const statuses = [
   ["locked", "Locked"],
 ];
 
-export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, disabled = false, compact = false }) {
+export default function AdminUserStatusForm({
+ user, onUpdated, onSavingChange, disabled = false, compact = false }) {
+  const { t, translateStatus } = useLanguage();
   const [status, setStatus] = useState(user.status);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -66,7 +69,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
     <div>
       <div className="flex items-center gap-2 mb-3">
         <ShieldAlert size={16} className="text-blue-600" />
-        <h3 className="text-sm font-bold text-slate-900">Account Access &amp; Status</h3>
+        <h3 className="text-sm font-bold text-slate-900">{t("admin.account_status", "Account Access & Status")}</h3>
       </div>
 
       {notice && (
@@ -89,7 +92,7 @@ export default function AdminUserStatusForm({ user, onUpdated, onSavingChange, d
       <form onSubmit={submit} className="space-y-3">
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Account Status
+            {t("admin.account_status", "Account Status")}
           </label>
           <div className="grid grid-cols-3 gap-2">
             {statuses.map(([value, label]) => {

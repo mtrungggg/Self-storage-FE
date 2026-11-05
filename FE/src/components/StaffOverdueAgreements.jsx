@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import staffAgreementService from "../api/staffAgreementService";
 import StaffLockAccess from "./StaffLockAccess";
@@ -16,6 +17,7 @@ function overdueDays(endDate) {
 }
 
 export default function StaffOverdueAgreements({ initialFacilityId = "" }) {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const effectiveFacilityId = String(initialFacilityId || user?.facilityId || "");
   const [agreements, setAgreements] = useState([]);
@@ -47,7 +49,7 @@ export default function StaffOverdueAgreements({ initialFacilityId = "" }) {
     <section className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-slate-900">Overdue Agreements</h2>
+          <h2 className="text-sm font-bold text-slate-900">{t("nav.overdue", "Công nợ quá hạn")}</h2>
           {!loading && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
               {agreements.length} cases
@@ -64,11 +66,11 @@ export default function StaffOverdueAgreements({ initialFacilityId = "" }) {
         </button>
       </div>
 
-      {loading && <p role="status" className="mt-3 text-xs text-slate-400">Loading overdue agreements...</p>}
+      {loading && <p role="status" className="mt-3 text-xs text-slate-400">{t("common.loading", "Đang tải...")}</p>}
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{error}</p>}
       {!loading && !error && agreements.length === 0 && (
         <p className="mt-4 rounded-xl border border-dashed p-6 text-center text-xs text-[#8996a9]">
-          No overdue agreements at this facility.
+          {t("common.no_data", "Không có dữ liệu")}
         </p>
       )}
       {!loading && !error && agreements.length > 0 && (
@@ -96,7 +98,7 @@ export default function StaffOverdueAgreements({ initialFacilityId = "" }) {
                   <StaffLockAccess agreementId={agreement.agreementId} onLocked={() => load(effectiveFacilityId)} />
                 )}
                 {days != null && days <= 1 && (
-                  <p className="mt-2 border-t border-red-200/50 pt-2 text-[11px] text-[#58657a]">Lock eligible after &gt;1d.</p>
+                  <p className="mt-2 border-t border-red-200/50 pt-2 text-[11px] text-[#58657a]">{t("staff.lock_eligible", "Khóa kho sau quá hạn 1 ngày.")}</p>
                 )}
               </article>
             );

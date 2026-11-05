@@ -38,10 +38,10 @@ export default function SupportDropdown({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((current) => !current)}
-        className="group relative flex w-full flex-col items-start rounded-[14px] border border-[#d8e3f5] bg-white/70 p-3 text-left transition hover:border-[#1d5fe5] hover:bg-white hover:shadow-sm focus:border-[#1d5fe5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1d5fe5]/10 disabled:cursor-not-allowed disabled:opacity-60"
+        className="group relative flex w-full flex-col items-start rounded-[14px] border border-[#d8e3f5] bg-white/70 p-3 text-left transition hover:border-zinc-900 dark:border-zinc-100 hover:bg-white hover:shadow-sm focus:border-zinc-900 dark:border-zinc-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:ring-zinc-100/20/10 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span className="pointer-events-none mb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#718299]">
-          <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">{icon}</span>
+          <span className="material-symbols-outlined text-[16px] text-zinc-900 dark:text-zinc-100">{icon}</span>
           {label}
         </span>
         <span className="flex w-full items-center justify-between gap-2">
@@ -67,7 +67,7 @@ export default function SupportDropdown({
                   setOpen(false);
                 }}
                 className={`flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-xs font-semibold transition ${
-                  active ? "bg-[#1d5fe5] text-white" : "text-[#334155] hover:bg-[#eef4ff] hover:text-[#1d5fe5]"
+                  active ? "bg-zinc-900 text-white text-white" : "text-[#334155] hover:bg-[#eef4ff] hover:text-zinc-900 dark:text-zinc-100"
                 }`}
               >
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-white" : "bg-[#9cb5df]"}`} />

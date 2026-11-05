@@ -12,11 +12,11 @@ export default function RefundPreview({ agreementId }) {
   const [opened, setOpened] = useState(false);
 
   const fieldDefs = [
-    { label: t("common.deposit", "Tiền cọc"), key: "depositBalance" },
-    { label: t("common.cleaning_fee", "Phí vệ sinh"), key: "estimatedCleaningFee" },
-    { label: t("common.repair_fee", "Phí sửa chữa"), key: "estimatedRepairFee" },
-    { label: t("common.overdue", "Phí quá hạn"), key: "estimatedOverdueCharges" },
-    { label: t("common.net_refund", "Thực nhận hoàn cọc"), key: "estimatedNetRefund", isBold: true },
+    { label: t("common.deposit", "Deposit"), key: "depositBalance" },
+    { label: t("common.deductions", "Cleaning Fee"), key: "estimatedCleaningFee" },
+    { label: t("common.deductions", "Repair Fee"), key: "estimatedRepairFee" },
+    { label: t("common.balance", "Overdue Charges"), key: "estimatedOverdueCharges" },
+    { label: t("common.net_refund", "Net Refund"), key: "estimatedNetRefund", isBold: true },
   ];
 
   async function load() {
@@ -44,7 +44,7 @@ export default function RefundPreview({ agreementId }) {
         disabled={loading}
         aria-expanded={opened}
         aria-controls={panelId}
-        className="font-semibold text-[#1d5fe5] hover:underline disabled:opacity-50 cursor-pointer"
+        className="font-semibold text-zinc-900 dark:text-zinc-100 hover:underline disabled:opacity-50 cursor-pointer"
       >
         {loading ? t("common.loading", "...") : t("moveout.estimate", "Ước tính tiền cọc hoàn lại")}
       </button>

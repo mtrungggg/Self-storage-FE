@@ -1,4 +1,8 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
+import { TableSkeleton } from "../components/SkeletonLoader";
+import EmptyState from "../components/EmptyState";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
@@ -19,6 +23,7 @@ const STATUS_BADGE = {
 };
 
 function ManagerDelinquentCases() {
+  const { t, formatCurrency, translateStatus } = useLanguage();
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +85,8 @@ function ManagerDelinquentCases() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Overdue &amp; Delinquency Cases</h1>
-        <p className="text-xs text-slate-500">Track overdue accounts, monitor delinquency grace periods, and record recovery enforcement actions.</p>
+        <h1 className="text-lg font-bold text-slate-900">{t("manager.delinquent", "Xử lý nợ quá hạn & Khóa kho")}</h1>
+        <p className="text-xs text-slate-500"></p>
       </div>
 
       {notice && (
@@ -97,13 +102,13 @@ function ManagerDelinquentCases() {
 
       <div className="grid grid-cols-1 gap-3">
         {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
-            Loading delinquent cases...
-          </div>
+          <TableSkeleton rows={4} columns={5} />
         ) : cases.length === 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
-            No delinquent cases found.
-          </div>
+          <EmptyState
+            icon="rule_folder"
+            title="Không có hồ sơ nợ quá hạn"
+            description="Tất cả khách hàng tại cơ sở này đang thanh toán đúng hạn. Không có trường hợp nợ xấu nào cần xử lý."
+          />
         ) : (
           cases.map((item) => {
             const draft = drafts[item.id] || {};
@@ -136,7 +141,7 @@ function ManagerDelinquentCases() {
                 {expanded && (
                   <div className="mt-2.5 space-y-1.5 border-t border-slate-100 pt-2.5">
                     {(item.actions ?? []).length === 0 ? (
-                      <p className="text-xs text-slate-400">No actions recorded yet.</p>
+                      <p className="text-xs text-slate-400">{t("common.no_data", "Không có dữ liệu")}</p>
                     ) : (
                       item.actions.map((action) => (
                         <div key={action.id} className="rounded-md border border-slate-100 bg-slate-50/60 p-2.5 text-xs">
@@ -159,14 +164,14 @@ function ManagerDelinquentCases() {
                   <div className="mt-3 flex flex-wrap items-end gap-2.5 border-t border-slate-100 pt-3">
                     <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
                       Action Type *
-                      <select
+                      <SelectDropdown
                         value={draft.actionType || ""}
                         onChange={(e) => updateDraft(item.id, "actionType", e.target.value)}
                         className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                       >
-                        <option value="" disabled>Select action</option>
+                        <option value="" disabled>{t("common.actions", "Chọn thao tác")}</option>
                         {ACTION_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                      </select>
+                      </SelectDropdown>
                     </label>
                     <label className="flex flex-1 min-w-[200px] flex-col gap-1 text-[11px] font-medium text-slate-600">
                       Notes
@@ -178,17 +183,17 @@ function ManagerDelinquentCases() {
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-medium text-slate-600">
-                      Update Case Status
-                      <select
+                      {t("common.save", "Cập nhật trạng thái")}
+                      <SelectDropdown
                         value={draft.updateCaseStatus || ""}
                         onChange={(e) => updateDraft(item.id, "updateCaseStatus", e.target.value)}
                         className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                       >
-                        <option value="">Keep current status</option>
+                        <option value="">{t("common.cancel", "Giữ nguyên trạng thái")}</option>
                         {DELINQUENT_CASE_STATUSES.map(([value, label]) => (
                           <option key={value} value={value}>{label}</option>
                         ))}
-                      </select>
+                      </SelectDropdown>
                     </label>
                     <button
                       type="button"

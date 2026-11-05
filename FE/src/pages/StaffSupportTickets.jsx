@@ -8,31 +8,28 @@ import TicketReportModal from "../components/TicketReportModal";
 import ManagerFacilityContext from "../context/ManagerFacilityContext";
 import { useAuth } from "../context/AuthContext";
 import { TICKET_STATUS_LIST } from "../constants/ticketConstants";
-
-function formatDate(value) {
-  const date = value ? new Date(value) : null;
-  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString("vi-VN") : "—";
-}
-
-const CATEGORY_PILLS = [
-  { key: "", label: "Tất cả" },
-  { key: "cleaning", label: "Vệ sinh / Dọn dẹp" },
-  { key: "maintenance", label: "Bảo trì / Sửa chữa" },
-  { key: "damage", label: "Hư hỏng / Sự cố" },
-];
-
-const STATUS_PILLS = [
-  { key: "", label: "Tất cả" },
-  { key: "open", label: "Chờ xử lý" },
-  { key: "in_progress", label: "Đang xử lý" },
-  { key: "completed", label: "Đã hoàn tất" },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 export default function StaffSupportTickets() {
+  const { t, translateStatus, formatDate } = useLanguage();
   const location = useLocation();
   const isManagerRoute = location.pathname.startsWith("/manager-");
   const managerFacilityContext = useContext(ManagerFacilityContext);
   const { user } = useAuth();
+
+  const CATEGORY_PILLS = [
+    { key: "", label: t("common.all", "Tất cả") },
+    { key: "cleaning", label: t("tickets.category_cleaning", "Vệ sinh") },
+    { key: "maintenance", label: t("tickets.category_maintenance", "Bảo trì") },
+    { key: "damage", label: t("tickets.category_damage", "Sự cố") },
+  ];
+
+  const STATUS_PILLS = [
+    { key: "", label: t("common.all", "Tất cả") },
+    { key: "open", label: t("status.open", "Chờ xử lý") },
+    { key: "in_progress", label: t("status.in_progress", "Đang xử lý") },
+    { key: "completed", label: t("status.completed", "Đã xong") },
+  ];
 
   const activeFacilityId = managerFacilityContext?.facilityId || user?.facilityId || "";
   const activeFacility = managerFacilityContext?.activeFacility || null;
@@ -184,23 +181,14 @@ export default function StaffSupportTickets() {
         {!isManagerRoute && (
           <Link
             to="/staff-dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1d5fe5] hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
           >
-            ← Quay lại Bảng điều khiển Nhân viên
+            {t("staff_inspections.back", "← Bảng điều khiển Nhân viên")}
           </Link>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Quản lý Ticket &amp; Sự cố kho</h1>
-            <p className="mt-1 text-xs text-slate-500">
-              Cơ sở: <span className="font-semibold text-slate-700">{activeFacility?.name ? `${activeFacility.name} (${activeFacility.code || `ID: ${activeFacilityId}`})` : activeFacilityId ? `Cơ sở #${activeFacilityId}` : "Tất cả cơ sở"}</span>
-              {!isManagerRoute && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">
-                  <span className="material-symbols-outlined text-[13px]">person_check</span>
-                  Chỉ hiển thị Ticket do Manager phân công cho bạn
-                </span>
-              )}
-            </p>
+            <h1 className="text-2xl font-bold">{t("staff_tickets.title", "Xử lý sự cố kỹ thuật")}</h1>
           </div>
           <button
             type="button"
@@ -208,7 +196,7 @@ export default function StaffSupportTickets() {
             disabled={loading}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition disabled:opacity-50"
           >
-            {loading ? "Đang tải lại..." : "Làm mới"}
+            {loading ? t("common.loading", "Đang tải...") : t("common.refresh", "Làm mới")}
           </button>
         </div>
 
@@ -216,7 +204,7 @@ export default function StaffSupportTickets() {
         <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3.5">
           {/* Category Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-24">Danh mục:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-24">{t("table.category", "Danh mục")}:</span>
             <div className="flex flex-wrap gap-1.5">
               {CATEGORY_PILLS.map((pill) => {
                 const isSelected = category === pill.key;
@@ -227,7 +215,7 @@ export default function StaffSupportTickets() {
                     onClick={() => handleCategoryChange(pill.key)}
                     className={`rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
                       isSelected
-                        ? "bg-[#1d5fe5] text-white shadow-xs ring-2 ring-blue-200"
+                        ? "bg-zinc-900 text-white text-white shadow-xs ring-2 ring-blue-200"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -240,7 +228,7 @@ export default function StaffSupportTickets() {
 
           {/* Status Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-24">Trạng thái:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 w-24">{t("table.status", "Trạng thái")}:</span>
             <div className="flex flex-wrap gap-1.5">
               {STATUS_PILLS.map((pill) => {
                 const isSelected = status === pill.key;
@@ -251,7 +239,7 @@ export default function StaffSupportTickets() {
                     onClick={() => handleStatusChange(pill.key)}
                     className={`rounded-full px-3.5 py-1 text-xs font-semibold transition-all ${
                       isSelected
-                        ? "bg-[#1d5fe5] text-white shadow-xs ring-2 ring-blue-200"
+                        ? "bg-zinc-900 text-white text-white shadow-xs ring-2 ring-blue-200"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -270,7 +258,7 @@ export default function StaffSupportTickets() {
                 onClick={handleClearFilters}
                 className="text-xs font-semibold text-slate-500 hover:text-red-600 transition"
               >
-                Xóa bộ lọc
+                {t("common.clear_filter", "Xóa bộ lọc")}
               </button>
             </div>
           )}
@@ -285,32 +273,25 @@ export default function StaffSupportTickets() {
           )}
 
           {loading ? (
-            <p role="status" className="p-6 text-center text-sm text-slate-500">Đang tải danh sách ticket được phân công...</p>
+            <p role="status" className="p-6 text-center text-sm text-slate-500">{t("common.loading", "Đang tải...")}</p>
           ) : error ? (
             <div role="alert" className="rounded-xl bg-white p-6 text-red-600 border border-red-100">
               <p className="font-semibold">{error}</p>
-              <button type="button" onClick={() => load(query)} className="mt-2 text-sm text-[#1d5fe5] underline">
-                Thử lại
+              <button type="button" onClick={() => load(query)} className="mt-2 text-sm text-zinc-900 dark:text-zinc-100 underline">
+                {t("common.refresh", "Thử lại")}
               </button>
             </div>
           ) : displayTickets.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 space-y-2">
               <span className="material-symbols-outlined text-4xl text-slate-300">task_alt</span>
               <p className="font-semibold text-slate-700">
-                {!isManagerRoute
-                  ? "Hiện tại không có Ticket nào do Manager phân công cho bạn."
-                  : "Không có ticket nào khớp với bộ lọc."}
-              </p>
-              <p className="text-xs text-slate-400">
-                {!isManagerRoute
-                  ? "Khi Quản lý cơ sở phân công ticket sự cố hoặc dọn dẹp kho, ticket sẽ hiển thị tại đây."
-                  : "Vui lòng chọn cơ sở hoặc điều chỉnh bộ lọc tìm kiếm."}
+                {t("common.no_data", "Không có dữ liệu")}
               </p>
             </div>
           ) : (
             <>
               <p className="mb-3 text-xs font-semibold text-[#58657a]">
-                Hiển thị {displayTickets.length} ticket được Manager phân công
+                {displayTickets.length} {t("staff.tickets", "Sự cố & Hỗ trợ")}
               </p>
               <div className="grid items-start gap-4 lg:grid-cols-2">
                 {displayTickets.map((ticket) => {
@@ -324,55 +305,55 @@ export default function StaffSupportTickets() {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-[#1d5fe5]">
+                          <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                             {ticket.ticketNo || `#${ticket.id}`}
                           </span>
                           {ticket.hasProposedCharges && (
                             <span className="rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
-                              Đã đề xuất phí
+                              {t("tickets.proposed_charge", "Đã đề xuất phí")}
                             </span>
                           )}
                           {isSevere && (
                             <span className="rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
                               <span className="material-symbols-outlined text-[12px]">warning</span>
-                              Hư hỏng nặng - Đổi kho
+                              {t("tickets.severe_need_relocation", "Hư hỏng nặng - Đổi kho")}
                             </span>
                           )}
                           {isResolved && !isSevere && (
                             <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
                               <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                              Đã xử lý xong
+                              {t("common.done", "Đã xong")}
                             </span>
                           )}
                         </div>
-                        <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-xs font-semibold text-[#1d5fe5] capitalize">
-                          {ticket.status || "—"}
+                        <span className="rounded-full bg-[#eef4ff] px-2.5 py-0.5 text-xs font-semibold text-zinc-900 dark:text-zinc-100 capitalize">
+                          {translateStatus(ticket.status)}
                         </span>
                       </div>
 
                       <h2 className="mt-3 break-words font-bold text-slate-900 text-sm">
-                        {ticket.subject || "Sự cố thiết bị / kho"}
+                        {ticket.subject || t("tickets.issue_job", "Công việc sự cố kho")}
                       </h2>
 
                       <dl className="mt-3 grid grid-cols-2 gap-2.5 text-xs">
                         {[
-                          ["Khách hàng", ticket.customerName || ticket.customerId],
+                          [t("common.customer", "Khách hàng"), ticket.customerName || ticket.customerId],
                           [
-                            "Cơ sở",
+                            t("common.facility", "Cơ sở"),
                             ticket.facilityName || ticket.facilityCode || ticket.facilityId,
                           ],
-                          ["Hợp đồng", ticket.agreementNo || ticket.agreementId],
-                          ["Ô kho", ticket.unitCode || ticket.storageUnitId],
-                          ["Danh mục", ticket.category],
-                          ["Mức ưu tiên", ticket.priority],
+                          [t("common.agreement", "Hợp đồng"), ticket.agreementNo || ticket.agreementId],
+                          [t("common.unit", "Ô kho"), ticket.unitCode || ticket.storageUnitId],
+                          [t("table.category", "Danh mục"), ticket.category],
+                          [t("table.priority", "Mức ưu tiên"), ticket.priority],
                           [
-                            "Nhân viên phụ trách",
+                            t("tickets.assigned_staff", "Nhân viên phụ trách"),
                             ticket.assignedEmployeeName ||
                               (ticket.assignedEmployeeId
                                 ? `Staff #${ticket.assignedEmployeeId}`
-                                : "Chưa gán"),
+                                : t("tickets.not_assigned", "Chưa gán")),
                           ],
-                          ["Ngày tạo", formatDate(ticket.createdAt)],
+                          [t("common.date", "Ngày tạo"), formatDate(ticket.createdAt)],
                         ].map(([label, value]) => (
                           <div key={label}>
                             <dt className="text-[11px] text-[#58657a]">{label}</dt>
@@ -382,7 +363,7 @@ export default function StaffSupportTickets() {
                       </dl>
 
                       <p className="mt-3 whitespace-pre-wrap break-words border-t border-slate-100 pt-2.5 text-xs text-[#58657a]">
-                        {ticket.description || "Không có mô tả chi tiết."}
+                        {ticket.description || t("common.no_notes", "Không có ghi chú")}
                       </p>
 
                       {/* Hiển thị kết quả báo cáo nếu có */}
@@ -448,7 +429,7 @@ export default function StaffSupportTickets() {
                         <button
                           type="button"
                           onClick={() => setReportingTicket(ticket)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition"
                         >
                           <span className="material-symbols-outlined text-[16px]">assignment_turned_in</span>
                           <span>{isResolved || isSevere ? "Báo cáo lại" : "Báo cáo kết quả xử lý"}</span>
@@ -458,7 +439,7 @@ export default function StaffSupportTickets() {
                       {/* Mở rộng chi tiết phụ: Trao đổi tin nhắn nội bộ & Đề xuất phụ phí */}
                       <details className="group mt-3 overflow-hidden rounded-xl border border-[#dfe7f5] bg-[#f8faff]">
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-bold text-[#0b1c30] transition hover:bg-[#eef4ff] [&::-webkit-details-marker]:hidden">
-                          <span>Trao đổi tin nhắn nội bộ &amp; Phụ phí</span>
+                          <span>{t("tickets.internal_discussion", "Trao đổi nội bộ")}</span>
                           <span className="text-xs text-[#58657a] transition-transform duration-200 group-open:rotate-180">▼</span>
                         </summary>
                         <div className="border-t border-[#dfe7f5] bg-white p-3 space-y-3">
@@ -473,7 +454,7 @@ export default function StaffSupportTickets() {
                                 <div className="space-y-2">
                                   <div className="flex items-center justify-between">
                                     <span className="text-[11px] font-bold text-amber-900">
-                                      Đề xuất phụ phí bồi thường do khách hàng gây ra
+                                      {t("tickets.propose_charge_title", "Đề xuất phụ phí")}
                                     </span>
                                     <button
                                       type="button"

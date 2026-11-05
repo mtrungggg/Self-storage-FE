@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useState, useMemo } from "react";
 import staffInspectionService from "../api/staffInspectionService";
 import MediaUpload from "./MediaUpload";
@@ -38,6 +40,7 @@ const DEFAULT_DAMAGE_ITEMS = [
 ];
 
 export default function InspectionFormModal({ inspection, isOpen, onClose, onSuccess }) {
+  const { t, formatCurrency } = useLanguage();
   const deposit = Number(
     inspection?.depositAmount ??
     inspection?.deposit ??
@@ -201,7 +204,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[24px] text-[#1d5fe5]">
+              <span className="material-symbols-outlined text-[24px] text-zinc-900 dark:text-zinc-100">
                 fact_check
               </span>
               <h2 id="inspection-modal-title" className="text-base font-bold text-slate-900">
@@ -230,7 +233,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
             <span className="material-symbols-outlined text-[18px] text-slate-500">lock</span>
             <span className="text-slate-600 font-medium">Tiền đặt cọc ban đầu (Deposit):</span>
           </div>
-          <span className="text-sm font-extrabold text-[#1d5fe5]">
+          <span className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100">
             {formatMoney(deposit)}
           </span>
         </div>
@@ -285,10 +288,10 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
             <div className="rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4 text-xs space-y-2 shadow-xs">
               <div className="flex items-center gap-2 font-bold text-emerald-800 text-sm">
                 <span className="material-symbols-outlined text-[20px] text-emerald-600">verified</span>
-                <span>Hoàn trả 100% cọc</span>
+                <span>{t("staff_inspections.intact_refund", "Kho nguyên vẹn: Hoàn trả 100% cọc")}</span>
               </div>
               <p className="text-emerald-950">
-                Kho đạt tiêu chuẩn sạch sẽ, không có hư hại về kết cấu và phụ kiện. Khách hàng được nhận lại toàn bộ số tiền đặt cọc.
+                {t("staff_inspections.intact_refund", "Kho đạt tiêu chuẩn sạch sẽ, không có hư hại. Hoàn trả 100% cọc.")}
               </p>
               <div className="flex items-center justify-between border-t border-emerald-200 pt-2 font-semibold">
                 <span className="text-slate-600">Chi phí hư hại (DamageCost):</span>
@@ -307,15 +310,15 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-amber-600">handyman</span>
-                  Danh sách hạng mục hư hại &amp; chi phí bồi thường
+                  {t("staff_inspections.damage_list", "Danh sách hạng mục hư hại")}
                 </label>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#1d5fe5] hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-zinc-900 dark:text-zinc-100 hover:underline"
                 >
                   <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                  Thêm hạng mục
+                  {t("common.add_item", "Thêm hạng mục")}
                 </button>
               </div>
 
@@ -327,7 +330,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                     key={idx}
                     type="button"
                     onClick={() => handleAddPresetItem(preset)}
-                    className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700 hover:border-[#1d5fe5] hover:text-[#1d5fe5] transition"
+                    className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700 hover:border-zinc-900 dark:border-zinc-100 hover:text-zinc-900 dark:text-zinc-100 transition"
                   >
                     + {preset.itemName}
                   </button>
@@ -351,7 +354,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                         placeholder="Tên hạng mục hư hỏng (VD: Vệ sinh rác, Cửa cuốn móp...)"
                         value={item.itemName}
                         onChange={(e) => handleUpdateItem(index, "itemName", e.target.value)}
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                       />
                       <div className="flex items-center gap-1">
                         <input
@@ -362,7 +365,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                           placeholder="Chi phí"
                           value={item.cost}
                           onChange={(e) => handleUpdateItem(index, "cost", e.target.value)}
-                          className="w-28 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-[#1d5fe5] text-right"
+                          className="w-28 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 text-right"
                         />
                         <span className="text-slate-500 text-[11px] font-semibold">₫</span>
                       </div>
@@ -379,16 +382,16 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-slate-600">Tình trạng hư hại:</span>
-                        <select
+                        <SelectDropdown
                           value={item.condition || "damaged"}
                           onChange={(e) => handleUpdateItem(index, "condition", e.target.value)}
-                          className="rounded-md border border-slate-200 bg-amber-50/70 px-2 py-0.5 text-[11px] font-semibold text-amber-900 focus:border-[#1d5fe5] focus:outline-none"
+                          className="rounded-md border border-slate-200 bg-amber-50/70 px-2 py-0.5 text-[11px] font-semibold text-amber-900 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none"
                         >
-                          <option value="damaged">Hư hỏng / Cần sửa chữa</option>
-                          <option value="dirty">Bẩn / Cần dọn vệ sinh</option>
-                          <option value="broken">Gãy vỡ / Cần thay mới</option>
-                          <option value="missing">Mất phụ kiện / Thiếu khóa</option>
-                        </select>
+                          <option value="damaged">{t("tickets.category_damage", "Hư hỏng / Cần sửa chữa")}</option>
+                          <option value="dirty">{t("modal.inspection_dirty", "Bẩn / Cần dọn vệ sinh")}</option>
+                          <option value="broken">{t("modal.inspection_broken", "Gãy vỡ / Cần thay mới")}</option>
+                          <option value="missing">{t("modal.inspection_missing", "Mất phụ kiện / Thiếu khóa")}</option>
+                        </SelectDropdown>
                       </div>
                       <span className="text-slate-400 italic">Mặc định: Hư hỏng</span>
                     </div>
@@ -398,7 +401,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                       placeholder="Ghi chú chi tiết mức độ hư hại (tùy chọn)..."
                       value={item.notes || ""}
                       onChange={(e) => handleUpdateItem(index, "notes", e.target.value)}
-                      className="w-full rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-1 text-[11px] text-slate-600 outline-none focus:border-[#1d5fe5]"
+                      className="w-full rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-1 text-[11px] text-slate-600 outline-none focus:border-zinc-900 dark:border-zinc-100"
                     />
                   </div>
                 ))}
@@ -505,7 +508,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               <div className="mt-2 rounded-xl bg-rose-50 border-2 border-rose-500 p-3.5 text-rose-950 space-y-2 shadow-xs animate-in fade-in">
                 <div className="flex items-center gap-2 font-extrabold text-rose-800 text-sm">
                   <span className="material-symbols-outlined text-rose-600 text-[22px]">error</span>
-                  <span>CẢNH BÁO: CHI PHÍ HƯ HẠI VƯỢT QUÁ TIỀN CỌC!</span>
+                  <span>{t("modal.inspection_warning_exceed", "Chi phí hư hại vượt quá tiền cọc!")}</span>
                 </div>
 
                 <div className="rounded-lg bg-rose-100/80 p-2.5 font-bold text-rose-900 text-xs">
@@ -517,7 +520,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                     • <strong>Khấu trừ tiền cọc:</strong> Giữ lại toàn bộ <strong>{formatMoney(deposit)}</strong> (0 ₫ hoàn lại).
                   </p>
                   <p>
-                    • <strong>Thu thêm:</strong> Hệ thống sẽ tự động tạo hóa đơn phạt bồi thường thiệt hại thu thêm <strong>{formatMoney(calculation.penaltyAmount)}</strong> gửi tới khách hàng.
+                    • <strong>{t("billing.extra_fee", "Thu thêm")}:</strong> {t("modal.inspection_auto_invoice", "Hệ thống sẽ tạo hóa đơn thu thêm phụ phí bồi thường.")} <strong>{formatMoney(calculation.penaltyAmount)}</strong>
                   </p>
                 </div>
               </div>
@@ -534,7 +537,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Nhập ghi chú nghiệm thu kho, tình trạng bàn giao chìa khóa/khoá mã số..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
             />
           </div>
 

@@ -1,24 +1,27 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
 import { useEffect, useRef, useState } from "react";
+import { Star, CheckCircle2, X } from "lucide-react";
 import supportService from "../api/supportService";
-
-function formatDate(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("en-US");
-}
+import { useLanguage } from "../context/LanguageContext";
 
 function Attachments({ items }) {
   if (!items?.length) return null;
   return (
     <ul className="mt-2 space-y-2 text-sm">
       {items.map((file) => {
-        // Only open web URLs supplied by the API, never executable URL schemes.
         const safeUrl = /^https?:\/\//i.test(file.objectUrl || "") ? file.objectUrl : null;
         const isImage = String(file.mimeType || file.contentType || "").toLowerCase().startsWith("image/")
           || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.fileName || "");
         return (
           <li key={file.id} className="break-words">
-            {safeUrl && isImage ? <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="block w-fit"><img src={safeUrl} alt={file.fileName || "Ticket attachment"} loading="lazy" className="max-h-64 max-w-full rounded-xl border border-[#dfe7f5] object-contain shadow-sm" /><span className="mt-1 block text-xs text-[#58657a]">{file.fileName || "Image attachment"}{file.fileSizeBytes != null ? ` (${Math.ceil(file.fileSizeBytes / 1024)} KB)` : ""}</span></a> : <>{safeUrl ? <a className="text-[#1d5fe5] underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{file.fileName || "Attachment"}</a> : <span>{file.fileName || "Attachment"}</span>}{file.fileSizeBytes != null && <span className="ml-2 text-xs text-[#58657a]">({Math.ceil(file.fileSizeBytes / 1024)} KB)</span>}</>}
+            {safeUrl && isImage ? (
+              <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="block w-fit">
+                <img src={safeUrl} alt={file.fileName || "Attachment"} loading="lazy" className="max-h-64 max-w-full rounded-xl border border-[#dfe7f5] dark:border-zinc-700 object-contain shadow-sm" />
+                <span className="mt-1 block text-xs text-[#58657a] dark:text-zinc-400">{file.fileName || "Image"}</span>
+              </a>
+            ) : (
+              safeUrl ? <a className="text-zinc-900 dark:text-zinc-100 underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{file.fileName || "File"}</a> : <span>{file.fileName || "File"}</span>
+            )}
           </li>
         );
       })}
@@ -27,6 +30,7 @@ function Attachments({ items }) {
 }
 
 export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated }) {
+  const { t, formatDate, translateStatus } = useLanguage();
   const dialogRef = useRef(null);
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,11 +38,20 @@ export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated
   const [attempt, setAttempt] = useState(0);
   const rateLock = useRef(false);
   const [score, setScore] = useState("");
+  const [hoveredScore, setHoveredScore] = useState(0);
   const [comment, setComment] = useState("");
   const [ratingBusy, setRatingBusy] = useState(false);
   const [ratingError, setRatingError] = useState("");
   const [ratingSaved, setRatingSaved] = useState(false);
   const [refreshError, setRefreshError] = useState("");
+
+  const ratingLabels = {
+    1: t("support.rating_1", "1 sao - Rất không hài lòng"),
+    2: t("support.rating_2", "2 sao - Chưa hài lòng"),
+    3: t("support.rating_3", "3 sao - Bình thường"),
+    4: t("support.rating_4", "4 sao - Hài lòng"),
+    5: t("support.rating_5", "5 sao - Rất hài lòng / Xuất sắc"),
+  };
 
   async function refreshTicket() {
     setRefreshError("");
@@ -47,17 +60,17 @@ export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated
       setTicket(updated);
       onTicketUpdated?.(updated);
     } catch {
-      setRefreshError("Your rating was saved, but ticket details could not be refreshed.");
+      setRefreshError(t("common.error", "Error refreshing details"));
     }
   }
 
   async function handleRate(event) {
     event.preventDefault();
-    if (rateLock.current || ratingSaved || ticket?.rating) return;
+    if (rateLock.current || ratingSaved || ticket?.rating || ticket?.ratingScore) return;
     setRatingError("");
     const value = Number(score);
     if (!Number.isInteger(value) || value < 1 || value > 5) {
-      setRatingError("Please select a rating from 1 to 5.");
+      setRatingError(t("common.required", "Vui lòng chọn mức đánh giá từ 1 đến 5 sao"));
       return;
     }
     rateLock.current = true;
@@ -67,7 +80,7 @@ export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated
       setRatingSaved(true);
       await refreshTicket();
     } catch (err) {
-      setRatingError(err.status === 404 ? "This ticket could not be found." : err.message || (err.status === 409 ? "This ticket cannot be confirmed or has already been rated." : "Unable to submit your rating. Please try again."));
+      setRatingError(err.message || t("common.error", "Error submitting rating"));
     } finally {
       rateLock.current = false;
       setRatingBusy(false);
@@ -76,84 +89,294 @@ export default function SupportTicketDetail({ ticketId, onClose, onTicketUpdated
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    dialog.showModal();
-    return () => dialog.close();
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+    return () => {
+      if (dialog && dialog.open) dialog.close();
+    };
   }, []);
 
   useEffect(() => {
     let active = true;
     supportService.getTicketDetail(ticketId)
-      .then((data) => { if (active) setTicket(data); })
+      .then((data) => {
+        if (active) {
+          setTicket(data);
+          if (data?.rating?.score || data?.ratingScore) {
+            setScore(String(data.rating?.score || data.ratingScore));
+            if (data.rating?.comment) setComment(data.rating.comment);
+          }
+        }
+      })
       .catch((err) => {
-        if (active) setError(err.status === 404 ? "This ticket could not be found." : err.message || "Unable to load ticket details.");
+        if (active) setError(err.status === 404 ? t("common.no_data", "Not found") : err.message || t("common.error", "Error loading"));
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [ticketId, attempt]);
+  }, [ticketId, attempt, t]);
+
+  const hasExistingRating = Boolean(ticket?.rating || ticket?.ratingScore || ratingSaved);
 
   return (
-    <dialog ref={dialogRef} onCancel={onClose} aria-labelledby="ticket-detail-title" className="fixed inset-0 m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 text-[#0b1c30] shadow-xl backdrop:bg-black/40">
-      <div className="flex items-start justify-between gap-4">
-        <h2 id="ticket-detail-title" className="text-lg font-bold">Ticket {ticket?.ticketNo || "details"}</h2>
-        <button type="button" onClick={onClose} className="rounded-lg border px-3 py-1 text-sm">Close</button>
+    <dialog
+      ref={dialogRef}
+      onCancel={onClose}
+      aria-labelledby="ticket-detail-title"
+      className="fixed inset-0 m-auto max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain rounded-2xl bg-white dark:bg-zinc-900 p-6 pb-28 text-[#0b1c30] dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-2xl backdrop:bg-black/50"
+    >
+      <div className="flex items-start justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+        <div>
+          <h2 id="ticket-detail-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            {t("support.ticket_no", "Yêu cầu hỗ trợ")} #{ticket?.ticketNo || ticketId}
+          </h2>
+          {ticket?.facilityName && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              {ticket.facilityName} {ticket.unitName ? `• ${ticket.unitName}` : ""}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center gap-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer"
+        >
+          <X size={14} />
+          {t("common.close", "Đóng")}
+        </button>
       </div>
-      {loading ? <p role="status" className="mt-4 text-sm">Loading ticket details...</p> : error ? (
-        <div className="mt-4">
-          <p role="alert" className="text-sm text-red-600">{error}</p>
-          <button type="button" className="mt-3 text-sm font-semibold text-[#1d5fe5]" onClick={() => { setError(""); setLoading(true); setAttempt((value) => value + 1); }}>Try again</button>
+
+      {loading ? (
+        <div className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <span className="material-symbols-outlined text-[28px] animate-spin mb-2">progress_activity</span>
+          <p>{t("common.loading", "Đang tải chi tiết yêu cầu...")}</p>
+        </div>
+      ) : error ? (
+        <div className="mt-4 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900">
+          <p role="alert" className="text-sm font-semibold text-rose-600 dark:text-rose-400">{error}</p>
+          <button
+            type="button"
+            className="mt-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 underline cursor-pointer"
+            onClick={() => { setError(""); setLoading(true); setAttempt((value) => value + 1); }}
+          >
+            {t("common.refresh", "Thử lại")}
+          </button>
         </div>
       ) : ticket && (
         <div className="mt-4 space-y-5 text-sm">
-          <h3 className="break-words text-base font-semibold">{ticket.subject}</h3>
-          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <h3 className="break-words text-base font-bold text-zinc-900 dark:text-zinc-100">{ticket.subject}</h3>
+          
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-3.5">
             {[
-              ["Status", ticket.displayStatus || ticket.status],
-              ["Priority", ticket.priority],
-              ["Facility", ticket.facilityName],
-              ["Unit", ticket.unitName],
-              ["Category", ticket.category],
-              ["Agreement", ticket.agreementId],
-              ["Created", formatDate(ticket.createdAt)],
-              ["Updated", formatDate(ticket.updatedAt)],
-            ].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
+              [t("common.status", "Trạng thái"), translateStatus(ticket.displayStatus || ticket.status)],
+              [t("support.priority", "Mức ưu tiên"), translateStatus(ticket.priority)],
+              [t("support.category", "Phân loại"), ticket.category || "—"],
+              [t("common.created_at", "Thời gian tạo"), ticket.createdAt ? formatDate(ticket.createdAt) : "—"],
+              [t("common.unit", "Ô kho"), ticket.unitName || "—"],
+              [t("common.facility", "Cơ sở"), ticket.facilityName || "—"],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{label}</dt>
+                <dd className="break-words font-semibold text-zinc-900 dark:text-zinc-100 mt-0.5">{value ?? "—"}</dd>
+              </div>
+            ))}
           </dl>
-          <section><h3 className="font-semibold">Description</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.description || "No description provided."}</p></section>
-          {!!ticket.initialAttachments?.length && <section><h3 className="font-semibold">Attachments</h3><Attachments items={ticket.initialAttachments} /></section>}
+
           <section>
-            <h3 className="font-semibold">Conversation</h3>
-            {!ticket.messages?.length ? <p className="mt-1 text-[#58657a]">No messages yet.</p> : (
-              <ol className="mt-2 space-y-3">
-                {ticket.messages.map((message) => <li key={message.id} className="rounded-lg bg-[#f8faff] p-3">
-                  <div className="flex flex-wrap justify-between gap-2"><span className="font-semibold">{message.authorName || "Support"} {message.authorRole && `(${message.authorRole})`}</span><span className="text-xs text-[#58657a]">{formatDate(message.createdAt)}</span></div>
-                  <p className="mt-2 whitespace-pre-wrap break-words">{message.body}</p>
-                  <Attachments items={message.attachments} />
-                </li>)}
+            <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              {t("common.details", "Nội dung chi tiết")}
+            </h4>
+            <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 p-3.5 whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200">
+              {ticket.description || "—"}
+            </div>
+          </section>
+
+          {!!ticket.initialAttachments?.length && (
+            <section>
+              <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+                {t("support.attachment", "Hình ảnh đính kèm")}
+              </h4>
+              <Attachments items={ticket.initialAttachments} />
+            </section>
+          )}
+
+          <section>
+            <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              {t("support.messages", "Trao đổi & Tin nhắn")}
+            </h4>
+            {!ticket.messages?.length ? (
+              <p className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                {t("common.no_data", "Chưa có tin nhắn phản hồi nào.")}
+              </p>
+            ) : (
+              <ol className="space-y-3">
+                {ticket.messages.map((message) => (
+                  <li key={message.id} className="rounded-xl border border-zinc-200/70 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/60 p-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/50 dark:border-zinc-700/50 pb-2 mb-2">
+                      <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                        {message.authorName || t("table.staff", "Nhân viên hỗ trợ")}
+                      </span>
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {message.createdAt ? formatDate(message.createdAt) : ""}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm">
+                      {message.body}
+                    </p>
+                    <Attachments items={message.attachments} />
+                  </li>
+                ))}
               </ol>
             )}
-
           </section>
-          {(ticket.resolution || ticket.resolvedAt) && <section><h3 className="font-semibold">Resolution</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.resolution || "—"}</p><p className="mt-1 text-xs text-[#58657a]">Resolved: {formatDate(ticket.resolvedAt)}</p></section>}
-          {ticket.rating && <section><h3 className="font-semibold">Rating: {ticket.rating.score}</h3><p className="mt-1 whitespace-pre-wrap break-words">{ticket.rating.comment}</p><p className="mt-1 text-xs text-[#58657a]">{formatDate(ticket.rating.createdAt)}</p></section>}
-          {ratingSaved && <p role="status" className="text-[#0e7b4c]">Completion confirmed. Thank you for your rating.</p>}
-          {refreshError && <div><p role="alert" className="text-red-600">{refreshError}</p><button type="button" onClick={refreshTicket} className="mt-2 text-[#1d5fe5] underline">Refresh details</button></div>}
-          {!ticket.rating && !ratingSaved && (
-            <form onSubmit={handleRate} aria-busy={ratingBusy} className="space-y-3 border-t border-[#dfe7f5] pt-4">
-              <h3 className="font-semibold">Confirm completion and rate</h3>
-              <p className="text-[#58657a]">Confirm that your issue has been resolved and rate the support you received.</p>
-              <fieldset disabled={ratingBusy} className="space-y-3">
+
+          {/* Resolution section */}
+          {(ticket.resolution || ticket.resolvedAt) && (
+            <section className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/20 p-4">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
+                <CheckCircle2 size={16} />
+                {t("status.resolved", "Kết quả xử lý từ nhân viên")}
+              </h4>
+              <p className="whitespace-pre-wrap break-words text-emerald-950 dark:text-emerald-200 font-medium">
+                {ticket.resolution || "Đã xử lý xong (Resolved)"}
+              </p>
+            </section>
+          )}
+
+          {/* Feedback Rating Section */}
+          {hasExistingRating ? (
+            <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-amber-600 dark:text-amber-400" />
+                <span className="font-bold text-sm text-amber-950 dark:text-amber-200">
+                  {ratingSaved
+                    ? t("support.rating_success", "Đã ghi nhận đánh giá của bạn thành công. Cảm ơn bạn!")
+                    : t("support.rating_saved", "Đã hoàn tất đánh giá chất lượng dịch vụ")}
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={22}
+                    className={
+                      star <= (ticket?.rating?.score || ticket?.ratingScore || Number(score) || 5)
+                        ? "fill-amber-400 text-amber-400 drop-shadow-xs"
+                        : "text-zinc-300 dark:text-zinc-600"
+                    }
+                  />
+                ))}
+                <span className="ml-2 font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                  {(ticket?.rating?.score || ticket?.ratingScore || score)} / 5 sao
+                </span>
+              </div>
+              {(ticket?.rating?.comment || comment) && (
+                <p className="mt-2.5 text-xs italic text-zinc-700 dark:text-zinc-300 bg-white/80 dark:bg-zinc-900/80 p-3 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
+                  "{ticket?.rating?.comment || comment}"
+                </p>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleRate} aria-busy={ratingBusy} className="space-y-4 border-t border-zinc-200 dark:border-zinc-800 pt-5">
+              <fieldset disabled={ratingBusy} className="space-y-4">
                 <div>
-                  <label htmlFor="ticket-score" className="mb-1 block font-semibold">Rating *</label>
-                  <select id="ticket-score" required value={score} onChange={(event) => setScore(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-2">
-                    <option value="">Select a rating</option>
-                    {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value} / 5</option>)}
-                  </select>
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+                    <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                      {t("support.rating", "Đánh giá chất lượng xử lý")} <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      {ratingLabels[hoveredScore || Number(score)] || t("support.rating_desc", "Vui lòng chọn từ 1 đến 5 sao")}
+                    </span>
+                  </div>
+
+                  {/* 1-CLICK INTERACTIVE 5-STAR RATING SELECTOR */}
+                  <div className="flex items-center gap-1.5 p-3 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/50">
+                    {[1, 2, 3, 4, 5].map((val) => {
+                      const active = val <= (hoveredScore || Number(score));
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setScore(String(val))}
+                          onMouseEnter={() => setHoveredScore(val)}
+                          onMouseLeave={() => setHoveredScore(0)}
+                          className="group p-2 rounded-xl transition-all hover:scale-115 focus:outline-none focus:ring-2 focus:ring-amber-400/40 cursor-pointer"
+                          aria-label={`${val} sao`}
+                        >
+                          <Star
+                            size={30}
+                            className={`transition-colors duration-150 ${
+                              active
+                                ? "fill-amber-400 text-amber-400 drop-shadow-sm"
+                                : "text-zinc-300 dark:text-zinc-600 hover:text-amber-300"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                    {score ? (
+                      <span className="ml-3 font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                        {score} / 5 sao
+                      </span>
+                    ) : (
+                      <span className="ml-3 text-xs text-zinc-400 dark:text-zinc-500 italic">
+                        (Bấm trực tiếp vào ngôi sao để chọn)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Dropdown Alternative with upward detection */}
+                  <div className="mt-3">
+                    <SelectDropdown
+                      id="ticket-score"
+                      required
+                      value={score}
+                      onChange={(e) => setScore(String(e.target.value))}
+                      placeholder={t("common.select", "Hoặc chọn từ danh sách mức đánh giá...")}
+                      className="w-full"
+                    >
+                      <option value="">{t("common.select", "Chọn mức đánh giá...")}</option>
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <option key={val} value={val}>
+                          {val} / 5 - {ratingLabels[val]}
+                        </option>
+                      ))}
+                    </SelectDropdown>
+                  </div>
                 </div>
+
                 <div>
-                  <label htmlFor="ticket-rating-comment" className="mb-1 block font-semibold">Comment (optional)</label>
-                  <textarea id="ticket-rating-comment" rows={3} value={comment} onChange={(event) => setComment(event.target.value)} className="w-full rounded-lg border border-[#dfe7f5] bg-[#f8faff] p-3" />
+                  <label htmlFor="ticket-rating-comment" className="mb-1 block font-semibold text-xs text-zinc-700 dark:text-zinc-300">
+                    {t("support.rating_comment", "Nhận xét & Góp ý thêm (tùy chọn)")}
+                  </label>
+                  <textarea
+                    id="ticket-rating-comment"
+                    rows={3}
+                    value={comment}
+                    onChange={(event) => setComment(event.target.value)}
+                    placeholder={t("support.rating_comment_placeholder", "Nhập nhận xét của bạn về trải nghiệm hỗ trợ...")}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/80 p-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10"
+                  />
                 </div>
-                {ratingError && <p role="alert" className="text-red-600">{ratingError}</p>}
-                <button type="submit" disabled={!score} className="rounded-lg bg-[#1d5fe5] px-4 py-2 font-semibold text-white disabled:opacity-50">{ratingBusy ? "Submitting..." : "Confirm and rate"}</button>
+
+                {ratingError && (
+                  <p role="alert" className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                    {ratingError}
+                  </p>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={!score || ratingBusy}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-3 font-bold text-sm shadow-md transition hover:opacity-90 disabled:opacity-40 cursor-pointer"
+                  >
+                    <Star size={16} className="fill-current text-amber-400" />
+                    {ratingBusy
+                      ? t("common.loading", "Đang gửi đánh giá...")
+                      : t("support.submit_rating", "Gửi Đánh Giá Dịch Vụ")}
+                  </button>
+                </div>
               </fieldset>
             </form>
           )}

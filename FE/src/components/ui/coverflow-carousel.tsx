@@ -49,6 +49,7 @@ export interface CoverflowCarouselProps {
   onSelectSlide?: (slide: CoverflowSlide, index: number) => void;
   /** Fires whenever navigation changes the centered slide. */
   onActiveSlideChange?: (slide: CoverflowSlide, index: number) => void;
+  bookNowText?: string;
 }
 
 export function CoverflowCarousel({
@@ -67,6 +68,7 @@ export function CoverflowCarousel({
   showPagination = false,
   showNavigation = false,
   label = "Cover carousel",
+  bookNowText = "Book this unit now",
   className,
   cardClassName,
   onSelectSlide,
@@ -442,9 +444,9 @@ export function CoverflowCarousel({
             <button
               type="button"
               onClick={() => onSelectSlide(active, selected)}
-              className="mt-5 flex items-center gap-2 rounded-[14px] bg-[#1d5fe5] px-7 py-3 text-[14px] font-extrabold text-white shadow-[0_10px_25px_rgba(29,95,229,0.3)] transition hover:bg-[#174fc7] hover:scale-105 active:scale-95"
+              className="mt-5 flex items-center gap-2 rounded-[14px] bg-zinc-900 text-white px-7 py-3 text-[14px] font-extrabold text-white shadow-[0_10px_25px_rgba(29,95,229,0.3)] transition hover:bg-zinc-800 hover:scale-105 active:scale-95"
             >
-              <span>Book this unit now</span>
+              <span>{bookNowText}</span>
               <ChevronRight className="size-4" />
             </button>
           )}
@@ -462,7 +464,7 @@ export function CoverflowCarousel({
               onClick={() => goTo(index)}
               className={cn(
                 "h-2 rounded-full transition-all duration-300",
-                index === selected ? "w-6 bg-[#1d5fe5]" : "w-2 bg-[#cbd5e1] hover:bg-[#94a3b8]",
+                index === selected ? "w-6 bg-zinc-900 text-white" : "w-2 bg-[#cbd5e1] hover:bg-[#94a3b8]",
               )}
             />
           ))}

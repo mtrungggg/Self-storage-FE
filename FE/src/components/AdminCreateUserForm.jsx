@@ -1,3 +1,6 @@
+import DatePicker from "@/components/ui/date-picker";
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useRef, useState } from "react";
 import { UserPlus, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import adminUserService from "../api/adminUserService";
@@ -14,7 +17,9 @@ const emptyForm = {
   initialFacilityId: "",
 };
 
-export default function AdminCreateUserForm({ roles, onCreated, open, setOpen }) {
+export default function AdminCreateUserForm({
+ roles, onCreated, open, setOpen }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -79,9 +84,9 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
     <section className="reference-card mb-6 p-6">
       <div className="reference-card-heading mb-4">
         <div>
-          <h2>Create New User Account</h2>
+          <h2>{t("admin.create_user_title", "Create New User Account")}</h2>
           <p className="reference-muted">
-            Provision system accounts for Facility Managers, Staff, or Storage Customers.
+            {t("admin.create_user_desc_short", "Cấp tài khoản người dùng cho Quản lý, Nhân viên hoặc Khách hàng.")}
           </p>
         </div>
         <button
@@ -93,7 +98,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
           }}
           className="reference-pill hover:bg-slate-50 cursor-pointer"
         >
-          <X size={13} /> Cancel
+          <X size={13} /> {t("common.cancel", "Hủy")}
         </button>
       </div>
 
@@ -141,9 +146,9 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-              Account Role <span className="text-red-500">*</span>
+              {t("admin.account_role", "Vai trò tài khoản")} <span className="text-red-500">*</span>
             </span>
-            <select
+            <SelectDropdown
               required
               value={form.role}
               onChange={(event) => setForm({ ...form, role: event.target.value })}
@@ -154,7 +159,7 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </label>
 
           {isEmployee && (
@@ -170,11 +175,9 @@ export default function AdminCreateUserForm({ roles, onCreated, open, setOpen })
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">Hire Date</span>
-                <input
-                  type="date"
+                <DatePicker
                   value={form.hireDate}
                   onChange={(event) => setForm({ ...form, hireDate: event.target.value })}
-                  className="reference-input"
                 />
               </label>
               <label className="block">

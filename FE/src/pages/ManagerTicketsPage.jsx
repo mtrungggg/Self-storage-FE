@@ -94,8 +94,8 @@ function resolveAssignedStaffName(ticket) {
 }
 
 export default function ManagerTicketsPage() {
+  const { t, translateStatus, formatDate } = useLanguage();
   const { activeFacility, facilityId } = useManagerFacility();
-  const { t, formatDate } = useLanguage();
   const { subscribe, joinFacility, recentEvent } = useSignalR();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -336,7 +336,7 @@ export default function ManagerTicketsPage() {
                   onClick={() => setStatusFilter(pill.key)}
                   className={`relative rounded-full px-3.5 py-1 text-xs font-semibold transition cursor-pointer ${
                     isSelected
-                      ? "bg-[#1d5fe5] text-white shadow-xs ring-2 ring-blue-200"
+                      ? "bg-zinc-900 text-white text-white shadow-xs ring-2 ring-blue-200"
                       : isPending && pendingReviewCount > 0
                       ? "bg-amber-100 text-amber-900 hover:bg-amber-200 font-bold"
                       : isSevere && severeRelocationCount > 0
@@ -410,7 +410,7 @@ export default function ManagerTicketsPage() {
                     {/* Header: Chỉ hiển thị DUY NHẤT 1 Badge trạng thái chính */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#1d5fe5]">
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                           {ticket.ticketNo || `#${ticket.id}`}
                         </span>
 
@@ -503,7 +503,7 @@ export default function ManagerTicketsPage() {
                               )}
                             </span>
                           ) : stage.isResolved || stage.isClosed ? (
-                            <span className="text-emerald-700 font-medium italic">Tự động hoàn tất</span>
+                            <span className="text-emerald-700 font-medium italic">{t("status.auto_completed", "Tự động hoàn tất")}</span>
                           ) : (
                             <span className="text-amber-700 font-bold italic">{t("tickets.not_assigned", "Chưa giao Staff")}</span>
                           )}
@@ -569,13 +569,13 @@ export default function ManagerTicketsPage() {
                     {stage.isClosed ? (
                       <div className="text-xs text-slate-500 font-semibold italic flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px] text-slate-400">lock</span>
-                        <span>Ticket đã đóng — Không cần điều phối thêm</span>
+                        <span>{t("tickets.closed_no_action", "Ticket đã đóng")}</span>
                       </div>
                     ) : stage.isResolved ? (
                       <>
                         <div className="text-xs text-emerald-800 font-bold flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[18px] text-emerald-600">task_alt</span>
-                          <span>Sự cố đã hoàn tất xử lý</span>
+                          <span>{t("tickets.resolved_notice", "Sự cố đã hoàn tất xử lý")}</span>
                         </div>
 
                         <button
@@ -597,7 +597,7 @@ export default function ManagerTicketsPage() {
                           onClick={() => setAssigningTicket(ticket)}
                           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${
                             stage.isPendingReview
-                              ? "bg-[#1d5fe5] hover:bg-[#1550c7] text-white"
+                              ? "bg-zinc-900 text-white hover:bg-zinc-800 text-white"
                               : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                           }`}
                         >

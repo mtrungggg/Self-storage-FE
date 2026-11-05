@@ -1,20 +1,21 @@
 import { useState } from "react";
 import apiClient from "../api/apiClient";
-
-const PRESET_ISSUES = [
-  "Dơ bẩn / Rác tồn sót lại chưa dọn",
-  "Kẹt ray cửa cuốn / Cửa không kéo lên được",
-  "Hỏng ổ khóa / Kẹt then cài không đóng mở được",
-  "Thấm dột nước / Ẩm mốc trên sàn hoặc tường",
-  "Đèn chiếu sáng hoặc quạt thông gió hỏng",
-];
+import { useLanguage } from "../context/LanguageContext";
 
 export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuccess, isStaff = true }) {
+  const { t, translateStatus } = useLanguage();
   const [description, setDescription] = useState("");
   const [selectedPreset, setSelectedPreset] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const PRESET_ISSUES = [
+    t("staff_inspections.cleanliness_bad", "Cleanliness / Debris"),
+    t("staff_inspections.door_lock_bad", "Door lock / Latch issue"),
+    t("status.needs_repair", "Needs Repair"),
+    t("checkin.severity_high", "Severe Issue"),
+  ];
 
   if (!isOpen || !target) return null;
 
@@ -27,7 +28,7 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
   async function handleSubmit(e) {
     e.preventDefault();
     if (!description.trim()) {
-      setError("Vui lòng nhập mô tả sự cố kho.");
+      setError(t("common.required", "Please enter description"));
       return;
     }
 
@@ -47,38 +48,39 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
           priority: "urgent",
         };
         const res = await apiClient.post("/staff/tickets", payload);
-        if (res?.data?.success === false) {
-          throw new Error(res?.data?.message || "Không thể tạo ticket sự cố.");
+        if (res?.success === false) {
+          throw new Error(res?.message || t("common.error", "Error"));
         }
       } else {
         const payload = {
           facilityId: Number(target.facilityId || 1),
           agreementId: target.agreementId || null,
-          subject: `[Check-in khẩn cấp] Sự cố kho ${target.unitCode || "chưa rõ"}`,
-          category: "incident",
+          storageUnitId: target.storageUnitId || null,
+          subject: `[Check-in] ${target.unitCode || "Unit"}`,
+          category: "unit",
           priority: "urgent",
           description: description.trim(),
         };
         const res = await apiClient.post("/customer/support-tickets", payload);
-        if (res?.data?.success === false) {
-          throw new Error(res?.data?.message || "Không thể tạo ticket sự cố.");
+        if (res?.success === false) {
+          throw new Error(res?.message || t("common.error", "Error"));
         }
       }
 
-      setSuccessMsg("Đã gửi báo cáo sự cố khẩn cấp lên Quản lý cơ sở điều phối!");
+      setSuccessMsg(t("checkin.report_sent", "Report submitted"));
       if (onSuccess) {
         onSuccess(target);
       }
       setTimeout(() => {
         setSuccessMsg("");
         onClose();
-      }, 1400);
+      }, 1200);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
         err?.response?.data?.errors?.[0] ||
         err.message ||
-        "Gặp lỗi khi gửi báo cáo sự cố. Vui lòng thử lại."
+        t("common.error", "Error submitting report")
       );
     } finally {
       setSubmitting(false);
@@ -93,7 +95,6 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
     >
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
@@ -101,11 +102,8 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
             </span>
             <div>
               <h2 id="report-issue-modal-title" className="text-base font-bold text-slate-900">
-                Báo sự cố kho lúc Check-in
+                {t("checkin.title", "Report Check-in Issue")}
               </h2>
-              <p className="text-xs text-slate-500">
-                Gửi Ticket khẩn cấp cho Quản lý cơ sở để xử lý tức thì
-              </p>
             </div>
           </div>
           <button
@@ -118,30 +116,17 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
           </button>
         </div>
 
-        {/* Target Info Summary */}
         <div className="mt-3.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-amber-900 font-semibold">
-              Ô kho: <strong className="text-slate-900 text-sm">{target.unitCode || "—"}</strong>
+              {t("common.unit", "Unit")}: <strong className="text-slate-900 text-sm">{target.unitCode || "—"}</strong>
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 font-bold text-rose-700 text-[10px] uppercase">
-              <span className="material-symbols-outlined text-[13px]">bolt</span>
-              Ưu tiên: Khẩn cấp (Urgent)
+              {t("status.urgent", "Urgent")}
             </span>
           </div>
-          {(target.agreementNo || target.currentAgreementNo) && (
-            <div className="text-slate-600">
-              Hợp đồng: <span className="font-mono font-semibold text-slate-800">{target.agreementNo || target.currentAgreementNo}</span>
-            </div>
-          )}
-          {target.customerName && (
-            <div className="text-slate-600">
-              Khách hàng: <strong className="text-slate-800">{target.customerName}</strong>
-            </div>
-          )}
         </div>
 
-        {/* Success Alert */}
         {successMsg && (
           <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900 font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
@@ -149,7 +134,6 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
           </div>
         )}
 
-        {/* Error Alert */}
         {error && (
           <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-rose-600 text-[20px]">error</span>
@@ -158,11 +142,7 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
         )}
 
         <form onSubmit={handleSubmit} className="mt-3.5 space-y-3.5">
-          {/* Quick preset pills */}
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Chọn nhanh tình trạng sự cố:
-            </label>
             <div className="flex flex-wrap gap-1.5">
               {PRESET_ISSUES.map((preset) => (
                 <button
@@ -181,12 +161,12 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
             </div>
           </div>
 
-          {/* Description Textarea */}
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1">
-              Mô tả chi tiết sự cố *
+              {t("common.details", "Details")} *
             </label>
             <textarea
+              id="report-issue-description"
               rows={3}
               required
               value={description}
@@ -194,23 +174,11 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
                 setDescription(e.target.value);
                 setError("");
               }}
-              placeholder="VD: Khách đến mở kho thấy bụi bẩn nhiều và có bao tải rác cũ / Kẹt cửa cuốn không kéo lên được..."
+              placeholder={t("checkin.defect_desc", "Describe issue...")}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-rose-500 focus:bg-white"
             />
           </div>
 
-          {/* Quy trình thông tin */}
-          <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-[11px] text-slate-600 space-y-1">
-            <div className="font-bold text-slate-800 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-[#1d5fe5]">info</span>
-              Quy trình phối hợp khẩn cấp:
-            </div>
-            <p>1. Manager nhận được Ticket sẽ điều phối nhân viên kiểm tra ngay.</p>
-            <p>2. Nếu dọn nhanh được, nhân viên khắc phục tại chỗ để khách nhận kho.</p>
-            <p>3. Nếu hỏng nặng, hệ thống tự động khóa bảo trì và Manager duyệt đổi kho mới ngay lập tức.</p>
-          </div>
-
-          {/* Buttons */}
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
             <button
               type="button"
@@ -218,15 +186,16 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
               onClick={onClose}
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
             >
-              Hủy bỏ
+              {t("common.cancel", "Cancel")}
             </button>
             <button
+              id="btn-submit-report-issue"
               type="submit"
               disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">send</span>
-              <span>{submitting ? "Đang gửi..." : "Gửi báo cáo lên Manager"}</span>
+              <span>{submitting ? t("common.loading", "Sending...") : t("common.submit", "Submit")}</span>
             </button>
           </div>
         </form>

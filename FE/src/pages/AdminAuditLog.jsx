@@ -1,3 +1,6 @@
+import DatePicker from "@/components/ui/date-picker";
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { Fragment, useEffect, useState } from "react";
 import { History, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
 import AuditChangeDetails from "../components/AuditChangeDetails";
@@ -43,6 +46,7 @@ function formatDate(value) {
 }
 
 export default function AdminAuditLog() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(defaults);
   const [query, setQuery] = useState({ ...defaults, PageNumber: 1 });
   const [result, setResult] = useState(null);
@@ -119,7 +123,7 @@ export default function AdminAuditLog() {
       <div className="reference-toolbar mb-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1>Audit Logs</h1>
+            <h1>{t("admin.audit_logs_title", "Audit Logs")}</h1>
             {data && <span className="reference-pill">{data.totalCount} events recorded</span>}
           </div>
           <p className="reference-muted mt-0.5">
@@ -159,7 +163,7 @@ export default function AdminAuditLog() {
 
           {/* Entity Type Dropdown */}
           <div className="w-44">
-            <select
+            <SelectDropdown
               value={filters.EntityType}
               onChange={(e) => setFilters({ ...filters, EntityType: e.target.value })}
               className="reference-select text-xs"
@@ -169,12 +173,12 @@ export default function AdminAuditLog() {
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </div>
 
           {/* Action Dropdown */}
           <div className="w-36">
-            <select
+            <SelectDropdown
               value={filters.Action}
               onChange={(e) => setFilters({ ...filters, Action: e.target.value })}
               className="reference-select text-xs"
@@ -184,12 +188,12 @@ export default function AdminAuditLog() {
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </div>
 
           {/* Rows per page */}
           <div className="w-32">
-            <select
+            <SelectDropdown
               value={filters.PageSize}
               onChange={(e) => setFilters({ ...filters, PageSize: Number(e.target.value) })}
               className="reference-select text-xs"
@@ -199,7 +203,7 @@ export default function AdminAuditLog() {
                   {size} rows / page
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </div>
 
           {/* Date Toggle */}
@@ -213,7 +217,7 @@ export default function AdminAuditLog() {
             }`}
           >
             <Filter size={13} />
-            <span>Date Range</span>
+            <span>{t("common.date", "Thời gian")}</span>
           </button>
 
           {/* Action Buttons */}
@@ -240,21 +244,17 @@ export default function AdminAuditLog() {
         {showDates && (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 border-t border-slate-100 pt-3">
             <div>
-              <span className="mb-1 block text-xs font-semibold text-slate-600">From Date / Time</span>
-              <input
-                type="datetime-local"
+              <span className="mb-1 block text-xs font-semibold text-slate-600">{t("common.date", "Từ ngày")}</span>
+              <DatePicker
                 value={filters.FromDate}
                 onChange={(e) => setFilters({ ...filters, FromDate: e.target.value })}
-                className="reference-input text-xs"
               />
             </div>
             <div>
               <span className="mb-1 block text-xs font-semibold text-slate-600">To Date / Time</span>
-              <input
-                type="datetime-local"
+              <DatePicker
                 value={filters.ToDate}
                 onChange={(e) => setFilters({ ...filters, ToDate: e.target.value })}
-                className="reference-input text-xs"
               />
             </div>
           </div>

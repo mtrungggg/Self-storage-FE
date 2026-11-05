@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import managerUserService from "../api/managerUserService";
@@ -11,6 +13,7 @@ const STAFF_POSITIONS = [
 ];
 
 export default function ManagerFacilityUsersPage() {
+  const { t, translateStatus } = useLanguage();
   const { activeFacility, facilityId, facilities } = useManagerFacility();
   const [activeTab, setActiveTab] = useState("staff"); // 'staff' | 'customers'
 
@@ -210,7 +213,7 @@ export default function ManagerFacilityUsersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            Quản lý Người dùng &amp; Nhân sự cơ sở
+            {t("nav.staff_customers", "Nhân sự & Khách hàng")}
           </h1>
           <p className="mt-1 text-xs text-slate-500">
             Cơ sở quản lý: <strong className="text-slate-800">{activeFacility?.name ? `${activeFacility.name} (${activeFacility.code || `ID: ${facilityId}`})` : facilityId ? `Cơ sở #${facilityId}` : "Tất cả cơ sở"}</strong>
@@ -242,7 +245,7 @@ export default function ManagerFacilityUsersPage() {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">group</span>
-            <span>Tab 2 – Khách hàng cơ sở ({customers.length})</span>
+            <span>{t("nav.customers", "Khách hàng")} ({customers.length})</span>
           </button>
         </div>
       </div>
@@ -291,10 +294,10 @@ export default function ManagerFacilityUsersPage() {
               <button
                 type="button"
                 onClick={openCreateStaffModal}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition"
               >
                 <span className="material-symbols-outlined text-[16px]">person_add</span>
-                <span>Thêm nhân viên</span>
+                <span>{t("manager.add_employee", "Thêm nhân viên")}</span>
               </button>
             </div>
           </div>
@@ -304,25 +307,25 @@ export default function ManagerFacilityUsersPage() {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">Mã NV / Tên</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Số điện thoại</th>
-                  <th className="px-4 py-3">Vị trí / Chức vụ</th>
-                  <th className="px-4 py-3 text-center">Trạng thái (Active/Inactive)</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
+                  <th className="px-4 py-3">{t("manager.staff_name_or_code", "Mã NV / Tên")}</th>
+                  <th className="px-4 py-3">{t("common.email", "Email")}</th>
+                  <th className="px-4 py-3">{t("common.phone", "Số điện thoại")}</th>
+                  <th className="px-4 py-3">{t("common.role", "Chức vụ")}</th>
+                  <th className="px-4 py-3 text-center">{t("common.status", "Trạng thái")}</th>
+                  <th className="px-4 py-3 text-right">{t("common.actions", "Thao tác")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {staffLoading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                      Đang tải danh sách nhân viên cơ sở...
+                      {t("manager.loading_staff", "Đang tải danh sách nhân viên...")}
                     </td>
                   </tr>
                 ) : filteredStaffList.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                      Không có nhân viên nào phù hợp.
+                      {t("manager.no_staff", "Không có nhân viên nào phù hợp.")}
                     </td>
                   </tr>
                 ) : (
@@ -334,7 +337,7 @@ export default function ManagerFacilityUsersPage() {
                       <tr key={staff.id} className="hover:bg-slate-50/60 transition">
                         <td className="px-4 py-3 font-semibold text-slate-900">
                           <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 font-bold text-[#1d5fe5] text-[11px]">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
                               {(staff.fullName || staff.name || "S").charAt(0).toUpperCase()}
                             </span>
                             <div>
@@ -414,7 +417,7 @@ export default function ManagerFacilityUsersPage() {
                   Danh sách Khách hàng tại cơ sở (Chế độ Read-only)
                 </p>
                 <p className="text-[11px] text-blue-700 mt-0.5">
-                  Hiển thị các khách hàng hiện đang có đơn đặt chỗ (Reservation) hoặc hợp đồng thuê (Agreement) tại cơ sở này.
+                  
                 </p>
               </div>
             </div>
@@ -451,25 +454,25 @@ export default function ManagerFacilityUsersPage() {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">Mã KH / Họ tên</th>
-                  <th className="px-4 py-3">Số điện thoại</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Ô kho sử dụng</th>
-                  <th className="px-4 py-3">Hợp đồng</th>
-                  <th className="px-4 py-3 text-center">Trạng thái</th>
+                  <th className="px-4 py-3">{t("manager.customer_name_or_code", "Mã KH / Họ tên")}</th>
+                  <th className="px-4 py-3">{t("common.phone", "Số điện thoại")}</th>
+                  <th className="px-4 py-3">{t("common.email", "Email")}</th>
+                  <th className="px-4 py-3">{t("manager.unit_in_use", "Ô kho sử dụng")}</th>
+                  <th className="px-4 py-3">{t("manager.agreements", "Hợp đồng")}</th>
+                  <th className="px-4 py-3 text-center">{t("common.status", "Trạng thái")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {customersLoading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                      Đang tải danh sách khách hàng...
+                      {t("manager.loading_customers", "Đang tải danh sách khách hàng...")}
                     </td>
                   </tr>
                 ) : filteredCustomers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                      Không có khách hàng nào tại cơ sở này.
+                      {t("manager.no_customers", "Không có khách hàng nào phù hợp.")}
                     </td>
                   </tr>
                 ) : (
@@ -496,7 +499,7 @@ export default function ManagerFacilityUsersPage() {
                       </td>
 
                       <td className="px-4 py-3">
-                        <span className="inline-block rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-[#1d5fe5]">
+                        <span className="inline-block rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
                           {cus.unitCode ? `Kho ${cus.unitCode}` : "—"}
                         </span>
                       </td>
@@ -531,7 +534,7 @@ export default function ManagerFacilityUsersPage() {
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-base font-bold text-slate-900">
-                {staffModalMode === "create" ? "Thêm nhân viên mới vào cơ sở" : "Chỉnh sửa thông tin nhân viên"}
+                {staffModalMode === "create" ? t("manager.add_employee", "Thêm nhân viên") : t("manager.edit_employee", "Chỉnh sửa nhân viên")}
               </h2>
               <button
                 type="button"
@@ -554,7 +557,7 @@ export default function ManagerFacilityUsersPage() {
                   placeholder="Nhập họ và tên nhân viên..."
                   value={staffFormData.fullName}
                   onChange={(e) => setStaffFormData({ ...staffFormData, fullName: e.target.value })}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-[#1d5fe5]"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                 />
               </div>
 
@@ -569,7 +572,7 @@ export default function ManagerFacilityUsersPage() {
                   placeholder="VD: staff.name@selfstorage.vn"
                   value={staffFormData.email}
                   onChange={(e) => setStaffFormData({ ...staffFormData, email: e.target.value })}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-[#1d5fe5] disabled:bg-slate-50 disabled:text-slate-500"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 disabled:bg-slate-50 disabled:text-slate-500"
                 />
               </div>
 
@@ -583,7 +586,7 @@ export default function ManagerFacilityUsersPage() {
                   placeholder="VD: 0901234567"
                   value={staffFormData.phoneNumber}
                   onChange={(e) => setStaffFormData({ ...staffFormData, phoneNumber: e.target.value })}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-[#1d5fe5]"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                 />
               </div>
 
@@ -591,17 +594,17 @@ export default function ManagerFacilityUsersPage() {
                 <label className="block font-bold text-slate-700 mb-1">
                   Vị trí / Chức vụ *
                 </label>
-                <select
+                <SelectDropdown
                   value={staffFormData.position}
                   onChange={(e) => setStaffFormData({ ...staffFormData, position: e.target.value })}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-[#1d5fe5]"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
                 >
                   {STAFF_POSITIONS.map((pos) => (
                     <option key={pos} value={pos}>
                       {pos}
                     </option>
                   ))}
-                </select>
+                </SelectDropdown>
               </div>
 
               {/* Checkbox Active */}
@@ -611,7 +614,7 @@ export default function ManagerFacilityUsersPage() {
                   id="staff-active-check"
                   checked={staffFormData.isActive}
                   onChange={(e) => setStaffFormData({ ...staffFormData, isActive: e.target.checked })}
-                  className="rounded border-slate-300 text-[#1d5fe5] focus:ring-[#1d5fe5]"
+                  className="rounded border-slate-300 text-zinc-900 dark:text-zinc-100 focus:ring-zinc-900/20 dark:ring-zinc-100/20"
                 />
                 <label htmlFor="staff-active-check" className="font-semibold text-slate-700 cursor-pointer">
                   Kích hoạt trạng thái làm việc (Active)
@@ -636,9 +639,9 @@ export default function ManagerFacilityUsersPage() {
                 <button
                   type="submit"
                   disabled={staffSubmitting}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50"
                 >
-                  <span>{staffSubmitting ? "Đang lưu..." : staffModalMode === "create" ? "Thêm nhân viên" : "Lưu thay đổi"}</span>
+                  <span>{staffSubmitting ? t("common.saving", "Đang lưu...") : staffModalMode === "create" ? t("manager.add_employee", "Thêm nhân viên") : t("common.save", "Lưu thay đổi")}</span>
                 </button>
               </div>
             </form>

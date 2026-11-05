@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import managerTicketService from "../api/managerTicketService";
@@ -24,7 +25,9 @@ function formatDate(isoStr) {
   }
 }
 
-export default function ManagerTicketChargeSection({ ticketId, isClosedOrResolved = false }) {
+export default function ManagerTicketChargeSection({
+ ticketId, isClosedOrResolved = false }) {
+  const { t } = useLanguage();
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [decidingId, setDecidingId] = useState(null);
@@ -69,7 +72,7 @@ export default function ManagerTicketChargeSection({ ticketId, isClosedOrResolve
   if (loading) {
     return (
       <div className="py-2 text-slate-400 text-xs italic text-center">
-        Đang tải thông tin phụ phí đề xuất...
+        {t("common.loading", "Đang tải thông tin phụ phí đề xuất...")}
       </div>
     );
   }
@@ -79,11 +82,11 @@ export default function ManagerTicketChargeSection({ ticketId, isClosedOrResolve
       <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-3 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[17px] text-slate-400">payments</span>
-          <span>Phụ phí phát sinh: <strong>Không có đề xuất phụ phí</strong> cho sự cố này.</span>
+          <span>Phụ phí phát sinh: <strong>{t("tickets.no_charge_proposals", "Không có đề xuất phụ phí")}</strong> </span>
         </div>
         <Link
           to="/manager-charge-proposals"
-          className="text-[11px] font-semibold text-[#1d5fe5] hover:underline"
+          className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
         >
           Trang duyệt phụ phí cơ sở →
         </Link>
@@ -100,7 +103,7 @@ export default function ManagerTicketChargeSection({ ticketId, isClosedOrResolve
         </span>
         <Link
           to="/manager-charge-proposals"
-          className="text-[11px] font-semibold text-[#1d5fe5] hover:underline"
+          className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
         >
           Mở trang quản lý phụ phí →
         </Link>

@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useId, useRef } from "react";
 import staffSupportService from "../api/staffSupportService";
 
@@ -18,6 +19,7 @@ function formatDate(isoStr) {
 }
 
 export default function StaffTicketReply({ ticketId, readOnly = false, onMessageSent }) {
+  const { t } = useLanguage();
   const fieldId = useId();
   const lock = useRef(false);
   const [messages, setMessages] = useState([]);
@@ -83,29 +85,29 @@ export default function StaffTicketReply({ ticketId, readOnly = false, onMessage
       {/* Header khu vực trao đổi */}
       <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
         <span className="font-bold text-slate-800 flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">forum</span>
+          <span className="material-symbols-outlined text-[16px] text-zinc-900 dark:text-zinc-100">forum</span>
           <span>Trao đổi nội bộ &amp; Phản hồi khách ({messages.length})</span>
         </span>
         <button
           type="button"
           onClick={loadMessages}
           disabled={loadingMessages}
-          className="text-[11px] text-[#1d5fe5] hover:underline flex items-center gap-1 cursor-pointer"
+          className="text-[11px] text-zinc-900 dark:text-zinc-100 hover:underline flex items-center gap-1 cursor-pointer"
         >
           <span className={`material-symbols-outlined text-[13px] ${loadingMessages ? "animate-spin" : ""}`}>
             refresh
           </span>
-          <span>Làm mới</span>
+          <span>{t("common.refresh", "Làm mới")}</span>
         </button>
       </div>
 
       {/* Lịch sử tin nhắn / Thread */}
       <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
         {loadingMessages ? (
-          <p className="text-slate-400 py-3 text-center italic">Đang tải lịch sử trao đổi...</p>
+          <p className="text-slate-400 py-3 text-center italic">{t("common.loading", "Đang tải...")}</p>
         ) : messages.length === 0 ? (
           <div className="rounded-lg bg-slate-50 border border-slate-200/60 p-3 text-center text-slate-400">
-            Chưa có ghi chú nội bộ hoặc trao đổi nào cho sự cố này.
+            {t("common.no_notes", "Chưa có ghi chú nội bộ hoặc trao đổi nào cho sự cố này.")}
           </div>
         ) : (
           messages.map((msg, idx) => (
@@ -172,7 +174,7 @@ export default function StaffTicketReply({ ticketId, readOnly = false, onMessage
                 onClick={() => setIsInternal(false)}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
                   !isInternal
-                    ? "bg-[#1d5fe5] text-white shadow-2xs"
+                    ? "bg-zinc-900 text-white text-white shadow-2xs"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -191,7 +193,7 @@ export default function StaffTicketReply({ ticketId, readOnly = false, onMessage
               setBody(e.target.value);
               setError("");
             }}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-[#1d5fe5] focus:outline-none shadow-2xs resize-none"
+            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs resize-none"
             placeholder={
               isInternal
                 ? "Ghi chú nội bộ cho Staff/Manager (Khách hàng không thấy)..."
@@ -206,7 +208,7 @@ export default function StaffTicketReply({ ticketId, readOnly = false, onMessage
             <button
               type="submit"
               disabled={sending || !body.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]">send</span>
               <span>{sending ? "Đang gửi..." : isInternal ? "Lưu ghi chú nội bộ" : "Gửi phản hồi"}</span>

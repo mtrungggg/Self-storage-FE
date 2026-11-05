@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { Bell, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, ArrowRight, User, Phone, FileText, Search } from "lucide-react";
 import managerService from "../api/managerService";
@@ -41,6 +42,7 @@ const STATUS_BADGE = {
 };
 
 export default function ManagerTransferRequests() {
+  const { t, translateStatus } = useLanguage();
   const { facilityId, loading: facilityLoading, refreshTransferRequests: refreshContextTransfers } = useManagerFacility();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -199,7 +201,7 @@ export default function ManagerTransferRequests() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-extrabold text-amber-950 text-xs">🔔 YÊU CẦU CHUYỂN KHO MỚI!</span>
-                <span className="text-[10px] text-amber-700 font-semibold">Vừa xong</span>
+                <span className="text-[10px] text-amber-700 font-semibold">{t("common.just_now", "Vừa xong")}</span>
               </div>
               <p className="mt-1 text-xs font-bold text-slate-800">
                 {incomingAlert.customerName || `Khách hàng #${incomingAlert.customerId}`}
@@ -223,9 +225,9 @@ export default function ManagerTransferRequests() {
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Unit Transfer Requests</h1>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t("manager.transfer_requests", "Yêu cầu chuyển kho")}</h1>
           <p className="text-xs text-slate-500">
-            Quản lý và phê duyệt hoặc từ chối các yêu cầu chuyển đổi ô kho của khách hàng.
+            
           </p>
         </div>
 
@@ -258,11 +260,11 @@ export default function ManagerTransferRequests() {
                   🔔 Có {counts.pending} yêu cầu chuyển kho mới đang chờ bạn xét duyệt!
                 </h2>
                 <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-black text-amber-900 uppercase">
-                  Cần xử lý
+                  {t("manager.action_required", "Cần xử lý")}
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-amber-800">
-                Khách hàng đã gửi yêu cầu chuyển sang kho mới. Vui lòng kiểm tra và duyệt chỉ định ô kho phù hợp.
+                
               </p>
             </div>
           </div>
@@ -317,7 +319,7 @@ export default function ManagerTransferRequests() {
                 : "text-slate-600 hover:bg-amber-50 hover:text-amber-700"
             }`}
           >
-            <span>Chờ duyệt</span>
+            <span>{t("status.pending", "Chờ duyệt")}</span>
             {counts.pending > 0 && (
               <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
                 filterTab === "pending" ? "bg-white text-amber-700" : "bg-amber-100 text-amber-800"
@@ -369,7 +371,7 @@ export default function ManagerTransferRequests() {
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
             <RefreshCw size={24} className="mx-auto mb-2 animate-spin text-blue-600 opacity-60" />
-            <span>Đang tải danh sách yêu cầu chuyển kho...</span>
+            <span>{t("manager.transfer_loading", "Đang tải yêu cầu chuyển kho...")}</span>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-xs">
@@ -377,12 +379,7 @@ export default function ManagerTransferRequests() {
               <FileText size={24} />
             </div>
             <p className="font-bold text-slate-700 text-sm">
-              {filterTab === "pending"
-                ? "Không có yêu cầu chuyển kho nào đang chờ duyệt."
-                : "Không tìm thấy yêu cầu chuyển kho nào."}
-            </p>
-            <p className="mt-1 text-slate-500">
-              Khi khách hàng gửi yêu cầu đổi/chuyển kho từ cổng khách hàng, yêu cầu sẽ lập tức hiển thị và có chuông báo tại đây.
+              {t("manager.transfer_no_data", "Không có yêu cầu chuyển kho nào.")}
             </p>
           </div>
         ) : (
@@ -424,7 +421,7 @@ export default function ManagerTransferRequests() {
                     {isPending && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 animate-pulse">
                         <Clock size={11} />
-                        Cần duyệt
+                        {t("manager.needs_approval", "Cần duyệt")}
                       </span>
                     )}
                     <span
@@ -441,14 +438,14 @@ export default function ManagerTransferRequests() {
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      Hợp đồng thuê
+                      {t("manager.agreements", "Hợp đồng thuê")}
                     </span>
                     <span className="font-mono font-bold text-slate-900">{request.agreementNo}</span>
                   </div>
 
                   <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block mb-0.5">
-                      Kho hiện tại ➔ Loại muốn chuyển
+                      {t("manager.transfer_current_to_target")}
                     </span>
                     <div className="flex items-center gap-1.5 font-bold text-blue-950">
                       <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200 text-blue-700">
@@ -461,7 +458,7 @@ export default function ManagerTransferRequests() {
 
                   <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      Ngày chuyển dự kiến
+                      {t("manager.expected_transfer_date", "Ngày chuyển dự kiến")}
                     </span>
                     <span className="font-semibold text-slate-800">
                       {formatDate(request.requestedEffectiveDate || request.moveOutDate)}
@@ -470,7 +467,7 @@ export default function ManagerTransferRequests() {
 
                   <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      Kho đích gợi ý
+                      {t("manager.target_unit_suggested", "Kho đích gợi ý")}
                     </span>
                     <span className="font-mono font-semibold text-slate-800">
                       {request.toUnitCode ? `Kho ${request.toUnitCode}` : "Chờ manager chỉ định"}
@@ -526,7 +523,7 @@ export default function ManagerTransferRequests() {
                         className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 text-xs font-bold text-rose-700 transition disabled:opacity-50 cursor-pointer"
                       >
                         <XCircle size={14} />
-                        <span>Từ chối (Reject)</span>
+                        <span>{t("manager.reject_transfer", "Từ chối")}</span>
                       </button>
                     </div>
                   </div>

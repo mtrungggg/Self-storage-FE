@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
@@ -17,6 +18,7 @@ const STATUS_BADGE = {
 };
 
 function ManagerChargeProposals() {
+  const { t, formatCurrency, translateStatus } = useLanguage();
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +69,8 @@ function ManagerChargeProposals() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">Ancillary Fee Charge Proposals</h1>
-        <p className="text-xs text-slate-500">Review staff proposals for ancillary fees and surcharges incurred during customer support tickets.</p>
+        <h1 className="text-lg font-bold text-slate-900">{t("manager.charge_proposals", "Đề xuất phụ phí từ nhân viên")}</h1>
+        <p className="text-xs text-slate-500"></p>
       </div>
 
       {notice && (
@@ -85,11 +87,11 @@ function ManagerChargeProposals() {
       <div className="grid grid-cols-1 gap-3">
         {loading ? (
           <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
-            Loading charge proposals...
+            {t("common.loading", "Đang tải...")}
           </div>
         ) : proposals.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-xs text-slate-400">
-            No charge proposals found.
+            {t("common.no_data", "Không có dữ liệu")}
           </div>
         ) : (
           proposals.map((proposal) => {
@@ -118,9 +120,9 @@ function ManagerChargeProposals() {
                 {isPending && (
                   <div className="mt-3 flex flex-wrap items-end gap-2.5 border-t border-slate-100 pt-3">
                     <label className="flex flex-1 min-w-[200px] flex-col gap-1 text-[11px] font-medium text-slate-600">
-                      Decision Notes / Justification
+                      {t("common.notes", "Ghi chú phê duyệt")}
                       <input
-                        placeholder="Add decision remarks..."
+                        placeholder={t("common.notes_placeholder", "Ghi chú quyết định...")}
                         value={reasonDrafts[proposal.id] || ""}
                         onChange={(e) => setReasonDrafts((prev) => ({ ...prev, [proposal.id]: e.target.value }))}
                         className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
@@ -133,7 +135,7 @@ function ManagerChargeProposals() {
                         onClick={() => decide(proposal.id, DECISION_STATUS.APPROVED)}
                         className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition disabled:opacity-50"
                       >
-                        Approve &amp; Issue Invoice
+                        {t("tickets.approve_charge", "Duyệt & Xuất hóa đơn")}
                       </button>
                       <button
                         type="button"

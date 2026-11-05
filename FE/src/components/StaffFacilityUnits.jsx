@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import staffFacilityService from "../api/staffFacilityService";
 import StaffUnitStatus from "./StaffUnitStatus";
@@ -49,6 +50,7 @@ function compactUnitType(unitTypeName) {
 }
 
 export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
+  const { t, translateStatus } = useLanguage();
   const [facilityId, setFacilityId] = useState(String(initialFacilityId || "1"));
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -196,7 +198,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter code, tenant..."
-              className="w-36 sm:w-48 rounded-lg border border-slate-200 bg-slate-50/80 pl-6 pr-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-[#1d5fe5] focus:bg-white"
+              className="w-36 sm:w-48 rounded-lg border border-slate-200 bg-slate-50/80 pl-6 pr-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
             />
           </div>
 
@@ -221,12 +223,12 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
       )}
 
       {loading && units.length === 0 && (
-        <div className="py-8 text-center text-xs text-slate-400">Loading units...</div>
+        <div className="py-8 text-center text-xs text-slate-400">{t("common.loading", "Đang tải...")}</div>
       )}
 
       {!loading && !error && searched && filteredUnits.length === 0 && (
         <div className="my-4 rounded-xl border border-dashed border-slate-200 p-8 text-center text-xs text-slate-400">
-          No units found matching this criteria.
+          {t("common.no_data", "Không có dữ liệu")}
         </div>
       )}
 
@@ -234,7 +236,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
         <div className="mt-3 space-y-3">
           <div className="overflow-hidden rounded-xl border border-[#dfe7f5] bg-white">
             <div className="grid grid-cols-[72px_minmax(0,1fr)_88px_72px] gap-2 border-b border-[#eef1f8] bg-[#f8faff] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-[#718299] sm:grid-cols-[82px_minmax(0,1.3fr)_92px_minmax(0,1fr)_80px]">
-              <span>Unit</span><span>Type</span><span>Status</span><span className="hidden sm:block">Customer</span><span className="text-right">Manage</span>
+              <span>{t("common.unit", "Ô kho")}</span><span>{t("table.type", "Loại")}</span><span>{t("common.status", "Trạng thái")}</span><span className="hidden sm:block">Customer</span><span className="text-right">Manage</span>
             </div>
             <div className="max-h-[430px] divide-y divide-[#eef1f8] overflow-y-auto">
               {filteredUnits.map((unit) => {
@@ -246,7 +248,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                     <span className="truncate text-[#58657a]" title={unit.unitTypeName}>{compactUnitType(unit.unitTypeName)}</span>
                     <span className={`inline-flex w-fit items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${status.badge}`}><span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />{status.label}</span>
                     <span className="hidden truncate text-[#58657a] sm:block">{unit.customerName || "—"}</span>
-                    <button type="button" onClick={() => setExpandedUnitId(expanded ? null : unit.unitId)} className={`justify-self-end rounded-lg border px-2 py-1 text-[10px] font-bold transition ${expanded ? "border-[#1d5fe5] bg-[#1d5fe5] text-white" : "border-[#d8e3f5] text-[#1d5fe5] hover:bg-[#eef4ff]"}`}>{expanded ? "Close" : "Manage"}</button>
+                    <button type="button" onClick={() => setExpandedUnitId(expanded ? null : unit.unitId)} className={`justify-self-end rounded-lg border px-2 py-1 text-[10px] font-bold transition ${expanded ? "border-zinc-900 dark:border-zinc-100 bg-zinc-900 text-white text-white" : "border-[#d8e3f5] text-zinc-900 dark:text-zinc-100 hover:bg-[#eef4ff]"}`}>{expanded ? "Close" : "Manage"}</button>
                   </div>
                 );
               })}
@@ -280,7 +282,7 @@ export default function StaffFacilityUnits({ initialFacilityId = "1" }) {
                   {/* Status Change & Task Ownership Lock Module */}
                   <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px] text-[#1d5fe5]">
+                      <span className="material-symbols-outlined text-[16px] text-zinc-900 dark:text-zinc-100">
                         tune
                       </span>
                       <span>Điều phối trạng thái kho (Unit status &amp; Task Lock)</span>

@@ -8,10 +8,16 @@ export default {
    * @param {{ result: 'Resolved' | 'Severe_Need_Relocation', note: string, evidenceUrls?: string[] }} payload
    */
   async reportTicket(id, { result, note, evidenceUrls = [] }) {
+    const isSevere = String(result).toLowerCase().includes("severe");
+    const notes = note?.trim() || "";
+    const photos = Array.isArray(evidenceUrls) ? evidenceUrls : evidenceUrls ? [evidenceUrls] : [];
     const payload = {
-      result, // 'Resolved' | 'Severe_Need_Relocation'
-      note: note?.trim() || "",
-      evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : evidenceUrls ? [evidenceUrls] : [],
+      reportNotes: notes,
+      note: notes,
+      assessmentLevel: isSevere ? "severe_need_relocation" : "resolved",
+      result: isSevere ? "Severe_Need_Relocation" : "Resolved",
+      evidenceImageUrls: photos,
+      evidenceUrls: photos,
     };
     try {
       const response = await apiClient.post(`/staff/tickets/${encodeURIComponent(id)}/report`, payload);

@@ -22,18 +22,18 @@ html {
   --spacing-sm: 0.75rem;
   --spacing-md: 1rem;
 
-  /* Standardized Color Palette (60-30-10 Rule) */
-  --color-brand-primary: #2563EB;
-  --color-brand-primary-hover: #1D4ED8;
-  --color-dark-sidebar: #0F172A;
-  --color-dark-border: #1E293B;
-  --color-dark-text-muted: #94A3B8;
+  /* Standardized Color Palette (Minimalist Monochrome & Soft Silver) */
+  --color-brand-primary: #18181B;
+  --color-brand-primary-hover: #27272A;
+  --color-dark-sidebar: #09090B;
+  --color-dark-border: #27272A;
+  --color-dark-text-muted: #A1A1AA;
 
-  --color-neutral-bg: #F8FAFC;
-  --color-neutral-card: #FFFFFF;
-  --color-neutral-title: #0F172A;
-  --color-neutral-muted: #64748B;
-  --color-neutral-border: #E2E8F0;
+  --color-neutral-bg: #F2F3F5;
+  --color-neutral-card: rgba(255, 255, 255, 0.90);
+  --color-neutral-title: #18181B;
+  --color-neutral-muted: #71717A;
+  --color-neutral-border: #E4E4E7;
 
   /* Status Colors */
   --color-status-available-bg: #ECFDF5;
@@ -147,7 +147,7 @@ body,
 
 body {
   font-family: "Inter", sans-serif;
-  background: #f8f9ff;
+  background-color: transparent;
   color: #0b1c30;
 }
 
@@ -496,3 +496,262 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
 .lenis.lenis-autoToggle { transition-property: overflow; transition-duration: 1ms; transition-behavior: allow-discrete; }
 
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* =========================================================================
+   COMPREHENSIVE HIGH-CONTRAST MONOCHROME DARK MODE (SYSTEM-WIDE)
+   Ensures complete background & text inversion with zero washed out elements
+   ========================================================================= */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+/* Navbars, Headers, Topbars, Footers */
+.dark header,
+.dark .admin-topbar,
+.dark footer {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Shell & Layout containers */
+.dark .admin-shell,
+.dark .admin-content,
+.dark main {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+/* Surface inversion: All light backgrounds -> Deep Charcoal #18181b */
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-zinc-50,
+.dark .bg-\[\#f8faff\],
+.dark .bg-\[\#f5f7fd\],
+.dark .bg-\[\#f0f4fc\],
+.dark .bg-\[\#f0f3f8\],
+.dark .bg-\[\#F2F3F5\] {
+  background-color: #18181b !important;
+}
+
+/* Elevated surfaces & pills -> Zinc-800 #27272a */
+.dark .bg-zinc-100,
+.dark .bg-slate-100,
+.dark .bg-zinc-200,
+.dark .bg-\[\#eef2f6\] {
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Semi-transparent overlays & backdrops */
+.dark .bg-white\/40,
+.dark .bg-white\/70,
+.dark .bg-white\/80,
+.dark .bg-white\/85,
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: rgba(24, 24, 27, 0.92) !important;
+}
+
+/* Borders -> Dark Zinc-800 #27272a */
+.dark .border-zinc-200,
+.dark .border-zinc-300,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-\[\#dfe7f5\],
+.dark .border-\[\#e6ebf5\],
+.dark .border-\[\#e4e4e7\],
+.dark .border-\[\#f0f3f8\] {
+  border-color: #27272a !important;
+}
+
+/* Primary Headings & Bold Text -> Bright Off-White #f4f4f5 */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark strong,
+.dark .text-\[\#0b1c30\],
+.dark .text-\[\#18181b\],
+.dark .text-\[\#122033\],
+.dark .text-slate-900,
+.dark .text-zinc-900,
+.dark .text-slate-800,
+.dark .text-zinc-800 {
+  color: #f4f4f5 !important;
+}
+
+/* Secondary & Body Text -> Soft Gray #d4d4d8 */
+.dark .text-\[\#3a475a\],
+.dark .text-slate-700,
+.dark .text-zinc-700,
+.dark .text-slate-600,
+.dark .text-zinc-600 {
+  color: #d4d4d8 !important;
+}
+
+/* Muted & Meta Text -> Neutral Gray #a1a1aa */
+.dark .text-\[\#58657a\],
+.dark .text-\[\#8996a9\],
+.dark .text-\[\#71717a\],
+.dark .text-slate-500,
+.dark .text-zinc-500,
+.dark .text-slate-400,
+.dark .text-zinc-400 {
+  color: #a1a1aa !important;
+}
+
+/* Form Controls (Inputs, Selects, Textareas) */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #27272a !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* Dropdown menus & popups */
+.dark [role="menu"],
+.dark [role="dialog"],
+.dark .admin-profile-menu,
+.dark .shadow-\[0_12px_28px_rgba\(15\,23\,42\,0\.1\)\] {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Tables */
+.dark table {
+  background-color: #18181b !important;
+}
+
+.dark th {
+  background-color: #27272a !important;
+  color: #a1a1aa !important;
+  border-color: #27272a !important;
+}
+
+.dark td {
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.dark tr:hover td {
+  background-color: #27272a/40 !important;
+}
+
+/* Hover states on navigation & list items */
+.dark .hover\:bg-\[\#f5f7fd\]:hover,
+.dark .hover\:bg-\[\#f8faff\]:hover,
+.dark .hover\:bg-\[\#f0f4fc\]:hover {
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+/* Shift Preset Cards & Badges in Dark Mode */
+.dark .bg-\[\#eefdf5\],
+.dark .bg-\[\#d1fadf\] {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  border-color: #065f46 !important;
+  color: #6ee7b7 !important;
+}
+
+.dark .bg-\[\#fef9ee\],
+.dark .bg-\[\#fef0c7\] {
+  background-color: rgba(120, 53, 15, 0.4) !important;
+  border-color: #92400e !important;
+  color: #fcd34d !important;
+}
+
+.dark .bg-\[\#f5f6ff\],
+.dark .bg-\[\#e0eaff\] {
+  background-color: rgba(49, 46, 129, 0.4) !important;
+  border-color: #3730a3 !important;
+  color: #a5b4fc !important;
+}
+
+.dark .bg-\[\#f0fdf9\],
+.dark .bg-\[\#ccfbf1\] {
+  background-color: rgba(19, 78, 74, 0.4) !important;
+  border-color: #115e59 !important;
+  color: #5eead4 !important;
+}
+
+.dark .bg-\[\#fff1f3\],
+.dark .bg-\[\#fee4e2\] {
+  background-color: rgba(136, 19, 55, 0.4) !important;
+  border-color: #9f1239 !important;
+  color: #fda4af !important;
+}
+
+.dark .bg-\[\#faf5ff\],
+.dark .bg-\[\#f8f9fc\] {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Invert all dark accent text colors inside badges & tables */
+.dark .text-\[\#027a48\],
+.dark .text-\[\#059669\] {
+  color: #6ee7b7 !important;
+}
+
+.dark .text-\[\#b54708\],
+.dark .text-\[\#d97706\] {
+  color: #fcd34d !important;
+}
+
+.dark .text-\[\#3538cd\],
+.dark .text-\[\#282d97\],
+.dark .text-\[\#444ce7\],
+.dark .text-\[\#4f46e5\] {
+  color: #a5b4fc !important;
+}
+
+.dark .text-\[\#0f766e\],
+.dark .text-\[\#115e59\] {
+  color: #5eead4 !important;
+}
+
+.dark .text-\[\#b42318\],
+.dark .text-\[\#912018\],
+.dark .text-\[\#d92d20\],
+.dark .text-\[\#dc2626\] {
+  color: #fda4af !important;
+}
+
+.dark .text-\[\#6941c6\],
+.dark .text-\[\#7f56d9\] {
+  color: #d8b4fe !important;
+}
+
+.dark .text-\[\#475467\] {
+  color: #d4d4d8 !important;
+}
+
+/* FacilitySwitcher & Toolbar dropdowns */
+.dark .facility-switcher,
+.dark #manager-portal-actions button {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}

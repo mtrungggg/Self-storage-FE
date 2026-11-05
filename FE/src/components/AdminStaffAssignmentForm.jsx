@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { Plus, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
@@ -16,7 +18,9 @@ const emptyForm = {
   endsAt: "",
 };
 
-export default function AdminStaffAssignmentForm({ employee, disabled, onSavingChange, onCreated, onClose }) {
+export default function AdminStaffAssignmentForm({
+ employee, disabled, onSavingChange, onCreated, onClose }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(emptyForm);
   const [facilities, setFacilities] = useState([]);
   const [loadingFacilities, setLoadingFacilities] = useState(false);
@@ -104,7 +108,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
           <Plus size={14} className="text-blue-600" />
-          Assign to Facility Branch
+          {t("admin.assign_facility", "Assign to Facility Branch")}
         </h4>
         {onClose && (
           <button
@@ -130,7 +134,7 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Select Facility *
             </label>
-            <select
+            <SelectDropdown
               value={form.facilityId}
               disabled={disabled || saving || loadingFacilities}
               onChange={(e) => setForm({ ...form, facilityId: e.target.value })}
@@ -141,22 +145,22 @@ export default function AdminStaffAssignmentForm({ employee, disabled, onSavingC
                   {fac.code} — {fac.name} ({fac.city})
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Assignment Role *
             </label>
-            <select
+            <SelectDropdown
               value={form.assignmentRole}
               disabled={disabled || saving}
               onChange={(e) => setForm({ ...form, assignmentRole: e.target.value })}
               className="reference-select"
             >
-              <option value={USER_ROLES.FACILITY_STAFF}>Facility Staff</option>
-              <option value={USER_ROLES.FACILITY_MANAGER}>Facility Manager</option>
-            </select>
+              <option value={USER_ROLES.FACILITY_STAFF}>{t("admin.facility_staff", "Facility Staff")}</option>
+              <option value={USER_ROLES.FACILITY_MANAGER}>{t("admin.facility_manager", "Facility Manager")}</option>
+            </SelectDropdown>
           </div>
 
           <div>

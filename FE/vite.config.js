@@ -20,11 +20,17 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      chunkSizeWarningLimit: 600,
+      chunkSizeWarningLimit: 800,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
+              if (id.includes('three')) {
+                return 'vendor-three';
+              }
+              if (id.includes('@ark-ui/react')) {
+                return 'vendor-ark';
+              }
               if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
                 return 'vendor-react';
               }

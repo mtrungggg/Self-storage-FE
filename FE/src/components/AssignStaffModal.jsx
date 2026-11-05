@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import managerTicketService from "../api/managerTicketService";
 import managerUserService from "../api/managerUserService";
@@ -12,7 +14,9 @@ function getStaffName(s) {
   return s.fullName || s.name || s.employeeName || s.employeeCode || `Staff #${getStaffId(s)}`;
 }
 
-export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, onSuccess }) {
+export default function AssignStaffModal({
+ ticket, facilityId, isOpen, onClose, onSuccess }) {
+  const { t } = useLanguage();
   const [staffList, setStaffList] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState("");
@@ -105,11 +109,11 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[22px] text-[#1d5fe5]">
+              <span className="material-symbols-outlined text-[22px] text-zinc-900 dark:text-zinc-100">
                 assignment_ind
               </span>
               <h2 id="assign-staff-title" className="text-base font-bold text-slate-900">
-                Giao việc cho Staff xử lý Ticket
+                {t("tickets.assign_staff_title", "Giao việc cho Staff xử lý")}
               </h2>
             </div>
             <p className="mt-1 text-xs text-slate-500">
@@ -135,15 +139,15 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
               Chọn nhân viên cùng cơ sở *
             </label>
             {loadingStaff ? (
-              <p className="text-slate-400 italic">Đang tải danh sách nhân viên...</p>
+              <p className="text-slate-400 italic">{t("common.loading", "Đang tải...")}</p>
             ) : staffList.length === 0 ? (
-              <p className="text-amber-700 italic">Cơ sở này chưa có nhân viên nào trong hệ thống.</p>
+              <p className="text-amber-700 italic">{t("staff.no_active_staff", "Cơ sở này chưa có nhân viên nào trong hệ thống.")}</p>
             ) : (
-              <select
+              <SelectDropdown
                 required
                 value={selectedStaffId}
                 onChange={(e) => setSelectedStaffId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5]"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100"
               >
                 {staffList.map((staff) => {
                   const sid = getStaffId(staff);
@@ -153,7 +157,7 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
                     </option>
                   );
                 })}
-              </select>
+              </SelectDropdown>
             )}
           </div>
 
@@ -167,13 +171,11 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="VD: Kiểm tra tình trạng ổ khóa, lau dọn khu vực kho hoặc báo cáo nếu phát hiện hư hại nặng..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white"
             />
           </div>
 
-          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-900 text-[11px] leading-relaxed">
-            📌 Ticket sau khi giao sẽ chuyển sang trạng thái <strong>Assigned_To_Staff</strong> và xuất hiện trực tiếp trong danh sách việc của nhân viên được chỉ định.
-          </div>
+          
 
           {error && (
             <div role="alert" className="rounded-lg bg-rose-50 p-2.5 text-rose-700 font-semibold">
@@ -183,17 +185,19 @@ export default function AssignStaffModal({ ticket, facilityId, isOpen, onClose, 
 
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
             <button
+              id="btn-cancel-assign-staff"
               type="button"
               disabled={submitting}
               onClick={onClose}
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
-              Hủy
+              {t("common.cancel", "Hủy")}
             </button>
             <button
+              id="btn-confirm-assign-staff"
               type="submit"
               disabled={submitting || !selectedStaffId || staffList.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-1.5 font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">send</span>
               <span>{submitting ? "Đang giao việc..." : "Xác nhận giao việc"}</span>

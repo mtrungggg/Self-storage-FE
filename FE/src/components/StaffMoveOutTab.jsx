@@ -1,3 +1,5 @@
+import DatePicker from "@/components/ui/date-picker";
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import staffMoveOutService from "../api/staffMoveOutService";
@@ -15,6 +17,7 @@ function today() {
 }
 
 export default function StaffMoveOutTab({ facilityId = "1" }) {
+  const { t, translateStatus } = useLanguage();
   const [date, setDate] = useState(() => today());
   const [filterAll, setFilterAll] = useState(false);
   const [items, setItems] = useState([]);
@@ -64,26 +67,26 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
     <section className="mt-5 rounded-2xl border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-slate-900">Kiểm tra trả kho</h2>
+          <h2 className="text-sm font-bold text-slate-900">{t("staff.moveout_tab", "Trả kho")}</h2>
           <Link
             to="/staff-inspections"
-            className="text-xs font-semibold text-[#1d5fe5] hover:underline"
+            className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 hover:underline"
           >
             Mở trang kiểm tra đầy đủ →
           </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="date"
-            value={date}
-            disabled={filterAll}
-            onChange={(e) => {
-              setFilterAll(false);
-              setDate(e.target.value);
-            }}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#1d5fe5] disabled:opacity-50"
-          />
+          <div className="w-44">
+            <DatePicker
+              value={date}
+              disabled={filterAll}
+              onChange={(e) => {
+                setFilterAll(false);
+                setDate(e.target.value);
+              }}
+            />
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -92,11 +95,11 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
             }}
             className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
               !filterAll && date === today()
-                ? "bg-[#1d5fe5] text-white border-[#1d5fe5]"
+                ? "bg-zinc-900 text-white text-white border-zinc-900 dark:border-zinc-100"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            Today
+            {t("common.today", "Hôm nay")}
           </button>
           <button
             type="button"
@@ -122,7 +125,7 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
 
       {loading && (
         <div className="py-6 text-center text-xs text-slate-400">
-          Loading...
+          {t("common.loading", "Đang tải...")}
         </div>
       )}
 

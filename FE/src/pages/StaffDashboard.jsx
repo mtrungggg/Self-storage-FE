@@ -19,13 +19,17 @@ import facilityService from "../api/facilityService";
 import { STORAGE_UNIT_STATUS, RESERVATION_STATUS } from "../constants/rentalConstants";
 import { TICKET_STATUS } from "../constants/ticketConstants";
 import { useSignalR } from "../context/SignalRContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function StaffDashboard({ initialTab = "checkin" }) {
   const { user } = useAuth();
+  const { t, translateStatus } = useLanguage();
   const { subscribe, joinFacility, recentEvent } = useSignalR();
 
-  // Selected operational facility (1 = HCM-TD, 2 = HCM-D7)
-  const [selectedFacilityId, setSelectedFacilityId] = useState("1");
+  // Selected operational facility (1 = HCM-TD, 2 = HCM-D7, 5 = HCM-TB)
+  const [selectedFacilityId, setSelectedFacilityId] = useState(
+    () => localStorage.getItem("staff_selected_facility_id") || "5"
+  );
   const [activeTab, setActiveTab] = useState(initialTab === "overdue" ? "checkin" : initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'issues'
 
   // Dynamic Metrics State
@@ -55,7 +59,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
         staffFacilityService.getUnits(Number(facilityId)),
         staffReservationService.lookup("", facilityId),
         staffTaskService.getTasks(facilityId),
-        staffSupportService.getTickets({ facilityId: Number(facilityId), onlyAssignedToMe: true }),
+        staffSupportService.getTickets({ facilityId: Number(facilityId) }),
         facilityService.getFacilities(),
       ]);
 
@@ -143,6 +147,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
       if (uid && (t.assignedEmployeeId === uid || t.assignedToId === uid || String(t.assignedEmployeeId) === String(uid))) return true;
       if (user?.employeeId && (t.assignedEmployeeId === user.employeeId || String(t.assignedEmployeeId) === String(user.employeeId))) return true;
       if (staffName && t.assignedEmployeeName && t.assignedEmployeeName.trim().toLowerCase() === staffName) return true;
+      if (!t.assignedEmployeeId) return true; // Newly created tickets for facility can be picked up and handled by staff
       return false;
     });
   }, [supportTickets, user]);
@@ -196,7 +201,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex flex-col antialiased">
+    <div className="relative min-h-screen bg-white dark:bg-zinc-950 dark:text-zinc-100 text-slate-900 font-sans flex flex-col antialiased">
       <PageBackground />
 
       {/* Shared Portal Header without Customer Links */}
@@ -215,26 +220,26 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
               setActiveTab("checkin");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-[#1d5fe5] hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#1d5fe5]"
-            title="Click to open Check-in & Scan QR"
+            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-zinc-900 dark:border-zinc-100 hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-zinc-900/20 dark:ring-zinc-100/20"
+            title={t("staff.checkin_handover", "Check-in & Bàn giao")}
           >
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-[#1d5fe5] transition-colors">
-                  Check-in & Bàn giao
+                <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-zinc-900 dark:text-zinc-100 transition-colors">
+                  {t("staff.checkin_handover", "Check-in & Bàn giao")}
                 </p>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-[#1d5fe5] border border-blue-200 group-hover:bg-[#1d5fe5] group-hover:text-white transition-colors">
-                  Scan QR
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-zinc-900 dark:text-zinc-100 border border-blue-200 group-hover:bg-zinc-900 text-white group-hover:text-white transition-colors">
+                  {t("common.scan_qr", "Quét QR")}
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-slate-900 group-hover:text-[#1d5fe5] transition-colors">
+                <span className="text-2xl font-extrabold text-slate-900 group-hover:text-zinc-900 dark:text-zinc-100 transition-colors">
                   {loadingMetrics ? "..." : String(confirmedReservations).padStart(2, "0")}
                 </span>
-                <span className="text-xs font-semibold text-blue-600">Pending</span>
+                <span className="text-xs font-semibold text-blue-600">{translateStatus("pending")}</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-[#1d5fe5] text-[#1d5fe5] group-hover:text-white flex items-center justify-center transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-zinc-900 text-white text-zinc-900 dark:text-zinc-100 group-hover:text-white flex items-center justify-center transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
@@ -244,7 +249,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
           {/* KPI 2: Shift Tasks */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Tasks</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">{t("staff.tasks", "Nhiệm vụ")}</p>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="text-2xl font-extrabold text-slate-900">
                   {loadingMetrics ? "..." : String(completedTasks).padStart(2, "0")}
@@ -266,23 +271,23 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
               setActiveTab("issues");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-[#1d5fe5] hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#1d5fe5]"
-            title="Bấm để xem danh sách công việc & sự cố"
+            className="group text-left bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:border-zinc-900 dark:border-zinc-100 hover:shadow-md transition-all flex items-center justify-between cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-zinc-900/20 dark:ring-zinc-100/20"
+            title={t("staff.assigned_tickets", "Việc phân công")}
           >
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-[#1d5fe5] transition-colors">
-                Tickets việc làm
+              <p className="text-[11px] font-bold text-slate-500 uppercase group-hover:text-zinc-900 dark:text-zinc-100 transition-colors">
+                {t("staff.assigned_tickets", "Việc phân công")}
               </p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-blue-600 group-hover:text-[#1d5fe5] transition-colors">
+                <span className="text-2xl font-extrabold text-blue-600 group-hover:text-zinc-900 dark:text-zinc-100 transition-colors">
                   {loadingMetrics ? "..." : String(activeTickets.length).padStart(2, "0")}
                 </span>
                 <span className="text-xs font-semibold text-slate-500">
-                  {completedTickets.length} đã xong
+                  {completedTickets.length} {t("common.done", "đã xong")}
                 </span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-[#1d5fe5] text-[#1d5fe5] group-hover:text-white flex items-center justify-center transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-zinc-900 text-white text-zinc-900 dark:text-zinc-100 group-hover:text-white flex items-center justify-center transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -292,13 +297,13 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
           {/* KPI 4: Occupancy */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Occupancy</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">{t("manager.occupancy_rate", "Tỷ lệ lấp đầy")}</p>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-2xl font-extrabold text-slate-900">
                   {loadingMetrics ? "..." : `${occupancyRate}%`}
                 </span>
                 <span className="text-xs font-semibold text-emerald-600">
-                  {vacantUnits} free
+                  {vacantUnits} {t("status.available", "trống")}
                 </span>
               </div>
             </div>
@@ -325,11 +330,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                   onClick={() => setActiveTab("checkin")}
                   className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                     activeTab === "checkin"
-                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      ? "bg-zinc-900 text-white text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  Check-in & Bàn giao
+                  {t("staff.checkin_tab", "Check-in")}
                 </button>
 
                 <button
@@ -337,11 +342,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                   onClick={() => setActiveTab("moveout")}
                   className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                     activeTab === "moveout"
-                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      ? "bg-zinc-900 text-white text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  Move-out
+                  {t("staff.moveout_tab", "Trả kho")}
                 </button>
 
                 <button
@@ -349,11 +354,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                   onClick={() => setActiveTab("units")}
                   className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                     activeTab === "units"
-                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      ? "bg-zinc-900 text-white text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  Units
+                  {t("staff.units_tab", "Ô kho")}
                 </button>
 
                 {hasCapability(user, CAPABILITIES.SHIFT_VIEW) && (
@@ -362,11 +367,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                     onClick={() => setActiveTab("shifts")}
                     className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                       activeTab === "shifts"
-                        ? "bg-[#1d5fe5] text-white shadow-xs"
+                        ? "bg-zinc-900 text-white text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    Shifts
+                    {t("staff.shifts_tab", "Ca trực")}
                   </button>
                 )}
 
@@ -375,11 +380,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                   onClick={() => setActiveTab("issues")}
                   className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
                     activeTab === "issues"
-                      ? "bg-[#1d5fe5] text-white shadow-xs"
+                      ? "bg-zinc-900 text-white text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  Issues ({openIssuesCount})
+                  {t("staff.issues_tab", "Sự cố")} ({openIssuesCount})
                 </button>
               </div>
 
@@ -404,7 +409,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                 {activeTab === "issues" && (
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-xs font-bold text-slate-700 uppercase">Tasks</h3>
+                      <h3 className="text-xs font-bold text-slate-700 uppercase">{t("staff.tasks", "Nhiệm vụ")}</h3>
                       <div className="flex flex-wrap gap-1">
                         {taskTabs.map((t) => (
                           <button
@@ -425,7 +430,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                     {filteredTasks.length === 0 ? (
                       <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                        No tasks.
+                        {t("common.no_data", "Không có dữ liệu")}
                       </div>
                     ) : (
                       filteredTasks.map((task) => (
@@ -442,7 +447,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                                 {task.facilityCode || "HCM-TD"} • {task.status}
                               </p>
                             </div>
-                            <span className="text-xs font-bold text-[#1d5fe5]">
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                               {task.progressPercent ?? 0}%
                             </span>
                           </div>
@@ -461,11 +466,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[18px] text-[#1d5fe5]">
+                  <span className="material-symbols-outlined text-[18px] text-zinc-900 dark:text-zinc-100">
                     assignment_late
                   </span>
                   <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Tickets phân công
+                    {t("staff.assigned_tickets", "Tickets phân công")}
                   </h2>
                 </div>
 
@@ -480,7 +485,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Việc cần làm ({activeTickets.length})
+                    {t("staff.todo_tickets", "Cần làm")} ({activeTickets.length})
                   </button>
                   <button
                     type="button"
@@ -491,7 +496,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Đã xong ({completedTickets.length})
+                    {t("common.done", "Đã xong")} ({completedTickets.length})
                   </button>
                 </div>
               </div>
@@ -500,7 +505,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
               {ticketSubTab === "active" ? (
                 activeTickets.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                    ✓ Hiện không có ticket nào cần xử lý.
+                    {t("staff.no_pending_tickets", "Hiện không có ticket nào cần xử lý.")}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -518,21 +523,21 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                               </span>
                               {ticket.unitCode && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0 border border-blue-200">
-                                  Kho {ticket.unitCode}
+                                  {t("common.unit", "Kho")} {ticket.unitCode}
                                 </span>
                               )}
                               {ticket.priority === "urgent" && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 shrink-0">
-                                  Khẩn cấp
+                                  {t("tickets.urgent", "Khẩn cấp")}
                                 </span>
                               )}
                             </div>
                             <p className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-700 transition">
-                              {ticket.subject || ticket.description || "Công việc sự cố kho"}
+                              {ticket.subject || ticket.description || t("tickets.issue_job", "Công việc sự cố kho")}
                             </p>
                             {ticket.customerName && (
                               <p className="text-[11px] text-slate-500">
-                                Khách hàng: {ticket.customerName}
+                                {t("common.customer", "Khách hàng")}: {ticket.customerName}
                               </p>
                             )}
                           </div>
@@ -543,9 +548,9 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                               e.stopPropagation();
                               setSelectedStaffTicket(ticket);
                             }}
-                            className="text-xs font-semibold bg-[#1d5fe5] hover:bg-[#1550c7] text-white px-3 py-1.5 rounded-lg transition-colors shrink-0 shadow-xs cursor-pointer"
+                            className="text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 text-white px-3 py-1.5 rounded-lg transition-colors shrink-0 shadow-xs cursor-pointer"
                           >
-                            Xử lý →
+                            {t("staff.handle_action", "Xử lý →")}
                           </button>
                         </div>
                       </div>
@@ -555,7 +560,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
               ) : (
                 completedTickets.length === 0 ? (
                   <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                    Chưa có công việc nào được hoàn thành gần đây.
+                    {t("staff.no_completed_tickets", "Chưa có công việc nào được hoàn thành gần đây.")}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -573,11 +578,11 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                               </span>
                               {ticket.unitCode && (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 shrink-0">
-                                  Kho {ticket.unitCode}
+                                  {t("common.unit", "Kho")} {ticket.unitCode}
                                 </span>
                               )}
                               <span className="text-[10px] font-bold text-emerald-700">
-                                ✓ Đã xong
+                                ✓ {t("common.done", "Đã xong")}
                               </span>
                             </div>
                             <p className="text-xs font-semibold text-slate-800 truncate">
@@ -593,7 +598,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                             }}
                             className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer"
                           >
-                            Xem lại
+                            {t("common.view", "Xem lại")}
                           </button>
                         </div>
                       </div>
@@ -621,13 +626,13 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
             {/* Smart Floorplan Card */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Floorplan</h2>
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">{t("manager.units", "Mặt bằng & Ô kho")}</h2>
                 <button
                   type="button"
                   onClick={() => setActiveTab("units")}
                   className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition"
                 >
-                  Expand
+                  {t("common.view", "Mở rộng")}
                 </button>
               </div>
 
@@ -648,31 +653,31 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : vacantUnits}
                   </span>
-                  <span className="block text-[10px] text-emerald-700 font-medium">Free</span>
+                  <span className="block text-[10px] text-emerald-700 font-medium">{t("status.available", "Trống")}</span>
                 </div>
                 <div className="bg-blue-50 border border-blue-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : occupiedUnits}
                   </span>
-                  <span className="block text-[10px] text-blue-700 font-medium">Rented</span>
+                  <span className="block text-[10px] text-blue-700 font-medium">{t("status.occupied", "Đang thuê")}</span>
                 </div>
                 <div className="bg-amber-50 border border-amber-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : pendingUnits}
                   </span>
-                  <span className="block text-[10px] text-amber-700 font-medium">Pending</span>
+                  <span className="block text-[10px] text-amber-700 font-medium">{t("status.reserved", "Giữ chỗ")}</span>
                 </div>
                 <div className="bg-purple-50 border border-purple-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : cleaningUnits}
                   </span>
-                  <span className="block text-[10px] text-purple-700 font-medium">Cleaning</span>
+                  <span className="block text-[10px] text-purple-700 font-medium">{t("status.cleaning", "Vệ sinh")}</span>
                 </div>
                 <div className="bg-red-50 border border-red-100 py-1.5 rounded-lg">
                   <span className="block text-xs font-bold text-slate-900">
                     {loadingMetrics ? "..." : maintenanceUnits}
                   </span>
-                  <span className="block text-[10px] text-red-700 font-medium">Maint.</span>
+                  <span className="block text-[10px] text-red-700 font-medium">{t("status.maintenance", "Bảo trì")}</span>
                 </div>
               </div>
             </div>

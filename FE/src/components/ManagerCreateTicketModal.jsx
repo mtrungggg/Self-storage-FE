@@ -1,3 +1,5 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import { useLanguage } from "../context/LanguageContext";
 import { useState, useEffect } from "react";
 import managerTicketService from "../api/managerTicketService";
 import staffFacilityService from "../api/staffFacilityService";
@@ -15,7 +17,9 @@ const PRIORITIES = [
   { value: "urgent", label: "Khẩn cấp — Cần xử lý ngay (Urgent)" },
 ];
 
-export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, onSuccess }) {
+export default function ManagerCreateTicketModal({
+ isOpen, onClose, facilityId, onSuccess }) {
+  const { t } = useLanguage();
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("incident");
@@ -101,13 +105,13 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[24px] text-[#1d5fe5]">
+            <span className="material-symbols-outlined text-[24px] text-zinc-900 dark:text-zinc-100">
               add_task
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">Tạo mới Ticket sự cố cơ sở</h2>
+              <h2 className="text-base font-bold text-slate-900">{t("tickets.create_ticket_title", "Tạo mới Ticket sự cố cơ sở")}</h2>
               <p className="text-xs text-slate-500">
-                Ghi nhận sự cố do khách báo trực tiếp tại quầy hoặc phát sinh vận hành nội bộ.
+                
               </p>
             </div>
           </div>
@@ -139,44 +143,44 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
               placeholder="Ví dụ: Kẹt ray cửa cuốn ô kho A-102, Hỏng đèn chiếu sáng..."
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs"
             />
           </div>
 
-          {/* Phân loại & Mức độ ưu tiên */}
+          {/* Phân loại & {t("table.priority", "Mức độ ưu tiên")} */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Phân loại công việc
+                {t("table.category", "Phân loại công việc")}
               </label>
-              <select
+              <SelectDropdown
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
                     {cat.label}
                   </option>
                 ))}
-              </select>
+              </SelectDropdown>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Mức độ ưu tiên
+                {t("table.priority", "Mức độ ưu tiên")}
               </label>
-              <select
+              <SelectDropdown
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p.value} value={p.value}>
                     {p.label}
                   </option>
                 ))}
-              </select>
+              </SelectDropdown>
             </div>
           </div>
 
@@ -185,10 +189,10 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Ô kho liên quan (tùy chọn)
             </label>
-            <select
+            <SelectDropdown
               value={storageUnitId}
               onChange={(e) => setStorageUnitId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs"
             >
               <option value="">— Sự cố chung cơ sở / Không gắn ô kho —</option>
               {units.map((u) => (
@@ -196,7 +200,7 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
                   {u.unitCode} ({u.status || u.physicalStatus})
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
           </div>
 
           {/* Giao việc cho Staff */}
@@ -204,10 +208,10 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Giao việc ngay cho Nhân viên (tùy chọn)
             </label>
-            <select
+            <SelectDropdown
               value={assignToStaffId}
               onChange={(e) => setAssignToStaffId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs"
             >
               <option value="">— Để vào hàng đợi (Chờ phân công sau) —</option>
               {staffs.map((s) => (
@@ -215,9 +219,9 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
                   {s.fullName || s.name} (NV Vận hành)
                 </option>
               ))}
-            </select>
+            </SelectDropdown>
             <span className="mt-1 block text-[11px] text-slate-500">
-              * Nếu chọn nhân viên, ticket sẽ tự động chuyển sang <strong>Đã giao Staff</strong> và đẩy thông báo xuống bảng việc của nhân viên.
+              * Nếu chọn nhân viên, ticket sẽ tự động chuyển sang <strong>{t("tickets.assigned_staff", "Đã giao Staff")}</strong> và đẩy thông báo xuống bảng việc của nhân viên.
             </span>
           </div>
 
@@ -232,7 +236,7 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
               placeholder="Ghi rõ chi tiết tình trạng sự cố, vị trí cụ thể, và hướng dẫn nhân viên..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none shadow-2xs resize-none"
+              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none shadow-2xs resize-none"
             />
           </div>
 
@@ -249,7 +253,7 @@ export default function ManagerCreateTicketModal({ isOpen, onClose, facilityId, 
             <button
               type="submit"
               disabled={submitting || !subject.trim() || !description.trim()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1d5fe5] hover:bg-[#1550c7] px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">save</span>
               <span>{submitting ? "Đang lưu..." : "Xác nhận tạo Ticket"}</span>

@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useId, useRef, useState } from "react";
 import staffSupportService from "../api/staffSupportService";
 import mediaService from "../api/mediaService";
@@ -8,6 +9,7 @@ function formatCurrency(val) {
 }
 
 export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
+  const { t } = useLanguage();
   const fieldId = useId();
   const lock = useRef(false);
   const [reason, setReason] = useState("");
@@ -105,7 +107,7 @@ export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
                 placeholder="Ví dụ: 200000"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-900 focus:border-[#1d5fe5] focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-900 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none"
               />
             </div>
 
@@ -120,7 +122,7 @@ export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
                 placeholder="Ví dụ: Hỏng ổ khóa cửa cuốn, xả rác tồn..."
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none"
               />
             </div>
           </div>
@@ -136,7 +138,7 @@ export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
               placeholder="Ghi rõ chi tiết hư hại do khách hàng gây ra và căn cứ tính phí..."
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-[#1d5fe5] focus:outline-none resize-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-zinc-900 dark:border-zinc-100 focus:outline-none resize-none"
             />
           </div>
 
@@ -163,7 +165,7 @@ export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
                     onClick={() => setPhotoUrl("")}
                     className="text-[11px] text-rose-600 hover:underline cursor-pointer"
                   >
-                    Xóa
+                    {t("common.delete", "Xóa")}
                   </button>
                 </div>
               )}
@@ -189,10 +191,10 @@ export default function StaffTicketCharge({ ticketId, onChargeProposed }) {
         <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-950 space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-emerald-800">
             <span className="material-symbols-outlined text-[17px] text-emerald-600">check_circle</span>
-            <span>Đã gửi đề xuất thu phụ phí thành công!</span>
+            <span>{t("tickets.charge_sent", "Đã gửi đề xuất thu phụ phí thành công!")}</span>
           </div>
           <p className="text-[11px] text-emerald-900">
-            Số tiền đề xuất: <strong>{formatCurrency(charge.amount)}</strong>. Trạng thái: <em>Chờ Quản lý (Manager) phê duyệt</em>.
+            Số tiền đề xuất: <strong>{formatCurrency(charge.amount)}</strong>. Trạng thái: <em>{t("tickets.pending_manager_approval", "Chờ Quản lý phê duyệt")}</em>.
           </p>
         </div>
       )}

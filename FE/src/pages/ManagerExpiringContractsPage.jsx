@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Search, RefreshCw, Filter, CheckCircle2, AlertCircle, Clock, CreditCard, ShieldAlert } from "lucide-react";
@@ -13,6 +14,7 @@ function formatDate(dateStr) {
 }
 
 export default function ManagerExpiringContractsPage() {
+  const { t, translateStatus, formatCurrency } = useLanguage();
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,15 +85,15 @@ export default function ManagerExpiringContractsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[28px] text-[#1d5fe5]">
+            <span className="material-symbols-outlined text-[28px] text-zinc-900 dark:text-zinc-100">
               assignment_returned
             </span>
             <h1 className="text-xl font-extrabold text-slate-900">
-              Hợp đồng hết hạn &amp; Trả kho
+              {t("nav.expiring_moveout", "Hết hạn & Trả kho")}
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Theo dõi các hợp đồng sắp/đã hết hạn, phân công nhân viên kiểm tra kho và cập nhật tiến trình sau nghiệm thu.
+            
           </p>
         </div>
 
@@ -102,7 +104,7 @@ export default function ManagerExpiringContractsPage() {
           className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-xs disabled:opacity-50"
         >
           <RefreshCw size={14} className={loading ? "animate-spin text-blue-600" : ""} />
-          <span>Làm mới</span>
+          <span>{t("common.refresh", "Làm mới")}</span>
         </button>
       </div>
 
@@ -112,12 +114,12 @@ export default function ManagerExpiringContractsPage() {
           onClick={() => setStatusFilter("all")}
           className={`cursor-pointer rounded-2xl border p-4 transition ${
             statusFilter === "all"
-              ? "border-[#1d5fe5] bg-blue-50/50 shadow-xs"
+              ? "border-zinc-900 dark:border-zinc-100 bg-blue-50/50 shadow-xs"
               : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tất cả ca trả kho</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t("common.all", "Tất cả")}</span>
             <span className="material-symbols-outlined text-[18px] text-slate-400">inventory_2</span>
           </div>
           <div className="mt-2 text-2xl font-black text-slate-900">{counts.all}</div>
@@ -132,7 +134,7 @@ export default function ManagerExpiringContractsPage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Chờ khách nhập STK</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">{t("moveout.waiting_bank", "Chờ khách nhập STK")}</span>
             <Clock size={16} className="text-amber-500" />
           </div>
           <div className="mt-2 text-2xl font-black text-amber-900">{counts.waiting_bank_info}</div>
@@ -147,7 +149,7 @@ export default function ManagerExpiringContractsPage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">Chờ khách đóng phạt</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">{t("moveout.waiting_penalty", "Chờ đóng phạt")}</span>
             <ShieldAlert size={16} className="text-rose-500" />
           </div>
           <div className="mt-2 text-2xl font-black text-rose-900">{counts.waiting_penalty_payment}</div>
@@ -162,7 +164,7 @@ export default function ManagerExpiringContractsPage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Đã hoàn cọc</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">{t("moveout.refunded", "Đã hoàn cọc")}</span>
             <CheckCircle2 size={16} className="text-emerald-500" />
           </div>
           <div className="mt-2 text-2xl font-black text-emerald-900">{counts.refunded}</div>
@@ -186,7 +188,7 @@ export default function ManagerExpiringContractsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo mã hợp đồng, khách hàng, số điện thoại, kho..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 py-2 text-xs text-slate-900 outline-none focus:border-[#1d5fe5] focus:bg-white transition"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 py-2 text-xs text-slate-900 outline-none focus:border-zinc-900 dark:border-zinc-100 focus:bg-white transition"
             />
           </div>
 
@@ -216,7 +218,7 @@ export default function ManagerExpiringContractsPage() {
                 statusFilter === "waiting_bank_info" ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              Chờ khách nhập STK ({counts.waiting_bank_info})
+              {t("moveout.waiting_bank", "Chờ khách nhập STK")} ({counts.waiting_bank_info})
             </button>
             <button
               type="button"
@@ -225,7 +227,7 @@ export default function ManagerExpiringContractsPage() {
                 statusFilter === "waiting_penalty_payment" ? "bg-rose-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              Chờ khách đóng phạt ({counts.waiting_penalty_payment})
+              {t("moveout.waiting_penalty", "Chờ đóng phạt")} ({counts.waiting_penalty_payment})
             </button>
             <button
               type="button"
@@ -234,7 +236,7 @@ export default function ManagerExpiringContractsPage() {
                 statusFilter === "refunded" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              Đã hoàn cọc ({counts.refunded})
+              {t("moveout.refunded", "Đã hoàn cọc")} ({counts.refunded})
             </button>
           </div>
         </div>
@@ -244,23 +246,23 @@ export default function ManagerExpiringContractsPage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3.5">Hợp đồng &amp; Khách hàng</th>
-                <th className="px-4 py-3.5">Ô kho</th>
-                <th className="px-4 py-3.5">Hạn / Yêu cầu trả</th>
+                <th className="px-4 py-3.5">{t("manager.contract_and_customer", "Hợp đồng & Khách hàng")}</th>
+                <th className="px-4 py-3.5">{t("manager.storage_unit", "Ô kho")}</th>
+                <th className="px-4 py-3.5">{t("manager.expire_or_moveout_date", "Hạn / Yêu cầu trả")}</th>
                 <th className="px-4 py-3.5 text-right">Tiền cọc</th>
-                <th className="px-4 py-3.5">Nhân viên nghiệm thu</th>
+                <th className="px-4 py-3.5">{t("manager.inspection_staff", "Nhân viên nghiệm thu")}</th>
                 <th className="px-4 py-3.5 text-center">Tiến trình sau nghiệm thu</th>
-                <th className="px-4 py-3.5 text-right">Hành động</th>
+                <th className="px-4 py-3.5 text-right">{t("manager.actions", "Thao tác")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-xs text-slate-400">
-                    <span className="material-symbols-outlined animate-spin text-[28px] text-[#1d5fe5] block mb-2">
+                    <span className="material-symbols-outlined animate-spin text-[28px] text-zinc-900 dark:text-zinc-100 block mb-2">
                       progress_activity
                     </span>
-                    Đang tải danh sách hợp đồng hết hạn &amp; yêu cầu trả kho...
+                    {t("manager.expiring_loading", "Đang tải danh sách hợp đồng hết hạn...")}
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
@@ -269,7 +271,7 @@ export default function ManagerExpiringContractsPage() {
                     <span className="material-symbols-outlined text-[36px] text-slate-300 block mb-1">
                       inbox
                     </span>
-                    Không tìm thấy hợp đồng nào phù hợp với bộ lọc hiện tại.
+                    {t("manager.expiring_empty", "Không tìm thấy hợp đồng nào phù hợp.")}
                   </td>
                 </tr>
               ) : (
@@ -284,7 +286,7 @@ export default function ManagerExpiringContractsPage() {
 
                     {/* Ô kho */}
                     <td className="px-4 py-3">
-                      <span className="font-mono font-bold text-[#1d5fe5] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                         Kho {item.unitCode}
                       </span>
                       <div className="text-[11px] text-slate-500 mt-1">{item.unitTypeName || "Tiêu chuẩn"}</div>
@@ -327,13 +329,13 @@ export default function ManagerExpiringContractsPage() {
                       )}
                     </td>
 
-                    {/* Tiến trình sau nghiệm thu: Đã hoàn cọc / Đang chờ khách nhập STK / Đang chờ khách đóng phạt */}
+                    {/* Tiến trình sau nghiệm thu: {t("moveout.refunded", "Đã hoàn cọc")} / Đang chờ khách nhập STK / Đang chờ khách đóng phạt */}
                     <td className="px-4 py-3 text-center">
                       {item.postInspectionStatus === "refunded" ? (
                         <div className="inline-flex flex-col items-center">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-300">
                             <span className="material-symbols-outlined text-[16px] text-emerald-600">task_alt</span>
-                            Đã hoàn cọc
+                            {t("moveout.refunded", "Đã hoàn cọc")}
                           </span>
                           {item.refundAmount > 0 && (
                             <span className="text-[11px] font-bold text-emerald-800 mt-0.5">
@@ -382,7 +384,7 @@ export default function ManagerExpiringContractsPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedAgreement(item)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#1d5fe5] hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[15px]">fact_check</span>
                           <span>Phân công kiểm tra kho</span>

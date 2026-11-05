@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -33,6 +34,7 @@ const statusLabel = (value) =>
   ({ active: "Active", disabled: "Disabled", locked: "Locked" }[value] || value);
 
 export default function AdminUserDetail() {
+  const { t, translateStatus } = useLanguage();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview"); // "overview" | "logins"
   const [attempt, setAttempt] = useState(0);
@@ -153,10 +155,10 @@ export default function AdminUserDetail() {
             to="/admin-users"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 mb-1.5 transition"
           >
-            <ArrowLeft size={14} /> Back to User Directory
+            <ArrowLeft size={14} /> {t("admin.back_to_users", "Back to User Directory")}
           </Link>
           <div className="flex items-center gap-3">
-            <h1>Account Details</h1>
+            <h1>{t("admin.account_details", "Account Details")}</h1>
             {user && (
               <span
                 className={`reference-status ${
@@ -179,7 +181,7 @@ export default function AdminUserDetail() {
             className="reference-button-secondary"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
+            {t("common.refresh", "Refresh")}
           </button>
         </div>
       </div>
@@ -197,7 +199,7 @@ export default function AdminUserDetail() {
             }`}
           >
             <Shield size={14} />
-            <span>Overview &amp; Roles</span>
+            <span>{t("admin.manage_roles", "Vai trò & Phân quyền")}</span>
           </button>
           <button
             type="button"
@@ -209,7 +211,7 @@ export default function AdminUserDetail() {
             }`}
           >
             <Calendar size={14} />
-            <span>Login Activity</span>
+            <span>{t("admin.login_activity", "Nhật ký đăng nhập")}</span>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
               {loginCount}
             </span>
@@ -223,13 +225,13 @@ export default function AdminUserDetail() {
         </div>
       )}
 
-      {loading && <p className="py-8 text-center text-xs text-slate-500">Loading user information...</p>}
+      {loading && <p className="py-8 text-center text-xs text-slate-500">{t("common.loading", "Đang tải thông tin...")}</p>}
 
       {error && (
         <div role="alert" className="reference-error mb-5">
           <AlertTriangle size={20} />
           <div>
-            <strong>Error Loading User Details</strong>
+            <strong>{t("common.error", "Lỗi tải thông tin")}</strong>
             <p>{error}</p>
           </div>
         </div>
@@ -240,7 +242,7 @@ export default function AdminUserDetail() {
           {/* Consolidated Header Profile Card */}
           <section className="reference-card mb-5 p-5">
             <div className="grid gap-6 lg:grid-cols-12">
-              {/* Left Column: Account Details Grid */}
+              {/* Left Column: {t("admin.account_details", "Account Details")} Grid */}
               <div className="lg:col-span-7 xl:col-span-8 border-b lg:border-b-0 lg:border-r border-slate-100 pb-5 lg:pb-0 lg:pr-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 font-bold text-base border border-blue-100">
@@ -535,7 +537,7 @@ export default function AdminUserDetail() {
         </>
       )}
 
-      {/* Tab 2: Login Activity */}
+      {/* Tab 2: {t("admin.login_activity", "Nhật ký đăng nhập")} */}
       {user && activeTab === "logins" && (
         <section className="reference-card reference-table-card">
           <div className="reference-card-heading">

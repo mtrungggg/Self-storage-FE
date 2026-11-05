@@ -1,3 +1,6 @@
+import SelectDropdown from "@/components/ui/select-dropdown";
+import DatePicker from "@/components/ui/date-picker";
+import { useLanguage } from "../context/LanguageContext";
 import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 // facilities loaded via ManagerFacilityContext
@@ -10,7 +13,11 @@ import { formatVnd } from "../lib/utils";
 import PAGINATION from "../constants/pagination";
 
 const feeTypes = [
-  ["maintenance_fee", "Maintenance Fee"],
+  ["late_fee", "Late Fee (Phí trễ hạn)"],
+  ["damage_fee", "Damage / Cleaning Fee (Phí hỏng / vệ sinh)"],
+  ["lost_key_fee", "Lost Key Fee (Phí mất chìa / thẻ)"],
+  ["maintenance_fee", "Maintenance Fee (Phí bảo trì)"],
+  ["other", "Other / Administrative (Phí khác / chuyển kho)"],
   ["late_payment", "Late Payment Fee"],
   ["cleaning", "Cleaning Fee"],
   ["damage", "Damage Compensation"],
@@ -18,15 +25,15 @@ const feeTypes = [
   ["lock_cut", "Lock Cutting"],
   ["overstay", "Overstay Surcharge"],
   ["booking_fee", "Booking Fee"],
-  ["vat_tax", "VAT / Tax"],
   ["admin", "Administrative Fee"],
-  ["service", "Service Charge"],
 ];
 
 const calculationMethods = [
-  ["fixed_amount", "Fixed Amount (₫)"],
+  ["flat", "Flat Fixed (Cố định)"],
+  ["per_day", "Per Day (Theo ngày)"],
   ["percentage", "Percentage (%)"],
-  ["daily_accrual", "Daily Accrual (₫/day)"],
+  ["fixed", "Fixed"],
+  ["monthly", "Monthly"],
 ];
 
 const FEE_TEMPLATES = [
@@ -103,6 +110,7 @@ const initialFeeForm = {
 };
 
 export default function ManagerPricing() {
+  const { t, formatCurrency } = useLanguage();
   const { facilityId, facilities } = useManagerFacility();
   const { user } = useAuth();
   const userRoles = (user?.roles || []).map((r) => r.toLowerCase());
@@ -468,7 +476,7 @@ export default function ManagerPricing() {
               Khóa quyền chỉnh sửa: Chế độ chỉ xem biểu giá (Read-only)
             </p>
             <p className="text-[11px] text-amber-700 mt-0.5">
-              Theo quy định phân quyền, chức năng thêm giá, chỉnh sửa giá và cập nhật bậc giá chỉ dành riêng cho Quản trị viên hệ thống (System Administrator). Quản lý cơ sở (Manager) chỉ có quyền xem biểu giá hiện hành.
+              {t("manager.pricing_admin_notice", "Biểu giá thuê kho cơ sở.")}
             </p>
           </div>
         </div>
@@ -517,7 +525,7 @@ export default function ManagerPricing() {
               onClick={openCreateFeeModal}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
             >
-              Add Fee Policy
+              {t("manager.add_pricing", "Thêm biểu giá")}
             </button>
           )}
 
@@ -544,7 +552,7 @@ export default function ManagerPricing() {
               onClick={() => setShowPromoModal(true)}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
             >
-              Create Voucher
+              {t("manager.create_voucher", "Tạo Voucher")}
             </button>
           )}
         </div>
@@ -553,52 +561,58 @@ export default function ManagerPricing() {
       {/* TAB 1: FEES & SURCHARGES SECTION */}
       {activeTab === "fees" && (
         <div className="space-y-4">
-          {/* Fees Filter Bar - Reactive Instant Search */}
-          <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3">
-            <input
-              type="search"
-              placeholder="Search code, conditions..."
-              value={feeFilters.Search}
-              onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
-              className="h-8 w-48 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400"
-            />
-            <select
-              value={feeFilters.FeeType}
-              onChange={(e) => handleFeeFilterChange("FeeType", e.target.value)}
-              className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
-            >
-              <option value="">All Fee Types</option>
-              {feeTypes.map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
-              ))}
-            </select>
-            <select
-              value={feeFilters.GlobalOnly}
-              onChange={(e) => handleFeeFilterChange("GlobalOnly", e.target.value)}
-              className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
-            >
-              <option value="">All Scopes</option>
-              <option value="true">Global (Network-Wide)</option>
-              <option value="false">Facility Specific</option>
-            </select>
-            <select
-              value={feeFilters.IsActive}
-              onChange={(e) => handleFeeFilterChange("IsActive", e.target.value)}
-              className="h-8 rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
-            >
-              <option value="">All Statuses</option>
-              <option value="true">Active Only</option>
-              <option value="false">Inactive Only</option>
-            </select>
-            {(feeFilters.Search || feeFilters.FeeType || feeFilters.GlobalOnly || feeFilters.IsActive) && (
-              <button
-                type="button"
-                onClick={handleResetFeeFilters}
-                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+          {/* Fees Filter Bar - Clean 4-column Grid */}
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+              <input
+                type="search"
+                placeholder={t("pricing.search_fee_placeholder", "Search code, conditions...")}
+                value={feeFilters.Search}
+                onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
+                className="w-full h-10 rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white px-3.5 text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition"
+              />
+              <SelectDropdown
+                value={feeFilters.FeeType}
+                onChange={(e) => handleFeeFilterChange("FeeType", e.target.value)}
+                className="w-full"
               >
-                Reset
-              </button>
-            )}
+                <option value="">{t("common.all", "Tất cả loại phí")}</option>
+                {feeTypes.map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </SelectDropdown>
+              <SelectDropdown
+                value={feeFilters.GlobalOnly}
+                onChange={(e) => handleFeeFilterChange("GlobalOnly", e.target.value)}
+                className="w-full"
+              >
+                <option value="">{t("common.all", "Tất cả phạm vi")}</option>
+                <option value="true">Global (Toàn hệ thống)</option>
+                <option value="false">{t("common.facility", "Theo cơ sở")}</option>
+              </SelectDropdown>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <SelectDropdown
+                    value={feeFilters.IsActive}
+                    onChange={(e) => handleFeeFilterChange("IsActive", e.target.value)}
+                    className="w-full"
+                  >
+                    <option value="">{t("common.all", "Tất cả trạng thái")}</option>
+                    <option value="true">{t("status.active", "Đang áp dụng")}</option>
+                    <option value="false">Không kích hoạt</option>
+                  </SelectDropdown>
+                </div>
+                {(feeFilters.Search || feeFilters.FeeType || feeFilters.GlobalOnly || feeFilters.IsActive) && (
+                  <button
+                    type="button"
+                    onClick={handleResetFeeFilters}
+                    className="shrink-0 h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Fees Data Table */}
@@ -606,15 +620,15 @@ export default function ManagerPricing() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-2.5">Fee Code</th>
-                  <th className="px-4 py-2.5">Scope</th>
-                  <th className="px-4 py-2.5">Category</th>
-                  <th className="px-4 py-2.5">Method</th>
-                  <th className="px-4 py-2.5 text-right">Rate / Amount</th>
-                  <th className="px-4 py-2.5 text-center">Grace</th>
-                  <th className="px-4 py-2.5">Effective</th>
-                  <th className="px-4 py-2.5 text-center">Status</th>
-                  <th className="px-4 py-2.5 text-right">Actions</th>
+                  <th className="px-4 py-2.5">{t("manager.fee_code", "Mã phí")}</th>
+                  <th className="px-4 py-2.5">{t("manager.scope", "Phạm vi")}</th>
+                  <th className="px-4 py-2.5">{t("manager.category", "Danh mục")}</th>
+                  <th className="px-4 py-2.5">{t("manager.method", "Phương thức")}</th>
+                  <th className="px-4 py-2.5 text-right">{t("manager.rate_amount", "Mức phí / Tỷ lệ")}</th>
+                  <th className="px-4 py-2.5 text-center">{t("manager.grace_period", "Thời gian ân hạn")}</th>
+                  <th className="px-4 py-2.5">{t("manager.effective_date", "Hiệu lực")}</th>
+                  <th className="px-4 py-2.5 text-center">{t("common.status", "Trạng thái")}</th>
+                  <th className="px-4 py-2.5 text-right">{t("manager.actions", "Thao tác")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -754,11 +768,11 @@ export default function ManagerPricing() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-2.5">Unit Type</th>
-                <th className="px-4 py-2.5 text-right">Monthly Rate (₫)</th>
-                <th className="px-4 py-2.5 text-right">Deposit Amount (₫)</th>
-                <th className="px-4 py-2.5 text-right">Reservation Fee (₫)</th>
-                <th className="px-4 py-2.5 text-center">Effective Date</th>
+                <th className="px-4 py-2.5">{t("table.type", "Loại ô kho")}</th>
+                <th className="px-4 py-2.5 text-right">{t("pricing.monthly_rate", "Đơn giá tháng")}</th>
+                <th className="px-4 py-2.5 text-right">{t("manager.deposit_amount", "Tiền cọc")}</th>
+                <th className="px-4 py-2.5 text-right">{t("pricing.reservation_fee", "Phí giữ chỗ")}</th>
+                <th className="px-4 py-2.5 text-center">{t("manager.effective_date", "Hiệu lực")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -964,7 +978,7 @@ export default function ManagerPricing() {
                   <span className="mb-1 block text-xs font-semibold text-slate-700">
                     Scope (Facility)
                   </span>
-                  <select
+                  <SelectDropdown
                     value={feeFormData.facilityId}
                     onChange={(e) => setFeeFormData({ ...feeFormData, facilityId: e.target.value })}
                     className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
@@ -975,14 +989,14 @@ export default function ManagerPricing() {
                         {fac.name} ({fac.code})
                       </option>
                     ))}
-                  </select>
+                  </SelectDropdown>
                 </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Fee Type <span className="text-red-500">*</span></span>
-                  <select
+                  <SelectDropdown
                     value={feeFormData.feeType}
                     onChange={(e) => {
                       const nextType = e.target.value;
@@ -997,12 +1011,12 @@ export default function ManagerPricing() {
                     {feeTypes.map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
                     ))}
-                  </select>
+                  </SelectDropdown>
                 </label>
 
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Calculation Method <span className="text-red-500">*</span></span>
-                  <select
+                  <SelectDropdown
                     value={feeFormData.calculationMethod}
                     onChange={(e) => setFeeFormData({ ...feeFormData, calculationMethod: e.target.value })}
                     className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
@@ -1010,7 +1024,7 @@ export default function ManagerPricing() {
                     {calculationMethods.map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
                     ))}
-                  </select>
+                  </SelectDropdown>
                 </label>
               </div>
 
@@ -1075,21 +1089,17 @@ export default function ManagerPricing() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Valid From</span>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={feeFormData.validFrom}
                     onChange={(e) => setFeeFormData({ ...feeFormData, validFrom: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
                   />
                 </label>
 
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Valid To (Optional)</span>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={feeFormData.validTo}
                     onChange={(e) => setFeeFormData({ ...feeFormData, validTo: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
                   />
                 </label>
               </div>
@@ -1173,14 +1183,14 @@ export default function ManagerPricing() {
               <div className="grid grid-cols-2 gap-2.5">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">Discount Type</span>
-                  <select
+                  <SelectDropdown
                     value={promoForm.discountType}
                     onChange={(e) => setPromoForm({ ...promoForm, discountType: e.target.value })}
                     className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount (₫)</option>
-                  </select>
+                  </SelectDropdown>
                 </label>
 
                 <label className="block">

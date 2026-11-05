@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
@@ -265,6 +266,7 @@ function ShiftCard({ shift, onDelete }) {
 }
 
 function ManagerShifts() {
+  const { t, formatCurrency, translateStatus } = useLanguage();
   const { facilityId } = useManagerFacility();
 
   // Dynamic date state
@@ -586,20 +588,37 @@ function ManagerShifts() {
     }
   };
 
-  // Core assignment function: Appends shift so 1 employee can work multiple shifts in 1 day!
+  // Helper to determine if two shift intervals on the same day overlap
+  const isShiftOverlapping = (presetA, presetB) => {
+    const hoursMap = {
+      morning: { start: 6, end: 14 },
+      afternoon: { start: 14, end: 22 },
+      night: { start: 22, end: 30 },
+      duty24h: { start: 8, end: 32 },
+      leave: { start: 0, end: 24 },
+      rest: { start: 0, end: 24 },
+    };
+    const a = hoursMap[presetA.type] || { start: presetA.startHour || 6, end: presetA.endHour || 14 };
+    const b = hoursMap[presetB.type] || { start: presetB.startHour || 6, end: presetB.endHour || 14 };
+    return Math.max(a.start, b.start) < Math.min(a.end, b.end);
+  };
+
+  // Core assignment function: Intelligently handles multiple shifts or replaces overlapping ones
   const assignPresetToCell = async (staff, dayKey, preset) => {
     setError("");
 
-    // Prevent duplicate assignment of the exact same shift preset to this cell
     const existingShifts = Array.isArray(staff.shifts?.[dayKey]) ? staff.shifts[dayKey] : [];
     const alreadyHasThisShift = existingShifts.some(
       (s) => s.type === preset.type || s.name?.toLowerCase() === preset.name?.toLowerCase()
     );
     if (alreadyHasThisShift) {
-      setNotice(`${staff.name} is already assigned to ${preset.name} on ${dayKey}.`);
+      setNotice(`${staff.name} đã được phân ${preset.name} vào ngày ${dayKey}.`);
       setTimeout(() => setNotice(""), 3000);
       return;
     }
+
+    // Find any existing shifts that overlap in time with the new preset
+    const conflictingShifts = existingShifts.filter((s) => isShiftOverlapping(s, preset));
 
     const previousStaffList = staffList;
     const previousShifts = shifts;
@@ -626,17 +645,18 @@ function ManagerShifts() {
       hours: preset.hours || 0,
     };
 
-    // Optimistically APPEND shift into array for this day
+    // Optimistically update: remove conflicting shifts and append new one
     setStaffList((prev) =>
       prev.map((s) => {
         if (s.id === staff.id) {
-          const currentShifts = Array.isArray(s.shifts?.[dayKey]) ? [...s.shifts[dayKey]] : [];
-          currentShifts.push(newShiftItem);
+          const nonConflictingShifts = (s.shifts?.[dayKey] || []).filter(
+            (cur) => !conflictingShifts.some((c) => c.shiftId === cur.shiftId)
+          );
           return {
             ...s,
             shifts: {
               ...s.shifts,
-              [dayKey]: currentShifts,
+              [dayKey]: [...nonConflictingShifts, newShiftItem],
             },
           };
         }
@@ -644,12 +664,28 @@ function ManagerShifts() {
       })
     );
 
-    setNotice(`Assigned ${preset.name} (${preset.time}) to ${staff.name} on ${dayKey}!`);
+    if (conflictingShifts.length > 0) {
+      setNotice(`Đã chuyển sang ${preset.name} (${preset.time}) cho ${staff.name}.`);
+    } else {
+      setNotice(`Đã phân ${preset.name} (${preset.time}) cho ${staff.name}!`);
+    }
     setTimeout(() => setNotice(""), 3000);
 
     // Call backend API in background
     if (facilityId) {
       try {
+        // 1. Delete conflicting assignments on backend first to prevent overlap errors
+        for (const conf of conflictingShifts) {
+          if (conf.shiftId) {
+            try {
+              await managerService.deleteShiftAssignment(facilityId, conf.shiftId, staff.id);
+            } catch (delErr) {
+              console.warn("Could not remove old conflicting shift:", delErr);
+            }
+          }
+        }
+
+        // 2. Find or create matching shift template
         let matchingShift = shifts.find(
           (sh) =>
             sh.shiftName?.toLowerCase() === preset.name.toLowerCase() &&
@@ -670,6 +706,7 @@ function ManagerShifts() {
           }
         }
 
+        // 3. Assign the new shift
         if (matchingShift?.id) {
           await managerService.createShiftAssignment(facilityId, {
             shiftId: matchingShift.id,
@@ -687,7 +724,7 @@ function ManagerShifts() {
           err?.response?.data?.message ||
           err?.response?.data?.errors?.join?.(", ") ||
           err?.message ||
-          "Failed to save shift assignment";
+          "Không thể lưu phân ca làm việc";
         setError(errorMessage);
         setTimeout(() => setError(""), 5000);
       }
@@ -767,7 +804,7 @@ function ManagerShifts() {
     }
 
     setIsAutoFilling(true);
-    setNotice("⚡ Đang tính toán phân bổ tối ưu 7 ngày (Sáng, Chiều, Đêm)...");
+    setNotice("Đang tính toán phân bổ tối ưu 7 ngày (Sáng, Chiều, Đêm)...");
     setError("");
 
     try {
@@ -922,7 +959,7 @@ function ManagerShifts() {
         return;
       }
 
-      setNotice(`⚡ Đã phân bổ tối ưu ${autoFilledCount} ca trực. Đang đồng bộ lên máy chủ...`);
+      setNotice(`Đã phân bổ tối ưu ${autoFilledCount} ca trực. Đang đồng bộ lên máy chủ...`);
 
       // 3. Đồng bộ các ca mới tạo lên backend
       for (const item of assignmentsToPersist) {
@@ -970,7 +1007,7 @@ function ManagerShifts() {
       }
 
       setShifts(newShiftsPool);
-      setNotice(`⚡ Đã tự động phân ca tối ưu 7 ngày (Sáng, Chiều, Đêm) cho toàn bộ nhân viên! (${autoFilledCount} ca đã tạo)`);
+      setNotice(`Đã tự động phân ca tối ưu 7 ngày (Sáng, Chiều, Đêm) cho toàn bộ nhân viên! (${autoFilledCount} ca đã tạo)`);
       setTimeout(() => setNotice(""), 4500);
     } catch (err) {
       setError(err?.message || "Không thể tự động phân ca cho cả tuần.");
@@ -990,7 +1027,7 @@ function ManagerShifts() {
     }
 
     setIsAutoFilling(true);
-    setNotice("✨ Đang kiểm tra lịch phân ca của tuần trước...");
+    setNotice("Đang kiểm tra lịch phân ca của tuần trước...");
     setError("");
 
     try {
@@ -1017,7 +1054,7 @@ function ManagerShifts() {
         return;
       }
 
-      setNotice("✨ Đang sao chép các ca làm việc sang tuần hiện tại...");
+      setNotice("Đang sao chép các ca làm việc sang tuần hiện tại...");
 
       // 3. Phân tích các ca tuần trước và ánh xạ sang tuần hiện tại
       let copiedCount = 0;
@@ -1127,7 +1164,7 @@ function ManagerShifts() {
       if (copiedCount === 0) {
         setNotice("Tất cả các ca của tuần trước đã có sẵn trong tuần hiện tại.");
       } else {
-        setNotice(`✨ Đã sao chép thành công ${copiedCount} ca làm việc từ tuần trước!`);
+        setNotice(`Đã sao chép thành công ${copiedCount} ca làm việc từ tuần trước!`);
       }
       setTimeout(() => setNotice(""), 4000);
     } catch (err) {
@@ -1156,10 +1193,10 @@ function ManagerShifts() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-black tracking-tight text-[#0b1c30]">
-            Staff Shift Roster
+            {t("manager.staff_roster", "Bảng phân ca nhân viên")}
           </h1>
           <p className="mt-0.5 text-xs text-[#58657a]">
-            Quick drag-and-drop shift scheduling, dynamic quota tracking, and multi-shift support per day.
+            
           </p>
         </div>
 
@@ -1178,7 +1215,7 @@ function ManagerShifts() {
             <button
               type="button"
               onClick={handleCurrentWeek}
-              className="px-3 text-xs font-bold text-[#0b1c30] hover:text-[#1d5fe5] transition"
+              className="px-3 text-xs font-bold text-[#0b1c30] hover:text-zinc-900 dark:text-zinc-100 transition"
               title="Jump to current week"
             >
               {weekLabel}
@@ -1201,7 +1238,7 @@ function ManagerShifts() {
               placeholder="Search staff name, code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-44 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-56 focus:border-[#1d5fe5]"
+              className="h-9 w-44 rounded-xl border border-[#dfe7f5] bg-white px-3 text-xs font-medium text-[#0b1c30] outline-none transition focus:w-56 focus:border-zinc-900 dark:border-zinc-100"
             />
           </div>
 
@@ -1212,18 +1249,18 @@ function ManagerShifts() {
               disabled={isAutoFilling}
               onClick={handleCopyPreviousWeek}
               className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-bold text-indigo-700 shadow-2xs hover:bg-indigo-100 transition disabled:opacity-50"
-              title="Sao chép ca trực sang các ngày còn lại trong tuần"
+              title={t("shifts.copy_previous", "Sao chép tuần trước")}
             >
-              <span>✨ Copy Previous Week</span>
+              <span>{t("shifts.copy_previous", "Sao chép tuần trước")}</span>
             </button>
             <button
               type="button"
               disabled={isAutoFilling}
               onClick={handleAutoFillWeek}
               className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600 bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-blue-700 transition disabled:opacity-50"
-              title="Tự động điền phân ca chuẩn xoay vòng (Sáng / Chiều / Đêm) cho cả tuần"
+              title={t("shifts.autofill", "Tự động xếp ca")}
             >
-              <span>{isAutoFilling ? "⚡ Điền lịch..." : "⚡ Auto-Fill Week"}</span>
+              <span>{isAutoFilling ? t("shifts.filling", "Đang xếp ca...") : t("shifts.autofill", "Tự động xếp ca")}</span>
             </button>
           </div>
         </div>
@@ -1245,7 +1282,7 @@ function ManagerShifts() {
                 className={`group relative flex cursor-grab items-center gap-1.5 rounded-xl border px-3 py-1.5 transition select-none active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 ${
                   preset.containerClass
                 } ${
-                  isSelectedBrush ? "ring-2 ring-offset-1 ring-[#1d5fe5] scale-[1.03]" : ""
+                  isSelectedBrush ? "ring-2 ring-offset-1 ring-zinc-900/20 dark:ring-zinc-100/20 scale-[1.03]" : ""
                 }`}
               >
                 <span className="text-xs font-black">{preset.name}</span>
@@ -1316,14 +1353,14 @@ function ManagerShifts() {
                     }`}
                   >
                     {day.isToday && (
-                      <div className="inline-block rounded-full bg-[#1d5fe5] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white mb-1 shadow-2xs">
-                        TODAY
+                      <div className="inline-block rounded-full bg-zinc-900 text-white px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white mb-1 shadow-2xs">
+                        {t("common.today", "Hôm nay")}
                       </div>
                     )}
-                    <div className={`text-[12px] font-medium ${day.isToday ? "text-[#1d5fe5] font-extrabold" : "text-[#475467]"}`}>
+                    <div className={`text-[12px] font-medium ${day.isToday ? "text-zinc-900 dark:text-zinc-100 font-extrabold" : "text-[#475467]"}`}>
                       {day.dayName}
                     </div>
-                    <div className={`mt-0.5 text-base font-black ${day.isToday ? "text-[#1d5fe5]" : "text-[#0b1c30]"}`}>
+                    <div className={`mt-0.5 text-base font-black ${day.isToday ? "text-zinc-900 dark:text-zinc-100" : "text-[#0b1c30]"}`}>
                       {day.dateFormatted}
                     </div>
                   </th>
@@ -1336,14 +1373,14 @@ function ManagerShifts() {
               {loading ? (
                 <tr>
                   <td colSpan={weekDays.length + 1} className="py-12 text-center text-xs font-bold text-[#8996a9]">
-                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#1d5fe5] border-t-transparent mb-2" />
-                    <div>Syncing staff and shift roster from server...</div>
+                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-zinc-900 dark:border-zinc-100 border-t-transparent mb-2" />
+                    <div>{t("common.loading", "Đang tải dữ liệu...")}</div>
                   </td>
                 </tr>
               ) : filteredStaff.length === 0 ? (
                 <tr>
                   <td colSpan={weekDays.length + 1} className="py-10 text-center text-xs font-semibold text-[#8996a9]">
-                    No staff members found for this facility.
+                    {t("manager.no_staff_shifts", "Chưa có nhân viên nào tại cơ sở này.")}
                   </td>
                 </tr>
               ) : (
@@ -1466,7 +1503,7 @@ function ManagerShifts() {
                               className="absolute top-2 right-2 z-50 w-52 rounded-xl border border-blue-100 bg-white p-2.5 shadow-2xl space-y-1.5 animate-in fade-in zoom-in-95 duration-150"
                             >
                               <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                                <span className="text-[11px] font-bold text-slate-800">Gán nhanh ca trực</span>
+                                <span className="text-[11px] font-bold text-slate-800">{t("manager.quick_assign_shift", "Gán ca nhanh")}</span>
                                 <button
                                   type="button"
                                   onClick={() => setActiveCellPopover(null)}
@@ -1520,15 +1557,15 @@ function ManagerShifts() {
               )}
             </tbody>
 
-            {/* Bottom Summary Row: SHIFT ROSTER SUMMARY */}
+            {/* Bottom Summary Row: {t("manager.shift_roster_summary", "Tóm tắt ca trực")} */}
             <tfoot>
               <tr className="border-t-2 border-[#eaecf0] bg-[#f8f9fc] text-xs">
                 <td className="w-[280px] min-w-[280px] p-3.5 align-middle border-r border-[#eaecf0]">
                   <div className="font-black uppercase tracking-wider text-[#0b1c30]">
-                    SHIFT ROSTER SUMMARY
+                    {t("manager.shift_roster_summary", "Tóm tắt ca trực")}
                   </div>
                   <div className="mt-0.5 text-[10px] font-medium text-[#475467]">
-                    Staffing coverage & workload
+                    {t("manager.shift_coverage", "Phân bổ nhân sự & khối lượng việc")}
                   </div>
                 </td>
 

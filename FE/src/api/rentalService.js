@@ -1,6 +1,16 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async getTransferPreview(agreementId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.requestedFacilityId) query.set("requestedFacilityId", params.requestedFacilityId);
+    if (params.requestedUnitTypeId) query.set("requestedUnitTypeId", params.requestedUnitTypeId);
+    if (params.moveOutDate) query.set("moveOutDate", params.moveOutDate);
+    const qs = query.toString();
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-preview${qs ? `?${qs}` : ""}`);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to load transfer preview.");
+    return res.data;
+  },
   async requestUnitTransfer(agreementId, payload) {
     const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-request`, payload);
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request a unit transfer.");
@@ -59,6 +69,11 @@ export const rentalService = {
    * Lấy biên bản bàn giao ô kho (nhận/trả kho)
    * @param {number|string} agreementId
    */
+  async getHandoverRecord(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/handover`);
+    if (res?.success !== true || !res.data) throw new Error(res?.message || "Không thể tải biên bản bàn giao.");
+    return res.data;
+  },
   /**
    * Mở khóa kho bằng mã PIN (Remote Unlock)
    * @param {number|string} agreementId

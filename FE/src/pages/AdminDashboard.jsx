@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -74,6 +75,7 @@ function SummaryCard({ label, value, detail, icon: Icon, to, linkLabel, badge })
 }
 
 function OccupancyChart({ occupancy }) {
+  const { t } = useLanguage();
   const segments = [
     ["Occupied", occupancy.occupiedUnits, "#2563eb"],     // Royal Blue
     ["Available", occupancy.availableUnits, "#94a3b8"],    // Slate Gray
@@ -85,8 +87,8 @@ function OccupancyChart({ occupancy }) {
   return (
     <section className="reference-card reference-occupancy">
       <div className="reference-card-heading">
-        <h2>Unit Distribution</h2>
-        <span className="reference-pill">Network-wide</span>
+        <h2>{t("admin.distribution", "Unit Distribution")}</h2>
+        <span className="reference-pill">{t("common.all", "Toàn hệ thống")}</span>
       </div>
       <div className="reference-ring-wrap">
         <svg
@@ -134,7 +136,7 @@ function OccupancyChart({ occupancy }) {
         ))}
       </div>
       <div className="reference-ring-total">
-        <span>Total Facilities</span>
+        <span>{t("admin.total_facilities", "Total Facilities")}</span>
         <strong>{format(occupancy.totalFacilities)}</strong>
       </div>
     </section>
@@ -142,6 +144,7 @@ function OccupancyChart({ occupancy }) {
 }
 
 export default function AdminDashboard() {
+  const { t, formatCurrency } = useLanguage();
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -197,7 +200,7 @@ export default function AdminDashboard() {
       {/* Top Toolbar */}
       <div className="reference-toolbar">
         <div>
-          <h1>Admin Dashboard</h1>
+          <h1>{t("nav.admin_dashboard", "Admin Dashboard")}</h1>
           <p className="reference-muted mt-0.5">
             System overview, revenue trends, and facility capacity across the enterprise.
           </p>
@@ -220,7 +223,7 @@ export default function AdminDashboard() {
             onClick={() => exportFacilities(facilities)}
           >
             <Upload size={14} />
-            <span>Export CSV</span>
+            <span>{t("common.export_csv", "Xuất CSV")}</span>
           </button>
           <button
             className="reference-outline-button"
@@ -229,7 +232,7 @@ export default function AdminDashboard() {
             onClick={() => window.print()}
           >
             <Download size={14} />
-            <span>Print</span>
+            <span>{t("common.print", "In")}</span>
           </button>
           <button
             className="reference-refresh"
@@ -246,7 +249,7 @@ export default function AdminDashboard() {
 
       {loading && (
         <div role="status" aria-live="polite">
-          <p className="reference-muted mb-4">Loading system analytics...</p>
+          <p className="reference-muted mb-4">{t("common.loading", "Đang tải dữ liệu...")}</p>
           <div className="reference-overview-grid">
             {[1, 2, 3].map((id) => (
               <div className="admin-skeleton h-80 rounded-xl" key={id} />

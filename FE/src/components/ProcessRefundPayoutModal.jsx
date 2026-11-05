@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext";
 import { useState, useEffect } from "react";
 import {
   X,
@@ -55,6 +56,7 @@ function resolveBankCode(bankName) {
 }
 
 export default function ProcessRefundPayoutModal({
+
   isOpen,
   onClose,
   refund,
@@ -64,6 +66,7 @@ export default function ProcessRefundPayoutModal({
   initialTxRef = "",
   initialNotes = "",
 }) {
+  const { t } = useLanguage();
   const [transactionRef, setTransactionRef] = useState(initialTxRef || "");
   const [notes, setNotes] = useState(initialNotes || "");
   const [selectedFile, setSelectedFile] = useState(initialFile || null);
@@ -282,7 +285,7 @@ export default function ProcessRefundPayoutModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Xác nhận đã chuyển khoản hoàn cọc
+                {t("refunds.confirm_payout_title", "Xác nhận đã chuyển khoản hoàn cọc")}
               </h2>
               <p className="text-xs text-slate-500">
                 Khách hàng: <span className="font-semibold text-slate-700">{refund.customerName}</span> • Hợp đồng: <span className="font-semibold text-slate-700">#{refund.agreementNo || refund.agreementId}</span>
@@ -311,7 +314,7 @@ export default function ProcessRefundPayoutModal({
             <div className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 to-white p-4">
               <div className="flex items-center justify-between mb-3 border-b border-emerald-100/80 pb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-                  <Building2 size={14} /> Thông tin tài khoản ngân hàng của khách
+                  <Building2 size={14} /> {t("refunds.bank_details_title", "Thông tin tài khoản ngân hàng")}
                 </span>
                 <span className="text-xs font-bold text-emerald-700">
                   Số tiền hoàn: {formatVnd(refundAmount)}
@@ -331,11 +334,11 @@ export default function ProcessRefundPayoutModal({
                       }}
                     />
                     <div className="hidden mt-2 text-[10px] text-slate-400 items-center justify-center gap-1">
-                      <QrCode size={12} /> Quét mã để chuyển nhanh
+                      <QrCode size={12} /> {t("refunds.scan_qr_payout", "Quét mã để chuyển nhanh")}
                     </div>
                   </div>
                   <span className="mt-1.5 text-[11px] font-medium text-slate-500 flex items-center gap-1">
-                    <QrCode size={13} className="text-emerald-600" /> Quét mã VietQR chuyển khoản
+                    <QrCode size={13} className="text-emerald-600" /> {t("refunds.scan_qr_payout", "Quét mã VietQR chuyển khoản")}
                   </span>
                 </div>
 
@@ -428,7 +431,7 @@ export default function ProcessRefundPayoutModal({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Ghi chú chuyển khoản
+                  {t("refunds.payout_notes", "Ghi chú chuyển khoản")}
                 </label>
                 <textarea
                   rows={2}
@@ -449,7 +452,7 @@ export default function ProcessRefundPayoutModal({
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-blue-400 hover:bg-blue-50/20 cursor-pointer transition">
                     <UploadCloud size={24} className="text-slate-400 mb-1.5" />
                     <span className="text-xs font-medium text-slate-700">
-                      Bấm để chọn file ảnh UNC / Hóa đơn chuyển tiền
+                      {t("refunds.upload_proof", "Chọn ảnh UNC / Hóa đơn")}
                     </span>
                     <span className="text-[11px] text-slate-400 mt-0.5">
                       Hỗ trợ định dạng PNG, JPG, JPEG, PDF (Tối đa 10MB)
@@ -506,7 +509,7 @@ export default function ProcessRefundPayoutModal({
               disabled={isSubmitting || isUploading}
               className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
             >
-              Hủy bỏ
+              {t("common.cancel", "Hủy bỏ")}
             </button>
             <button
               type="submit"
@@ -516,7 +519,7 @@ export default function ProcessRefundPayoutModal({
               {isSubmitting ? (
                 <>
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Đang xử lý...
+                  {t("common.loading", "Đang xử lý...")}
                 </>
               ) : (
                 <>
