@@ -1,3 +1,4 @@
+import { useLanguage } from "../../context/LanguageContext";
 import React from "react";
 import { DatePicker as ArkDatePicker, parseDate } from "@ark-ui/react/date-picker";
 import { Portal } from "@ark-ui/react/portal";
@@ -49,12 +50,15 @@ export const DatePickerComponent: React.FC<DatePickerProps> = ({
   onChange,
   min,
   max,
-  placeholder = "Select date...",
+  placeholder,
+
   disabled = false,
   required = false,
   className = "",
   triggerClassName = "",
 }) => {
+  const { lang, t } = useLanguage();
+  const effectivePlaceholder = placeholder ?? t("common.select_date", "Chọn ngày...");
   const parsedVal = safeParseDate(value ?? defaultValue);
   const parsedMin = safeParseDate(min);
   const parsedMax = safeParseDate(max);
@@ -74,6 +78,7 @@ export const DatePickerComponent: React.FC<DatePickerProps> = ({
       )}
 
       <ArkDatePicker.Root
+        locale={lang === "vi" ? "vi-VN" : "en-US"}
         id={id}
         name={name}
         disabled={disabled}
@@ -107,7 +112,7 @@ export const DatePickerComponent: React.FC<DatePickerProps> = ({
             <div className="flex items-center gap-2.5 truncate">
               <CalendarIcon size={16} className="text-zinc-400 shrink-0" />
               <ArkDatePicker.ValueText
-                placeholder={placeholder}
+                placeholder={effectivePlaceholder}
                 className="truncate font-medium text-zinc-900 dark:text-zinc-100"
               />
             </div>

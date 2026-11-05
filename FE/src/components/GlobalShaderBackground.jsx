@@ -14,20 +14,15 @@ export default function GlobalShaderBackground() {
 
   // Keep body background transparent for customer/login pages so shader shines through crisply
   useEffect(() => {
-    if (isDashboardRoute) {
-      document.body.style.backgroundColor = document.documentElement.classList.contains("dark")
-        ? "#09090b"
-        : "#ffffff";
-    } else {
-      document.body.style.backgroundColor = "transparent";
-    }
+    const isDark = document.documentElement.classList.contains("dark");
+    document.body.style.backgroundColor = isDark ? "#09090b" : "#F2F3F5";
   }, [isDashboardRoute, pathname]);
 
   if (isDashboardRoute) {
     return (
       <div
         aria-hidden="true"
-        className="fixed inset-0 -z-10 pointer-events-none bg-white dark:bg-zinc-950"
+        className="fixed inset-0 -z-10 pointer-events-none bg-[#F2F3F5] dark:bg-[#09090b]"
       />
     );
   }
@@ -35,10 +30,10 @@ export default function GlobalShaderBackground() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-transparent"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#F2F3F5] dark:bg-[#09090b] transition-colors duration-300"
     >
       <ShaderMetal
-        className="w-full h-full opacity-100 dark:opacity-75"
+        className="w-full h-full opacity-90 dark:opacity-25 transition-opacity duration-300"
         settings={{
           metal: "chrome",
           color: "#E4E4E7",

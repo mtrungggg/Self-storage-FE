@@ -755,3 +755,81 @@ html.lenis, html.lenis body { height: auto; }
   border-color: #27272a !important;
   color: #f4f4f5 !important;
 }
+
+/* Primary & Secondary Button Contrast Rules in Dark Mode */
+.dark button.bg-zinc-900,
+.dark button.bg-black,
+.dark a.bg-zinc-900,
+.dark a.bg-black {
+  background-color: #f4f4f5 !important;
+  color: #18181b !important;
+  border-color: #e4e4e7 !important;
+}
+
+.dark button.bg-zinc-900:hover,
+.dark button.bg-black:hover,
+.dark a.bg-zinc-900:hover,
+.dark a.bg-black:hover {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+}
+
+.dark button.bg-white,
+.dark a.bg-white {
+  background-color: #27272a !important;
+  border-color: #3f3f46 !important;
+  color: #f4f4f5 !important;
+}
+
+.dark button.bg-white:hover,
+.dark a.bg-white:hover {
+  background-color: #3f3f46 !important;
+  color: #ffffff !important;
+}
+
+/* Emerald, Amber, Rose, Blue Status Badges in Dark Mode */
+.dark .bg-emerald-50,
+.dark .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.6) !important;
+  border-color: #065f46 !important;
+  color: #6ee7b7 !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.6) !important;
+  border-color: #92400e !important;
+  color: #fcd34d !important;
+}
+
+.dark .bg-rose-50,
+.dark .bg-rose-100,
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: rgba(136, 19, 55, 0.6) !important;
+  border-color: #9f1239 !important;
+  color: #fda4af !important;
+}
+
+.dark .bg-blue-50,
+.dark .bg-blue-100,
+.dark .bg-indigo-50,
+.dark .bg-indigo-100 {
+  background-color: rgba(49, 46, 129, 0.6) !important;
+  border-color: #3730a3 !important;
+  color: #a5b4fc !important;
+}
+
+/* High Contrast Input & Select Carets and Focus */
+.dark input,
+.dark select,
+.dark textarea {
+  caret-color: #f4f4f5;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #a1a1aa !important;
+  outline: none;
+}

@@ -1,3 +1,4 @@
+import { useLanguage } from "../../context/LanguageContext";
 import React, { useState, useRef, useEffect, useId } from "react";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -32,7 +33,8 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
   defaultValue,
   options = [],
   onChange,
-  placeholder = "Select an option...",
+  placeholder,
+
   disabled = false,
   required = false,
   className = "",
@@ -40,6 +42,8 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
   menuClassName = "",
   children,
 }) => {
+  const { t } = useLanguage();
+  const effectivePlaceholder = placeholder ?? t("common.select_option", "Chọn một tùy chọn...");
   const generatedId = useId();
   const selectId = id || generatedId;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -182,7 +186,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
               : "text-zinc-400 dark:text-zinc-500"
           }`}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : effectivePlaceholder}
         </span>
 
         <ChevronDown
@@ -201,7 +205,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         >
           {parsedOptions.length === 0 ? (
             <div className="px-3 py-2 text-xs text-zinc-400 text-center">
-              No options available
+              {t("common.no_options", "Không có tùy chọn nào")}
             </div>
           ) : (
             parsedOptions.map((opt) => {
