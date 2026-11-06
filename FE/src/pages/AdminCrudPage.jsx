@@ -31,6 +31,7 @@ const FACILITY_TIMEZONE = "Asia/Ho_Chi_Minh";
 
 const statuses = [
   ["active", "Active"],
+  ["suspended_new_bookings", "Ngưng nhận đặt mới (Suspended)"],
   ["maintenance", "Maintenance"],
   ["inactive", "Inactive"],
 ];

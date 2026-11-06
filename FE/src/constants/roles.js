@@ -20,7 +20,6 @@ export const ROLE_OPTIONS = Object.freeze([
   [USER_ROLES.CUSTOMER, "Customer"],
   [USER_ROLES.FACILITY_STAFF, "Facility Staff"],
   [USER_ROLES.FACILITY_MANAGER, "Facility Manager"],
-  [USER_ROLES.BUSINESS_OPERATIONS_MANAGER, "Operations Manager"],
   [USER_ROLES.SYSTEM_ADMINISTRATOR, "System Administrator"],
 ]);
 

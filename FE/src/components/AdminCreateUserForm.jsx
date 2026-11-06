@@ -154,7 +154,7 @@ export default function AdminCreateUserForm({
               onChange={(event) => setForm({ ...form, role: event.target.value })}
               className="reference-select"
             >
-              {roles.map(([value, label]) => (
+              {(roles || []).filter(([value]) => value !== "business_operations_manager").map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>

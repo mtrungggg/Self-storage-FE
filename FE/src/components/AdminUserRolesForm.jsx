@@ -23,8 +23,8 @@ export default function AdminUserRolesForm({
   const mounted = useRef(true);
   const changed = selected.length !== original.length || selected.some((role) => !original.includes(role));
   const options = [
-    ...roleOptions,
-    ...original.filter((code) => !roleOptions.some(([value]) => value === code)).map((code) => [code, code]),
+    ...roleOptions.filter(([value]) => value !== "business_operations_manager"),
+    ...original.filter((code) => !roleOptions.some(([value]) => value === code) && code !== "business_operations_manager").map((code) => [code, code]),
   ];
 
   useEffect(() => {

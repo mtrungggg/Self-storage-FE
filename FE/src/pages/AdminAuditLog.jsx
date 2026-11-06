@@ -79,17 +79,18 @@ export default function AdminAuditLog() {
     const next = { ...filters, PageNumber: 1 };
 
     // Intelligent unified search field handling:
-    // If user typed into SearchKeyword:
     const kw = (next.SearchKeyword || "").trim();
     if (kw) {
+      next.SearchKeyword = kw;
       if (/^\d+$/.test(kw)) {
-        // Numeric: search by EntityId or ActorUserId
         next.EntityId = kw;
         next.ActorUserId = kw;
       } else {
         next.EntityId = kw;
+        next.ActorUserId = "";
       }
     } else {
+      next.SearchKeyword = "";
       next.EntityId = "";
       next.ActorUserId = "";
     }
