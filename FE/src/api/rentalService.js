@@ -27,6 +27,18 @@ export const rentalService = {
     if (!res.data || res.data.renewalId == null) throw new Error("The server did not return renewal details.");
     return res.data;
   },
+  async cancelTransferRequest(requestId) {
+    const res = await apiClient.post(`/customer/rentals/transfer-requests/${encodeURIComponent(requestId)}/cancel`);
+    return res?.data ?? true;
+  },
+  async cancelRenewal(renewalId) {
+    const res = await apiClient.post(`/customer/rentals/renewals/${encodeURIComponent(renewalId)}/cancel`);
+    return res?.data ?? true;
+  },
+  async cancelInvoice(invoiceId) {
+    const res = await apiClient.post(`/customer/rentals/invoices/${encodeURIComponent(invoiceId)}/cancel`);
+    return res?.data ?? true;
+  },
   async getRefundPreview(agreementId) {
     const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/refund-preview`);
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to load the refund estimate.");

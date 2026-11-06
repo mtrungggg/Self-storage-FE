@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import paymentService from "../api/paymentService";
 import reservationService from "../api/reservationService";
+import rentalService from "../api/rentalService";
 import { CHECKOUT_STATUS, PAYMENT_STATUS } from "../constants/paymentConstants";
 import { RESERVATION_STATUS } from "../constants/rentalConstants";
 
@@ -14,6 +15,7 @@ export function usePaymentCheckout() {
   const stateReservationId = location.state?.reservationId || stateCheckout?.reservationId || null;
   const stateInvoiceId = location.state?.invoiceId || stateCheckout?.invoiceId || null;
   const stateRenewalId = location.state?.renewalId || null;
+  const stateTransferRequestId = location.state?.transferRequestId || null;
 
   const [checkout, setCheckout] = useState(
     stateCheckout?.vietQr?.qrImageUrl ? stateCheckout : null
@@ -158,7 +160,7 @@ export function usePaymentCheckout() {
     return () => clearInterval(timer);
   }, [status]);
 
-  // Polling for SePay payment confirmation (every 2.5s)
+  // Optimized Polling for SePay payment confirmation (3s interval, targeted)
   useEffect(() => {
     if (status !== CHECKOUT_STATUS.PENDING) return;
 
@@ -185,39 +187,39 @@ export function usePaymentCheckout() {
               return;
             }
           }
-        }
-
-        // Check payment history
-        const history = await paymentService.getPaymentHistory();
-        if (!isCancelled && Array.isArray(history)) {
-          const matched = history.find(
-            (p) =>
-              (checkout?.invoiceNo && p.invoiceNo === checkout.invoiceNo) ||
-              (checkout?.invoiceId && p.invoiceId === checkout.invoiceId) ||
-              (reservation?.reservationCode && p.reservationCode === reservation.reservationCode)
-          );
-          if (matched) {
-            const pStatus = (matched.status || "").toLowerCase();
-            if (pStatus === PAYMENT_STATUS.SUCCEEDED || pStatus === "paid") {
-              setStatus(CHECKOUT_STATUS.SUCCESS);
-              return;
-            }
-            if (pStatus === PAYMENT_STATUS.FAILED || pStatus === PAYMENT_STATUS.CANCELLED) {
-              setStatus(CHECKOUT_STATUS.FAILED);
-              return;
+        } else {
+          // Check payment history only for invoices / renewals
+          const history = await paymentService.getPaymentHistory();
+          if (!isCancelled && Array.isArray(history)) {
+            const matched = history.find(
+              (p) =>
+                (checkout?.invoiceNo && p.invoiceNo === checkout.invoiceNo) ||
+                (checkout?.invoiceId && p.invoiceId === checkout.invoiceId) ||
+                (reservation?.reservationCode && p.reservationCode === reservation.reservationCode)
+            );
+            if (matched) {
+              const pStatus = (matched.status || "").toLowerCase();
+              if (pStatus === PAYMENT_STATUS.SUCCEEDED || pStatus === "paid") {
+                setStatus(CHECKOUT_STATUS.SUCCESS);
+                return;
+              }
+              if (pStatus === PAYMENT_STATUS.FAILED || pStatus === PAYMENT_STATUS.CANCELLED) {
+                setStatus(CHECKOUT_STATUS.FAILED);
+                return;
+              }
             }
           }
         }
       } catch (err) {
-        // Silently continue polling
+        // Silently ignore network hiccup during poll
       }
 
       if (!isCancelled) {
-        pollTimer = setTimeout(checkPaymentSuccess, 2500);
+        pollTimer = setTimeout(checkPaymentSuccess, 3000);
       }
     };
 
-    pollTimer = setTimeout(checkPaymentSuccess, 2500);
+    pollTimer = setTimeout(checkPaymentSuccess, 3000);
 
     return () => {
       isCancelled = true;
@@ -237,23 +239,35 @@ export function usePaymentCheckout() {
     setCancelError("");
   };
 
-  // Perform cancel reservation
+  // Perform cancel for reservation, renewal, transfer or invoice
   const handleConfirmCancel = async () => {
     const resId = reservation?.reservationId || reservation?.id || checkout?.reservationId || stateReservationId;
-    if (!resId) {
+    const rnwId = stateRenewalId || checkout?.renewalId;
+    const invId = stateInvoiceId || checkout?.invoiceId;
+    const trfId = stateTransferRequestId || checkout?.transferRequestId;
+
+    if (!resId && !rnwId && !invId && !trfId) {
       setCancelModalOpen(false);
-      navigate("/home");
+      navigate("/billing");
       return;
     }
 
     setCancelling(true);
     setCancelError("");
     try {
-      await reservationService.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
+      if (resId) {
+        await reservationService.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
+      } else if (rnwId) {
+        await rentalService.cancelRenewal(rnwId);
+      } else if (trfId) {
+        await rentalService.cancelTransferRequest(trfId);
+      } else if (invId) {
+        await rentalService.cancelInvoice(invId);
+      }
       setCancelModalOpen(false);
-      setStatus("failed");
+      setStatus(CHECKOUT_STATUS.FAILED);
     } catch (err) {
-      setCancelError(err?.message || "Hủy đơn đặt chỗ thất bại. Vui lòng thử lại.");
+      setCancelError(err?.message || "Hủy giao dịch thất bại. Vui lòng thử lại.");
     } finally {
       setCancelling(false);
     }

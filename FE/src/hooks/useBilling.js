@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/paymentService";
@@ -63,41 +63,81 @@ export function useBilling() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-    Promise.all([paymentService.getPaymentHistory(), paymentService.getUnpaidInvoices()])
-      .then(([history, unpaid]) => {
-        if (!active) return;
-        const list = Array.isArray(history) ? history : [];
-        const paymentInvoiceIds = new Set(list.map((item) => Number(item.invoiceId)).filter(Boolean));
-        const unpaidRows = (Array.isArray(unpaid) ? unpaid : [])
-          .filter((invoice) => !paymentInvoiceIds.has(Number(invoice.invoiceId)))
-          .map((invoice) => ({
-            paymentId: 0,
-            invoiceId: invoice.invoiceId,
-            invoiceNo: invoice.invoiceNo,
-            reservationId: invoice.reservationId,
-            reservationCode: invoice.reservationCode,
-            agreementNo: invoice.agreementNo,
-            amount: invoice.amountDue,
-            currency: invoice.currency,
-            method: "bank_transfer",
-            provider: "SePay",
-            status: invoice.status,
-            createdAt: invoice.createdAt,
-          }));
-        setPayments([...list, ...unpaidRows]);
-      })
-      .catch((err) => {
-        if (active) setError(err?.message || "Không thể tải lịch sử thanh toán.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+  const fetchInvoices = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const [history, unpaid] = await Promise.all([
+        paymentService.getPaymentHistory(),
+        paymentService.getUnpaidInvoices(),
+      ]);
+
+      const list = Array.isArray(history) ? history : [];
+      const unpaidRows = (Array.isArray(unpaid) ? unpaid : []).map((invoice) => ({
+        paymentId: 0,
+        invoiceId: invoice.invoiceId,
+        invoiceNo: invoice.invoiceNo,
+        reservationId: invoice.reservationId,
+        reservationCode: invoice.reservationCode,
+        agreementNo: invoice.agreementNo,
+        amount: invoice.amountDue,
+        currency: invoice.currency,
+        method: "bank_transfer",
+        provider: "SePay",
+        status: invoice.status,
+        createdAt: invoice.createdAt,
+      }));
+
+      const all = [...list, ...unpaidRows];
+      const deduplicatedMap = new Map();
+
+      // Status rank: Active/Pending/Open > Paid/Succeeded > Expired/Failed/Cancelled
+      const getRank = (status) => {
+        const s = (status || "").toLowerCase();
+        if (s === "pending" || s === "pending_payment" || s === "open" || s === "draft" || s === "overdue") return 3;
+        if (s === "succeeded" || s === "paid" || s === "approved") return 2;
+        return 1;
+      };
+
+      for (const item of all) {
+        const key = item.invoiceNo
+          ? item.invoiceNo.trim()
+          : item.invoiceId
+          ? `INV-${item.invoiceId}`
+          : item.reservationCode
+          ? `RSV-${item.reservationCode}`
+          : `PAY-${item.paymentId}`;
+
+        if (!deduplicatedMap.has(key)) {
+          deduplicatedMap.set(key, item);
+        } else {
+          const existing = deduplicatedMap.get(key);
+          const rankItem = getRank(item.status);
+          const rankExisting = getRank(existing.status);
+
+          if (rankItem > rankExisting) {
+            deduplicatedMap.set(key, item);
+          } else if (rankItem === rankExisting) {
+            const timeItem = new Date(item.createdAt || 0).getTime();
+            const timeExisting = new Date(existing.createdAt || 0).getTime();
+            if (timeItem > timeExisting) {
+              deduplicatedMap.set(key, item);
+            }
+          }
+        }
+      }
+
+      setPayments(Array.from(deduplicatedMap.values()));
+    } catch (err) {
+      setError(err?.message || "Không thể tải lịch sử thanh toán.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   const [tick, setTick] = useState(0);
 
@@ -188,6 +228,7 @@ export function useBilling() {
     filteredInvoices,
     loading,
     error,
+    reloadInvoices: fetchInvoices,
   };
 }
 

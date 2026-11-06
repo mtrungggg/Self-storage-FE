@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import rentalService from "../api/rentalService";
+import reservationService from "../api/reservationService";
 import { useBilling } from "../hooks/useBilling";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
@@ -18,7 +21,31 @@ function Billing() {
     filteredInvoices,
     loading,
     error,
+    reloadInvoices,
   } = useBilling();
+
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const handleCancelInvoice = async (inv) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy giao dịch chờ thanh toán này?")) return;
+    setActionLoading(inv.id);
+    try {
+      if (inv.renewalId) {
+        await rentalService.cancelRenewal(inv.renewalId);
+      } else if (inv.invoiceId) {
+        await rentalService.cancelInvoice(inv.invoiceId);
+      } else if (inv.reservationId) {
+        await reservationService.cancelReservation(inv.reservationId, "Khách hàng hủy trên trang Billing");
+      }
+      if (reloadInvoices) {
+        await reloadInvoices();
+      }
+    } catch (err) {
+      alert(err?.message || "Không thể hủy giao dịch. Vui lòng thử lại.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -202,26 +229,40 @@ function Billing() {
                       <td className="py-3.5 pr-3 text-right">
                         <div className="inline-flex items-center justify-end gap-2">
                           {inv.status === "upcoming" && (
-                            <button
-                              onClick={() =>
-                                navigate("/checkout", {
-                                  state: {
-                                    reservationId: inv.reservationId,
-                                    invoiceId: inv.invoiceId || null,
-                                    reservationCode: inv.reservationCode,
-                                    renewalId: inv.renewalId,
-                                    agreementNo: inv.agreementNo,
-                                    amount: inv.rawAmount,
-                                  },
-                                })
-                              }
-                              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-zinc-900 text-white px-3 text-[12px] font-semibold text-white shadow-xs transition hover:bg-[#154ec1] active:scale-[0.98]"
-                            >
-                              <span className="material-symbols-outlined text-[15px]">
-                                credit_card
-                              </span>
-                              {t("billing.pay_now", "Pay Now")}
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  navigate("/checkout", {
+                                    state: {
+                                      reservationId: inv.reservationId,
+                                      invoiceId: inv.invoiceId || null,
+                                      reservationCode: inv.reservationCode,
+                                      renewalId: inv.renewalId,
+                                      agreementNo: inv.agreementNo,
+                                      amount: inv.rawAmount,
+                                    },
+                                  })
+                                }
+                                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-zinc-900 text-white px-3 text-[12px] font-semibold shadow-xs transition hover:bg-[#154ec1] active:scale-[0.98]"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">
+                                  credit_card
+                                </span>
+                                {t("billing.pay_now", "Pay Now")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCancelInvoice(inv)}
+                                disabled={actionLoading === inv.id}
+                                className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-2.5 text-[12px] font-semibold shadow-xs transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                                title="Hủy giao dịch chờ thanh toán"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">
+                                  close
+                                </span>
+                                {actionLoading === inv.id ? t("common.loading", "...") : t("common.cancel", "Hủy")}
+                              </button>
+                            </>
                           )}
                           {inv.reservationId && (
                             <button
