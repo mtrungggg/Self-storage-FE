@@ -284,15 +284,6 @@ export default function ManagerTicketsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>+ Tạo sự cố / Ticket mới</span>
-          </button>
-
-          <button
-            type="button"
             onClick={loadTickets}
             disabled={loading}
             className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer"
