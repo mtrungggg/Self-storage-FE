@@ -48,8 +48,9 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const [ticketSubTab, setTicketSubTab] = useState("active"); // 'active' | 'completed'
   const [selectedStaffTicket, setSelectedStaffTicket] = useState(null);
 
-  // Active task type filter inside Issues tab
+  // Active task type and status filter inside Issues tab
   const [activeTaskType, setActiveTaskType] = useState("all");
+  const [taskStatusFilter, setTaskStatusFilter] = useState("active"); // 'active' | 'done' | 'all' 
 
   const requestId = useRef(0);
 
@@ -227,10 +228,15 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     })),
   ], [tasks]);
 
-  const filteredTasks = useMemo(
-    () => tasks.filter((task) => activeTaskType === "all" || task.taskType === activeTaskType),
-    [tasks, activeTaskType]
-  );
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (activeTaskType !== "all" && task.taskType !== activeTaskType) return false;
+      const isDone = task.status === "done" || task.status === "completed";
+      if (taskStatusFilter === "active" && isDone) return false;
+      if (taskStatusFilter === "done" && !isDone) return false;
+      return true;
+    });
+  }, [tasks, activeTaskType, taskStatusFilter]);
 
   const handleUpdateTask = (updated) => {
     setTasks((current) =>
@@ -447,14 +453,52 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                 {activeTab === "issues" && (
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-xs font-bold text-slate-700 uppercase">{t("staff.tasks", "Nhiệm vụ")}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-xs font-bold text-slate-700 uppercase">{t("staff.tasks", "Nhiệm vụ")}</h3>
+                        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
+                          <button
+                            type="button"
+                            onClick={() => setTaskStatusFilter("active")}
+                            className={`px-2.5 py-1 rounded transition cursor-pointer ${
+                              taskStatusFilter === "active"
+                                ? "bg-white text-slate-900 shadow-xs"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            Cần làm ({pendingTasks})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTaskStatusFilter("done")}
+                            className={`px-2.5 py-1 rounded transition cursor-pointer ${
+                              taskStatusFilter === "done"
+                                ? "bg-white text-slate-900 shadow-xs"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            Đã xong ({completedTasks})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTaskStatusFilter("all")}
+                            className={`px-2.5 py-1 rounded transition cursor-pointer ${
+                              taskStatusFilter === "all"
+                                ? "bg-white text-slate-900 shadow-xs"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            Tất cả ({totalTasks})
+                          </button>
+                        </div>
+                      </div>
+
                       <div className="flex flex-wrap gap-1">
                         {taskTabs.map((t) => (
                           <button
                             key={t.id}
                             type="button"
                             onClick={() => setActiveTaskType(t.id)}
-                            className={`px-2.5 py-1 text-xs rounded-md font-semibold capitalize transition ${
+                            className={`px-2 py-0.5 text-[11px] rounded font-semibold capitalize transition cursor-pointer ${
                               activeTaskType === t.id
                                 ? "bg-slate-900 text-white"
                                 : "text-slate-500 hover:bg-slate-100"
@@ -482,7 +526,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                                 {task.title || `Task #${task.id}`}
                               </strong>
                               <p className="text-[11px] text-slate-400 mt-0.5">
-                                {task.facilityCode || "HCM-TD"} • {task.status}
+                                {task.facilityCode || "HCM-TD"} • {task.status === "done" ? "done (đã xong)" : task.status}
                               </p>
                             </div>
                             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
