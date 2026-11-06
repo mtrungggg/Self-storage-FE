@@ -125,10 +125,13 @@ export const managerUserService = {
     try {
       const res = await apiClient.get("/manager/customers", { params: query });
       if (res?.success === true) {
-        const data = res.data;
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.items)) return data.items;
-        return [];
+        const raw = res.data;
+        const list = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
+        return list.map((c) => ({
+          ...c,
+          id: c.customerId ?? c.id,
+          customerCode: c.customerCode || `CUS-${c.customerId ?? c.id}`,
+        }));
       }
     } catch (err) {
       if (err.status !== 404) throw err;

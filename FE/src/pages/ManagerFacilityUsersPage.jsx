@@ -490,45 +490,53 @@ export default function ManagerFacilityUsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredCustomers.map((cus) => (
-                    <tr key={cus.id} className="hover:bg-slate-50/60 transition">
-                      <td className="px-4 py-3 font-semibold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700 text-[11px]">
-                            {(cus.fullName || "K").charAt(0).toUpperCase()}
-                          </span>
-                          <div>
-                            <div>{cus.fullName || `Khách hàng #${cus.id}`}</div>
-                            <span className="text-[10px] text-slate-400 font-mono">{cus.customerCode || `#${cus.id}`}</span>
+                  filteredCustomers.map((cus, idx) => {
+                    const cusId = cus.customerId ?? cus.id ?? idx;
+                    const hasActiveRentals = (cus.activeAgreements ?? 0) > 0 || cus.status === "active";
+                    return (
+                      <tr key={cusId} className="hover:bg-slate-50/60 transition">
+                        <td className="px-4 py-3 font-semibold text-slate-900">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700 text-[11px]">
+                              {(cus.fullName || "K").charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <div>{cus.fullName || `Khách hàng #${cusId}`}</div>
+                              <span className="text-[10px] text-slate-400 font-mono">{cus.customerCode || `#CUS-${cusId}`}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-4 py-3 text-slate-800 font-semibold">
-                        {cus.phoneNumber || "—"}
-                      </td>
+                        <td className="px-4 py-3 text-slate-800 font-semibold">
+                          {cus.phoneNumber || "—"}
+                        </td>
 
-                      <td className="px-4 py-3 text-slate-600 font-mono text-[11px]">
-                        {cus.email || "—"}
-                      </td>
+                        <td className="px-4 py-3 text-slate-600 font-mono text-[11px]">
+                          {cus.email || "—"}
+                        </td>
 
-                      <td className="px-4 py-3">
-                        <span className="inline-block rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          {cus.unitCode ? `Kho ${cus.unitCode}` : "—"}
-                        </span>
-                      </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-block rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                            {cus.unitCode ? `Kho ${cus.unitCode}` : (cus.activeAgreements > 0 ? `${cus.activeAgreements} kho đang thuê` : "Chưa có kho")}
+                          </span>
+                        </td>
 
-                      <td className="px-4 py-3 font-mono font-medium text-slate-700">
-                        {cus.agreementNo || "—"}
-                      </td>
+                        <td className="px-4 py-3 font-mono font-medium text-slate-700">
+                          {cus.agreementNo || `${cus.activeAgreements ?? 0} đang hoạt động (${cus.totalAgreements ?? 0} tổng)`}
+                        </td>
 
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 capitalize">
-                          {cus.status || "Đang thuê"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold capitalize ${
+                            hasActiveRentals
+                              ? "bg-emerald-50 text-emerald-800"
+                              : "bg-slate-100 text-slate-600"
+                          }`}>
+                            {cus.status || (hasActiveRentals ? "Đang thuê" : "Đã trả kho")}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
