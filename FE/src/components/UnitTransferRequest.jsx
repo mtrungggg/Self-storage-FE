@@ -64,7 +64,8 @@ function getUnitSizeLabel(sizeKey, areaM2, isVi) {
   }
 }
 
-export default function UnitTransferRequest({ agreementId, facilityId, currentFacilityName = "" }) {
+export default function UnitTransferRequest({ agreementId, unitId, facilityId, currentFacilityName = "" }) {
+  const resolvedAgreementId = agreementId || unitId;
   const { t, translateStatus, lang } = useLanguage();
   const isVi = lang === "vi";
   const [open, setOpen] = useState(false);
@@ -200,14 +201,14 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
 
   // Load / Update transfer preview whenever facility, unit type, or date changes
   useEffect(() => {
-    if (!open || !agreementId) return;
+    if (!open || !resolvedAgreementId) return;
     let active = true;
 
     const targetFacility = Number(selectedFacilityId) || Number(facilityId);
     const targetUnitType = Number(requestedUnitTypeId) || null;
 
     setPreviewLoading(true);
-    rentalService.getTransferPreview(agreementId, {
+    rentalService.getTransferPreview(resolvedAgreementId, {
       requestedFacilityId: targetFacility || undefined,
       requestedUnitTypeId: targetUnitType || undefined,
       moveOutDate: requestedEffectiveDate,
@@ -230,7 +231,7 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
       });
 
     return () => { active = false; };
-  }, [open, agreementId, selectedFacilityId, facilityId, requestedUnitTypeId, requestedEffectiveDate]);
+  }, [open, resolvedAgreementId, selectedFacilityId, facilityId, requestedUnitTypeId, requestedEffectiveDate]);
 
   const copyToClipboard = (text, fieldName) => {
     if (!text) return;
@@ -263,7 +264,7 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
     setLoading(true);
     setError("");
     try {
-      const data = await rentalService.requestUnitTransfer(agreementId, {
+      const data = await rentalService.requestUnitTransfer(resolvedAgreementId, {
         requestedUnitTypeId: unitTypeId,
         requestedFacilityId: targetFacility,
         moveOutDate: requestedEffectiveDate,
@@ -567,6 +568,21 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
                 {preview.totalRequiredPayment > 0 ? t("transfer.payment_pending", "Cần thanh toán thêm") : t("transfer.free_transfer", "Miễn phí")}
               </span>
             </div>
+
+            {preview.availableUnitsCount != null && (
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/70 dark:bg-zinc-900/50 border border-blue-100 dark:border-blue-900/30 text-[11px]">
+                <span className="text-slate-600 dark:text-zinc-400 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[15px] text-blue-600">warehouse</span>
+                  {t("transfer.units_in_stock", "Kho trống khả dụng tại cơ sở:")}
+                </span>
+                <span className={`font-bold ${preview.availableUnitsCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                  {preview.availableUnitsCount > 0
+                    ? `${preview.availableUnitsCount} ${t("transfer.units_available", "kho sẵn sàng")}`
+                    : t("transfer.waiting_availability", "Đang chờ sắp xếp")}
+                </span>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-blue-100 dark:border-blue-900/40 text-slate-600 dark:text-zinc-400">
               <div>

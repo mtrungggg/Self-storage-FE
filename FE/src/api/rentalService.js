@@ -3,9 +3,12 @@ import apiClient from "./apiClient";
 export const rentalService = {
   async getTransferPreview(agreementId, params = {}) {
     const query = new URLSearchParams();
-    if (params.requestedFacilityId) query.set("requestedFacilityId", params.requestedFacilityId);
-    if (params.requestedUnitTypeId) query.set("requestedUnitTypeId", params.requestedUnitTypeId);
-    if (params.moveOutDate) query.set("moveOutDate", params.moveOutDate);
+    const facilityId = params.requestedFacilityId ?? params.targetFacilityId;
+    const unitTypeId = params.requestedUnitTypeId ?? params.targetUnitTypeId;
+    const date = params.moveOutDate ?? params.targetMoveDate;
+    if (facilityId) query.set("requestedFacilityId", facilityId);
+    if (unitTypeId) query.set("requestedUnitTypeId", unitTypeId);
+    if (date) query.set("moveOutDate", date);
     const qs = query.toString();
     const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-preview${qs ? `?${qs}` : ""}`);
     if (res?.success !== true) throw new Error(res?.message || "Unable to load transfer preview.");

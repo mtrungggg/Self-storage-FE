@@ -345,11 +345,11 @@ export default function MyUnits() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[#f8faff] border border-[#eef2f9] p-3">
                       <div className="flex-1 min-w-[240px]">
-                        <MoveOutRequest agreementId={activeGalleryUnit.agreementId} />
+                        <MoveOutRequest agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id} />
                       </div>
                       <div className="flex-1 min-w-[240px]">
                         <UnitTransferRequest
-                          agreementId={activeGalleryUnit.agreementId}
+                          agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id}
                           facilityId={activeGalleryUnit.facilityId}
                           currentFacilityName={activeGalleryUnit.facilityName}
                         />
