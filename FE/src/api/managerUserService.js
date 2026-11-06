@@ -65,23 +65,11 @@ export const managerUserService = {
 
     // Fallback: POST /api/manager/facilities/{facilityId}/staff
     if (payload.facilityId) {
-      try {
-        const res = await apiClient.post(`/manager/facilities/${encodeURIComponent(payload.facilityId)}/staff`, payload);
-        if (res?.success === true) return res.data;
-      } catch (err2) {
-        if (err2.status !== 404) throw err2;
-      }
+      const res = await apiClient.post(`/manager/facilities/${encodeURIComponent(payload.facilityId)}/staff`, payload);
+      if (res?.success === true) return res.data;
     }
 
-    // Local fallback creation
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        ...payload,
-        isActive: true,
-      },
-    };
+    throw new Error("Không thể tạo nhân viên.");
   },
 
   /**
@@ -98,18 +86,11 @@ export const managerUserService = {
 
     // Fallback nếu scoped theo cơ sở
     if (payload.facilityId) {
-      try {
-        const res = await apiClient.put(`/manager/facilities/${encodeURIComponent(payload.facilityId)}/staff/${encodeURIComponent(id)}`, payload);
-        if (res?.success === true) return res.data;
-      } catch (err2) {
-        if (err2.status !== 404) throw err2;
-      }
+      const res = await apiClient.put(`/manager/facilities/${encodeURIComponent(payload.facilityId)}/staff/${encodeURIComponent(id)}`, payload);
+      if (res?.success === true) return res.data;
     }
 
-    return {
-      success: true,
-      data: { id, ...payload },
-    };
+    throw new Error("Không thể cập nhật thông tin nhân viên.");
   },
 
   /**
@@ -125,14 +106,10 @@ export const managerUserService = {
     }
 
     // Fallback to PUT
-    try {
-      const res = await apiClient.put(`/manager/staffs/${encodeURIComponent(id)}/status`, { isActive });
-      if (res?.success === true) return res.data;
-    } catch {
-      // Continue
-    }
+    const res = await apiClient.put(`/manager/staffs/${encodeURIComponent(id)}/status`, { isActive });
+    if (res?.success === true) return res.data;
 
-    return { success: true, id, isActive };
+    throw new Error("Không thể cập nhật trạng thái nhân viên.");
   },
 
   /**

@@ -154,7 +154,7 @@ export default function ManagerFacilityUsersPage() {
   async function handleSaveStaff(e) {
     e.preventDefault();
 
-    if (staffModalMode === "create" && staffFormData.password.trim().length < 6) {
+    if (staffModalMode === "create" && (!staffFormData.password || staffFormData.password.trim().length < 6)) {
       setErrorMsg("Mật khẩu ban đầu phải có ít nhất 6 ký tự.");
       return;
     }
@@ -178,7 +178,7 @@ export default function ManagerFacilityUsersPage() {
           isActive: staffFormData.isActive,
           facilityId: Number(facilityId || 1),
         };
-        await managerUserService.updateStaff(selectedStaff.id, payload);
+        const staffId = selectedStaff?.userId ?? selectedStaff?.id; await managerUserService.updateStaff(staffId, payload);
         setToastMsg(`Đã cập nhật thông tin nhân viên "${staffFormData.fullName}".`);
       }
       closeStaffModal();
@@ -192,22 +192,24 @@ export default function ManagerFacilityUsersPage() {
 
   // Toggle Active / Inactive for Staff
   async function handleToggleStaffStatus(staff) {
+    const targetStaffId = staff?.userId ?? staff?.id;
+    if (!targetStaffId) return;
     const nextStatus = !(staff.isActive ?? true);
-    setStatusUpdatingId(staff.id);
+    setStatusUpdatingId(targetStaffId);
     setErrorMsg("");
 
     // Optimistic UI update
     setStaffList((prev) =>
-      prev.map((s) => (s.id === staff.id ? { ...s, isActive: nextStatus } : s))
+      prev.map((s) => ((s.userId ?? s.id) === targetStaffId ? { ...s, isActive: nextStatus } : s))
     );
 
     try {
-      await managerUserService.updateStaffStatus(staff.id, nextStatus);
+      await managerUserService.updateStaffStatus(targetStaffId, nextStatus);
       setToastMsg(`Đã chuyển nhân viên "${staff.fullName || staff.name}" sang ${nextStatus ? "Hoạt động (Active)" : "Ngừng hoạt động (Inactive)"}.`);
     } catch (err) {
       // Revert if failed
       setStaffList((prev) =>
-        prev.map((s) => (s.id === staff.id ? { ...s, isActive: !nextStatus } : s))
+        prev.map((s) => ((s.userId ?? s.id) === targetStaffId ? { ...s, isActive: !nextStatus } : s))
       );
       setErrorMsg(err.message || "Không thể cập nhật trạng thái nhân viên.");
     } finally {
@@ -339,18 +341,19 @@ export default function ManagerFacilityUsersPage() {
                 ) : (
                   filteredStaffList.map((staff) => {
                     const isActive = staff.isActive ?? true;
-                    const isUpdating = statusUpdatingId === staff.id;
+                    const currentStaffId = staff?.userId ?? staff?.id;
+                    const isUpdating = statusUpdatingId === currentStaffId;
 
                     return (
-                      <tr key={staff.id} className="hover:bg-slate-50/60 transition">
+                      <tr key={currentStaffId ?? staff.employeeCode} className="hover:bg-slate-50/60 transition">
                         <td className="px-4 py-3 font-semibold text-slate-900">
                           <div className="flex items-center gap-2">
                             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
                               {(staff.fullName || staff.name || "S").charAt(0).toUpperCase()}
                             </span>
                             <div>
-                              <div>{staff.fullName || staff.name || `Staff #${staff.id}`}</div>
-                              <span className="text-[10px] text-slate-400 font-mono">ID: {staff.id}</span>
+                              <div>{staff.fullName || staff.name || `Staff #${currentStaffId}`}</div>
+                              <span className="text-[10px] text-slate-400 font-mono">ID: {currentStaffId}</span>
                             </div>
                           </div>
                         </td>
