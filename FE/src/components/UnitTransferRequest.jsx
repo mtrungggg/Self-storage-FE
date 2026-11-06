@@ -126,7 +126,8 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
     const matching = availableInCat.find((t) => getUnitSizeKey(t) === selectedSize);
     if (matching) {
       setRequestedUnitTypeId(String(matching.id));
-    } else if (availableInCat.length === 1) {
+    } else if (availableInCat.length > 0) {
+      // Tự động pre-select kích thước khả dụng đầu tiên của Loại kho mới
       setSelectedSize(getUnitSizeKey(availableInCat[0]));
       setRequestedUnitTypeId(String(availableInCat[0].id));
     } else {
