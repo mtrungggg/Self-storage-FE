@@ -8,11 +8,11 @@ import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
-import ReportCheckInIssueModal from "../components/ReportCheckInIssueModal";
 
 export default function StoragePass() {
   const navigate = useNavigate();
-  const { t, translateStatus } = useLanguage();
+  const { t, translateStatus, lang } = useLanguage();
+  const isVi = lang === "vi";
   const [searchParams, setSearchParams] = useSearchParams();
   const urlAgreementId = Number(searchParams.get("agreementId"));
 
@@ -72,7 +72,6 @@ export default function StoragePass() {
   const [declareRows, setDeclareRows] = useState([createEmptyItemRow()]);
   const [declareSaving, setDeclareSaving] = useState(false);
   const [declareError, setDeclareError] = useState("");
-  const [reportIssueModalOpen, setReportIssueModalOpen] = useState(false);
 
   useEffect(() => {
     if (urlAgreementId && activeRentals?.length > 0) {
@@ -302,14 +301,6 @@ export default function StoragePass() {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setReportIssueModalOpen(true)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-xs cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">report_problem</span>
-                      {t("my_units.report_issue", "Report Issue")}
-                    </button>
-                    <button
-                      type="button"
                       onClick={handleOpenDeclareModal}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#12b76a] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#0e9f5d] transition"
                     >
@@ -327,25 +318,16 @@ export default function StoragePass() {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleOpenUnlockModal}
-                    disabled={!selectedRentalId || credentialsLoading || isSuspended}
-                    className="flex flex-1 w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 text-white px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-zinc-800 transition disabled:opacity-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                    {t("access.lock_status_unlocked", "Unlock Unit")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportIssueModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition whitespace-nowrap cursor-pointer shadow-xs"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">report_problem</span>
-                    {t("my_units.report_issue", "Report Issue")}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenUnlockModal}
+                  disabled={!selectedRentalId || credentialsLoading || isSuspended}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 text-white px-4 py-3.5 text-sm font-bold shadow-sm hover:bg-zinc-800 transition disabled:opacity-50 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <span>{isVi ? "Kho đang khóa" : "Unit is Locked"}</span>
+                  <span className="text-xs font-normal opacity-75">({isVi ? "Bấm để mở" : "Tap to unlock"})</span>
+                </button>
               )}
             </div>
           </div>
@@ -680,19 +662,6 @@ export default function StoragePass() {
           document.body
         )}
 
-      <ReportCheckInIssueModal
-        target={{
-          unitCode: activeUnitCode,
-          agreementNo: selectedRental?.agreementNo,
-          customerName: selectedRental?.customerName,
-          storageUnitId: selectedRental?.storageUnitId || selectedRental?.unitId,
-          agreementId: selectedRental?.agreementId,
-          facilityId: selectedRental?.facilityId || 1,
-        }}
-        isOpen={reportIssueModalOpen}
-        onClose={() => setReportIssueModalOpen(false)}
-        isStaff={false}
-      />
     </div>
   );
 }
