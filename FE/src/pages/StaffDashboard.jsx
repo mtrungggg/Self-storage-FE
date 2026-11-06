@@ -21,9 +21,28 @@ import { TICKET_STATUS } from "../constants/ticketConstants";
 import { useSignalR } from "../context/SignalRContext";
 import { useLanguage } from "../context/LanguageContext";
 
+function getTaskTypeLabel(type, isVi) {
+  switch (type?.toLowerCase()) {
+    case "support":
+      return isVi ? "Hỗ trợ" : "Support";
+    case "inspection":
+      return isVi ? "Kiểm tra" : "Inspection";
+    case "maintenance":
+      return isVi ? "Bảo trì" : "Maintenance";
+    case "check_in":
+      return isVi ? "Nhận kho" : "Check-in";
+    case "check_out":
+      return isVi ? "Trả kho" : "Check-out";
+    case "other":
+      return isVi ? "Khác" : "Other";
+    default:
+      return type ? type.replaceAll("_", " ") : "";
+  }
+}
+
 export default function StaffDashboard({ initialTab = "checkin" }) {
   const { user } = useAuth();
-  const { t, translateStatus } = useLanguage();
+  const { t, translateStatus, lang } = useLanguage();
   const { subscribe, joinFacility, recentEvent } = useSignalR();
 
   const storageKey = user?.id ? `staff_selected_facility_id_${user.id}` : "staff_selected_facility_id";
@@ -48,9 +67,8 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const [ticketSubTab, setTicketSubTab] = useState("active"); // 'active' | 'completed'
   const [selectedStaffTicket, setSelectedStaffTicket] = useState(null);
 
-  // Active task type and status filter inside Issues tab
-  const [activeTaskType, setActiveTaskType] = useState("all");
-  const [taskStatusFilter, setTaskStatusFilter] = useState("active"); // 'active' | 'done' | 'all' 
+  // Single unified filter for Tasks inside Issues tab: 'all' | 'active' | 'done' | 'support' | 'inspection'
+  const [taskFilter, setTaskFilter] = useState("all");
 
   const requestId = useRef(0);
 
@@ -218,25 +236,37 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     );
   }, [myFacilityInfo, facilities, tasks, user, selectedFacilityId]);
 
-  // Task categories filter
-  const taskTabs = useMemo(() => [
-    { id: "all", label: "All Tasks", count: tasks.length },
-    ...[...new Set(tasks.map((task) => task.taskType).filter(Boolean))].map((type) => ({
-      id: type,
-      label: type.replaceAll("_", " "),
-      count: tasks.filter((task) => task.taskType === type).length,
-    })),
-  ], [tasks]);
+  // Single unified task filters list (All, To Do, Done, Support, Inspection)
+  const taskFilterItems = useMemo(() => {
+    const isVi = lang === "vi";
+    const items = [
+      { id: "all", label: isVi ? "Tất cả" : "All Tasks", count: totalTasks },
+      { id: "active", label: isVi ? "Cần làm" : "To Do", count: pendingTasks },
+      { id: "done", label: isVi ? "Đã xong" : "Done", count: completedTasks },
+    ];
+
+    const distinctTypes = [...new Set(tasks.map((task) => task.taskType).filter(Boolean))];
+    for (const type of distinctTypes) {
+      items.push({
+        id: type,
+        label: getTaskTypeLabel(type, isVi),
+        count: tasks.filter((task) => task.taskType === type).length,
+      });
+    }
+
+    return items;
+  }, [lang, totalTasks, pendingTasks, completedTasks, tasks]);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      if (activeTaskType !== "all" && task.taskType !== activeTaskType) return false;
-      const isDone = task.status === "done" || task.status === "completed";
-      if (taskStatusFilter === "active" && isDone) return false;
-      if (taskStatusFilter === "done" && !isDone) return false;
-      return true;
-    });
-  }, [tasks, activeTaskType, taskStatusFilter]);
+    if (taskFilter === "all") return tasks;
+    if (taskFilter === "active") {
+      return tasks.filter((task) => task.status !== "done" && task.status !== "completed");
+    }
+    if (taskFilter === "done") {
+      return tasks.filter((task) => task.status === "done" || task.status === "completed");
+    }
+    return tasks.filter((task) => task.taskType === taskFilter);
+  }, [tasks, taskFilter]);
 
   const handleUpdateTask = (updated) => {
     setTasks((current) =>
@@ -452,59 +482,23 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                 {activeTab === "issues" && (
                   <div className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-xs font-bold text-slate-700 uppercase">{t("staff.tasks", "Nhiệm vụ")}</h3>
-                        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        {t("staff.tasks", "Nhiệm vụ")}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
+                        {taskFilterItems.map((item) => (
                           <button
+                            key={item.id}
                             type="button"
-                            onClick={() => setTaskStatusFilter("active")}
+                            onClick={() => setTaskFilter(item.id)}
                             className={`px-2.5 py-1 rounded transition cursor-pointer ${
-                              taskStatusFilter === "active"
+                              taskFilter === item.id
                                 ? "bg-white text-slate-900 shadow-xs"
                                 : "text-slate-500 hover:text-slate-900"
                             }`}
                           >
-                            Cần làm ({pendingTasks})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTaskStatusFilter("done")}
-                            className={`px-2.5 py-1 rounded transition cursor-pointer ${
-                              taskStatusFilter === "done"
-                                ? "bg-white text-slate-900 shadow-xs"
-                                : "text-slate-500 hover:text-slate-900"
-                            }`}
-                          >
-                            Đã xong ({completedTasks})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTaskStatusFilter("all")}
-                            className={`px-2.5 py-1 rounded transition cursor-pointer ${
-                              taskStatusFilter === "all"
-                                ? "bg-white text-slate-900 shadow-xs"
-                                : "text-slate-500 hover:text-slate-900"
-                            }`}
-                          >
-                            Tất cả ({totalTasks})
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1">
-                        {taskTabs.map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => setActiveTaskType(t.id)}
-                            className={`px-2 py-0.5 text-[11px] rounded font-semibold capitalize transition cursor-pointer ${
-                              activeTaskType === t.id
-                                ? "bg-slate-900 text-white"
-                                : "text-slate-500 hover:bg-slate-100"
-                            }`}
-                          >
-                            {t.label} ({t.count})
+                            {item.label} ({item.count})
                           </button>
                         ))}
                       </div>
