@@ -1,5 +1,5 @@
 import DatePicker from "@/components/ui/date-picker";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
 import facilityService from "../api/facilityService";
 import SupportDropdown from "./SupportDropdown";
@@ -11,8 +11,62 @@ function localDate() {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }
 
+function getUnitCategory(type) {
+  const n = (type?.name || "").toLowerCase();
+  const c = (type?.code || "").toLowerCase();
+  if (n.includes("climate") || c.includes("climate")) return "climate_controlled";
+  if (n.includes("seafood") || n.includes("freeze") || n.includes("cold") || c.includes("seafood")) return "cold_seafood";
+  if (n.includes("warm") || n.includes("heat") || c.includes("warm")) return "heated_warm";
+  if (n.includes("locker") || c.includes("mini") || n.includes("mini smart")) return "smart_locker";
+  return "dry_standard";
+}
+
+function getUnitCategoryLabel(catKey, isVi) {
+  switch (catKey) {
+    case "climate_controlled":
+      return isVi ? "Kho mát điều hòa (Climate-Controlled)" : "Climate-Controlled Storage";
+    case "cold_seafood":
+      return isVi ? "Kho lạnh / Thủy hải sản (Cold / Deep Freeze)" : "Cold / Deep Freeze Storage";
+    case "heated_warm":
+      return isVi ? "Kho giữ nhiệt (Heated Warm Storage)" : "Heated Warm Storage";
+    case "smart_locker":
+      return isVi ? "Tủ đồ thông minh (Smart Dry Locker)" : "Smart Dry Locker";
+    case "dry_standard":
+    default:
+      return isVi ? "Kho tiêu chuẩn / Khô (Dry Goods Storage)" : "Standard Dry Goods Storage";
+  }
+}
+
+function getUnitSizeKey(type) {
+  const area = Number(type?.areaM2 || (type?.widthM * type?.lengthM) || 0);
+  if (area <= 1.5) return "mini";
+  if (area <= 3.5) return "small";
+  if (area <= 6.5) return "medium";
+  if (area <= 10.5) return "large";
+  return "xlarge";
+}
+
+function getUnitSizeLabel(sizeKey, areaM2, isVi) {
+  const areaText = areaM2 ? `${areaM2} m²` : "";
+  switch (sizeKey) {
+    case "mini":
+      return isVi ? "Mini (1 m² - 1.2 m³)" : "Mini (1 m² - 1.2 m³)";
+    case "small":
+      return isVi ? `Nhỏ - Small (${areaText || "3 m²"} - 7.5 m³)` : `Small (${areaText || "3 m²"} - 7.5 m³)`;
+    case "medium":
+      return isVi ? `Vừa - Medium (${areaText || "6 m²"} - 15 m³)` : `Medium (${areaText || "6 m²"} - 15 m³)`;
+    case "large":
+      return isVi ? `Lớn - Large (${areaText || "10 m²"} - 28 m³)` : `Large (${areaText || "10 m²"} - 28 m³)`;
+    case "xlarge":
+      return isVi ? `Rất lớn - XL (${areaText || "16 m²"} - 48 m³)` : `Extra Large (${areaText || "16 m²"} - 48 m³)`;
+    default:
+      return `${areaText || sizeKey}`;
+  }
+}
+
 export default function UnitTransferRequest({ agreementId, facilityId, currentFacilityName = "" }) {
-  const { t, translateStatus } = useLanguage();
+  const { t, translateStatus, lang } = useLanguage();
+  const isVi = lang === "vi";
   const [open, setOpen] = useState(false);
   const [facilities, setFacilities] = useState([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(false);
@@ -21,6 +75,76 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
   const [unitTypes, setUnitTypes] = useState([]);
   const [typesLoading, setTypesLoading] = useState(false);
   const [requestedUnitTypeId, setRequestedUnitTypeId] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+
+  const categoryOptions = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    unitTypes.forEach((t) => {
+      const cat = getUnitCategory(t);
+      if (!seen.has(cat)) {
+        seen.add(cat);
+        list.push({
+          value: cat,
+          label: getUnitCategoryLabel(cat, isVi),
+        });
+      }
+    });
+    return list;
+  }, [unitTypes, isVi]);
+
+  const sizeOptions = useMemo(() => {
+    const filteredTypes = selectedCategory
+      ? unitTypes.filter((t) => getUnitCategory(t) === selectedCategory)
+      : unitTypes;
+
+    const seen = new Set();
+    const list = [];
+    filteredTypes.forEach((t) => {
+      const sz = getUnitSizeKey(t);
+      if (!seen.has(sz)) {
+        seen.add(sz);
+        const area = Number(t.areaM2 || (t.widthM * t.lengthM) || 0);
+        list.push({
+          value: sz,
+          label: getUnitSizeLabel(sz, area, isVi),
+          area,
+        });
+      }
+    });
+    return list.sort((a, b) => a.area - b.area);
+  }, [unitTypes, selectedCategory, isVi]);
+
+  const selectedUnitType = useMemo(() => {
+    return unitTypes.find((t) => String(t.id) === String(requestedUnitTypeId));
+  }, [unitTypes, requestedUnitTypeId]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    const availableInCat = unitTypes.filter((t) => getUnitCategory(t) === cat);
+    const matching = availableInCat.find((t) => getUnitSizeKey(t) === selectedSize);
+    if (matching) {
+      setRequestedUnitTypeId(String(matching.id));
+    } else if (availableInCat.length === 1) {
+      setSelectedSize(getUnitSizeKey(availableInCat[0]));
+      setRequestedUnitTypeId(String(availableInCat[0].id));
+    } else {
+      setSelectedSize("");
+      setRequestedUnitTypeId("");
+    }
+  };
+
+  const handleSizeChange = (sz) => {
+    setSelectedSize(sz);
+    if (!selectedCategory) return;
+    const matching = unitTypes.find(
+      (t) => getUnitCategory(t) === selectedCategory && getUnitSizeKey(t) === sz
+    );
+    if (matching) {
+      setRequestedUnitTypeId(String(matching.id));
+    }
+  };
   const [requestedEffectiveDate, setRequestedEffectiveDate] = useState(localDate);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -367,18 +491,53 @@ export default function UnitTransferRequest({ agreementId, facilityId, currentFa
           </div>
         )}
 
-        <SupportDropdown
-          label={t("transfer.target_type", "Target Unit Type")}
-          icon="view_in_ar"
-          disabled={typesLoading || (preview && !preview.canTransfer)}
-          value={requestedUnitTypeId}
-          onChange={setRequestedUnitTypeId}
-          placeholder={typesLoading ? t("common.loading", "Loading...") : t("transfer.target_type", "Target Type")}
-          options={unitTypes.map((type) => ({
-            value: String(type.id),
-            label: `${type.name || type.displayName || `Type #${type.id}`}${type.dimensions ? ` (${type.dimensions})` : ""}`,
-          }))}
-        />
+        {/* Tách loại kho và kích thước ra 2 dropdown riêng biệt */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <SupportDropdown
+              label={isVi ? "1. Loại Kho & Tiện Ích" : "1. Storage Environment"}
+              icon="category"
+              disabled={typesLoading || (preview && !preview.canTransfer)}
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              placeholder={typesLoading ? t("common.loading", "Đang tải...") : (isVi ? "Chọn loại kho..." : "Select type...")}
+              options={categoryOptions}
+            />
+
+            <SupportDropdown
+              label={isVi ? "2. Kích Thước & Diện Tích" : "2. Unit Size"}
+              icon="aspect_ratio"
+              disabled={typesLoading || (preview && !preview.canTransfer) || !selectedCategory}
+              value={selectedSize}
+              onChange={handleSizeChange}
+              placeholder={
+                !selectedCategory
+                  ? (isVi ? "← Chọn loại kho trước" : "← Select type first")
+                  : (isVi ? "Chọn kích thước..." : "Select size...")
+              }
+              options={sizeOptions}
+            />
+          </div>
+
+          {selectedUnitType && (
+            <div className="flex items-center justify-between rounded-xl bg-blue-50/70 dark:bg-zinc-800/60 border border-blue-200 dark:border-zinc-700 p-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-[18px]">verified</span>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-zinc-100">{selectedUnitType.name}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    {selectedUnitType.widthM}m × {selectedUnitType.lengthM}m × {selectedUnitType.heightM}m 
+                    {selectedUnitType.areaM2 ? ` • ${selectedUnitType.areaM2} m²` : ""}
+                    {selectedUnitType.volumeM3 ? ` • ${selectedUnitType.volumeM3} m³` : ""}
+                  </p>
+                </div>
+              </div>
+              <span className="font-mono text-[11px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded">
+                {selectedUnitType.code}
+              </span>
+            </div>
+          )}
+        </div>
 
         <label className="block font-semibold text-slate-600 dark:text-zinc-400">
           {t("transfer.effective_date", "Target Date")}
