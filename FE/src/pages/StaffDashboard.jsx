@@ -26,10 +26,12 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const { t, translateStatus } = useLanguage();
   const { subscribe, joinFacility, recentEvent } = useSignalR();
 
+  const storageKey = user?.id ? `staff_selected_facility_id_${user.id}` : "staff_selected_facility_id";
+
   // Cơ sở vận hành đang chọn — được xác định từ API /staff/my-facility (phân công thật của nhân viên),
   // chỉ dùng giá trị lưu ở localStorage nếu đã từng được xác định trước đó trong phiên này.
   const [selectedFacilityId, setSelectedFacilityId] = useState(
-    () => localStorage.getItem("staff_selected_facility_id") || null
+    () => localStorage.getItem(storageKey) || null
   );
   const [myFacilityInfo, setMyFacilityInfo] = useState(null);
   const [activeTab, setActiveTab] = useState(initialTab === "overdue" ? "checkin" : initialTab); // 'checkin' | 'moveout' | 'units' | 'shifts' | 'issues'
@@ -81,17 +83,22 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     }
   };
 
-  // Xác định cơ sở nhân viên thực sự được phân công (chỉ chạy khi chưa có facilityId nào được chọn)
+  // Xác định cơ sở nhân viên thực sự được phân công và đồng bộ cache theo user
   useEffect(() => {
-    if (selectedFacilityId) return;
     let cancelled = false;
     staffFacilityService
       .getMyFacility()
       .then((info) => {
         if (cancelled || !info?.facilityId) return;
         setMyFacilityInfo(info);
-        setSelectedFacilityId(String(info.facilityId));
-        localStorage.setItem("staff_selected_facility_id", String(info.facilityId));
+        const assignedId = String(info.facilityId);
+        setSelectedFacilityId((current) => {
+          if (current !== assignedId) {
+            localStorage.setItem(storageKey, assignedId);
+            return assignedId;
+          }
+          return current;
+        });
       })
       .catch((err) => {
         console.error("Failed to resolve staff's assigned facility:", err);
@@ -99,7 +106,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     return () => {
       cancelled = true;
     };
-  }, [selectedFacilityId]);
+  }, [user?.id, storageKey]);
 
   useEffect(() => {
     if (!selectedFacilityId) return;

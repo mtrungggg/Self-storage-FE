@@ -167,6 +167,7 @@ export default function ManagerFacilityUsersPage() {
         const payload = {
           ...staffFormData,
           facilityId: Number(facilityId || 1),
+          assignmentRole: staffFormData.position || "facility_staff",
         };
         await managerUserService.createStaff(payload);
         setToastMsg(`Đã thêm nhân viên "${staffFormData.fullName}" thành công.`);
@@ -175,10 +176,12 @@ export default function ManagerFacilityUsersPage() {
           fullName: staffFormData.fullName,
           phoneNumber: staffFormData.phoneNumber,
           position: staffFormData.position,
+          assignmentRole: staffFormData.position,
           isActive: staffFormData.isActive,
           facilityId: Number(facilityId || 1),
         };
-        const staffId = selectedStaff?.userId ?? selectedStaff?.id; await managerUserService.updateStaff(staffId, payload);
+        const staffId = selectedStaff?.userId ?? selectedStaff?.id;
+        await managerUserService.updateStaff(staffId, payload);
         setToastMsg(`Đã cập nhật thông tin nhân viên "${staffFormData.fullName}".`);
       }
       closeStaffModal();

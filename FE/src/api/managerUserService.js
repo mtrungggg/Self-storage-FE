@@ -98,15 +98,17 @@ export const managerUserService = {
    * Toggle Active / Inactive
    */
   async updateStaffStatus(id, isActive) {
+    const status = isActive ? "active" : "inactive";
+    const payload = { status, isActive };
     try {
-      const res = await apiClient.patch(`/manager/staffs/${encodeURIComponent(id)}/status`, { isActive });
+      const res = await apiClient.patch(`/manager/staffs/${encodeURIComponent(id)}/status`, payload);
       if (res?.success === true) return res.data;
     } catch (err) {
       if (err.status !== 404) throw err;
     }
 
     // Fallback to PUT
-    const res = await apiClient.put(`/manager/staffs/${encodeURIComponent(id)}/status`, { isActive });
+    const res = await apiClient.put(`/manager/staffs/${encodeURIComponent(id)}/status`, payload);
     if (res?.success === true) return res.data;
 
     throw new Error("Không thể cập nhật trạng thái nhân viên.");
