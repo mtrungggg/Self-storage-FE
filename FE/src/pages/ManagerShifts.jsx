@@ -348,7 +348,7 @@ function ManagerShifts() {
                 role !== USER_ROLES.FACILITY_MANAGER.toLowerCase() &&
                 role !== "facility_manager" &&
                 role !== "manager" &&
-                s.assignmentRole !== USER_ROLES.FACILITY_MANAGER
+                s.assignmentRole !== USER_ROLES.FACILITY_MANAGER && (!s.employmentStatus || String(s.employmentStatus).toLowerCase() === "active")
               );
             })
             .map((s) => ({
@@ -1618,3 +1618,4 @@ function ManagerShifts() {
 }
 
 export default ManagerShifts;
+
