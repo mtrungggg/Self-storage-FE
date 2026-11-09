@@ -15,7 +15,7 @@ function formatInspectionErrorMessage(err) {
   const lower = msg.toLowerCase();
 
   if (lower.includes("condition") || lower.includes("điều kiện")) {
-    return "Vui lòng kiểm tra tình trạng nghiệm thu kho hoặc tình trạng hư hại của từng hạng mục (Hư hỏng, Bẩn, Gãy vỡ...).";
+    return `Vui lòng kiểm tra tình trạng nghiệm thu kho hoặc tình trạng hư hại của từng hạng mục. Chi tiết: ${msg}`;
   }
   if (lower.includes("ck__move_out_request") || lower.includes("finalized")) {
     return "Hợp đồng trả kho đã được xử lý hoặc đã hoàn tất biên bản trước đó.";
@@ -32,11 +32,19 @@ function formatInspectionErrorMessage(err) {
   return msg || "Không thể gửi biên bản kiểm tra. Vui lòng thử lại.";
 }
 
+function cleanUnitCode(code) {
+  if (!code || code === "N/A") return "—";
+  let s = String(code).trim();
+  s = s.replace(/^(Unit|Ô kho|Kho)\s*/i, "");
+  s = s.replace(/-(PENDING|INSPECT|OCCUPIED|AVAILABLE|CLEANING|MAINTENANCE|RESERVED|RENTED|VACANT).*$/i, "");
+  return s.trim() || "—";
+}
+
 const DEFAULT_DAMAGE_ITEMS = [
-  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "150000", condition: "dirty", notes: "" },
+  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "150000", condition: "damaged", notes: "" },
   { itemName: "Trầy xước / Sơn tường ố bẩn", cost: "300000", condition: "damaged", notes: "" },
   { itemName: "Móp méo / Kẹt ray cửa cuốn", cost: "500000", condition: "damaged", notes: "" },
-  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "200000", condition: "broken", notes: "" },
+  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "200000", condition: "damaged", notes: "" },
 ];
 
 export default function InspectionFormModal({ inspection, isOpen, onClose, onSuccess }) {
@@ -50,7 +58,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
 
   const [hasDamage, setHasDamage] = useState(false);
   const [damageItems, setDamageItems] = useState([
-    { itemName: "Dọn dẹp vệ sinh kho", cost: "200000", condition: "dirty", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
+    { itemName: "Dọn dẹp vệ sinh kho", cost: "200000", condition: "damaged", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
   ]);
   const [manualDamageCost, setManualDamageCost] = useState("");
   const [evidenceUrls, setEvidenceUrls] = useState([]);
@@ -170,7 +178,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
               itemName: item.itemName.trim(),
               cost: Number(item.cost || 0),
               notes: item.notes?.trim() || "",
-              condition: item.condition || "damaged",
+              condition: item.condition === "missing" ? "missing" : "damaged",
             }))
           : [],
         damageItemNames: hasDamage
@@ -208,7 +216,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                 fact_check
               </span>
               <h2 id="inspection-modal-title" className="text-base font-bold text-slate-900">
-                Biên bản kiểm tra trả kho · Kho {inspection.unitCode && inspection.unitCode !== "N/A" ? inspection.unitCode : (inspection.storageUnitCode || "—")}
+                Biên bản kiểm tra trả kho · Ô kho {cleanUnitCode(inspection.unitCode && inspection.unitCode !== "N/A" ? inspection.unitCode : (inspection.storageUnitCode || "—"))}
               </h2>
             </div>
             <p className="mt-1 text-xs text-slate-500">

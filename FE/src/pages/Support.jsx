@@ -138,7 +138,7 @@ function Support() {
                     icon="category"
                     value={category}
                     onChange={setCategory}
-                    options={SUPPORT_CATEGORIES.map((item) => ({ value: item.value, label: item.label }))}
+                    options={SUPPORT_CATEGORIES.map((item) => ({ value: item.value, label: t("support.cat_" + item.value, item.label) }))}
                   />
                 </div>
 

@@ -14,24 +14,24 @@ export const DEFAULT_STAFF_AVATARS = Object.freeze([
 ]);
 
 export const DEFAULT_STORAGE_UNIT_IMAGE =
-  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6vQvGRB6gtHfaCHV6HGkSMY2MX6yms6f0fIWviNxwV-VPGg3qifeMjHvx&s=10";
 
 export const STORAGE_TYPE_PLACEHOLDERS = Object.freeze({
-  "S-DRY": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-  "M-DRY": "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
-  "M-SEAFOOD": "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=800&q=80",
-  "L-WARM": "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
-  "XL-CLIMATE": "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80",
-  "MINI-DRY": "https://images.unsplash.com/photo-1554774853-719586f82d77?auto=format&fit=crop&w=800&q=80",
-  "S-SEAFOOD": "https://images.unsplash.com/photo-1516542076529-1ea3854896f2?auto=format&fit=crop&w=800&q=80",
-  "M-WARM": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+  "S-DRY": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6vQvGRB6gtHfaCHV6HGkSMY2MX6yms6f0fIWviNxwV-VPGg3qifeMjHvx&s=10",
+  "M-DRY": "https://hips.hearstapps.com/hmg-prod/images/self-storage-facility-interior-with-tools-royalty-free-image-1727987323.jpg?crop=0.671xw:1.00xh;0.325xw,0&resize=1200:*",
+  "M-SEAFOOD": "https://cdn-zero-one.storagekingusa.com/media/44f1a0b5-ad57-4a4c-b8af-06ebd9c6d8c9.webp",
+  "L-WARM": "https://spacevalet.in/wp-content/uploads/2024/07/SpaceValet_Sewri_0042-6-scaled.webp",
+  "XL-CLIMATE": "https://spacehubstore.com/assets/static/articles/v4/head/background-desktop.png",
+  "MINI-DRY": "https://www.aa-ministorage.com/wp-content/uploads/2019/09/AA-139.jpg",
+  "S-SEAFOOD": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6vQvGRB6gtHfaCHV6HGkSMY2MX6yms6f0fIWviNxwV-VPGg3qifeMjHvx&s=10",
+  "M-WARM": "https://hips.hearstapps.com/hmg-prod/images/self-storage-facility-interior-with-tools-royalty-free-image-1727987323.jpg?crop=0.671xw:1.00xh;0.325xw,0&resize=1200:*",
 });
 
 export const FACILITY_GALLERY_PHOTOS = Object.freeze([
-  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1590496793929-36417d3117de?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1549194388-f61be84a6e9e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6vQvGRB6gtHfaCHV6HGkSMY2MX6yms6f0fIWviNxwV-VPGg3qifeMjHvx&s=10",
+  "https://hips.hearstapps.com/hmg-prod/images/self-storage-facility-interior-with-tools-royalty-free-image-1727987323.jpg?crop=0.671xw:1.00xh;0.325xw,0&resize=1200:*",
+  "https://cdn-zero-one.storagekingusa.com/media/44f1a0b5-ad57-4a4c-b8af-06ebd9c6d8c9.webp",
+  "https://spacevalet.in/wp-content/uploads/2024/07/SpaceValet_Sewri_0042-6-scaled.webp",
+  "https://spacehubstore.com/assets/static/articles/v4/head/background-desktop.png",
+  "https://www.aa-ministorage.com/wp-content/uploads/2019/09/AA-139.jpg",
 ]);

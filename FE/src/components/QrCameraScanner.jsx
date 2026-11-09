@@ -22,8 +22,12 @@ export default function QrCameraScanner({ onScan, onClose }) {
         await qrScanner.start(
           { facingMode: "environment" },
           {
-            fps: 12,
-            qrbox: { width: 240, height: 240 },
+            fps: 15,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const qrboxEdgeSize = Math.max(220, Math.floor(minEdge * 0.75));
+              return { width: qrboxEdgeSize, height: qrboxEdgeSize };
+            },
             aspectRatio: 1.0,
           },
           (decodedText) => {

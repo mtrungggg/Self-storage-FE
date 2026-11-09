@@ -36,32 +36,36 @@ function PaymentCheckout() {
   const bankCode = checkout?.vietQr?.bankCode || "MBBank";
   const accountNo = checkout?.vietQr?.accountNo || "0817495759";
   const accountName = checkout?.vietQr?.accountName || "VO THAI HOANG KHOI";
-  const memo = checkout?.vietQr?.transferContent || checkout?.invoiceNo || (reservation?.reservationCode ? `DH${reservation.reservationCode.slice(-4)}` : "DH5010");
+  const memo = checkout?.vietQr?.transferContent || checkout?.invoiceNo || (reservation?.reservationCode ? `DH${reservation.reservationCode.slice(-4)}` : "");
 
   const qrCandidateUrls = useMemo(() => {
     const list = [];
     const roundedAmount = Math.round(Number(displayAmount) || 0);
 
-    list.push(
-      `https://qr.sepay.vn/img?bank=${encodeURIComponent(bankCode)}&acc=${encodeURIComponent(accountNo)}&template=compact&amount=${roundedAmount}&des=${encodeURIComponent(memo)}`
-    );
-
-    list.push(
-      `https://img.vietqr.io/image/${encodeURIComponent(bankCode)}-${encodeURIComponent(accountNo)}-compact.png?amount=${roundedAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(accountName)}`
-    );
-
     if (checkout?.vietQr?.qrImageUrl) {
-      const normalized = checkout.vietQr.qrImageUrl.replace("https://vietqr.app/img", "https://qr.sepay.vn/img");
-      if (!list.includes(normalized)) list.push(normalized);
       if (!list.includes(checkout.vietQr.qrImageUrl)) list.push(checkout.vietQr.qrImageUrl);
+      const sepayFallback = checkout.vietQr.qrImageUrl.replace("https://vietqr.app/img", "https://qr.sepay.vn/img");
+      if (!list.includes(sepayFallback)) list.push(sepayFallback);
     }
 
-    const emvcoPayload = `2|99|${bankCode}|${accountNo}|${accountName}|0|0|${roundedAmount}|${memo}`;
-    list.push(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(emvcoPayload)}`);
+    if (bankCode && accountNo) {
+      const qronlyVietQr = `https://vietqr.app/img?bank=${encodeURIComponent(bankCode)}&acc=${encodeURIComponent(accountNo)}&template=qronly&showinfo=false&holder=${encodeURIComponent(accountName)}${roundedAmount > 0 ? `&amount=${roundedAmount}` : ""}${memo ? `&des=${encodeURIComponent(memo)}` : ""}`;
+      if (!list.includes(qronlyVietQr)) list.push(qronlyVietQr);
+
+      list.push(
+        `https://qr.sepay.vn/img?bank=${encodeURIComponent(bankCode)}&acc=${encodeURIComponent(accountNo)}&template=qronly&amount=${roundedAmount}&des=${encodeURIComponent(memo)}`
+      );
+
+      list.push(
+        `https://img.vietqr.io/image/${encodeURIComponent(bankCode)}-${encodeURIComponent(accountNo)}-qronly.png?amount=${roundedAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(accountName)}`
+      );
+
+      const emvcoPayload = `2|99|${bankCode}|${accountNo}|${accountName}|0|0|${roundedAmount}|${memo}`;
+      list.push(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(emvcoPayload)}`);
+    }
 
     return list;
   }, [bankCode, accountNo, accountName, memo, displayAmount, checkout?.vietQr?.qrImageUrl]);
-
   const [qrIndex, setQrIndex] = useState(0);
   const [copiedField, setCopiedField] = useState(null);
 
@@ -245,14 +249,21 @@ function PaymentCheckout() {
               )}
 
               <div className="mt-4 flex flex-col items-center">
-                <div className="relative h-[290px] w-[290px] overflow-hidden rounded-[18px] border-2 border-[#dfe7f5] bg-white p-2.5 shadow-sm transition hover:shadow-md">
-                  <img
-                    key={currentQrSrc}
-                    src={currentQrSrc}
-                    alt="VietQR Payment Code"
-                    onError={handleQrImgError}
-                    className="h-full w-full object-contain"
-                  />
+                <div className="relative h-[290px] w-[290px] overflow-hidden rounded-[18px] border-2 border-[#dfe7f5] bg-white p-2.5 shadow-sm transition hover:shadow-md flex items-center justify-center">
+                  {currentQrSrc ? (
+                    <img
+                      key={currentQrSrc}
+                      src={currentQrSrc}
+                      alt="VietQR Payment Code"
+                      onError={handleQrImgError}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-[#8996a9] p-4 text-center">
+                      <span className="material-symbols-outlined text-[40px] text-[#cbd5e1] mb-2">qr_code_scanner</span>
+                      <span className="text-xs">{t("billing.qr_not_available", "QR code is being generated...")}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-2 text-[11px] text-[#8996a9] flex items-center gap-1.5">
@@ -270,39 +281,43 @@ function PaymentCheckout() {
                 <div className="mt-4 w-full rounded-[16px] bg-[#f8faff] border border-[#e8effd] p-4 text-left text-[12px] space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[#64748b]">{t("common.bank_name", "Bank")}:</span>
-                    <span className="font-bold text-[#0b1c30]">{bankCode}</span>
+                    <span className="font-bold text-[#0b1c30]">{bankCode || "—"}</span>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-[#edf2fc] pt-2">
                     <span className="text-[#64748b]">{t("common.account_number", "Account Number")}:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-[13px] text-[#0b1c30]">{accountNo}</span>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(accountNo, "acc")}
-                        className="rounded-md bg-white border border-[#dfe7f5] px-2 py-0.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-[#edf3ff] transition"
-                      >
-                        {copiedField === "acc" ? t("common.confirm", "Copied") : t("common.download", "Copy")}
-                      </button>
+                      <span className="font-mono font-bold text-[13px] text-[#0b1c30]">{accountNo || "—"}</span>
+                      {accountNo && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(accountNo, "acc")}
+                          className="rounded-md bg-white border border-[#dfe7f5] px-2 py-0.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-[#edf3ff] transition cursor-pointer"
+                        >
+                          {copiedField === "acc" ? t("common.copied", "Copied") : t("common.copy", "Copy")}
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-[#edf2fc] pt-2">
                     <span className="text-[#64748b]">{t("common.account_holder", "Account Holder")}:</span>
-                    <span className="font-bold text-[#0b1c30]">{accountName}</span>
+                    <span className="font-bold text-[#0b1c30]">{accountName || "—"}</span>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-[#edf2fc] pt-2">
                     <span className="text-[#64748b]">{t("common.notes", "Memo")}:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-[13px] text-zinc-900 dark:text-zinc-100">{memo}</span>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(memo, "memo")}
-                        className="rounded-md bg-white border border-[#dfe7f5] px-2 py-0.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-[#edf3ff] transition"
-                      >
-                        {copiedField === "memo" ? t("common.confirm", "Copied") : t("common.download", "Copy")}
-                      </button>
+                      <span className="font-mono font-black text-[13px] text-zinc-900 dark:text-zinc-100">{memo || "—"}</span>
+                      {memo && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(memo, "memo")}
+                          className="rounded-md bg-white border border-[#dfe7f5] px-2 py-0.5 text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-[#edf3ff] transition cursor-pointer"
+                        >
+                          {copiedField === "memo" ? t("common.copied", "Copied") : t("common.copy", "Copy")}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -342,12 +357,12 @@ function PaymentCheckout() {
                 <span className="material-symbols-outlined text-[22px]">warning</span>
               </div>
               <div>
-                <h3 className="text-[16px] font-bold text-[#0b1c30]">{t("common.confirm", "Confirm Cancel")}</h3>
+                <h3 className="text-[16px] font-bold text-[#0b1c30]">{t("reservation.cancel_confirm_title", "Confirm Cancel")}</h3>
               </div>
             </div>
 
             <p className="mt-4 text-[13px] leading-relaxed text-[#58657a]">
-              {t("common.warning", "Are you sure you want to cancel this reservation?")}
+              {t("reservation.cancel_confirm_message", "Are you sure you want to cancel this reservation?")}
             </p>
 
             {cancelError && (
@@ -371,7 +386,7 @@ function PaymentCheckout() {
                 disabled={cancelling}
                 className="rounded-[10px] bg-[#d92d20] px-4 py-2 text-[13px] font-bold text-white shadow transition hover:bg-[#b42318] disabled:opacity-50"
               >
-                {cancelling ? t("common.loading", "Cancelling...") : t("common.cancel", "Confirm Cancel")}
+                {cancelling ? t("common.loading", "Cancelling...") : t("reservation.cancel_confirm_title", "Confirm Cancel")}
               </button>
             </div>
           </div>

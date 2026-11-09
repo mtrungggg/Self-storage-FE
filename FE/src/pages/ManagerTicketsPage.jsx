@@ -101,6 +101,7 @@ export default function ManagerTicketsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [error, setError] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [closingTicketId, setClosingTicketId] = useState(null);
@@ -124,7 +125,15 @@ export default function ManagerTicketsPage() {
     [t]
   );
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const loadTickets = async () => {
+    if (!facilityId) return;
     const cur = ++requestId.current;
     setLoading(true);
     setError("");
@@ -133,11 +142,11 @@ export default function ManagerTicketsPage() {
       const data = await managerTicketService.getTickets({
         facilityId,
         status: statusFilter || undefined,
-        search: searchQuery || undefined,
+        search: debouncedSearch.trim() || undefined,
       });
 
       if (cur === requestId.current) {
-        setTickets(Array.isArray(data) ? data : []);
+        setTickets(Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []));
       }
     } catch (err) {
       if (cur === requestId.current) {
@@ -151,7 +160,7 @@ export default function ManagerTicketsPage() {
   useEffect(() => {
     loadTickets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facilityId, statusFilter]);
+  }, [facilityId, statusFilter, debouncedSearch]);
 
   // Join facility group and listen to SignalR updates
   useEffect(() => {
@@ -176,8 +185,8 @@ export default function ManagerTicketsPage() {
   const filteredTickets = useMemo(() => {
     let list = [...tickets];
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.trim().toLowerCase();
       list = list.filter(
         (t) =>
           String(t.ticketNo || t.id).toLowerCase().includes(q) ||
@@ -214,7 +223,7 @@ export default function ManagerTicketsPage() {
     });
 
     return list;
-  }, [tickets, searchQuery, statusFilter]);
+  }, [tickets, debouncedSearch, statusFilter]);
 
   // Counters
   const pendingReviewCount = useMemo(() => {

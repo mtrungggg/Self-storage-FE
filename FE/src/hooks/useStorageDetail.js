@@ -5,6 +5,7 @@ import reservationService from "../api/reservationService";
 import { DEFAULT_STORAGE_UNIT_IMAGE } from "../constants/assets";
 import BUSINESS_CONFIG from "../config/businessConfig";
 import paymentService from "../api/paymentService";
+import { useLanguage } from "../context/LanguageContext";
 
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -36,6 +37,8 @@ function nextFriday(base) {
 export function useStorageDetail() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
+  const isVi = lang === "vi";
   const unitFromState = location.state?.unit;
 
   // Selected unit details or fallback default matching BE seed data
@@ -94,10 +97,10 @@ export function useStorageDetail() {
     () => [
       { id: "today", label: `Today (${formatDateCompact(today)})` },
       { id: "tomorrow", label: `Tomorrow (${formatDateCompact(tomorrow)})` },
-      { id: "fri", label: formatDateCompact(friday) },
-      { id: "custom", label: "Custom Date" },
+      { id: "fri", label: formatDateCompact(friday, isVi) },
+      { id: "custom", label: t("booking.custom_date", "Custom Date") },
     ],
-    [today, tomorrow, friday]
+    [today, tomorrow, friday, t, isVi]
   );
 
   const resolvedStartDate = useMemo(() => {
@@ -114,7 +117,7 @@ export function useStorageDetail() {
 
   // Derived display values
   const holdCountdownStr = `${String(Math.floor(holdCountdown / 60)).padStart(2, "0")}:${String(holdCountdown % 60).padStart(2, "0")}`;
-  const resolvedStartDateLabel = formatDateCompact(resolvedStartDate);
+  const resolvedStartDateLabel = formatDateCompact(resolvedStartDate, isVi);
 
   // Real pricing quote from the backend
   const [pricing, setPricing] = useState(null);

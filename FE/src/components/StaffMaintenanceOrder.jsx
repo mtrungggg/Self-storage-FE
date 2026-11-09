@@ -60,7 +60,7 @@ export default function StaffMaintenanceOrder({
         <label className="font-semibold">Estimated cost<input type="number" min="0" step="1000" required value={estimatedCost} onChange={(event) => setEstimatedCost(event.target.value)} className="mt-1 block w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-[#0b1c30]" /></label>
       </div>
       <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={blocksBooking} onChange={(event) => setBlocksBooking(event.target.checked)} /> Block new bookings for this unit</label>
-      {error && <p role="alert" className="rounded-lg bg-red-100 p-2 text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-100 p-2 text-red-700">{t(error, error)}</p>}
       <button disabled={loading} className="rounded-lg bg-[#b42318] px-3 py-2 font-bold text-white disabled:opacity-50">{loading ? "Creating..." : "Create order"}</button>
     </form>}
   </div>;

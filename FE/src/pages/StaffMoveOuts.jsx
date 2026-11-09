@@ -13,6 +13,14 @@ function today() {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
+function cleanUnitCode(code) {
+  if (!code || code === "N/A") return "—";
+  let s = String(code).trim();
+  s = s.replace(/^(Unit|Ô kho|Kho)\s*/i, "");
+  s = s.replace(/-(PENDING|INSPECT|OCCUPIED|AVAILABLE|CLEANING|MAINTENANCE|RESERVED|RENTED|VACANT).*$/i, "");
+  return s.trim() || "—";
+}
+
 export default function StaffMoveOuts() {
   const { t, translateStatus } = useLanguage();
   const [query, setQuery] = useState(() => ({ date: today() }));
@@ -60,26 +68,12 @@ export default function StaffMoveOuts() {
             <p className="mb-3 text-sm text-[#58657a]">{items.length} {t("staff.moveout_tab", "Trả kho")} · {query.date}</p>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {items.map((item) => <article key={item.id} className="min-w-0 rounded-xl border border-[#dfe7f5] bg-white p-4 text-sm">
-                <div className="flex flex-wrap justify-between gap-2"><h2 className="font-bold">{t("common.unit", "Kho")} {item.unitCode || "—"}</h2><span className="rounded-full bg-[#eef4ff] px-2 py-1 text-xs">{translateStatus(item.status)}</span></div>
+                <div className="flex flex-wrap justify-between gap-2"><h2 className="font-bold">{t("common.unit", "Ô kho")} {cleanUnitCode(item.unitCode)}</h2><span className="rounded-full bg-[#eef4ff] px-2 py-1 text-xs">{translateStatus(item.status)}</span></div>
                 <dl className="mt-3 space-y-2">
                   {[[t("common.customer", "Khách hàng"), item.customerName || item.customerId], [t("common.agreement", "Hợp đồng"), item.agreementNo || item.agreementId], [t("common.facility", "Cơ sở"), item.facilityId], [t("moveout.moveout_date", "Ngày trả kho"), item.requestedMoveOutDate]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
                 </dl>
                 <p className="mt-3 whitespace-pre-wrap break-words border-t pt-3">{item.reason || t("common.no_notes", "Không có ghi chú")}</p>
-                {item.status === MOVE_OUT_STATUS.COMPLETED && (
-                  <div className="mt-2">
-                    {item.refundMethod === "cash" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                        <span className="material-symbols-outlined text-[14px]">payments</span>
-                        {t("moveout.cash_paid", "Đã chi trả tiền mặt tại quầy")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        {t("moveout.pending_transfer", "Đang chờ Quản lý chuyển khoản")}
-                      </span>
-                    )}
-                  </div>
-                )}
+
                 <MoveOutInspection
                   moveOut={item}
                   onCompleted={(id, extra) =>

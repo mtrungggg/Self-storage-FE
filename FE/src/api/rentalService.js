@@ -1,6 +1,11 @@
 import apiClient from "./apiClient";
 
 export const rentalService = {
+  async getLatestTransferRequest(agreementId) {
+    const res = await apiClient.get(`/customer/rentals/${encodeURIComponent(agreementId)}/transfer-request`);
+    if (res?.success !== true) throw new Error(res?.message || "Unable to check transfer payment status.");
+    return res.data ?? null;
+  },
   async getTransferPreview(agreementId, params = {}) {
     const query = new URLSearchParams();
     const facilityId = params.requestedFacilityId ?? params.targetFacilityId;
@@ -45,11 +50,38 @@ export const rentalService = {
     if (!res.data || res.data.agreementId == null) throw new Error("The server did not return a refund estimate.");
     return res.data;
   },
-  async requestMoveOut(agreementId, { requestedMoveOutDate, reason }) {
-    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/move-out`, { requestedMoveOutDate, reason });
+  async requestMoveOut(agreementId, payload) {
+    const {
+      requestedMoveOutDate,
+      reason,
+      bankName,
+      bankAccountNumber,
+      accountNumber,
+      bankAccountHolder,
+      accountHolder,
+    } = payload || {};
+    const res = await apiClient.post(`/customer/rentals/${encodeURIComponent(agreementId)}/move-out`, {
+      requestedMoveOutDate,
+      reason,
+      bankName,
+      bankAccountNumber: bankAccountNumber || accountNumber,
+      bankAccountHolder: bankAccountHolder || accountHolder,
+    });
     if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to request move-out.");
     if (!res.data || res.data.id == null) throw new Error("The server did not return the move-out request.");
     return res.data;
+  },
+  async submitRefundBankInfo(refundId, data) {
+    const res = await apiClient.post(`/customer/rentals/refunds/${encodeURIComponent(refundId)}/bank-info`, data);
+    if (res?.success !== true) throw new Error(res?.message || res?.errors?.join(", ") || "Unable to submit refund bank info.");
+    return res?.data ?? true;
+  },
+  /**
+   * Các khoản hoàn cọc đang chờ khách nhập STK (kể cả hợp đồng đã kết thúc)
+   */
+  async getPendingBankInfoRefunds() {
+    const res = await apiClient.get("/customer/rentals/refunds/pending-bank-info");
+    return res?.data ?? [];
   },
   /**
    * Lấy danh sách hợp đồng thuê kho (đang hoạt động & lịch sử) của khách hàng

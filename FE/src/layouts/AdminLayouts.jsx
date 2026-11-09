@@ -36,15 +36,13 @@ function ManagementShell() {
 
   return (
     <div className={`admin-shell ${isAdminView ? "admin-reference" : ""} relative flex min-h-screen bg-white dark:bg-zinc-950 text-[#0b1c30] dark:text-zinc-100`}>
-      {!isAdminView && (
-        <AdminSidebar
-          navGroups={sidebarNav}
-          activeId={activeId}
-          isOpen={mobileSidebarOpen}
-          onClose={closeMobileSidebar}
-          isAdmin={false}
-        />
-      )}
+      <AdminSidebar
+        navGroups={sidebarNav}
+        activeId={activeId}
+        isOpen={mobileSidebarOpen}
+        onClose={closeMobileSidebar}
+        isAdmin={Boolean(isAdminView)}
+      />
       <div className="flex min-w-0 flex-1 flex-col w-full">
         <AdminTopbar
           profile={profile}

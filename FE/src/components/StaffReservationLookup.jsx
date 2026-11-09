@@ -152,14 +152,6 @@ export default function StaffReservationLookup() {
 
   const [qrData, setQrData] = useState(null);
 
-  const [qrNotes, setQrNotes] = useState("");
-
-  const [qrActionLoading, setQrActionLoading] = useState(false);
-
-  const [qrActionSuccess, setQrActionSuccess] = useState("");
-
-  const [qrActionResult, setQrActionResult] = useState(null);
-
   const [issueModalTarget, setIssueModalTarget] = useState(null);
 
 
@@ -378,8 +370,6 @@ export default function StaffReservationLookup() {
 
     setToastMsg("");
 
-    setQrActionSuccess("");
-
     setQrData(null);
 
     setSearched(true);
@@ -424,120 +414,29 @@ export default function StaffReservationLookup() {
 
 
 
-  /**
-
-   * STT 8: Xác nhận hành động từ mã QR
-
-   * POST /api/staff/qr/confirm-action & POST /api/staff/handovers nếu là check-in
-
-   */
-
-  async function handleConfirmQrAction(actionName) {
-
-    if (!qrData || qrActionLoading) return;
-
-    setQrActionLoading(true);
-
-    setQrActionSuccess("");
-
-    setQrActionResult(null);
-
-    setError("");
-
-
-
-    try {
-
-      const payload = {
-
-        actionType: actionName || qrData.actionType || "",
-
-        reservationId: qrData.reservation?.reservationId || null,
-
-        agreementId: qrData.agreement?.agreementId || null,
-
-        transferRequestId: qrData.transferRequest?.transferRequestId || null,
-
-        moveOutId: qrData.moveOutId || qrData.agreement?.moveOutId || null,
-
-        unitId: qrData.unit?.unitId || qrData.agreement?.unitId || null,
-
-        notes: qrNotes.trim(),
-
-      };
-
-
-
-      const result = await staffQrService.confirmAction(payload);
-
-      setQrActionResult(result);
-
-      setQrActionSuccess(result?.message || `Xử lý hành động "${payload.actionType}" thành công!`);
-
-
-
-      // Nếu hành động là nhận kho/check-in, gọi đồng thời handover API
-
-      if (payload.reservationId) {
-
-        await staffReservationService.createHandover({
-
-          reservationId: Number(payload.reservationId),
-
-          handoverType: "check_in",
-
-          overallCondition: "good",
-
-          notes: "Xác nhận bàn giao từ mã QR.",
-
-        });
-
-      }
-
-
-
-      const unitCode = qrData.unit?.unitCode || qrData.agreement?.unitCode;
-
-      if (unitCode) {
-
-        confirmFacilityCheckIn({
-
-          unitCode,
-
-          agreementNo: qrData.agreement?.agreementNo,
-
-          reservationCode: qrData.reservation?.reservationCode,
-
-          customerName: qrData.customer?.fullName,
-
-          facilityCode: qrData.unit?.facilityName || qrData.agreement?.facilityName,
-
-        });
-
-      }
-
-    } catch (err) {
-
-      setError(err.message || "Không thể xác nhận hành động QR.");
-
-    } finally {
-
-      setQrActionLoading(false);
-
-    }
-
-  }
-
 
 
   async function search(keyword = query.trim(), clearResults = true, autoCheckInOnScan = false) {
 
-    if (!keyword) {
+    const trimmed = String(keyword || "").trim();
 
-      setError("Nhập mã đặt chỗ, số điện thoại hoặc chuỗi QR để tra cứu.");
+    if (!trimmed) {
+
+      setError("Nhập mã hợp đồng, mã đơn giữ chỗ, hoặc chuỗi QR để tra cứu.");
 
       return;
 
+    }
+
+    // Nếu nhập mã hợp đồng (AGR-...) hoặc chuỗi QR (CHK|..., CHECKIN:..., TRANSFER:..., MOVEOUT:...), tự động kích hoạt xác minh check-in
+    if (
+      trimmed.toUpperCase().startsWith("AGR-") ||
+      trimmed.startsWith("CHK|") ||
+      trimmed.startsWith("CHECKIN:") ||
+      trimmed.startsWith("TRANSFER:") ||
+      trimmed.startsWith("MOVEOUT:")
+    ) {
+      return verifyQrCode(trimmed.toUpperCase().startsWith("AGR-") ? trimmed.toUpperCase() : trimmed);
     }
 
 
@@ -570,7 +469,7 @@ export default function StaffReservationLookup() {
 
     const lookupKeyword = parsed.isQrPayload
 
-      ? parsed.reservationCode || parsed.unitCode || parsed.agreementNo
+      ? parsed.reservationCode || parsed.agreementNo || parsed.unitCode
 
       : keyword;
 
@@ -830,7 +729,7 @@ export default function StaffReservationLookup() {
 
         <label className="min-w-[260px] flex-1 text-xs font-semibold text-[#58657a]">
 
-          {t("staff_lookup.enter_code", "Mã đặt chỗ / Số điện thoại / Chuỗi QR")}
+          {t("staff_lookup.enter_code", "Mã hợp đồng / Mã đơn giữ chỗ / Chuỗi QR")}
 
           <input
 
@@ -840,31 +739,9 @@ export default function StaffReservationLookup() {
 
             onChange={(event) => setQuery(event.target.value)}
 
-            placeholder={t("staff_lookup.lookup_input_placeholder", "VD: RSV-1002, số ĐT khách, hoặc dán chuỗi QR...")}
+            placeholder={t("staff_lookup.lookup_input_placeholder", "VD: AGR-2026-DQ05, RSV-1002, số ĐT khách...")}
 
             className="mt-1 w-full rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-zinc-900 dark:border-zinc-100"
-
-          />
-
-        </label>
-
-        <label className="text-xs font-semibold text-[#58657a]">
-
-          {t("common.facility", "Cơ sở")} (ID)
-
-          <input
-
-            type="number"
-
-            min="1"
-
-            step="1"
-
-            value={facilityId}
-
-            onChange={(event) => setFacilityId(event.target.value)}
-
-            className="mt-1 block w-24 rounded-[9px] border border-[#dfe7f5] px-3 py-2 text-sm text-[#0b1c30] outline-none focus:border-zinc-900 dark:border-zinc-100"
 
           />
 
@@ -1108,42 +985,6 @@ export default function StaffReservationLookup() {
 
                   type="button"
 
-                  onClick={() =>
-
-                    setIssueModalTarget({
-
-                      unitCode: qrData.unit?.unitCode || qrData.reservation?.unitCode,
-
-                      agreementNo: qrData.agreement?.agreementNo,
-
-                      customerName: qrData.customer?.fullName,
-
-                      storageUnitId: qrData.unit?.storageUnitId || qrData.unit?.unitId,
-
-                      agreementId: qrData.agreement?.id || qrData.agreement?.agreementId,
-
-                      facilityId: qrData.agreement?.facilityId || qrData.unit?.facilityId || facilityId,
-
-                    })
-
-                  }
-
-                  className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
-
-                  title="Báo cáo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
-
-                >
-
-                  <span className="material-symbols-outlined text-[15px]">report_problem</span>
-
-                  <span>Báo sự cố kho</span>
-
-                </button>
-
-                <button
-
-                  type="button"
-
                   onClick={() => setQrReassignOpen((v) => !v)}
 
                   className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 shadow-xs"
@@ -1202,153 +1043,6 @@ export default function StaffReservationLookup() {
 
           )}
 
-
-
-          {/* Notes input for confirm-action */}
-
-          <div className="mt-3 border-t border-indigo-100 pt-3">
-
-            <label className="block text-xs font-semibold text-slate-700">
-
-              Ghi chú bàn giao / kiểm tra:
-
-              <input
-
-                type="text"
-
-                value={qrNotes}
-
-                onChange={(e) => setQrNotes(e.target.value)}
-
-                placeholder="VD: Đã đối chiếu CCCD, chìa khóa/khoá mã số hoạt động tốt..."
-
-                className="mt-1 w-full rounded-lg border border-[#dfe7f5] bg-white px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-indigo-500"
-
-              />
-
-            </label>
-
-          </div>
-
-
-
-          {/* Allowed Actions */}
-
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-
-            <div className="text-xs text-slate-600">
-
-              Xác nhận thao tác bàn giao / nhận kho:
-
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-
-              {Array.isArray(qrData.allowedActions) && qrData.allowedActions.length > 0 ? (
-
-                qrData.allowedActions.map((actionName) => (
-
-                  <button
-
-                    key={actionName}
-
-                    type="button"
-
-                    disabled={qrActionLoading}
-
-                    onClick={() => handleConfirmQrAction(actionName)}
-
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
-
-                  >
-
-                    <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-
-                    <span>Xác nhận: {actionName}</span>
-
-                  </button>
-
-                ))
-
-              ) : (
-
-                <button
-
-                  type="button"
-
-                  disabled={qrActionLoading}
-
-                  onClick={() => handleConfirmQrAction(qrData.actionType || "confirm")}
-
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition disabled:opacity-50"
-
-                >
-
-                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-
-                  <span>Xác nhận bàn giao</span>
-
-                </button>
-
-              )}
-
-            </div>
-
-          </div>
-
-
-
-          {qrActionResult && (
-
-            <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-950 space-y-1">
-
-              <div className="font-bold text-emerald-800 flex items-center gap-1.5">
-
-                <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
-
-                <span>{qrActionResult.message || qrActionSuccess || "Đã bàn giao kho thành công."}</span>
-
-              </div>
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-slate-700">
-
-                {qrActionResult.actionType && (
-
-                  <span>Hành động: <strong>{qrActionResult.actionType}</strong></span>
-
-                )}
-
-                {qrActionResult.agreementId > 0 && (
-
-                  <span>Hợp đồng #{qrActionResult.agreementId}: <strong className="text-emerald-700">{qrActionResult.agreementStatus || "Đang hoạt động"}</strong></span>
-
-                )}
-
-                {qrActionResult.unitId > 0 && (
-
-                  <span>Kho #{qrActionResult.unitId}: <strong className="text-emerald-700">{qrActionResult.unitStatus || "Đã bàn giao"}</strong></span>
-
-                )}
-
-              </div>
-
-            </div>
-
-          )}
-
-
-
-          {!qrActionResult && qrActionSuccess && (
-
-            <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-bold text-emerald-800 flex items-center gap-2">
-
-              <span className="material-symbols-outlined text-emerald-600 text-[18px]">done_all</span>
-
-              {qrActionSuccess}
-
-            </div>
-
-          )}
 
         </div>
 
@@ -1445,72 +1139,6 @@ export default function StaffReservationLookup() {
                       <span className="text-[11px] text-[#58657a]">Chờ xác nhận bàn giao</span>
 
                     )}
-
-                    <div className="flex flex-wrap items-center gap-2">
-
-                      <button
-
-                        type="button"
-
-                        onClick={() =>
-
-                          setIssueModalTarget({
-
-                            unitCode: unit.unitCode,
-
-                            agreementNo: unit.currentAgreementNo,
-
-                            customerName: unit.customerName,
-
-                            storageUnitId: unit.unitId,
-
-                            facilityId: facilityId || 1,
-
-                          })
-
-                        }
-
-                        className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
-
-                        title="Báo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
-
-                      >
-
-                        <span className="material-symbols-outlined text-[15px]">report_problem</span>
-
-                        <span>Báo sự cố</span>
-
-                      </button>
-
-                      <button
-
-                        type="button"
-
-                        onClick={() =>
-
-                          confirmFacilityCheckIn({
-
-                            unitCode: unit.unitCode,
-
-                            agreementNo: unit.currentAgreementNo,
-
-                            customerName: unit.customerName,
-
-                          })
-
-                        }
-
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#0e7b4c] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d] cursor-pointer"
-
-                      >
-
-                        <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
-
-                        <span>{checkedRecord ? "Bàn giao lại" : "Xác nhận bàn giao"}</span>
-
-                      </button>
-
-                    </div>
 
                   </div>
 
@@ -1640,42 +1268,6 @@ export default function StaffReservationLookup() {
 
                     {/* Nút Báo sự cố kho */}
 
-                    <button
-
-                      type="button"
-
-                      onClick={() =>
-
-                        setIssueModalTarget({
-
-                          unitCode: resolvedUnitCode,
-
-                          reservationCode: item.reservationCode,
-
-                          agreementNo: item.agreementNo,
-
-                          customerName: item.customerName,
-
-                          storageUnitId: item.storageUnitId,
-
-                          facilityId: item.facilityId || facilityId,
-
-                        })
-
-                      }
-
-                      className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 shadow-xs cursor-pointer"
-
-                      title="Báo cáo sự cố kho cho Facility Manager khi kho bẩn hoặc hỏng"
-
-                    >
-
-                      <span className="material-symbols-outlined text-[15px]">report_problem</span>
-
-                      <span>Báo sự cố kho</span>
-
-                    </button>
-
 
 
                     {/* Nút Đổi ô kho tương đương */}
@@ -1710,35 +1302,21 @@ export default function StaffReservationLookup() {
 
                     {/* Nút Xác nhận bàn giao */}
 
+                    {!isHandedOver && (
                     <button
-
                       type="button"
-
                       disabled={handoverLoadingId === item.reservationId}
-
                       onClick={() => handleConfirmHandover(item)}
-
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[#0e7b4c] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#0b633d] disabled:opacity-50"
-
                     >
-
                       <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-
                       <span>
-
                         {handoverLoadingId === item.reservationId
-
                           ? "Đang bàn giao..."
-
-                          : isHandedOver
-
-                          ? "Bàn giao lại"
-
                           : "Xác nhận bàn giao"}
-
                       </span>
-
                     </button>
+                    )}
 
                   </div>
 

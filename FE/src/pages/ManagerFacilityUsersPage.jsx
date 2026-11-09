@@ -159,6 +159,11 @@ export default function ManagerFacilityUsersPage() {
       return;
     }
 
+    if (!facilityId || Number(facilityId) <= 0) {
+      setErrorMsg("Vui lòng chọn cơ sở quản lý hợp lệ trước khi thao tác.");
+      return;
+    }
+
     setStaffSubmitting(true);
     setErrorMsg("");
 
@@ -166,7 +171,7 @@ export default function ManagerFacilityUsersPage() {
       if (staffModalMode === "create") {
         const payload = {
           ...staffFormData,
-          facilityId: Number(facilityId || 1),
+          facilityId: Number(facilityId),
           assignmentRole: staffFormData.position || "facility_staff",
         };
         await managerUserService.createStaff(payload);
@@ -178,7 +183,7 @@ export default function ManagerFacilityUsersPage() {
           position: staffFormData.position,
           assignmentRole: staffFormData.position,
           isActive: staffFormData.isActive,
-          facilityId: Number(facilityId || 1),
+          facilityId: Number(facilityId),
         };
         const staffId = selectedStaff?.userId ?? selectedStaff?.id;
         await managerUserService.updateStaff(staffId, payload);

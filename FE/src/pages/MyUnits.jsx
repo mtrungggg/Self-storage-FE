@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
@@ -10,17 +10,20 @@ import { BRAND_NAME } from "../constants/brand";
 import { CoverflowCarousel } from "@/components/ui/coverflow-carousel";
 import RentalRenewal from "../components/RentalRenewal";
 import MoveOutRequest from "../components/MoveOutRequest";
+import PendingRefundBankInfo from "../components/PendingRefundBankInfo";
 import UnitTransferRequest from "../components/UnitTransferRequest";
+import UnitInformation from "../components/UnitInformation";
 import { CardSkeleton } from "../components/SkeletonLoader";
 import EmptyState from "../components/EmptyState";
+import HandoverReportModal from "../components/HandoverReportModal";
 
 const UNIT_CARD_IMAGES = [
-  "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1590247813693-5541d1c609fd?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6vQvGRB6gtHfaCHV6HGkSMY2MX6yms6f0fIWviNxwV-VPGg3qifeMjHvx&s=10",
+  "https://hips.hearstapps.com/hmg-prod/images/self-storage-facility-interior-with-tools-royalty-free-image-1727987323.jpg?crop=0.671xw:1.00xh;0.325xw,0&resize=1200:*",
+  "https://cdn-zero-one.storagekingusa.com/media/44f1a0b5-ad57-4a4c-b8af-06ebd9c6d8c9.webp",
+  "https://spacevalet.in/wp-content/uploads/2024/07/SpaceValet_Sewri_0042-6-scaled.webp",
+  "https://spacehubstore.com/assets/static/articles/v4/head/background-desktop.png",
+  "https://www.aa-ministorage.com/wp-content/uploads/2019/09/AA-139.jpg",
 ];
 
 export default function MyUnits() {
@@ -41,19 +44,30 @@ export default function MyUnits() {
   const [handoverLoading, setHandoverLoading] = useState(false);
   const [handoverError, setHandoverError] = useState("");
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
+  const handoverRequest = useRef(0);
+
+  const handleCloseHandover = () => {
+    handoverRequest.current += 1;
+    setIsHandoverModalOpen(false);
+  };
 
   const handleOpenHandover = async (unit) => {
+    const requestId = ++handoverRequest.current;
     setIsHandoverModalOpen(true);
     setHandoverLoading(true);
     setHandoverError("");
     setHandoverData(null);
     try {
       const data = await rentalService.getHandoverRecord(unit.agreementId);
-      setHandoverData(data);
+      if (requestId === handoverRequest.current) setHandoverData(data);
     } catch (err) {
-      setHandoverError(err.message || t("common.error", "Error loading record"));
+      if (requestId === handoverRequest.current) {
+        setHandoverError(err.status === 404
+          ? t("customer.handover_pending_notice", "Chưa có biên bản được ghi nhận. Nhân viên tại cơ sở sẽ lập biên bản sau khi kiểm tra và bàn giao thực tế.")
+          : err.message || t("common.error", "Error loading record"));
+      }
     } finally {
-      setHandoverLoading(false);
+      if (requestId === handoverRequest.current) setHandoverLoading(false);
     }
   };
 
@@ -107,7 +121,7 @@ export default function MyUnits() {
         unitTypeCode: r.unitTypeCode || "STANDARD",
         facilityName: r.facilityName || BRAND_NAME,
         status: isExpiringSoon ? "renew" : "active",
-        statusLabel: isExpiringSoon ? t("status.overdue", "Expiring") : t("status.occupied", "Active"),
+        statusLabel: isExpiringSoon ? t("my_units.expiring_soon", "Sắp hết hạn") : t("status.occupied", "Active"),
         contractDate: `#${r.agreementNo || "AGR-2026"}`,
         contractLeft: r.endDate
           ? `${t("common.due_date", "Expires")}: ${formatDate(r.endDate)}`
@@ -137,7 +151,7 @@ export default function MyUnits() {
     return filteredUnits.map((u, idx) => ({
       id: String(u.id),
       title: `${t("common.unit", "Unit")} ${u.unitCode}`,
-      src: UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
+      src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
       alt: `${u.unitCode} - ${u.facilityName}`,
       badge: u.unitTypeCode || "UNIT",
       meta: [
@@ -184,6 +198,12 @@ export default function MyUnits() {
             {t("my_units.rent_btn", "Rent Unit")}
           </button>
         </div>
+
+        {user && (
+          <div className="mt-4">
+            <PendingRefundBankInfo />
+          </div>
+        )}
 
         {!user && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold text-blue-900">
@@ -339,6 +359,8 @@ export default function MyUnits() {
                     </div>
                   </div>
 
+                  <UnitInformation rental={activeGalleryUnit.rawRental} className="mt-4" />
+
                   <div className="mt-4">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2">
                       {t("common.actions", "Actions")}
@@ -349,6 +371,7 @@ export default function MyUnits() {
                       </div>
                       <div className="flex-1 min-w-[240px]">
                         <UnitTransferRequest
+                          key={activeGalleryUnit.agreementId}
                           agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id}
                           facilityId={activeGalleryUnit.facilityId}
                           currentFacilityName={activeGalleryUnit.facilityName}
@@ -373,102 +396,12 @@ export default function MyUnits() {
 
       
       {isHandoverModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-        >
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                  <span className="material-symbols-outlined text-[20px]">assignment</span>
-                </span>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">{t("customer.handover_modal_title", "Biên bản bàn giao ô kho")}</h3>
-                  <p className="text-xs text-slate-500">{t("common.details", "Details")}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                id="btn-close-handover-top"
-                onClick={() => setIsHandoverModalOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            <div className="mt-4">
-              {handoverLoading ? (
-                <div className="py-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
-                  <span className="material-symbols-outlined animate-spin text-[28px] text-indigo-600">progress_activity</span>
-                  <span>{t("common.loading", "Loading...")}</span>
-                </div>
-              ) : handoverError ? (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 text-xs text-amber-800 dark:text-amber-300">
-                  <div className="flex items-center gap-1.5 font-bold mb-1.5 text-amber-900 dark:text-amber-200">
-                    <span className="material-symbols-outlined text-[17px]">info</span>
-                    <span>{t("common.notice", "Thông báo")}</span>
-                  </div>
-                  <p className="leading-relaxed">
-                    {t("customer.handover_pending_notice", "Chưa có biên bản bàn giao. Nhân viên tại chi nhánh sẽ kiểm tra hiện trạng và lập biên bản cùng bạn khi bạn đến nhận kho.")}
-                  </p>
-                </div>
-              ) : handoverData ? (
-                <div className="space-y-3 text-xs">
-                  <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100 grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("table.code", "Code")}</span>
-                      <span className="font-bold text-slate-800">{handoverData.handoverCode || `#HO-${handoverData.id || "REC"}`}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("common.type", "Type")}</span>
-                      <span className="font-semibold text-indigo-600 capitalize">{translateStatus(handoverData.handoverType || "Move-in")}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("common.agreement", "Agreement")}</span>
-                      <span className="font-semibold text-slate-700">{handoverData.agreementNo || `#AGR-${handoverData.agreementId}`}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("common.unit", "Unit")}</span>
-                      <span className="font-bold text-slate-800">{handoverData.unitCode || t("status.assigned", "Assigned")}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("common.date", "Date")}</span>
-                      <span className="text-slate-700">{handoverData.handoverDate ? formatDate(handoverData.handoverDate) : t("status.completed", "Done")}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">{t("table.staff", "Staff")}</span>
-                      <span className="font-semibold text-slate-700">{handoverData.handledByName || t("table.staff", "Staff")}</span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-emerald-800">
-                    <div className="flex items-center gap-1.5 font-bold mb-1">
-                      <span className="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
-                      <span>{t("common.status", "Status")}</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-emerald-900">
-                      {handoverData.conditionNotes || t("status.passed", "Passed")}
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="button"
-                      id="close-handover-modal"
-                      onClick={() => setIsHandoverModalOpen(false)}
-                      className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 cursor-pointer"
-                    >
-                      {t("common.close", "Close")}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <HandoverReportModal
+          record={handoverData}
+          loading={handoverLoading}
+          error={handoverError}
+          onClose={handleCloseHandover}
+        />
       )}
 
       <Footer />

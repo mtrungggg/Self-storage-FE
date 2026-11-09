@@ -103,6 +103,7 @@ function AppRoutes() {
               <Route path="/my-units" element={<MyUnits />} />
               <Route path="/my-storages" element={<Navigate to="/my-units" replace />} />
               <Route path="/access-control" element={<AccessControl />} />
+              <Route path="/access-ccontrol" element={<Navigate to="/access-control" replace />} />
               <Route path="/storage-pass" element={<StoragePass />} />
               <Route path="/storage-management" element={<StoragePass />} />
             </Route>

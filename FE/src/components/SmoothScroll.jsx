@@ -5,8 +5,10 @@ import Lenis from "lenis";
 export default function SmoothScroll({ children }) {
   const location = useLocation();
   const lenisRef = useRef(null);
+  const nativeScroll = ["/access-control", "/billing"].includes(location.pathname);
 
   useEffect(() => {
+    if (nativeScroll) return;
     const lenis = new Lenis({
       duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -32,7 +34,7 @@ export default function SmoothScroll({ children }) {
       lenis.destroy();
       lenisRef.current = null;
     };
-  }, []);
+  }, [nativeScroll]);
 
   // Smooth reset to top on route navigation
   useEffect(() => {

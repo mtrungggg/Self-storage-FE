@@ -35,6 +35,37 @@ const STATUS_BADGE = {
   processing: "bg-sky-50 text-sky-700 border border-sky-200",
 };
 
+const CP1252_REVERSE_MAP = {
+  0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84, 0x2026: 0x85,
+  0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88, 0x2030: 0x89, 0x0160: 0x8a,
+  0x2039: 0x8b, 0x0152: 0x8c, 0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92,
+  0x201c: 0x93, 0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+  0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b, 0x0153: 0x9c,
+  0x017e: 0x9e, 0x0178: 0x9f,
+};
+
+function fixMojibake(text) {
+  if (!text || typeof text !== "string") return text;
+  if (!/(?:Ã.|Â.|Ä.|Æ.|á»|áº)/.test(text)) return text;
+  try {
+    const bytes = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if (code <= 0xff) {
+        bytes[i] = code;
+      } else if (CP1252_REVERSE_MAP[code] !== undefined) {
+        bytes[i] = CP1252_REVERSE_MAP[code];
+      } else {
+        return text;
+      }
+    }
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    return decoded.includes("\ufffd") ? text : decoded;
+  } catch {
+    return text;
+  }
+}
+
 export default function ManagerRefundApprovals() {
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const { t, formatCurrency, formatDate } = useLanguage();
@@ -367,13 +398,26 @@ export default function ManagerRefundApprovals() {
               }
             }
 
-            bankName = bankName || "MBBank (Napas 247)";
+            const cleanCustomerName = fixMojibake(refund.customerName);
+            displayReason = fixMojibake(displayReason);
+            bankName = fixMojibake(bankName) || "MBBank (Napas 247)";
             accountNumber = accountNumber || "0987654321";
-            accountHolder = (accountHolder || refund.customerName || "KHACH HANG").toUpperCase();
+            accountHolder = (fixMojibake(accountHolder) || cleanCustomerName || "KHACH HANG").toUpperCase();
+
+            const cleanOriginalDeposit = Number(refund.originalDeposit || 0);
+            const cleanRecommendedRefund = (refund.recommendedRefundAmount != null && Number(refund.recommendedRefundAmount) > 0)
+              ? Number(refund.recommendedRefundAmount)
+              : (refund.amount != null && Number(refund.amount) > 0)
+              ? Number(refund.amount)
+              : cleanOriginalDeposit;
+            let cleanEstimatedDeductions = Number(refund.estimatedDeductions || 0);
+            if (cleanEstimatedDeductions === 0 && cleanOriginalDeposit > cleanRecommendedRefund) {
+              cleanEstimatedDeductions = cleanOriginalDeposit - cleanRecommendedRefund;
+            }
 
             const refundAmount = draft.overrideAmount
               ? Number(draft.overrideAmount)
-              : refund.recommendedRefundAmount ?? refund.amount ?? refund.originalDeposit;
+              : cleanRecommendedRefund;
 
             return (
               <div
@@ -384,9 +428,9 @@ export default function ManagerRefundApprovals() {
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                     <User size={16} className="text-slate-400" />
-                    <span>{refund.customerName}</span>
+                    <span>{cleanCustomerName}</span>
                     {refund.agreementNo && (
-                      <span className="font-normal text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                      <span className="font-medium text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-sans">
                         #{refund.agreementNo}
                       </span>
                     )}
@@ -412,7 +456,7 @@ export default function ManagerRefundApprovals() {
                       {t("common.deposit", "Tiền cọc ban đầu (Deposit)")}
                     </div>
                     <div className="mt-0.5 text-xs font-bold text-slate-800">
-                      {formatCurrency(refund.originalDeposit)}
+                      {formatCurrency(cleanOriginalDeposit)}
                     </div>
                   </div>
 
@@ -421,7 +465,7 @@ export default function ManagerRefundApprovals() {
                       {t("common.deductions", "Khấu trừ hư hại / Công nợ")}
                     </div>
                     <div className="mt-0.5 text-xs font-bold text-rose-600">
-                      -{formatCurrency(refund.estimatedDeductions)}
+                      -{formatCurrency(cleanEstimatedDeductions)}
                     </div>
                   </div>
 
@@ -430,7 +474,7 @@ export default function ManagerRefundApprovals() {
                       {t("common.net_refund", "Số tiền thực nhận (Net Refund)")}
                     </div>
                     <div className="mt-0.5 text-sm font-extrabold text-emerald-700">
-                      {formatCurrency(refund.recommendedRefundAmount)}
+                      {formatCurrency(cleanRecommendedRefund)}
                     </div>
                   </div>
                 </div>

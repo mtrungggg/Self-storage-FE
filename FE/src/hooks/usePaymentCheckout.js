@@ -59,20 +59,43 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
-        if (stateInvoiceId) {
-          const invoiceCheckout = await paymentService.createCheckout({
-            invoiceId: Number(stateInvoiceId),
-            paymentMethod: "vietqr",
-          });
-          if (active) {
-            setCheckout(invoiceCheckout);
-            setReservation(null);
-            setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
-            totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
+        // 1. If we have a reservation (from state or user's pending reservation)
+        if (stateReservationId || (!stateInvoiceId && !stateRenewalId)) {
+          let targetReservation = reservation;
+          if (stateReservationId) {
+            try {
+              targetReservation = await reservationService.getReservationDetail(stateReservationId);
+              if (active && targetReservation) setReservation(targetReservation);
+            } catch {
+              // fallback
+            }
           }
-          return;
+
+          if (!targetReservation) {
+            const myReservations = await reservationService.getMyReservations("pending");
+            targetReservation = Array.isArray(myReservations) ? myReservations[0] : null;
+            if (active && targetReservation) setReservation(targetReservation);
+          }
+
+          const resId = targetReservation?.reservationId || targetReservation?.id || stateReservationId;
+          if (resId) {
+            const newCheckout = await paymentService.createCheckout({
+              reservationId: Number(resId),
+              paymentMethod: "vietqr",
+            });
+            if (active && newCheckout) {
+              setCheckout(newCheckout);
+              const remaining = targetReservation?.holdUntil
+                ? Math.max(0, Math.floor((new Date(targetReservation.holdUntil).getTime() - Date.now()) / 1000))
+                : newCheckout.expiresInSeconds || 900;
+              setTimeLeft(remaining > 0 ? remaining : 900);
+              totalSecondsRef.current = remaining > 0 ? remaining : 900;
+            }
+            return;
+          }
         }
 
+        // 2. If it's a rental renewal
         if (stateRenewalId) {
           const renewalCheckout = await paymentService.createCheckout({
             renewalId: Number(stateRenewalId),
@@ -89,45 +112,23 @@ export function usePaymentCheckout() {
           }
           return;
         }
-        let targetReservation = reservation;
 
-        // If we have an explicit reservationId passed from Billing or State
-        if (stateReservationId) {
-          try {
-            targetReservation = await reservationService.getReservationDetail(stateReservationId);
-            if (active && targetReservation) setReservation(targetReservation);
-          } catch {
-            // fallback to getMyReservations
+        // 3. If it's an independent invoice (e.g. fees, damage, transfer difference)
+        if (stateInvoiceId) {
+          const invoiceCheckout = await paymentService.createCheckout({
+            invoiceId: Number(stateInvoiceId),
+            paymentMethod: "vietqr",
+          });
+          if (active) {
+            setCheckout(invoiceCheckout);
+            setReservation(null);
+            setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
+            totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
           }
-        }
-
-        // If not found, look up user's pending reservation
-        if (!targetReservation) {
-          const myReservations = await reservationService.getMyReservations("pending");
-          targetReservation = Array.isArray(myReservations) ? myReservations[0] : null;
-          if (active && targetReservation) setReservation(targetReservation);
-        }
-
-        const resId = targetReservation?.reservationId || targetReservation?.id || stateReservationId;
-
-        if (!resId) {
-          if (active) setError("Không có đơn đặt chỗ nào đang chờ thanh toán.");
           return;
         }
 
-        const newCheckout = await paymentService.createCheckout({
-          reservationId: Number(resId),
-          paymentMethod: "vietqr",
-        });
-
-        if (active && newCheckout) {
-          setCheckout(newCheckout);
-          const remaining = targetReservation?.holdUntil
-            ? Math.max(0, Math.floor((new Date(targetReservation.holdUntil).getTime() - Date.now()) / 1000))
-            : newCheckout.expiresInSeconds || 900;
-          setTimeLeft(remaining > 0 ? remaining : 900);
-          totalSecondsRef.current = remaining > 0 ? remaining : 900;
-        }
+        if (active) setError("Không có khoản thanh toán nào đang chờ xử lý.");
       } catch (err) {
         if (active) setError(err?.message || "Không thể khởi tạo thông tin thanh toán VietQR.");
       } finally {
@@ -255,14 +256,14 @@ export function usePaymentCheckout() {
     setCancelling(true);
     setCancelError("");
     try {
-      if (resId) {
+      if (invId) {
+        await rentalService.cancelInvoice(invId);
+      } else if (resId) {
         await reservationService.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
       } else if (rnwId) {
         await rentalService.cancelRenewal(rnwId);
       } else if (trfId) {
         await rentalService.cancelTransferRequest(trfId);
-      } else if (invId) {
-        await rentalService.cancelInvoice(invId);
       }
       setCancelModalOpen(false);
       setStatus(CHECKOUT_STATUS.FAILED);

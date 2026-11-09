@@ -1,8 +1,12 @@
 import apiClient from "./apiClient";
 
 export default {
-  async updateStatus(id, { status, progressPercent }) {
-    const res = await apiClient.put(`/staff/tasks/${encodeURIComponent(id)}/status`, { status, progressPercent });
+  async updateStatus(id, { status, progressPercent, reportNote }) {
+    const res = await apiClient.put(`/staff/tasks/${encodeURIComponent(id)}/status`, {
+      status,
+      progressPercent,
+      reportNote,
+    });
     if (res?.success !== true) throw new Error(res?.message || "Unable to update task.");
     if (!res.data || res.data.id == null) throw new Error("The server did not return the updated task.");
     return res.data;

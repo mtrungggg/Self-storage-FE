@@ -15,14 +15,14 @@ import {
   ChevronRight,
   Clock,
   Users,
-  Box,
   MapPin,
   Power,
   Eye,
   Calendar,
-  Globe,
   Trash2,
   ShieldAlert,
+  Box,
+  Globe,
 } from "lucide-react";
 import adminFacilityService from "../api/adminFacilityService";
 import adminStaffAssignmentService from "../api/adminStaffAssignmentService";
@@ -280,8 +280,8 @@ export default function AdminCrudPage() {
       ward: formData.ward?.trim() || undefined,
       district: formData.district?.trim() || undefined,
       city: formData.city.trim(),
-      latitude: Number(formData.latitude) || 0,
-      longitude: Number(formData.longitude) || 0,
+      latitude: formData.latitude !== "" && formData.latitude != null ? Number(formData.latitude) : null,
+      longitude: formData.longitude !== "" && formData.longitude != null ? Number(formData.longitude) : null,
       timezone: formData.timezone || FACILITY_TIMEZONE,
       openingTime: formData.openingTime || undefined,
       closingTime: formData.closingTime || undefined,

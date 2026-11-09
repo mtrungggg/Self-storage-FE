@@ -17,6 +17,14 @@ function today() {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
+function cleanUnitCode(code) {
+  if (!code || code === "N/A") return "—";
+  let s = String(code).trim();
+  s = s.replace(/^(Unit|Ô kho|Kho)\s*/i, "");
+  s = s.replace(/-(PENDING|INSPECT|OCCUPIED|AVAILABLE|CLEANING|MAINTENANCE|RESERVED|RENTED|VACANT).*$/i, "");
+  return s.trim() || "—";
+}
+
 export default function StaffInspectionsPage() {
   const { t, formatCurrency } = useLanguage();
   const [facilityId, setFacilityId] = useState("");
@@ -223,7 +231,7 @@ export default function StaffInspectionsPage() {
                           <div className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[18px] text-zinc-900 dark:text-zinc-100">warehouse</span>
                             <strong className="text-sm font-bold text-slate-900">
-                              {t("common.unit", "Kho")} {item.unitCode || "—"}
+                              {t("common.unit", "Ô kho")} {cleanUnitCode(item.unitCode)}
                             </strong>
                           </div>
                           <span

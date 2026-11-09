@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -19,9 +20,9 @@ export default function StoragePass() {
   const ITEM_CATEGORIES = useMemo(() => [
     { value: "household", label: t("storage_pass.cat_household", "Đồ gia dụng / Nội thất") },
     { value: "documents", label: t("storage_pass.cat_documents", "Hồ sơ / Giấy tờ") },
-    { value: "business", label: t("storage_pass.cat_business", "Hàng hóa kinh doanh") },
+    { value: "commercial", label: t("storage_pass.cat_business", "Hàng hóa kinh doanh") },
     { value: "electronics", label: t("storage_pass.cat_fragile", "Thiết bị điện tử / Dễ vỡ") },
-    { value: "seasonal", label: t("storage_pass.cat_seasonal", "Đồ mùa vụ / Thể thao") },
+    { value: "personal", label: t("storage_pass.cat_seasonal", "Đồ mùa vụ / Thể thao") },
     { value: "other", label: t("storage_pass.cat_other", "Khác") },
   ], [t]);
 
@@ -67,6 +68,7 @@ export default function StoragePass() {
   const [unlockPin, setUnlockPin] = useState("");
   const [showUnlockPin, setShowUnlockPin] = useState(false);
   const [unlockError, setUnlockError] = useState("");
+  const [unlockLoading, setUnlockLoading] = useState(false);
 
   const [declareModalOpen, setDeclareModalOpen] = useState(false);
   const [declareRows, setDeclareRows] = useState([createEmptyItemRow()]);
@@ -86,17 +88,38 @@ export default function StoragePass() {
   const activeUnitCode = (hasLiveRentals && currentUnitCode) ? currentUnitCode : selectedRental?.unitCode || "HN-101";
   const isSuspended = credentials?.suspended || credentials?.status === "suspended";
 
-  const qrImageUrl = useMemo(() => {
+  const [qrImageUrl, setQrImageUrl] = useState("");
+
+  useEffect(() => {
+    let active = true;
     if (!checkInQrValue) {
-      return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(`VS-PASS-${activeUnitCode}-${selectedRentalId || 1006}`)}`;
+      setQrImageUrl("");
+      return;
     }
-    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=${encodeURIComponent(checkInQrValue)}`;
-  }, [checkInQrValue, activeUnitCode, selectedRentalId]);
+    QRCode.toDataURL(checkInQrValue, {
+      width: 280,
+      margin: 2,
+      errorCorrectionLevel: "L",
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => {
+        if (active) setQrImageUrl(url);
+      })
+      .catch(() => {
+        if (active) setQrImageUrl("");
+      });
+    return () => {
+      active = false;
+    };
+  }, [checkInQrValue]);
 
   const handleCopyQrValue = async () => {
-    const val = checkInQrValue || `VS-PASS-${activeUnitCode}-${selectedRentalId || 1006}`;
+    if (!checkInQrValue) return;
     try {
-      await navigator.clipboard.writeText(val);
+      await navigator.clipboard.writeText(checkInQrValue);
       setQrCopied(true);
       setTimeout(() => setQrCopied(false), 2500);
     } catch {
@@ -108,24 +131,29 @@ export default function StoragePass() {
     if (isSuspended) return;
     setUnlockPin("");
     setUnlockError("");
+    setUnlockLoading(false);
     setShowUnlockPin(false);
     setUnlockModalOpen(true);
   };
 
-  const handleVerifyUnlockSubmit = (e) => {
+  const handleVerifyUnlockSubmit = async (e) => {
     e.preventDefault();
     const pin = unlockPin.trim();
     if (!pin) {
       setUnlockError(t("auth.otp_placeholder", "Enter PIN"));
       return;
     }
+    setUnlockLoading(true);
+    setUnlockError("");
     try {
-      verifyUnlockPin(pin);
+      await verifyUnlockPin(pin);
       setUnlockModalOpen(false);
       setUnlockPin("");
       setUnlockError("");
     } catch (err) {
       setUnlockError(err?.message || t("common.error", "Incorrect PIN"));
+    } finally {
+      setUnlockLoading(false);
     }
   };
 
@@ -240,11 +268,18 @@ export default function StoragePass() {
 
             <div className="mt-6 flex flex-col items-center rounded-2xl border border-[#dfe7f5] bg-[#f8faff] p-6 text-center">
               <div className="relative rounded-2xl border-4 border-zinc-900 dark:border-zinc-100/15 bg-white p-4 shadow-md transition hover:scale-[1.01]">
-                <img
-                  src={qrImageUrl}
-                  alt={`QR ${activeUnitCode}`}
-                  className="h-64 w-64 object-contain sm:h-72 sm:w-72"
-                />
+                {qrImageUrl ? (
+                  <img
+                    src={qrImageUrl}
+                    alt={`QR ${activeUnitCode}`}
+                    className="h-64 w-64 object-contain sm:h-72 sm:w-72"
+                  />
+                ) : (
+                  <div className="h-64 w-64 flex flex-col items-center justify-center sm:h-72 sm:w-72 text-zinc-400 text-xs">
+                    <span className="material-symbols-outlined text-[48px] mb-2 text-zinc-300">qr_code_2</span>
+                    <span>{isSuspended ? (isVi ? "Mã QR tạm khóa" : "Access pass suspended") : (isVi ? "Đang tải mã truy cập..." : "Loading access pass...")}</span>
+                  </div>
+                )}
                 <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 text-white px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow">
                   {t("my_units.storage_pass", "GATE")}
                 </div>
@@ -254,7 +289,7 @@ export default function StoragePass() {
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#8996a9]">{t("table.code", "Code")}</div>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <code className="truncate font-mono text-xs font-bold text-[#0b1c30]">
-                    {checkInQrValue || `VS-PASS-${activeUnitCode}-${selectedRentalId || 1006}`}
+                    {checkInQrValue || (isSuspended ? (isVi ? "MÃ TẠM KHÓA" : "SUSPENDED") : (isVi ? "Đang tải mã..." : "Loading..."))}
                   </code>
                   <button
                     type="button"
@@ -264,7 +299,7 @@ export default function StoragePass() {
                     <span className="material-symbols-outlined text-[15px]">
                       {qrCopied ? "check" : "content_copy"}
                     </span>
-                    {qrCopied ? t("common.confirm", "Copied") : t("common.download", "Copy")}
+                    {qrCopied ? t("common.copied", "Copied") : t("common.copy", "Copy")}
                   </button>
                 </div>
               </div>
@@ -524,10 +559,10 @@ export default function StoragePass() {
                   </button>
                   <button
                     type="submit"
-                    disabled={unlockPin.length < 4}
-                    className="flex-1 rounded-xl bg-zinc-900 text-white py-2.5 text-xs font-bold text-white shadow-xs hover:bg-zinc-800 disabled:opacity-50"
+                    disabled={unlockPin.length < 4 || unlockLoading}
+                    className="flex-1 rounded-xl bg-zinc-900 text-white py-2.5 text-xs font-bold text-white shadow-xs hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
                   >
-                    {t("common.confirm", "Verify & Unlock")}
+                    {unlockLoading ? t("common.loading", "Verifying...") : t("common.confirm", "Verify & Unlock")}
                   </button>
                 </div>
               </form>

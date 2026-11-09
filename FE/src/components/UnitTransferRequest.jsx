@@ -1,9 +1,11 @@
 import DatePicker from "@/components/ui/date-picker";
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import rentalService from "../api/rentalService";
 import facilityService from "../api/facilityService";
 import SupportDropdown from "./SupportDropdown";
 import { useLanguage } from "../context/LanguageContext";
+import { TRANSFER_PAID_STATUSES, TRANSFER_CLOSED_STATUSES, transferQrUrl } from "../domain/usecases/transferPayment";
 
 function localDate() {
   const date = new Date();
@@ -156,6 +158,65 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
   const [previewLoading, setPreviewLoading] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
   const lock = useRef(false);
+  const [paymentCheckError, setPaymentCheckError] = useState("");
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [paymentRefresh, setPaymentRefresh] = useState(0);
+  const [paymentNotice, setPaymentNotice] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const previousPaymentStatus = useRef(null);
+
+  useEffect(() => {
+    if (previousPaymentStatus.current === "pending_payment" && TRANSFER_PAID_STATUSES.includes(result?.status)) setPaymentNotice(true);
+    if (TRANSFER_CLOSED_STATUSES.includes(result?.status)) setPaymentNotice(false);
+    previousPaymentStatus.current = result?.status;
+  }, [result?.status]);
+
+  // Recover the existing request after navigation/reload rather than creating a second payment.
+  useEffect(() => {
+    if (!open || !resolvedAgreementId) return;
+    let active = true;
+    rentalService.getLatestTransferRequest(resolvedAgreementId).then((data) => {
+      if (active && data?.id && !TRANSFER_CLOSED_STATUSES.includes(data.status) && data.status !== "completed") setResult(data);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [open, resolvedAgreementId]);
+
+  // Confirm payment against the server; do not infer success from QR display or elapsed time.
+  useEffect(() => {
+    if (!result?.id || result.status !== "pending_payment") return;
+    let active = true;
+    let timer;
+    let inFlight = false;
+    const refresh = async () => {
+      if (!active || inFlight) return;
+      if (document.hidden) { timer = setTimeout(refresh, 3000); return; }
+      inFlight = true;
+      setCheckingPayment(true);
+      try {
+        const snapshot = await rentalService.getLatestTransferRequest(resolvedAgreementId);
+        if (active && snapshot?.id === result.id) {
+          setResult((current) => ({ ...current, ...snapshot }));
+          setPaymentCheckError("");
+        } else if (active) {
+          setPaymentCheckError(t("transfer.payment_status_changed", "Yêu cầu đã thay đổi. Vui lòng tải lại trang để kiểm tra."));
+        }
+      } catch (err) {
+        if (active) setPaymentCheckError(err?.message || t("transfer.payment_check_error", "Chưa kiểm tra được thanh toán. Hệ thống sẽ tự thử lại."));
+      } finally {
+        inFlight = false;
+        if (active) {
+          setCheckingPayment(false);
+          timer = setTimeout(refresh, 3000);
+        }
+      }
+    };
+    const onVisible = () => {
+      if (!document.hidden) { clearTimeout(timer); refresh(); }
+    };
+    refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { active = false; clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
+  }, [result?.id, result?.status, resolvedAgreementId, paymentRefresh, t]);
 
   useEffect(() => {
     if (facilityId && transferMode === "same_facility") {
@@ -163,41 +224,36 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     }
   }, [facilityId, transferMode]);
 
-  // Load facilities and unit types
+  // Keep both catalogue requests in one lifecycle. Updating either list must
+  // not cancel the other request's loading-state cleanup.
   useEffect(() => {
     if (!open) return undefined;
     let active = true;
+    setFacilitiesLoading(true);
+    setTypesLoading(true);
+    setError("");
 
-    if (facilities.length === 0) {
-      setFacilitiesLoading(true);
-      facilityService.getFacilities()
-        .then((data) => {
-          if (active) setFacilities(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-          if (active) console.warn("Failed to load facilities:", err);
-        })
-        .finally(() => {
-          if (active) setFacilitiesLoading(false);
-        });
-    }
-
-    if (unitTypes.length === 0) {
-      setTypesLoading(true);
-      facilityService.getUnitTypes()
-        .then((data) => {
-          if (active) setUnitTypes(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-          if (active) setError(err.message || t("common.error", "Error loading unit types"));
-        })
-        .finally(() => {
-          if (active) setTypesLoading(false);
-        });
-    }
+    Promise.allSettled([
+      facilityService.getFacilities(),
+      facilityService.getUnitTypes(),
+    ]).then(([facilityResult, typeResult]) => {
+      if (!active) return;
+      if (facilityResult.status === "fulfilled") {
+        setFacilities(Array.isArray(facilityResult.value) ? facilityResult.value : []);
+      }
+      if (typeResult.status === "fulfilled") {
+        setUnitTypes(Array.isArray(typeResult.value) ? typeResult.value : []);
+      }
+      const failed = [facilityResult, typeResult].find((result) => result.status === "rejected");
+      if (failed) {
+        setError(failed.reason?.message || t("common.error", "Unable to load transfer options. Close and reopen to retry."));
+      }
+      setFacilitiesLoading(false);
+      setTypesLoading(false);
+    });
 
     return () => { active = false; };
-  }, [open, facilities.length, unitTypes.length, t]);
+  }, [open, t]);
 
   // Load / Update transfer preview whenever facility, unit type, or date changes
   useEffect(() => {
@@ -207,6 +263,7 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     const targetFacility = Number(selectedFacilityId) || Number(facilityId);
     const targetUnitType = Number(requestedUnitTypeId) || null;
 
+    setPreview(null);
     setPreviewLoading(true);
     rentalService.getTransferPreview(resolvedAgreementId, {
       requestedFacilityId: targetFacility || undefined,
@@ -224,14 +281,17 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
         }
       })
       .catch((err) => {
-        if (active) console.warn("Failed to load transfer preview:", err);
+        if (active) {
+          setPreview(null);
+          setError(err?.message || t("common.error", "Unable to load transfer preview"));
+        }
       })
       .finally(() => {
         if (active) setPreviewLoading(false);
       });
 
     return () => { active = false; };
-  }, [open, resolvedAgreementId, selectedFacilityId, facilityId, requestedUnitTypeId, requestedEffectiveDate]);
+  }, [open, resolvedAgreementId, selectedFacilityId, facilityId, requestedUnitTypeId, requestedEffectiveDate, t]);
 
   const copyToClipboard = (text, fieldName) => {
     if (!text) return;
@@ -242,6 +302,7 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
 
   async function submit(event) {
     event.preventDefault();
+    if (loading || typesLoading || facilitiesLoading || previewLoading || !preview) return;
     const targetFacility = Number(selectedFacilityId) || Number(facilityId);
     if (!Number.isInteger(targetFacility) || targetFacility <= 0) {
       setError(t("common.required", "Select target facility"));
@@ -283,16 +344,64 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     }
   }
 
+  async function handleCancelTransfer() {
+    if (!result?.id || cancelling) return;
+    const confirmed = window.confirm(
+      t("transfer.confirm_cancel", "Bạn có chắc chắn muốn hủy yêu cầu chuyển kho này không?")
+    );
+    if (!confirmed) return;
+
+    setCancelling(true);
+    setPaymentCheckError("");
+    try {
+      await rentalService.cancelTransferRequest(result.id);
+      setResult(null);
+      const targetFacility = Number(selectedFacilityId) || Number(facilityId);
+      const targetUnitType = Number(requestedUnitTypeId) || null;
+      rentalService
+        .getTransferPreview(resolvedAgreementId, {
+          requestedFacilityId: targetFacility || undefined,
+          requestedUnitTypeId: targetUnitType || undefined,
+          moveOutDate: requestedEffectiveDate,
+        })
+        .then((data) => {
+          setPreview(data);
+          if (data && !data.canTransfer && data.disabledReason) {
+            setError(data.disabledReason);
+          } else {
+            setError("");
+          }
+        })
+        .catch(() => {});
+    } catch (err) {
+      setPaymentCheckError(
+        err?.message || t("transfer.cancel_failed", "Không thể hủy yêu cầu chuyển kho. Vui lòng thử lại.")
+      );
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   if (result) {
     const targetFacilityObj = facilities.find((f) => String(f.id) === String(selectedFacilityId));
-    const requiresPayment = Number(result.totalPaidAmount) > 0 && result.paymentQrUrl;
+    const paid = TRANSFER_PAID_STATUSES.includes(result.status);
+    const closed = TRANSFER_CLOSED_STATUSES.includes(result.status);
+    const qrUrl = transferQrUrl(result);
+    const requiresPayment = result.status === "pending_payment" && Number(result.amountDue ?? result.totalPaidAmount) > 0;
 
     return (
       <div role="status" className="mt-3 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white dark:from-zinc-900 dark:to-zinc-950 dark:border-blue-900/40 p-4 text-xs space-y-3 shadow-sm">
+        {paymentNotice && createPortal(
+          <div role="alert" className="fixed bottom-5 right-4 z-[110] flex max-w-[calc(100vw-2rem)] items-start gap-3 rounded-2xl border border-emerald-200 bg-white p-4 text-emerald-950 shadow-xl sm:right-6">
+            <span aria-hidden="true" className="material-symbols-outlined text-2xl text-emerald-600">check_circle</span>
+            <div><p className="text-sm font-bold">{t("transfer.payment_success", "Thanh toán chuyển kho thành công")}</p><p className="mt-1 text-xs">{Number(result.paidAmount ?? result.totalPaidAmount).toLocaleString("vi-VN")} VND · #{result.id}</p></div>
+            <button type="button" aria-label={t("common.close", "Đóng thông báo")} onClick={() => setPaymentNotice(false)} className="rounded-lg p-1 hover:bg-emerald-50"><span aria-hidden="true" className="material-symbols-outlined text-lg">close</span></button>
+          </div>, document.body
+        )}
         <div className="flex items-center justify-between border-b border-blue-100 dark:border-zinc-800 pb-2.5">
           <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-zinc-100 text-sm">
             <span className="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
-            <span>{t("transfer.request_sent", "Yêu cầu chuyển kho đã được tạo")}</span>
+            <span>{paid && Number(result.totalPaidAmount) > 0 ? t("transfer.payment_success", "Thanh toán chuyển kho thành công") : t("transfer.request_sent", "Yêu cầu chuyển kho đã được tạo")}</span>
           </div>
           <span className="font-mono font-bold text-xs bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded-md">
             #{result.id}
@@ -314,7 +423,25 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
           )}
         </div>
 
-        {requiresPayment ? (
+        {paid && Number(result.totalPaidAmount) > 0 ? (
+          <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+            <p className="text-sm font-bold">{t("transfer.payment_received", "Đã nhận thanh toán")} {Number(result.paidAmount ?? result.totalPaidAmount).toLocaleString("vi-VN")} VND</p>
+            <p className="mt-2 leading-relaxed">{t("transfer.payment_next_step", "Thanh toán đã được xác nhận. Vui lòng liên hệ nhân viên cơ sở để kiểm tra và bàn giao kho theo lịch chuyển.")}</p>
+          </div>
+        ) : closed ? (
+          <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <p>{t("transfer.payment_closed", "Yêu cầu chuyển kho đã hủy hoặc kết thúc thời hạn thanh toán. Nếu bạn đã chuyển tiền, vui lòng kiểm tra Hóa đơn & Thanh toán hoặc liên hệ hỗ trợ; không chuyển lại tiền.")}</p>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setResult(null)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+              >
+                {t("common.close", "Đóng")}
+              </button>
+            </div>
+          </div>
+        ) : requiresPayment ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50/80 dark:bg-amber-950/30 dark:border-amber-900/60 p-3.5 space-y-3">
             <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200 text-xs">
               <span className="material-symbols-outlined text-[18px] text-amber-600">payments</span>
@@ -327,24 +454,29 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
 
             <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-amber-200/80 dark:border-zinc-800 shadow-xs">
               <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-50 border border-slate-200">
-                <img
-                  src={result.paymentQrUrl}
+                {qrUrl ? <img
+                  src={qrUrl}
                   alt="VietQR Transfer Payment"
-                  className="h-44 w-44 object-contain rounded"
+                  className="h-52 w-52 object-contain rounded"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
-                />
+                /> : <p className="max-w-52 text-center text-xs text-amber-800">{t("transfer.qr_unavailable", "Mã QR chưa khả dụng. Vui lòng kiểm tra lại trạng thái thanh toán.")}</p>}
                 <span className="text-[10px] font-semibold text-slate-500 mt-1 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[12px]">qr_code</span> VietQR
                 </span>
               </div>
 
               <div className="flex-1 space-y-2 text-xs w-full">
+                <div className="space-y-1 border-b border-slate-100 pb-2 dark:border-zinc-800">
+                  <p><span className="text-slate-500">{t("common.bank_name", "Ngân hàng")}: </span><strong>{result.paymentBankCode || (qrUrl ? new URL(qrUrl).searchParams.get("bank") : "—")}</strong></p>
+                  <p><span className="text-slate-500">{t("common.account_number", "Số tài khoản")}: </span><strong className="break-all font-mono">{result.paymentAccountNo || (qrUrl ? new URL(qrUrl).searchParams.get("acc") : "—")}</strong></p>
+                  <p><span className="text-slate-500">{t("common.account_holder", "Chủ tài khoản")}: </span><strong>{result.paymentAccountName || (qrUrl ? new URL(qrUrl).searchParams.get("holder") : "—")}</strong></p>
+                </div>
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-1.5">
                   <span className="text-slate-500">{t("billing.amount", "Số tiền")}:</span>
                   <span className="font-extrabold text-base text-amber-600 dark:text-amber-400">
-                    {Number(result.totalPaidAmount).toLocaleString()} VND
+                    {Number(result.amountDue ?? result.totalPaidAmount).toLocaleString("vi-VN")} VND
                   </span>
                 </div>
 
@@ -389,10 +521,48 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
                 </div>
               </div>
             </div>
+            <p className="text-[11px] leading-relaxed text-amber-900">{t("transfer.qr_prefilled", "Dùng ứng dụng ngân hàng quét QR để điền sẵn tài khoản, số tiền và nội dung chuyển khoản. Giữ nguyên nội dung để hệ thống nhận diện giao dịch.")}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-amber-200 pt-3">
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={handleCancelTransfer}
+                className="rounded-lg border border-rose-300 bg-white px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-400 disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-2xs"
+              >
+                <span className="material-symbols-outlined text-[15px]">close</span>
+                {cancelling ? t("common.processing", "Đang hủy…") : t("common.cancel", "Hủy")}
+              </button>
+              <button
+                type="button"
+                disabled={checkingPayment}
+                onClick={() => setPaymentRefresh((value) => value + 1)}
+                className="rounded-lg border border-amber-300 bg-white px-3.5 py-2 text-xs font-bold text-amber-900 hover:bg-amber-50 disabled:opacity-50 transition-colors shadow-2xs"
+              >
+                {checkingPayment ? t("common.loading", "Đang kiểm tra…") : t("transfer.check_payment", "Tôi đã thanh toán · Kiểm tra lại")}
+              </button>
+            </div>
+            {paymentCheckError && <p role="alert" className="text-xs text-red-700">{paymentCheckError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 text-xs">
-            {t("transfer.fee_notice", "Yêu cầu chuyển kho miễn phí đã được tiếp nhận và nhân viên sẽ xử lý.")}
+            <p>
+              {Number(result.totalPaidAmount) <= 0
+                ? t("transfer.fee_notice", "Yêu cầu chuyển kho miễn phí đã được tiếp nhận và nhân viên sẽ xử lý.")
+                : t("transfer.payment_updating", "Đang cập nhật trạng thái yêu cầu chuyển kho. Vui lòng kiểm tra Hóa đơn & Thanh toán trước khi chuyển thêm tiền.")}
+            </p>
+            {result.status === "pending" && (
+              <div className="mt-2.5 flex justify-end">
+                <button
+                  type="button"
+                  disabled={cancelling}
+                  onClick={handleCancelTransfer}
+                  className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50 transition-colors flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                  {cancelling ? t("common.processing", "Đang hủy…") : t("common.cancel", "Hủy")}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -648,11 +818,11 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
 
         <button
           type="submit"
-          disabled={loading || typesLoading || facilitiesLoading || (preview && !preview.canTransfer)}
+          disabled={loading || typesLoading || facilitiesLoading || previewLoading || !preview?.canTransfer || !requestedUnitTypeId || !requestedEffectiveDate || !reason.trim()}
           className="rounded-lg bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white px-3.5 py-2 font-bold transition disabled:opacity-50 cursor-pointer shadow-xs w-full flex items-center justify-center gap-1.5"
         >
-          {loading ? (
-            t("common.loading", "Submitting...")
+          {loading || typesLoading || facilitiesLoading || previewLoading ? (
+            t("common.loading", "Loading...")
           ) : (
             <>
               <span className="material-symbols-outlined text-[16px]">send</span>

@@ -7,7 +7,7 @@ import adminFacilityService from "../api/adminFacilityService";
 import { USER_ROLES } from "../constants/roles";
 
 export default function AdminStaffAssignmentForm({
-  employee, disabled, onSavingChange, onCreated, onClose }) {
+  employee, userRoles, user, disabled, onSavingChange, onCreated, onClose }) {
   const { t } = useLanguage();
   const [facilityId, setFacilityId] = useState("");
   const [facilities, setFacilities] = useState([]);
@@ -53,9 +53,12 @@ export default function AdminStaffAssignmentForm({
     }
 
     // Auto-resolve role based on existing employee roles (default to Staff or Manager)
-    const targetRole = employee?.roles?.some((r) => String(r).toLowerCase().includes("manager"))
-      ? USER_ROLES.FACILITY_MANAGER
-      : USER_ROLES.FACILITY_STAFF;
+    const roleList = userRoles || user?.roles || employee?.roles || [];
+    const isManager = roleList.some((r) =>
+      String(r?.code || r?.name || r || "").toLowerCase().includes("manager")
+    );
+    const targetRole = isManager ? USER_ROLES.FACILITY_MANAGER : USER_ROLES.FACILITY_STAFF;
+    const targetEmployeeId = employee?.userId || user?.id;
 
     submitting.current = true;
     setSaving(true);
@@ -63,7 +66,7 @@ export default function AdminStaffAssignmentForm({
     let assignment;
     try {
       assignment = await adminStaffAssignmentService.create({
-        employeeId: employee.userId,
+        employeeId: targetEmployeeId,
         facilityId: parsedFacilityId,
         assignmentRole: targetRole,
         startsAt: new Date().toISOString(),

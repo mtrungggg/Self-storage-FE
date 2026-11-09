@@ -24,7 +24,7 @@ const staffInspectionService = {
       );
       if (response?.success === true) return response.data;
     } catch (err) {
-      if (err.status !== 404) throw err;
+      if (err.status !== 404 || payload.hasDamage || payload.damageCost > 0) throw err;
     }
 
     // Fallback to legacy move-out inspect route if backend has not migrated

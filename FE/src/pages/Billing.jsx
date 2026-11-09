@@ -27,20 +27,26 @@ function Billing() {
   const [actionLoading, setActionLoading] = useState(null);
 
   const handleCancelInvoice = async (inv) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy giao dịch chờ thanh toán này?")) return;
+    if (actionLoading || !inv.canCancel) return;
+    const isPaidRsv = inv.reservationId && inv.status === "paid";
+    const confirmMsg = isPaidRsv
+      ? "Bạn có chắc chắn muốn hủy đơn đặt chỗ đã thanh toán này? Yêu cầu hoàn tiền sẽ được tự động gửi đến Quản lý cơ sở để xử lý hoàn tiền cho bạn."
+      : "Bạn có chắc chắn muốn hủy giao dịch chờ thanh toán này?";
+    if (!window.confirm(confirmMsg)) return;
     setActionLoading(inv.id);
     try {
       if (inv.renewalId) {
         await rentalService.cancelRenewal(inv.renewalId);
+      } else if (inv.reservationId) {
+        await reservationService.cancelReservation(inv.reservationId, isPaidRsv ? "Khách hàng hủy đơn đặt chỗ đã thanh toán trên trang Billing" : "Khách hàng hủy trên trang Billing");
       } else if (inv.invoiceId) {
         await rentalService.cancelInvoice(inv.invoiceId);
-      } else if (inv.reservationId) {
-        await reservationService.cancelReservation(inv.reservationId, "Khách hàng hủy trên trang Billing");
       }
       if (reloadInvoices) {
         await reloadInvoices();
       }
     } catch (err) {
+      await reloadInvoices();
       alert(err?.message || "Không thể hủy giao dịch. Vui lòng thử lại.");
     } finally {
       setActionLoading(null);
@@ -154,7 +160,7 @@ function Billing() {
             </div>
           ) : (
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse text-[12px]">
+              <table className="w-full min-w-[850px] border-collapse text-[12px]">
                 <thead>
                   <tr className="border-b border-[#eef1f8] text-left text-[11px] font-bold uppercase tracking-[0.05em] text-[#8996a9]">
                     <th className="py-3 pr-3">{t("billing.invoice_no", "Invoice #")}</th>
@@ -162,7 +168,7 @@ function Billing() {
                     <th className="py-3 pr-3">{t("common.type", "Service")}</th>
                     <th className="py-3 pr-3">{t("common.amount", "Amount")}</th>
                     <th className="py-3 pr-3">{t("billing.payment_method", "Method")}</th>
-                    <th className="py-3 pr-3">{t("common.status", "Status")}</th>
+                    <th className="py-3 pr-3 whitespace-nowrap">{t("common.status", "Status")}</th>
                     <th className="py-3 pr-3 text-right">{t("common.actions", "Action")}</th>
                   </tr>
                 </thead>
@@ -176,7 +182,7 @@ function Billing() {
                         {inv.id}
                       </td>
                       <td className="py-3.5 pr-3 text-[#58657a]">{inv.date}</td>
-                      <td className="py-3.5 pr-3">
+                      <td className="py-3.5 pr-3 whitespace-nowrap">
                         <div className="font-semibold text-[#0b1c30]">
                           {inv.desc}
                         </div>
@@ -203,43 +209,43 @@ function Billing() {
                           {inv.method}
                         </span>
                       </td>
-                      <td className="py-3.5 pr-3">
+                      <td className="py-3.5 pr-3 whitespace-nowrap">
                         {inv.status === "paid" ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#abefc6] bg-[#ecfdf3] px-2.5 py-0.5 text-[11px] font-bold text-[#027a48]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#abefc6] bg-[#ecfdf3] px-2.5 py-0.5 text-[11px] font-bold text-[#027a48]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#12b76a]"></span>
                             {translateStatus(inv.status)}
                           </span>
                         ) : inv.status === "failed" ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#fecdca] bg-[#fff1f1] px-2.5 py-0.5 text-[11px] font-bold text-[#b3261e]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#fecdca] bg-[#fff1f1] px-2.5 py-0.5 text-[11px] font-bold text-[#b3261e]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#d92d20]"></span>
                             {translateStatus(inv.status)}
                           </span>
                         ) : inv.status === "expired" ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#fecdca] bg-[#fff5f5] px-2.5 py-0.5 text-[11px] font-bold text-[#b42318]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#fecdca] bg-[#fff5f5] px-2.5 py-0.5 text-[11px] font-bold text-[#b42318]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#d92d20]"></span>
                             {translateStatus(inv.status)}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#fedf89] bg-[#fffcf5] px-2.5 py-0.5 text-[11px] font-bold text-[#b54708]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#f79009] animate-pulse"></span>
-                            {translateStatus(inv.status)}
+                          <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#fedf89] bg-[#fffcf5] px-2.5 py-0.5 text-[11px] font-bold text-[#b54708]">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#f79009] animate-pulse"></span>
+                            {inv.requiresReconciliation ? t("billing.awaiting_reconciliation", "Đã nhận được thanh toán · Đang chờ đối chiếu") : translateStatus(inv.status)}
                           </span>
                         )}
                       </td>
                       <td className="py-3.5 pr-3 text-right">
                         <div className="inline-flex items-center justify-end gap-2">
-                          {inv.status === "upcoming" && (
+                          {(inv.canPay || inv.status === "upcoming" || inv.status === "pending") && (
                             <>
                               <button
                                 onClick={() =>
                                   navigate("/checkout", {
                                     state: {
                                       reservationId: inv.reservationId,
-                                      invoiceId: inv.invoiceId || null,
+                                      invoiceId: inv.invoiceId || inv.id || null,
                                       reservationCode: inv.reservationCode,
                                       renewalId: inv.renewalId,
                                       agreementNo: inv.agreementNo,
-                                      amount: inv.rawAmount,
+                                      amount: inv.rawAmount || inv.amount,
                                     },
                                   })
                                 }
@@ -250,7 +256,7 @@ function Billing() {
                                 </span>
                                 {t("billing.pay_now", "Pay Now")}
                               </button>
-                              <button
+                              {inv.canCancel && <button
                                 type="button"
                                 onClick={() => handleCancelInvoice(inv)}
                                 disabled={actionLoading === inv.id}
@@ -261,7 +267,7 @@ function Billing() {
                                   close
                                 </span>
                                 {actionLoading === inv.id ? t("common.loading", "...") : t("common.cancel", "Hủy")}
-                              </button>
+                              </button>}
                             </>
                           )}
                           {inv.reservationId && (
@@ -273,6 +279,20 @@ function Billing() {
                                 visibility
                               </span>
                               {t("common.view_details", "Details")}
+                            </button>
+                          )}
+                          {inv.canCancel && inv.reservationId && inv.status === "paid" && (
+                            <button
+                              type="button"
+                              onClick={() => handleCancelInvoice(inv)}
+                              disabled={actionLoading === inv.id}
+                              className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-2.5 text-[12px] font-semibold shadow-xs transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                              title="Hủy đặt chỗ & Yêu cầu hoàn tiền"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">
+                                cancel
+                              </span>
+                              {actionLoading === inv.id ? t("common.loading", "...") : t("common.cancel", "Hủy đặt chỗ")}
                             </button>
                           )}
                           {inv.isRenewal && (inv.status === "expired" || inv.status === "failed") && (

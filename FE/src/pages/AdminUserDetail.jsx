@@ -439,6 +439,8 @@ export default function AdminUserDetail() {
                   <AdminStaffAssignmentForm
                     key={`assignment-${user.id}`}
                     employee={employee}
+                    userRoles={user?.roles}
+                    user={user}
                     disabled={savingStatus || savingRoles || deletingAssignment !== null}
                     onSavingChange={setSavingAssignment}
                     onClose={() => setShowAssignForm(false)}

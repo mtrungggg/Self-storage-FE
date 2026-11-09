@@ -18,17 +18,11 @@ function StorageDetail() {
     customDate,
     setCustomDate,
     minCustomDateISO,
-    isCustomDateInvalid,
     resolvedStartDate,
     resolvedStartDateLabel,
     holdCountdownStr,
     durationMonths,
     setDurationMonths,
-    voucherInput,
-    setVoucherInput,
-    appliedVoucher,
-    handleApplyVoucher,
-    handleClearVoucher,
     agreeTerms,
     setAgreeTerms,
     agreeLock,
@@ -109,7 +103,7 @@ function StorageDetail() {
               </div>
 
               <div className="mt-5 border-t border-[#eef1f8] pt-4">
-                <div className="text-[13px] font-bold text-[#0b1c30]">{t("home.specs", "Unit Photos")}</div>
+                <div className="text-[13px] font-bold text-[#0b1c30]">{t("booking.unit_images", "Unit Photos")}</div>
 
                 <div className="mt-3">
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -136,7 +130,7 @@ function StorageDetail() {
             <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
               <div className="mb-3">
                 <div className="text-[14px] font-bold text-[#0b1c30]">
-                  1. {t("common.start_date", "Move-in Date")}
+                  {t("common.start_date", "Ngày bắt đầu")}
                 </div>
               </div>
 
@@ -179,68 +173,6 @@ function StorageDetail() {
                         onChange={(e) => setCustomDate(e.target.value)}
                       />
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[16px] border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
-              <div className="mb-3">
-                <div className="text-[14px] font-bold text-[#0b1c30]">
-                  2. {t("my_units.rental_period", "Rental Duration")}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {DURATION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.months}
-                    type="button"
-                    onClick={() => setDurationMonths(opt.months)}
-                    className={`flex flex-col items-center justify-center rounded-[10px] border p-3 transition ${
-                      durationMonths === opt.months
-                        ? "border-zinc-900 dark:border-zinc-100 bg-[#eef4ff] text-zinc-900 dark:text-zinc-100"
-                        : "border-[#dfe7f5] bg-white text-[#3a475a] hover:bg-[#f8faff]"
-                    }`}
-                  >
-                    <span className="text-[14px] font-bold">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-3.5">
-                <div className="text-[12px] font-bold text-[#0b1c30]">{t("common.optional", "Promo Code")}</div>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    value={voucherInput}
-                    onChange={(e) => setVoucherInput(e.target.value)}
-                    placeholder={t("common.search", "Promo Code")}
-                    className="flex-1 rounded-[8px] border border-[#dfe7f5] bg-white px-3 py-2 text-[12px] font-semibold uppercase text-[#0b1c30] outline-none focus:border-zinc-900 dark:border-zinc-100"
-                  />
-                  {appliedVoucher ? (
-                    <button
-                      type="button"
-                      onClick={handleClearVoucher}
-                      className="rounded-[8px] border border-[#fecdca] bg-[#fff1f1] px-3.5 py-2 text-[12px] font-bold text-[#b3261e] hover:bg-[#fee4e2]"
-                    >
-                      {t("common.delete", "Remove")}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleApplyVoucher}
-                      disabled={!voucherInput.trim()}
-                      className="rounded-[8px] bg-[#0b1c30] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#132741] disabled:opacity-50"
-                    >
-                      {t("common.confirm", "Apply")}
-                    </button>
-                  )}
-                </div>
-
-                {appliedVoucher && pricing?.discountAmount > 0 && (
-                  <div className="mt-2 text-[11px] font-bold text-[#0e7b4c]">
-                    {appliedVoucher}: -{formatCurrency(pricing.discountAmount)}
                   </div>
                 )}
               </div>
@@ -307,13 +239,13 @@ function StorageDetail() {
               <label className="flex items-start gap-2">
                 <input type="checkbox" checked={agreeTerms} onChange={() => setAgreeTerms((v) => !v)} className="mt-0.5 h-3.5 w-3.5 accent-[#1d5fe5]" />
                 <span>
-                  {t("common.confirm", "I agree to the rental terms")}
+                  {t("booking.agree_terms", "I agree to the rental terms")}
                 </span>
               </label>
               <label className="flex items-start gap-2">
                 <input type="checkbox" checked={agreeLock} onChange={() => setAgreeLock((v) => !v)} className="mt-0.5 h-3.5 w-3.5 accent-[#1d5fe5]" />
                 <span>
-                  {t("access.keypad_instructions", "I confirm keyless PIN opening")}
+                  {t("booking.confirm_keyless_pin", "I confirm keyless PIN opening instructions")}
                 </span>
               </label>
             </div>

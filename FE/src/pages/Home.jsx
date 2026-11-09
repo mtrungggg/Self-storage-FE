@@ -286,18 +286,7 @@ function Home() {
                                 : "text-[#18181b] hover:bg-[#f4f4f5] hover:text-[#18181b]"
                             }`}
                           >
-                            <div className="flex flex-col truncate">
-                              <span className="truncate">{s.id === "all" ? t("home.all_sizes", s.label) : s.label}</span>
-                              {s.subtext && (
-                                <span
-                                  className={`text-[10px] truncate ${
-                                    isSelected ? "text-white/80" : "text-[#71717a]"
-                                  }`}
-                                >
-                                  {s.subtext}
-                                </span>
-                              )}
-                            </div>
+                            <span className="truncate">{s.id === "all" ? t("home.all_sizes", s.label) : s.label}</span>
                             {isSelected && (
                               <span className="material-symbols-outlined text-[16px] text-white shrink-0 ml-1">check</span>
                             )}
@@ -485,3 +474,4 @@ function Home() {
 }
 
 export default Home;
+

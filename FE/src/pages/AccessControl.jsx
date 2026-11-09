@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, lazy, Suspense } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,13 +9,12 @@ import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import { FACILITY_GALLERY_PHOTOS as UNIT_PHOTOS } from "../constants/assets";
 
-const LuminaInteractiveList = lazy(() =>
-  import("../components/ui/lumina-interactive-list").then((m) => ({ default: m.Component }))
-);
+import AccessUnitGallery from "../components/AccessUnitGallery";
+import UnitInformation from "../components/UnitInformation";
 
 function AccessControl() {
   const navigate = useNavigate();
-  const { t, translateStatus } = useLanguage();
+  const { t } = useLanguage();
   const {
     rentalsLoading,
     activeRentals,
@@ -115,7 +114,7 @@ function AccessControl() {
       unitCode: r.unitCode,
       title: `${t("common.unit", "Unit")} ${r.unitCode}`,
       description: r.facilityName || "",
-      media: r.image || UNIT_PHOTOS[idx % UNIT_PHOTOS.length],
+      media: r.imageUrl || r.image || UNIT_PHOTOS[idx % UNIT_PHOTOS.length],
     }));
   }, [effectiveRentals, t]);
 
@@ -205,22 +204,11 @@ function AccessControl() {
 
         {hasLiveRentals ? (
           <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 shadow-md">
-            <Suspense
-              fallback={
-                <div className="h-64 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900 text-zinc-400 gap-2">
-                  <div className="w-6 h-6 border-2 border-zinc-900 dark:border-zinc-100 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-medium">Loading 3D Visualizer...</span>
-                </div>
-              }
-            >
-              <LuminaInteractiveList
-                slides={luminaSlides}
-                initialIndex={selectedSlideIndex}
-                onSlideChange={(_idx, slide) => {
-                  if (slide?.id) setSelectedRentalId(slide.id);
-                }}
-              />
-            </Suspense>
+            <AccessUnitGallery
+              slides={luminaSlides}
+              selectedIndex={selectedSlideIndex}
+              onSelect={setSelectedRentalId}
+            />
           </div>
         ) : !rentalsLoading && (
           <div className="mt-5 rounded-2xl border border-dashed border-[#dfe7f5] bg-white p-8 text-center">
@@ -230,6 +218,10 @@ function AccessControl() {
               {t("my_units.rent_btn", "Rent Unit")}
             </button>
           </div>
+        )}
+
+        {hasLiveRentals && (
+          <UnitInformation rental={currentUnit} className="mt-5" />
         )}
 
         {hasLiveRentals && (
@@ -247,10 +239,15 @@ function AccessControl() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div className="text-[15px] font-bold text-[#0b1c30]">{t("access.pin_display", "Keypad PIN Code")}</div>
-                        {currentFacilityCheckIn && (
+                        {currentFacilityCheckIn || selectedRental?.checkedInAt ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-[#abefc6] bg-[#ecfdf3] px-2.5 py-0.5 text-[10px] font-bold text-[#027a48]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#12b76a]" />
                             {t("status.checked_in", "Checked In")}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            {t("status.awaiting_checkin", "Chờ nhận kho")}
                           </span>
                         )}
                       </div>
@@ -296,6 +293,40 @@ function AccessControl() {
                           <span className="material-symbols-outlined text-[16px]">credit_card</span>
                           <span>{t("billing.pay_now", "Billing")}</span>
                         </button>
+                      </div>
+                    ) : isAwaitingCheckIn || (!displayPin && !credentialsLoading) ? (
+                      <div className="mt-4 rounded-[14px] border border-blue-200 bg-blue-50/70 p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                            <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-[13px] font-bold text-blue-900">
+                                {t("access.awaiting_checkin_title", "Kho mới đặt — Đang chờ Check-in nhận kho")}
+                              </span>
+                              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                                {t("status.awaiting_checkin", "Chờ nhận kho")}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[12px] leading-relaxed text-blue-800">
+                              {t(
+                                "access.awaiting_checkin_desc",
+                                "Theo quy trình vận hành kho (BR-RSV-04), mã PIN mở khóa sẽ tự động kích hoạt ngay sau khi bạn làm thủ tục nhận kho tại cơ sở. Vui lòng sử dụng Thẻ mở kho & QR để làm thủ tục."
+                              )}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenCheckInQr}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[12px] font-bold text-white shadow-sm transition hover:bg-blue-700"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                                <span>{t("access.open_qr_pass", "Mở Thẻ mở kho & QR")}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="mt-4 rounded-[12px] border border-[#eef1f8] bg-[#f8faff] p-4">

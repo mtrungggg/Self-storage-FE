@@ -26,6 +26,35 @@ function getCleanCondition(raw) {
   return raw;
 }
 
+function parseTypeAndSize(unitTypeName) {
+  const name = String(unitTypeName || "").toLowerCase();
+  let typeLabel = "Kho hàng khô";
+  if (name.includes("seafood") || name.includes("freeze") || name.includes("đông lạnh") || name.includes("hải sản")) {
+    typeLabel = "Kho đông lạnh / Hải sản";
+  } else if (name.includes("warm") || name.includes("heated") || name.includes("sưởi")) {
+    typeLabel = "Kho sưởi ấm";
+  } else if (name.includes("climate") || name.includes("nhiệt độ")) {
+    typeLabel = "Kho kiểm soát nhiệt độ";
+  } else if (name.includes("locker") || name.includes("tủ khóa")) {
+    typeLabel = "Tủ khóa thông minh";
+  }
+
+  let sizeLabel = "Small (3 m²)";
+  if (name.includes("mini") || name.includes("1 m2") || name.includes("1 m²")) {
+    sizeLabel = "Mini (1 m²)";
+  } else if (name.includes("small") || name.includes("3 m2") || name.includes("3 m²")) {
+    sizeLabel = "Small (3 m²)";
+  } else if (name.includes("medium") || name.includes("6 m2") || name.includes("6 m²")) {
+    sizeLabel = "Medium (6 m²)";
+  } else if ((name.includes("large") && !name.includes("extra")) || name.includes("10 m2") || name.includes("10 m²")) {
+    sizeLabel = "Large (10 m²)";
+  } else if (name.includes("extra large") || name.includes("xl") || name.includes("16 m2") || name.includes("16 m²")) {
+    sizeLabel = "Extra Large (16 m²)";
+  }
+
+  return { typeLabel, sizeLabel };
+}
+
 const FEE_TYPE_TRANSLATIONS = {
   vi: {
     late_fee: "Phí trễ hạn thanh toán",
@@ -554,17 +583,6 @@ export default function ManagerPricing() {
           >
             Unit Rental Rates ({rates.length})
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("promotions")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
-              activeTab === "promotions"
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Promotions &amp; Vouchers ({promotions.length})
-          </button>
         </div>
 
         <div>
@@ -592,16 +610,6 @@ export default function ManagerPricing() {
               className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
             >
               {saving ? "Saving..." : `Save Changes (${dirtyIds.size})`}
-            </button>
-          )}
-
-          {isAdmin && activeTab === "promotions" && (
-            <button
-              type="button"
-              onClick={() => setShowPromoModal(true)}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
-            >
-              {t("manager.create_voucher", "Tạo Voucher")}
             </button>
           )}
         </div>
@@ -819,7 +827,8 @@ export default function ManagerPricing() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-2.5">{t("table.type", "Loại ô kho")}</th>
+                <th className="px-4 py-2.5">LOẠI KHO</th>
+                <th className="px-4 py-2.5">KÍCH THƯỚC</th>
                 <th className="px-4 py-2.5 text-right">{t("pricing.monthly_rate", "Đơn giá tháng")}</th>
                 <th className="px-4 py-2.5 text-right">{t("manager.deposit_amount", "Tiền cọc")}</th>
                 <th className="px-4 py-2.5 text-right">{t("pricing.reservation_fee", "Phí giữ chỗ")}</th>
@@ -829,13 +838,13 @@ export default function ManagerPricing() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-xs text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
                     Loading rate policies from server...
                   </td>
                 </tr>
               ) : rates.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-xs text-slate-400">
+                  <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
                     No rate configurations defined for this facility.
                   </td>
                 </tr>
@@ -843,6 +852,7 @@ export default function ManagerPricing() {
                 rates.map((rate) => {
                   const edited = editedRates[rate.id] || {};
                   const isDirty = dirtyIds.has(rate.id);
+                  const { typeLabel, sizeLabel } = parseTypeAndSize(rate.unitTypeName);
 
                   return (
                     <tr
@@ -850,8 +860,14 @@ export default function ManagerPricing() {
                       className={isDirty ? "bg-amber-50/40 hover:bg-amber-50/70 transition" : "hover:bg-slate-50/60 transition"}
                     >
                       <td className="px-4 py-2.5">
-                        <div className="font-semibold text-slate-800">{rate.unitTypeName}</div>
+                        <div className="font-semibold text-slate-900">{typeLabel}</div>
                         <div className="text-[10px] text-slate-400">{rate.facilityName}</div>
+                      </td>
+
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          {sizeLabel}
+                        </span>
                       </td>
 
                       <td className="px-4 py-2.5 text-right">
@@ -901,59 +917,6 @@ export default function ManagerPricing() {
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* TAB 3: PROMOTIONS SECTION */}
-      {activeTab === "promotions" && (
-        <div className="space-y-2.5">
-          {loading ? (
-            <div className="rounded-lg border border-slate-200 bg-white py-12 text-center text-xs text-slate-400">
-              Loading promotional vouchers...
-            </div>
-          ) : promotions.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-white py-12 text-center text-xs text-slate-400">
-              No promotional vouchers configured.
-            </div>
-          ) : (
-            promotions.map((promo) => (
-              <div
-                key={promo.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3.5 hover:bg-slate-50/50 transition"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
-                      {promo.code}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-900">{promo.name}</span>
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    {promo.discountType === "percentage"
-                      ? `Discount ${promo.discountValue}%`
-                      : `Discount ${formatVnd(promo.discountValue)}`}
-                    {promo.usageLimit ? ` • Usage limit: ${promo.usageLimit}` : ""}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!isAdmin}
-                    onClick={() => isAdmin && handleTogglePromo(promo.id, promo.isActive)}
-                    className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold transition ${
-                      promo.isActive
-                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                    title={promo.isActive ? "Click to suspend" : "Click to activate"}
-                  >
-                    {promo.isActive ? "Active" : "Inactive"}
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       )}
 
@@ -1179,112 +1142,6 @@ export default function ManagerPricing() {
                   className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
                 >
                   {savingFee ? "Saving..." : feeFormData.id ? "Save Changes" : "Create Policy"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Create Promotion */}
-      {isAdmin && showPromoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h2 className="text-sm font-bold text-slate-900">Create New Promotional Voucher</h2>
-              <button
-                type="button"
-                onClick={() => setShowPromoModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePromo} className="space-y-3.5">
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Voucher Code <span className="text-red-500">*</span>
-                </span>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. SUMMER20"
-                  value={promoForm.code}
-                  onChange={(e) => setPromoForm({ ...promoForm, code: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-mono uppercase text-slate-800 focus:outline-none focus:border-slate-400"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Campaign Name <span className="text-red-500">*</span>
-                </span>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Summer Opening Special"
-                  value={promoForm.name}
-                  onChange={(e) => setPromoForm({ ...promoForm, name: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Discount Type</span>
-                  <SelectDropdown
-                    value={promoForm.discountType}
-                    onChange={(e) => setPromoForm({ ...promoForm, discountType: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
-                  >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₫)</option>
-                  </SelectDropdown>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">
-                    Discount Value <span className="text-red-500">*</span>
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    placeholder={promoForm.discountType === "percentage" ? "10" : "50000"}
-                    value={promoForm.discountValue}
-                    onChange={(e) => setPromoForm({ ...promoForm, discountValue: e.target.value })}
-                    className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-400"
-                  />
-                </label>
-              </div>
-
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">Usage Limit</span>
-                <input
-                  type="number"
-                  min="1"
-                  value={promoForm.usageLimit}
-                  onChange={(e) => setPromoForm({ ...promoForm, usageLimit: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
-                />
-              </label>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowPromoModal(false)}
-                  className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingPromo}
-                  className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {savingPromo ? "Creating..." : "Confirm & Create"}
                 </button>
               </div>
             </form>

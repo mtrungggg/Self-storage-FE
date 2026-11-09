@@ -107,6 +107,14 @@ function mapStatusStyle(status) {
   return "border-rose-300 bg-rose-50 text-rose-800 shadow-xs";
 }
 
+function formatMapStatusLabel(status) {
+  const key = String(status || "").toLowerCase().trim();
+  if (key === "pending_inspection") return "pending";
+  if (key === "out_of_service") return "out of svc";
+  if (key === "maintenance") return "maint.";
+  return key;
+}
+
 function getNextUnitCode(existingUnits, zone = "A", floor = "1", offset = 0) {
   const z = (zone || "A").trim().toUpperCase();
   const f = (floor || "1").trim();
@@ -128,25 +136,16 @@ function getNextUnitCode(existingUnits, zone = "A", floor = "1", offset = 0) {
   return `${z}-${f}${padded}`;
 }
 
-function parseNotesAndImage(rawNotes) {
-  if (!rawNotes) return { notes: "", imageUrl: "" };
-  const match = rawNotes.match(/\[IMG:(https?:\/\/[^\]]+)\]/);
+function parseNotesAndImage(rawNotes, fallbackImageUrl = "") {
+  if (!rawNotes) return { notes: "", imageUrl: fallbackImageUrl || "" };
+  const match = rawNotes.match(/\[IMG:([^\]]+)\]/);
   if (match) {
     return {
-      imageUrl: match[1],
-      notes: rawNotes.replace(/\[IMG:(https?:\/\/[^\]]+)\]\s*/, "").trim(),
+      imageUrl: match[1].trim(),
+      notes: rawNotes.replace(/\[IMG:[^\]]+\]\s*/, "").trim(),
     };
   }
-  return { notes: rawNotes, imageUrl: "" };
-}
-
-function packNotesAndImage(notes, imageUrl) {
-  const cleanN = (notes || "").trim();
-  const cleanImg = (imageUrl || "").trim();
-  if (cleanImg) {
-    return `[IMG:${cleanImg}] ${cleanN}`.trim();
-  }
-  return cleanN;
+  return { notes: rawNotes, imageUrl: fallbackImageUrl || "" };
 }
 
 export default function ManagerUnits() {
@@ -237,7 +236,17 @@ export default function ManagerUnits() {
       prev.map((u) => (u.id === unit.id ? { ...u, physicalStatus: nextStatus } : u))
     );
     try {
-      await managerService.updateUnit(unit.id, { physicalStatus: nextStatus });
+      await managerService.updateUnit(unit.id, {
+        unitCode: unit.unitCode,
+        unitTypeId: unit.unitTypeId,
+        areaId: unit.areaId || undefined,
+        floorLabel: unit.floorLabel || "",
+        zoneLabel: unit.zoneLabel || "",
+        physicalStatus: nextStatus,
+        isListed: unit.isListed,
+        notes: unit.notes ?? "",
+        imageUrl: unit.imageUrl ?? "",
+      });
       setNotice(`Đã đổi trạng thái kho ${unit.unitCode} sang ${nextStatus}.`);
       setTimeout(() => setNotice(""), 3500);
     } catch (err) {
@@ -254,7 +263,17 @@ export default function ManagerUnits() {
       prev.map((u) => (u.id === unit.id ? { ...u, isListed: nextVal } : u))
     );
     try {
-      await managerService.updateUnit(unit.id, { isListed: nextVal });
+      await managerService.updateUnit(unit.id, {
+        unitCode: unit.unitCode,
+        unitTypeId: unit.unitTypeId,
+        areaId: unit.areaId || undefined,
+        floorLabel: unit.floorLabel || "",
+        zoneLabel: unit.zoneLabel || "",
+        physicalStatus: unit.physicalStatus,
+        isListed: nextVal,
+        notes: unit.notes ?? "",
+        imageUrl: unit.imageUrl ?? "",
+      });
       setNotice(`Kho ${unit.unitCode} hiện đã ${nextVal ? "Hiển thị cho khách thuê" : "Ẩn"}.`);
       setTimeout(() => setNotice(""), 3500);
     } catch (err) {
@@ -268,7 +287,7 @@ export default function ManagerUnits() {
   function openEditUnit(unit) {
     setEditingUnitId(unit.id);
     setPendingDrop(null);
-    const { notes, imageUrl } = parseNotesAndImage(unit.notes);
+    const { notes, imageUrl } = parseNotesAndImage(unit.notes, unit.imageUrl);
     setUnitForm({
       unitCode: unit.unitCode || "",
       unitTypeId: String(unit.unitTypeId || ""),
@@ -288,7 +307,6 @@ export default function ManagerUnits() {
     setSavingUnit(true);
     setError("");
     try {
-      const packedNotes = packNotesAndImage(unitForm.notes, unitForm.imageUrl);
       const basePayload = {
         unitTypeId: Number(unitForm.unitTypeId),
         areaId: unitForm.areaId ? Number(unitForm.areaId) : undefined,
@@ -299,9 +317,11 @@ export default function ManagerUnits() {
             ? "pending_inspection"
             : unitForm.physicalStatus,
         isListed: Boolean(unitForm.isListed),
-        notes: packedNotes || undefined,
+        notes: (unitForm.notes ?? "").trim(),
+        imageUrl: (unitForm.imageUrl ?? "").trim(),
       };
 
+      let createdUnitId = null;
       if (editingUnitId) {
         await managerService.updateUnit(editingUnitId, {
           ...basePayload,
@@ -315,31 +335,53 @@ export default function ManagerUnits() {
           unitCode: unitForm.unitCode,
         });
 
-        const newUnitId = created?.id || Date.now();
+        createdUnitId = created?.id;
+        if (!createdUnitId) {
+          throw new Error("Không thể lấy mã định danh ô kho sau khi tạo.");
+        }
+
         const width = pendingDrop?.width || 22;
         const height = pendingDrop?.height || 16;
-        const newPos = {
-          unitId: newUnitId,
-          unitCode: unitForm.unitCode,
-          areaId: pendingDrop?.area?.areaId,
-          x: pendingDrop?.unitX || 10,
-          y: pendingDrop?.unitY || 10,
-          width,
-          height,
-          rotationDegrees: 0,
-          physicalStatus: basePayload.physicalStatus,
-          metadata: "{}",
-        };
+        const targetAreaId = pendingDrop?.area?.areaId || (basePayload.areaId ? Number(basePayload.areaId) : undefined);
 
-        setLayout((prev) => {
-          if (!prev) return { facilityId, facilityName: "", areas: pendingDrop?.area ? [pendingDrop.area] : [], unitPositions: [newPos] };
-          return {
-            ...prev,
-            unitPositions: [...(prev.unitPositions || []), newPos],
+        // Lưu ngay vị trí tọa độ ô kho mới vào sơ đồ mặt bằng trên backend
+        if (targetAreaId) {
+          const newPos = {
+            unitId: Number(createdUnitId),
+            areaId: Number(targetAreaId),
+            x: Math.round(Number(pendingDrop?.unitX ?? 10)),
+            y: Math.round(Number(pendingDrop?.unitY ?? 10)),
+            width,
+            height,
+            rotationDegrees: 0,
+            metadata: "{}",
           };
-        });
 
-        setSelectedMapUnitId(newUnitId);
+          const currentPositions = (layout?.unitPositions || [])
+            .filter((p) => p.unitId !== createdUnitId)
+            .map((pos) => {
+              const matchedUnit = units.find((u) => u.id === pos.unitId);
+              const effectiveAreaId = pos.areaId
+                ? Number(pos.areaId)
+                : (matchedUnit?.areaId ? Number(matchedUnit.areaId) : undefined);
+              return {
+                unitId: Number(pos.unitId),
+                areaId: effectiveAreaId,
+                x: Math.round(Number(pos.x) || 0),
+                y: Math.round(Number(pos.y) || 0),
+                width: Number(pos.width) > 0 ? Number(pos.width) : 22,
+                height: Number(pos.height) > 0 ? Number(pos.height) : 16,
+                rotationDegrees: Number(pos.rotationDegrees) || 0,
+                metadata: pos.metadata || "{}",
+              };
+            });
+
+          await managerService.updateMapLayout(facilityId, {
+            positions: [...currentPositions, newPos],
+          });
+        }
+
+        setSelectedMapUnitId(createdUnitId);
         setNotice(`Đã thêm ô kho mới [${unitForm.unitCode}] vào mặt bằng thành công.`);
       }
 
@@ -347,6 +389,9 @@ export default function ManagerUnits() {
       setPendingDrop(null);
       await loadUnits();
       await loadLayout();
+      if (createdUnitId) {
+        setSelectedMapUnitId(createdUnitId);
+      }
       setTimeout(() => setNotice(""), 4000);
     } catch (err) {
       setError(err?.message || "Không thể lưu thông tin ô kho.");
@@ -403,16 +448,22 @@ export default function ManagerUnits() {
     setError("");
     try {
       const payload = {
-        positions: (layout.unitPositions || []).map((pos) => ({
-          unitId: Number(pos.unitId),
-          areaId: pos.areaId ? Number(pos.areaId) : undefined,
-          x: Math.round(Number(pos.x) || 0),
-          y: Math.round(Number(pos.y) || 0),
-          width: Number(pos.width) > 0 ? Number(pos.width) : 22,
-          height: Number(pos.height) > 0 ? Number(pos.height) : 16,
-          rotationDegrees: Number(pos.rotationDegrees) || 0,
-          metadata: pos.metadata || "{}",
-        })),
+        positions: (layout.unitPositions || []).map((pos) => {
+          const matchedUnit = units.find((u) => u.id === pos.unitId);
+          const effectiveAreaId = pos.areaId
+            ? Number(pos.areaId)
+            : (matchedUnit?.areaId ? Number(matchedUnit.areaId) : undefined);
+          return {
+            unitId: Number(pos.unitId),
+            areaId: effectiveAreaId,
+            x: Math.round(Number(pos.x) || 0),
+            y: Math.round(Number(pos.y) || 0),
+            width: Number(pos.width) > 0 ? Number(pos.width) : 22,
+            height: Number(pos.height) > 0 ? Number(pos.height) : 16,
+            rotationDegrees: Number(pos.rotationDegrees) || 0,
+            metadata: pos.metadata || "{}",
+          };
+        }),
       };
 
       await managerService.updateMapLayout(facilityId, payload);
@@ -462,14 +513,18 @@ export default function ManagerUnits() {
 
     if (data.type === "new-unit") {
       const zoneCode = (area.code || "").toUpperCase();
-      let zoneLabel = "A";
-      let floorLabel = "1";
-      if (zoneCode === "F1-ZA") { zoneLabel = "A"; floorLabel = "1"; }
-      else if (zoneCode === "F1-ZB") { zoneLabel = "B"; floorLabel = "1"; }
-      else if (zoneCode === "F2-ZA") { zoneLabel = "A"; floorLabel = "2"; }
-      else if (area.name?.includes("B")) { zoneLabel = "B"; }
+      const match = zoneCode.match(/^F(\d+)-Z([A-Z])/i);
+      let zoneLabel = match ? match[2].toUpperCase() : "A";
+      let floorLabel = match ? match[1] : "1";
+      if (!match) {
+        if (zoneCode === "F1-ZA") { zoneLabel = "A"; floorLabel = "1"; }
+        else if (zoneCode === "F1-ZB") { zoneLabel = "B"; floorLabel = "1"; }
+        else if (zoneCode === "F2-ZA") { zoneLabel = "A"; floorLabel = "2"; }
+        else if (area.name?.includes("B")) { zoneLabel = "B"; }
+      }
 
-      const nextCode = getNextUnitCode(units, zoneLabel, floorLabel, 0);
+      const allKnownUnits = [...units, ...(layout?.unitPositions || [])];
+      const nextCode = getNextUnitCode(allKnownUnits, zoneLabel, floorLabel, 0);
       const defaultTypeId = unitTypes[0]?.id ? String(unitTypes[0].id) : "1";
 
       setPendingDrop({
@@ -747,7 +802,9 @@ export default function ManagerUnits() {
                   {zoneAreas.map((area, areaIdx) => {
                     const zoneCode = (area.code || "").toUpperCase();
                     const zoneUnits = mapPositions.filter((pos) => {
-                      if (area.areaId && pos.areaId && Number(area.areaId) === Number(pos.areaId)) return true;
+                      if (pos.areaId && zoneAreas.some((a) => Number(a.areaId) === Number(pos.areaId))) {
+                        return Number(area.areaId) === Number(pos.areaId);
+                      }
                       const uCode = (pos.unitCode || "").toUpperCase();
                       if (zoneCode === "F1-ZA") return /^A-?1\d+/.test(uCode) || (uCode.startsWith("A-") && !uCode.startsWith("A-2"));
                       if (zoneCode === "F1-ZB") return /^B-?1\d+/.test(uCode) || uCode.startsWith("B-");
@@ -821,7 +878,7 @@ export default function ManagerUnits() {
                                     }}
                                     onClick={() => setSelectedMapUnitId(occupyingUnit.unitId)}
                                     title={`${occupyingUnit.unitCode} (${occupyingUnit.physicalStatus}) - Kéo để đổi ô lưới`}
-                                    className={`absolute flex flex-col items-center justify-center rounded-lg border text-[10px] font-bold tracking-tight transition duration-150 cursor-grab hover:scale-102 hover:shadow-md ${mapStatusStyle(occupyingUnit.physicalStatus)} ${
+                                    className={`absolute flex flex-col items-center justify-center rounded-lg border text-[10px] font-bold tracking-tight transition duration-150 cursor-grab hover:scale-102 hover:shadow-md overflow-hidden ${mapStatusStyle(occupyingUnit.physicalStatus)} ${
                                       selected ? "ring-2 ring-blue-600 shadow-md z-20" : "z-10 shadow-xs"
                                     }`}
                                     style={{
@@ -832,7 +889,7 @@ export default function ManagerUnits() {
                                     }}
                                   >
                                     <span className="truncate max-w-full px-1">{occupyingUnit.unitCode}</span>
-                                    <span className="text-[8px] font-normal opacity-75">{occupyingUnit.physicalStatus}</span>
+                                    <span className="truncate max-w-full px-0.5 text-[8px] font-normal opacity-75">{formatMapStatusLabel(occupyingUnit.physicalStatus)}</span>
                                   </div>
                                 );
                               }

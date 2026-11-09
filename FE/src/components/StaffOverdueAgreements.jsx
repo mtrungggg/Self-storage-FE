@@ -67,7 +67,7 @@ export default function StaffOverdueAgreements({ initialFacilityId = "" }) {
       </div>
 
       {loading && <p role="status" className="mt-3 text-xs text-slate-400">{t("common.loading", "Đang tải...")}</p>}
-      {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{error}</p>}
+      {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{t(error, error)}</p>}
       {!loading && !error && agreements.length === 0 && (
         <p className="mt-4 rounded-xl border border-dashed p-6 text-center text-xs text-[#8996a9]">
           {t("common.no_data", "Không có dữ liệu")}

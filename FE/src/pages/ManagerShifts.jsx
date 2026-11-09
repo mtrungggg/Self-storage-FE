@@ -961,49 +961,52 @@ function ManagerShifts() {
 
       setNotice(`Đã phân bổ tối ưu ${autoFilledCount} ca trực. Đang đồng bộ lên máy chủ...`);
 
-      // 3. Đồng bộ các ca mới tạo lên backend
+      // 3. Đồng bộ các ca mới tạo lên backend bằng Batch API
+      const autoFillAssignmentsToAdd = [];
       for (const item of assignmentsToPersist) {
-        try {
-          const [year, month, day] = item.dayKey.split("-").map(Number);
-          const startHour = item.preset.startHour || 6;
-          const endHour = item.preset.endHour || 14;
-          const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
-          const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
-          if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
+        const [year, month, day] = item.dayKey.split("-").map(Number);
+        const startHour = item.preset.startHour || 6;
+        const endHour = item.preset.endHour || 14;
+        const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
+        const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
+        if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
 
-          const cacheKey = `${item.preset.name.toLowerCase()}_${item.dayKey}`;
-          let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
-            (sh) =>
-              sh.shiftName?.toLowerCase() === item.preset.name.toLowerCase() &&
-              new Date(sh.startsAt).toISOString().slice(0, 10) === item.dayKey
-          );
+        const cacheKey = `${item.preset.name.toLowerCase()}_${item.dayKey}`;
+        let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
+          (sh) =>
+            sh.shiftName?.toLowerCase() === item.preset.name.toLowerCase() &&
+            new Date(sh.startsAt).toISOString().slice(0, 10) === item.dayKey
+        );
 
-          if (!matchingShift) {
-            const created = await managerService.createShift(facilityId, {
-              shiftName: item.preset.name,
-              startsAt: startDate.toISOString(),
-              endsAt: endDate.toISOString(),
-              status: "open",
-              allowPast: true,
-            });
-            matchingShift = created;
-            if (created) {
-              shiftCache.set(cacheKey, created);
-              newShiftsPool.push(created);
-            }
+        if (!matchingShift) {
+          const created = await managerService.createShift(facilityId, {
+            shiftName: item.preset.name,
+            startsAt: startDate.toISOString(),
+            endsAt: endDate.toISOString(),
+            status: "open",
+            allowPast: true,
+          });
+          matchingShift = created;
+          if (created) {
+            shiftCache.set(cacheKey, created);
+            newShiftsPool.push(created);
           }
-
-          if (matchingShift?.id) {
-            await managerService.createShiftAssignment(facilityId, {
-              shiftId: matchingShift.id,
-              employeeId: item.staffId,
-              dutyRole: DUTY_ROLES[0].value,
-              allowPast: true,
-            });
-          }
-        } catch {
-          // Bỏ qua lỗi lẻ nếu ca đã tồn tại
         }
+
+        if (matchingShift?.id) {
+          autoFillAssignmentsToAdd.push({
+            shiftId: matchingShift.id,
+            employeeId: item.staffId,
+            dutyRole: DUTY_ROLES[0].value,
+            allowPast: true,
+          });
+        }
+      }
+
+      if (autoFillAssignmentsToAdd.length > 0) {
+        await managerService.batchSaveShiftAssignments(facilityId, {
+          assignmentsToAdd: autoFillAssignmentsToAdd,
+        });
       }
 
       setShifts(newShiftsPool);
@@ -1065,6 +1068,7 @@ function ManagerShifts() {
       }));
 
       const shiftCache = new Map();
+      const copyAssignmentsToAdd = [];
 
       for (const item of prevRoster) {
         // Tìm staff tương ứng
@@ -1114,48 +1118,50 @@ function ManagerShifts() {
         updatedStaffList[staffIndex].shifts[targetDayKey] = [...existingShifts, newShiftItem];
         copiedCount++;
 
-        // Đồng bộ lên backend
-        try {
-          const [year, month, day] = targetDayKey.split("-").map(Number);
-          const startHour = preset.startHour || 6;
-          const endHour = preset.endHour || 14;
-          const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
-          const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
-          if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
+        // Đồng bộ lên backend bằng Batch API
+        const [year, month, day] = targetDayKey.split("-").map(Number);
+        const startHour = preset.startHour || 6;
+        const endHour = preset.endHour || 14;
+        const startDate = new Date(Date.UTC(year, month - 1, day, startHour, 0, 0));
+        const endDate = new Date(Date.UTC(year, month - 1, day, endHour % 24, 0, 0));
+        if (endHour >= 24) endDate.setUTCDate(endDate.getUTCDate() + 1);
 
-          const cacheKey = `${preset.name.toLowerCase()}_${targetDayKey}`;
-          let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
-            (sh) =>
-              sh.shiftName?.toLowerCase() === preset.name.toLowerCase() &&
-              new Date(sh.startsAt).toISOString().slice(0, 10) === targetDayKey
-          );
+        const cacheKey = `${preset.name.toLowerCase()}_${targetDayKey}`;
+        let matchingShift = shiftCache.get(cacheKey) || newShiftsPool.find(
+          (sh) =>
+            sh.shiftName?.toLowerCase() === preset.name.toLowerCase() &&
+            new Date(sh.startsAt).toISOString().slice(0, 10) === targetDayKey
+        );
 
-          if (!matchingShift) {
-            const created = await managerService.createShift(facilityId, {
-              shiftName: preset.name,
-              startsAt: startDate.toISOString(),
-              endsAt: endDate.toISOString(),
-              status: "open",
-              allowPast: true,
-            });
-            matchingShift = created;
-            if (created) {
-              shiftCache.set(cacheKey, created);
-              newShiftsPool.push(created);
-            }
+        if (!matchingShift) {
+          const created = await managerService.createShift(facilityId, {
+            shiftName: preset.name,
+            startsAt: startDate.toISOString(),
+            endsAt: endDate.toISOString(),
+            status: "open",
+            allowPast: true,
+          });
+          matchingShift = created;
+          if (created) {
+            shiftCache.set(cacheKey, created);
+            newShiftsPool.push(created);
           }
-
-          if (matchingShift?.id) {
-            await managerService.createShiftAssignment(facilityId, {
-              shiftId: matchingShift.id,
-              employeeId: staffObj.id,
-              dutyRole: item.dutyRole || DUTY_ROLES[0].value,
-              allowPast: true,
-            });
-          }
-        } catch {
-          // Bỏ qua lỗi lẻ
         }
+
+        if (matchingShift?.id) {
+          copyAssignmentsToAdd.push({
+            shiftId: matchingShift.id,
+            employeeId: staffObj.id,
+            dutyRole: item.dutyRole || DUTY_ROLES[0].value,
+            allowPast: true,
+          });
+        }
+      }
+
+      if (copyAssignmentsToAdd.length > 0) {
+        await managerService.batchSaveShiftAssignments(facilityId, {
+          assignmentsToAdd: copyAssignmentsToAdd,
+        });
       }
 
       setShifts(newShiftsPool);
@@ -1339,7 +1345,7 @@ function ManagerShifts() {
                       ON-DUTY STAFF ({filteredStaff.length})
                     </span>
                     <span className="rounded-full bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-bold text-[#475467]">
-                      Standard: ${BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK}h
+                      Standard: {BUSINESS_CONFIG.WORKLOAD.STANDARD_SHIFT_HOURS_PER_WEEK}h
                     </span>
                   </div>
                 </th>

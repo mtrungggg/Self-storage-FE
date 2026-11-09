@@ -24,13 +24,13 @@ export default function ManagerExpiringContractsPage() {
   const [selectedAgreement, setSelectedAgreement] = useState(null);
 
   const loadData = async () => {
-    if (!facilityId && facilityLoading) return;
+    if (!facilityId) return;
     setLoading(true);
     setError("");
 
     try {
       const data = await managerExpiringContractsService.getExpiringCases({
-        facilityId: facilityId || 1,
+        facilityId: Number(facilityId),
         search: search.trim() || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
@@ -381,14 +381,30 @@ export default function ManagerExpiringContractsPage() {
                     {/* Hành động: Nút “Phân công kiểm tra kho” */}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAgreement(item)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[15px]">fact_check</span>
-                          <span>Phân công kiểm tra kho</span>
-                        </button>
+                        {item.postInspectionStatus === "refunded" || item.status === "completed" ? (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200">
+                            <span className="material-symbols-outlined text-[15px]">check_circle</span>
+                            <span>Đã hoàn tất</span>
+                          </span>
+                        ) : item.inspectionStatus === "completed" || item.inspectionStatus === "inspected" ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 text-slate-500 px-3 py-1.5 text-xs font-bold border border-slate-200 cursor-not-allowed"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">verified</span>
+                            <span>Đã nghiệm thu</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAgreement(item)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 text-white hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">fact_check</span>
+                            <span>{item.assignedStaffId ? "Phân công lại" : "Phân công kiểm tra kho"}</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -404,7 +420,7 @@ export default function ManagerExpiringContractsPage() {
         <AssignInspectionModal
           isOpen={Boolean(selectedAgreement)}
           agreement={selectedAgreement}
-          facilityId={facilityId || selectedAgreement.facilityId || 1}
+          facilityId={facilityId || selectedAgreement?.facilityId}
           onClose={() => setSelectedAgreement(null)}
           onSuccess={() => {
             setSelectedAgreement(null);

@@ -138,23 +138,12 @@ export const managerService = {
     try {
       const res = await apiClient.post(`/manager/refunds/${encodeURIComponent(id)}/process-payout`, payload);
       return res?.data ?? res;
-    } catch {
+    } catch (err) {
       try {
         const res2 = await apiClient.post(`/manager/refund-approvals/${encodeURIComponent(id)}/payout`, payload);
         return res2?.data ?? res2;
-      } catch {
-        const notes = [
-          payload.transactionRef ? `Mã GD: ${payload.transactionRef}` : '',
-          payload.notes || payload.note || '',
-          payload.proofUrl || payload.proofImageUrl ? `UNC: ${payload.proofUrl || payload.proofImageUrl}` : ''
-        ].filter(Boolean).join(' | ');
-
-        return this.decideRefundApproval(id, {
-          decision: 'approved',
-          reason: notes || 'Xác nhận đã chuyển khoản hoàn cọc cho khách hàng',
-          overrideAmount: payload.amount,
-          ...payload
-        });
+      } catch (err2) {
+        throw err?.response?.data?.message ? err : (err2 || err);
       }
     }
   },

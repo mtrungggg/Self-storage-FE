@@ -40,7 +40,7 @@ export default function StaffLockAccess({
     <button type="button" onClick={() => setOpen((value) => !value)} className="font-bold text-red-700 underline">{open ? "Cancel access lock" : "Lock access"}</button>
     {open && <form onSubmit={submit} className="mt-2 space-y-2">
       <label className="block font-semibold text-[#58657a]">{t("common.reason", "Lý do")}<textarea required rows="2" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Payment overdue or sealing inspection reason" className="mt-1 block w-full rounded-lg border border-red-200 bg-white p-2 text-[#0b1c30]" /></label>
-      {error && <p role="alert" className="rounded-lg bg-red-100 p-2 text-red-700">{error}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-100 p-2 text-red-700">{t(error, error)}</p>}
       <button disabled={loading} className="rounded-lg bg-red-700 px-3 py-2 font-bold text-white disabled:opacity-50">{loading ? "Locking..." : "Confirm lock access"}</button>
     </form>}
   </div>;

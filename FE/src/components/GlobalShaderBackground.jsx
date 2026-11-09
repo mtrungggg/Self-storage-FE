@@ -18,7 +18,7 @@ export default function GlobalShaderBackground() {
     document.body.style.backgroundColor = isDark ? "#09090b" : "#F2F3F5";
   }, [isDashboardRoute, pathname]);
 
-  if (isDashboardRoute) {
+  if (isDashboardRoute || pathname === "/access-control" || pathname === "/billing") {
     return (
       <div
         aria-hidden="true"

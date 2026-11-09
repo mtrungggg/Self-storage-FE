@@ -28,6 +28,7 @@ const BANK_CODE_MAP = {
   "MBBank (MB)": "MB",
   "MBBank (Napas 247)": "MB",
   "MBBank": "MB",
+  "MB Bank": "MB",
   "MB": "MB",
   "VietinBank (CTG)": "ICB",
   "VietinBank": "ICB",
@@ -108,31 +109,31 @@ export default function ProcessRefundPayoutModal({
   }
 
   const bankName =
-    savedBankInfo?.bankName ||
+    reasonBank?.bank ||
     refund.bankName ||
     refund.customerBankName ||
-    reasonBank?.bank ||
-    "MBBank (Napas 247)";
+    savedBankInfo?.bankName ||
+    "";
   const bankCode =
-    savedBankInfo?.bankCode ||
-    refund.bankCode ||
     reasonBank?.bankCode ||
-    resolveBankCode(bankName) ||
-    "MB";
+    refund.bankCode ||
+    savedBankInfo?.bankCode ||
+    (bankName ? resolveBankCode(bankName) : "") ||
+    "";
   const accountNumber =
-    savedBankInfo?.accountNumber ||
+    reasonBank?.acc ||
     refund.bankAccountNumber ||
     refund.accountNo ||
     refund.customerAccountNumber ||
-    reasonBank?.acc ||
-    "0987654321";
+    savedBankInfo?.accountNumber ||
+    "";
   const accountHolder = (
-    savedBankInfo?.accountHolder ||
+    reasonBank?.holder ||
     refund.bankAccountHolder ||
     refund.accountHolder ||
     refund.customerName ||
-    reasonBank?.holder ||
-    "KHACH HANG"
+    savedBankInfo?.accountHolder ||
+    ""
   ).toUpperCase();
 
   const refundAmount =
@@ -146,9 +147,11 @@ export default function ProcessRefundPayoutModal({
   // VietQR URL generation
   const cleanBank = bankCode.replace(/\s+/g, "").trim();
   const cleanAcc = accountNumber.replace(/\s+/g, "").trim();
-  const vietQrUrl = `https://img.vietqr.io/image/${cleanBank}-${cleanAcc}-compact2.png?amount=${refundAmount}&addInfo=${encodeURIComponent(
-    memo
-  )}&accountName=${encodeURIComponent(accountHolder)}`;
+  const vietQrUrl = (cleanBank && cleanAcc)
+    ? `https://img.vietqr.io/image/${cleanBank}-${cleanAcc}-compact2.png?amount=${refundAmount}&addInfo=${encodeURIComponent(
+        memo
+      )}&accountName=${encodeURIComponent(accountHolder)}`
+    : "";
 
   const handleCopy = (text, fieldName) => {
     navigator.clipboard?.writeText(text);

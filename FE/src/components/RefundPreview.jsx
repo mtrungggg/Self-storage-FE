@@ -15,7 +15,7 @@ export default function RefundPreview({ agreementId }) {
     { label: t("common.deposit", "Deposit"), key: "depositBalance" },
     { label: t("common.deductions", "Cleaning Fee"), key: "estimatedCleaningFee" },
     { label: t("common.deductions", "Repair Fee"), key: "estimatedRepairFee" },
-    { label: t("common.balance", "Overdue Charges"), key: "estimatedOverdueCharges" },
+    { label: t("moveout.unpaid_charges", "Công nợ / Hóa đơn chưa thanh toán"), key: "estimatedOverdueCharges" },
     { label: t("common.net_refund", "Net Refund"), key: "estimatedNetRefund", isBold: true },
   ];
 
@@ -75,6 +75,11 @@ export default function RefundPreview({ agreementId }) {
             <p className="mt-1.5 text-[10px] text-slate-400">
               *{t("moveout.estimate_note", "Chỉ mang tính chất ước tính dựa trên biên bản kiểm tra kho.")}
             </p>
+            {preview.note && (
+              <p className="mt-1 text-[10px] text-slate-500 italic">
+                {preview.note}
+              </p>
+            )}
           </div>
         )}
       </div>

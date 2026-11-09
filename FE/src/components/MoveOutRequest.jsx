@@ -7,16 +7,20 @@ import { useLanguage } from "../context/LanguageContext";
 const POPULAR_BANKS = [
   "Vietcombank (VCB)",
   "Techcombank (TCB)",
-  "MBBank (MB)",
-  "VietinBank (CTG)",
   "BIDV",
+  "VietinBank",
+  "Agribank",
+  "MB Bank",
   "ACB",
   "VPBank",
   "TPBank",
   "Sacombank",
-  "Agribank",
   "HDBank",
   "VIB",
+  "SHB",
+  "MSB",
+  "SeABank",
+  "OCB",
 ];
 
 export default function MoveOutRequest({ agreementId }) {
@@ -90,7 +94,9 @@ export default function MoveOutRequest({ agreementId }) {
     try {
       const bankData = {
         bankName: bankName.trim(),
+        bankAccountNumber: accountNumber.trim(),
         accountNumber: accountNumber.trim(),
+        bankAccountHolder: accountHolder.trim().toUpperCase(),
         accountHolder: accountHolder.trim().toUpperCase(),
         submittedAt: new Date().toISOString(),
       };
@@ -254,21 +260,19 @@ export default function MoveOutRequest({ agreementId }) {
                   <label htmlFor={`${id}-bank`} className="mb-1 block text-[11px] font-semibold text-slate-700">
                     {t("common.bank_name", "Beneficiary Bank")} *
                   </label>
-                  <input
+                  <select
                     id={`${id}-bank`}
-                    type="text"
                     required
-                    list={`${id}-bank-list`}
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
-                    placeholder={t("common.bank_name", "Bank name")}
-                    className="w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-xs outline-none focus:border-zinc-900 dark:border-zinc-100"
-                  />
-                  <datalist id={`${id}-bank-list`}>
+                    className="w-full rounded-lg border border-[#dfe7f5] bg-white p-2 text-xs outline-none focus:border-zinc-900 dark:border-zinc-100 cursor-pointer"
+                  >
                     {POPULAR_BANKS.map((b) => (
-                      <option key={b} value={b} />
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

@@ -47,16 +47,14 @@ export default function AdminTopbar({
   return (
     <header className="admin-topbar">
       <div className="flex min-w-0 items-center gap-3">
-        {!profile?.isAdmin && (
-          <button
-            type="button"
-            onClick={onToggleMobileSidebar}
-            className="admin-icon-button lg:hidden"
-            aria-label="Toggle navigation menu"
-          >
-            <Menu size={21} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onToggleMobileSidebar}
+          className="admin-icon-button lg:hidden"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu size={21} />
+        </button>
         {profile?.isAdmin ? (
           <Link to="/admin-overview" className="reference-brand">
             <Box size={24} strokeWidth={2.2} />

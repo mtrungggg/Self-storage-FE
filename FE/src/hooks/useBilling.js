@@ -2,21 +2,14 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/paymentService";
+import { mergeBillingRows } from "../domain/usecases/mergeBillingRows";
 import { PAYMENT_STATUS } from "../constants/paymentConstants";
 
 // Maps BE payment status strings → FE tab keys
-function mapStatus(status, createdAt) {
+function mapStatus(status) {
   const s = (status || "").toLowerCase();
-  if (s === PAYMENT_STATUS.SUCCEEDED || s === "paid" || s === PAYMENT_STATUS.REFUNDED || s === "approved") return "paid";
+  if (s === PAYMENT_STATUS.SUCCEEDED || s === "paid" || s === PAYMENT_STATUS.REFUNDED || s === PAYMENT_STATUS.PARTIALLY_REFUNDED || s === "approved") return "paid";
   if (s === PAYMENT_STATUS.FAILED || s === PAYMENT_STATUS.CANCELLED || s === "rejected") return "failed";
-
-  // Check if pending payment has exceeded 15 minutes (900 seconds) hold time
-  if ((s === PAYMENT_STATUS.PENDING || s === "pending_payment") && createdAt) {
-    const ageMs = Date.now() - new Date(createdAt).getTime();
-    if (ageMs > 15 * 60 * 1000) {
-      return "expired";
-    }
-  }
 
   if (s === "expired") return "expired";
 
@@ -25,7 +18,7 @@ function mapStatus(status, createdAt) {
 }
 
 // Human-readable English label for each raw BE status
-function statusLabel(status, createdAt) {
+function statusLabel(status) {
   const s = (status || "").toLowerCase();
   if (s === PAYMENT_STATUS.SUCCEEDED || s === "paid" || s === "approved") return "Paid";
   if (s === PAYMENT_STATUS.REFUNDED) return "Refunded";
@@ -34,9 +27,6 @@ function statusLabel(status, createdAt) {
   if (s === PAYMENT_STATUS.CANCELLED) return "Cancelled";
   if (s === "expired") return "Expired";
   if (s === PAYMENT_STATUS.PENDING || s === "pending_payment") {
-    if (createdAt && (Date.now() - new Date(createdAt).getTime() > 15 * 60 * 1000)) {
-      return "Expired";
-    }
     return "Awaiting Payment";
   }
   return "Pending";
@@ -59,6 +49,7 @@ export function useBilling() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
 
+  const [now, setNow] = useState(() => Date.now());
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,62 +63,8 @@ export function useBilling() {
         paymentService.getUnpaidInvoices(),
       ]);
 
-      const list = Array.isArray(history) ? history : [];
-      const unpaidRows = (Array.isArray(unpaid) ? unpaid : []).map((invoice) => ({
-        paymentId: 0,
-        invoiceId: invoice.invoiceId,
-        invoiceNo: invoice.invoiceNo,
-        reservationId: invoice.reservationId,
-        reservationCode: invoice.reservationCode,
-        agreementNo: invoice.agreementNo,
-        amount: invoice.amountDue,
-        currency: invoice.currency,
-        method: "bank_transfer",
-        provider: "SePay",
-        status: invoice.status,
-        createdAt: invoice.createdAt,
-      }));
-
-      const all = [...list, ...unpaidRows];
-      const deduplicatedMap = new Map();
-
-      // Status rank: Active/Pending/Open > Paid/Succeeded > Expired/Failed/Cancelled
-      const getRank = (status) => {
-        const s = (status || "").toLowerCase();
-        if (s === "pending" || s === "pending_payment" || s === "open" || s === "draft" || s === "overdue") return 3;
-        if (s === "succeeded" || s === "paid" || s === "approved") return 2;
-        return 1;
-      };
-
-      for (const item of all) {
-        const key = item.invoiceNo
-          ? item.invoiceNo.trim()
-          : item.invoiceId
-          ? `INV-${item.invoiceId}`
-          : item.reservationCode
-          ? `RSV-${item.reservationCode}`
-          : `PAY-${item.paymentId}`;
-
-        if (!deduplicatedMap.has(key)) {
-          deduplicatedMap.set(key, item);
-        } else {
-          const existing = deduplicatedMap.get(key);
-          const rankItem = getRank(item.status);
-          const rankExisting = getRank(existing.status);
-
-          if (rankItem > rankExisting) {
-            deduplicatedMap.set(key, item);
-          } else if (rankItem === rankExisting) {
-            const timeItem = new Date(item.createdAt || 0).getTime();
-            const timeExisting = new Date(existing.createdAt || 0).getTime();
-            if (timeItem > timeExisting) {
-              deduplicatedMap.set(key, item);
-            }
-          }
-        }
-      }
-
-      setPayments(Array.from(deduplicatedMap.values()));
+      setNow(Date.now());
+      setPayments(mergeBillingRows(history, unpaid));
     } catch (err) {
       setError(err?.message || "Không thể tải lịch sử thanh toán.");
     } finally {
@@ -139,28 +76,26 @@ export function useBilling() {
     fetchInvoices();
   }, [fetchInvoices]);
 
-  const [tick, setTick] = useState(0);
-
   // Live timer tick every second for 15-minute hold countdown
   useEffect(() => {
-    if (!payments.length || !payments.some((p) => p.status === "pending" || p.status === "pending_payment")) return;
-    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    if (!payments.length || !payments.some((p) => p.status === "pending" || p.status === "pending_payment" || (p.canPay && p.holdUntil))) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [payments]);
 
   const invoices = useMemo(
     () =>
       payments.map((p) => {
         const isPending =
           (p.status || "").toLowerCase() === "pending" ||
-          (p.status || "").toLowerCase() === "pending_payment";
+          (p.status || "").toLowerCase() === "pending_payment" ||
+          Boolean(p.canPay && p.holdUntil);
 
-        const ageMs = p.createdAt ? Date.now() - new Date(p.createdAt).getTime() : 0;
-        const isExp =
-          (p.status || "").toLowerCase() === "expired" ||
-          (isPending && p.createdAt && ageMs > 15 * 60 * 1000);
-
-        const mappedStatus = isExp ? "expired" : mapStatus(p.status, p.createdAt);
+        const deadline = p.holdUntil ? new Date(p.holdUntil).getTime()
+          : p.renewalId && isPending ? new Date(p.createdAt).getTime() + 15 * 60 * 1000
+          : null;
+        const isExp = p.status === "expired" || (isPending && deadline !== null && deadline <= now);
+        const mappedStatus = p.requiresReconciliation ? "upcoming" : isExp ? "expired" : mapStatus(p.status);
 
         const isRenewal = Boolean(
           p.renewalId ||
@@ -174,14 +109,15 @@ export function useBilling() {
           ? `Đơn đặt chỗ ${p.reservationCode}`
           : `Hóa đơn ${p.invoiceNo || p.invoiceId}`;
 
-        const remainingSeconds =
-          isPending && p.createdAt
-            ? Math.max(0, Math.floor((15 * 60 * 1000 - ageMs) / 1000))
-            : 0;
+        const remainingSeconds = isPending && deadline !== null
+          ? Math.max(0, Math.floor((deadline - now) / 1000)) : 0;
 
         return {
           id: p.invoiceNo || `PAY-${p.paymentId}`,
           paymentId: p.paymentId,
+          requiresReconciliation: Boolean(p.requiresReconciliation),
+          canPay: p.canPay && !isExp && !p.requiresReconciliation,
+          canCancel: p.canCancel && !isExp && !p.requiresReconciliation,
           invoiceId: p.invoiceId,
           renewalId: p.renewalId,
           agreementNo: p.agreementNo,
@@ -194,14 +130,14 @@ export function useBilling() {
           method: formatMethod(p.method, p.provider),
           rawStatus: p.status,
           status: mappedStatus,
-          statusLabel: isExp ? "Expired" : statusLabel(p.status, p.createdAt),
+          statusLabel: isExp ? "Expired" : statusLabel(p.status),
           isExpired: isExp,
           remainingSeconds,
           reservationId: p.reservationId,
           reservationCode: p.reservationCode,
         };
       }),
-    [payments, tick]
+    [payments, now]
   );
 
   const tabCounts = useMemo(() => {

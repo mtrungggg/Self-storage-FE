@@ -23,9 +23,13 @@ const ENTITY_OPTIONS = [
 
 const ACTION_OPTIONS = [
   { value: "", label: "All Actions" },
-  { value: "Create", label: "Create" },
-  { value: "Update", label: "Update" },
-  { value: "Delete", label: "Delete" },
+  { value: "Create", label: "Create (Tạo mới)" },
+  { value: "Update", label: "Update (Cập nhật)" },
+  { value: "Update_Status", label: "Update Status (Đổi trạng thái)" },
+  { value: "Update_Roles", label: "Update Roles (Đổi vai trò)" },
+  { value: "Assign_Staff", label: "Assign Staff (Phân công)" },
+  { value: "Revoke_Staff_Assignment", label: "Revoke Assignment (Thu hồi phân công)" },
+  { value: "Delete", label: "Delete (Xóa)" },
 ];
 
 const defaults = {

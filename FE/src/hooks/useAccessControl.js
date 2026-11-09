@@ -322,7 +322,7 @@ export function useAccessControl() {
 
   const selectedRental = useMemo(
 
-    () => rentals.find((r) => r.agreementId === selectedRentalId) || activeRentals[0] || null,
+    () => activeRentals.find((r) => r.agreementId === selectedRentalId) || activeRentals[0] || null,
 
     [rentals, activeRentals, selectedRentalId]
 
@@ -359,20 +359,20 @@ export function useAccessControl() {
 
 
   const checkInQrValue = useMemo(() => {
+    if (!selectedRental && !matchingReservation) return "";
 
-    if (!selectedRental) return "";
+    const unitCode = selectedRental?.unitCode || currentUnitCode || matchingReservation?.unitCode || "";
+    const rawAgrNo = selectedRental?.agreementNo || "";
+    const agreementNo = rawAgrNo
+      ? (rawAgrNo.startsWith("AGR-") ? rawAgrNo : `AGR-${rawAgrNo}`)
+      : (selectedRental?.agreementId ? `AGR-${selectedRental.agreementId}` : "");
+    const reservationCode = matchingReservation?.reservationCode || "";
+    const facilityId = selectedRental?.facilityId || matchingReservation?.facilityId || "";
 
-    const unit = selectedRental.unitCode || "UNIT";
-
-    const agrNo = selectedRental.agreementNo || `AGR-${selectedRental.agreementId}`;
-
-    const rsvCode = matchingReservation?.reservationCode || "";
-
-    const facId = selectedRental.facilityId || 1;
-
-    return `CHK|${unit}|${agrNo}|${rsvCode}|${facId}`;
-
-  }, [selectedRental, matchingReservation]);
+    // Generate compact, low-density QR payload: "CHK|unit|agrNo|rsvCode|facId"
+    // Keeps payload under ~55 characters (QR Version 2-3) so cameras scan instantly with zero blur
+    return `CHK|${unitCode}|${agreementNo}|${reservationCode}|${facilityId}`;
+  }, [selectedRental, currentUnitCode, matchingReservation]);
 
 
 
@@ -466,11 +466,7 @@ export function useAccessControl() {
 
         if (active && data) {
 
-          if (data.keypadPin) {
-
-            localStorage.setItem(STORAGE_KEYS.getPinKey(selectedRentalId), data.keypadPin);
-
-          }
+          
 
           setCredentials(data);
 
@@ -578,7 +574,7 @@ export function useAccessControl() {
 
       const res = await rentalService.changePin(selectedRentalId, { currentPin, newPin });
 
-      localStorage.setItem(STORAGE_KEYS.getPinKey(selectedRentalId), newPin);
+      
 
       setCredentials((prev) => (prev ? { ...prev, keypadPin: newPin } : prev));
 
@@ -602,32 +598,18 @@ export function useAccessControl() {
 
 
 
-  const verifyUnlockPin = (enteredPin) => {
-
+  const verifyUnlockPin = async (enteredPin) => {
     const cleanPin = String(enteredPin || "").trim();
-
-    const storedLocal = selectedRentalId ? localStorage.getItem(STORAGE_KEYS.getPinKey(selectedRentalId)) : null;
-
-    const expectedPin = String(credentials?.keypadPin || storedLocal || "482910").trim();
-
     if (!/^\d{4,8}$/.test(cleanPin)) {
-
       throw new Error("Please enter a valid PIN (4 to 8 digits).");
-
     }
-
-    if (expectedPin && cleanPin !== expectedPin && cleanPin !== "482910") {
-
-      throw new Error("Incorrect PIN. Please verify your unit PIN code.");
-
+    if (!selectedRentalId) {
+      throw new Error("No active rental agreement selected.");
     }
-
+    const res = await rentalService.unlockUnit(selectedRentalId, cleanPin);
     setUnlockedMap((prev) => ({ ...prev, [selectedRentalId]: true }));
-
     appendLiveLog(currentUnitCode, `Unlocked Unit ${currentUnitCode} via PIN`, "#2dd4a0");
-
-    return true;
-
+    return res;
   };
 
 
