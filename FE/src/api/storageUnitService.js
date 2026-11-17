@@ -1,13 +1,17 @@
-import apiClient from "./apiClient";
+import catalogApi from "../services/api/catalogApi";
 
 export const storageUnitService = {
-  /**
-   * Tìm các ô kho còn trống theo điểm kho / loại kho / khu vực
-   * @param {{ facilityId?: number, unitTypeId?: number, facilityAreaId?: number }} [params]
-   */
   async getAvailableUnits(params = {}) {
-    const res = await apiClient.get("/customer/storage-units/available", { params });
-    return res?.data ?? [];
+    if (params.facilityId) {
+      const { facilityId, ...rest } = params;
+      return catalogApi.getAvailableUnits(facilityId, rest);
+    }
+    const facilities = await catalogApi.getFacilities();
+    if (!facilities.length) return [];
+    const results = await Promise.all(
+      facilities.map((f) => catalogApi.getAvailableUnits(f.id, params).catch(() => []))
+    );
+    return results.flat();
   },
 };
 

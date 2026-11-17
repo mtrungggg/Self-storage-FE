@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 // facilities loaded via ManagerFacilityContext
 import managerService from "../api/managerService";
+import apiClient from "../api/apiClient";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { useAuth } from "../context/AuthContext";
 import { ADMIN_ROLES, hasAnyRole } from "../constants/roles";
@@ -202,6 +203,78 @@ export default function ManagerPricing() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [pricePerSqm, setPricePerSqm] = useState(100);
+  const [storageCategories, setStorageCategories] = useState([]);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatSurcharge, setNewCatSurcharge] = useState("0");
+
+  const loadDynamicPricingConfig = async () => {
+    try {
+      const res = await apiClient.get("/v1/admin/pricing-config");
+      const d = res?.data ?? res;
+      if (d) {
+        setPricePerSqm(Number(d.pricePerSquareMeter ?? 100));
+        setStorageCategories(d.categories || []);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadDynamicPricingConfig();
+  }, []);
+
+  const handleSavePricePerSqm = async () => {
+    try {
+      setSaving(true);
+      await apiClient.put("/v1/admin/pricing-config", { pricePerSquareMeter: Number(pricePerSqm) || 0 });
+      setNotice("Đã lưu đơn giá cơ bản theo m².");
+      await loadDynamicPricingConfig();
+    } catch (err) {
+      setError(err?.message || "Không thể lưu đơn giá/m².");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveCategorySurcharge = async (cat) => {
+    try {
+      setSaving(true);
+      await apiClient.put(`/v1/admin/storage-categories/${cat.id}`, {
+        name: cat.name,
+        surchargeAmount: Number(cat.surchargeAmount) || 0,
+        isActive: cat.isActive ?? true,
+      });
+      setNotice(`Đã lưu phụ phí cho loại "${cat.name}".`);
+      await loadDynamicPricingConfig();
+    } catch (err) {
+      setError(err?.message || "Không thể lưu phụ phí loại kho.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    try {
+      setSaving(true);
+      await apiClient.post("/v1/admin/storage-categories", {
+        name: newCatName.trim(),
+        surchargeAmount: Number(newCatSurcharge) || 0,
+        isActive: true,
+      });
+      setNewCatName("");
+      setNewCatSurcharge("0");
+      setNotice("Đã thêm loại kho mới.");
+      await loadDynamicPricingConfig();
+    } catch (err) {
+      setError(err?.message || "Không thể thêm loại kho.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // TAB 1: FEES & SURCHARGES
   const [feeFilters, setFeeFilters] = useState(initialFeeFilters);
@@ -519,6 +592,121 @@ export default function ManagerPricing() {
 
   return (
     <div className="space-y-4">
+      {/* Dynamic Pricing Config: Price per m² + Storage Category Surcharges */}
+      <div className="rounded-2xl border border-[#dfe7f5] bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)] space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+              <span className="material-symbols-outlined text-[22px]">calculate</span>
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-[#0b1c30]">
+                Cấu hình giá theo m² & Phụ phí loại kho
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Công thức tự động:{" "}
+                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-700">
+                  Giá thuê/tháng = (Diện tích m² × Đơn giá/m²) + Phụ phí loại kho
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-xl border border-blue-200/80 bg-blue-50/50 px-3.5 py-2">
+            <div className="text-right">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                Đơn giá cơ bản / 1m²
+              </div>
+              <div className="mt-0.5 flex items-center gap-1">
+                <input
+                  type="number"
+                  min="0"
+                  value={pricePerSqm}
+                  onChange={(e) => setPricePerSqm(e.target.value)}
+                  className="w-28 rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-right font-mono text-sm font-bold text-[#0b1c30] outline-none focus:border-blue-500"
+                />
+                <span className="text-xs font-bold text-blue-900">đ/m²</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSavePricePerSqm}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-zinc-800 disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[16px]">save</span>
+              Lưu giá/m²
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {storageCategories.map((cat) => (
+            <div
+              key={cat.id}
+              className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-slate-50/70 px-3.5 py-2.5 transition hover:border-blue-300 hover:bg-white"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold text-[#0b1c30]">{cat.name}</div>
+                <div className="text-[10px] text-slate-500">Phụ phí cộng thêm</div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="relative flex items-center">
+                  <span className="pl-2 text-[11px] font-bold text-slate-400">+</span>
+                  <input
+                    type="number"
+                    value={cat.surchargeAmount}
+                    onChange={(e) =>
+                      setStorageCategories((prev) =>
+                        prev.map((c) => (c.id === cat.id ? { ...c, surchargeAmount: e.target.value } : c))
+                      )
+                    }
+                    className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleSaveCategorySurcharge(cat)}
+                  className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-zinc-800"
+                >
+                  Lưu
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form
+          onSubmit={handleCreateCategory}
+          className="flex flex-wrap items-center gap-2.5 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-3 text-xs"
+        >
+          <span className="font-bold text-slate-700">Thêm loại kho mới:</span>
+          <input
+            type="text"
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="Tên loại kho (VD: Kho hóa chất, Kho đông lạnh...)"
+            className="min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs outline-none focus:border-zinc-900"
+          />
+          <input
+            type="number"
+            value={newCatSurcharge}
+            onChange={(e) => setNewCatSurcharge(e.target.value)}
+            placeholder="Phụ phí (+VNĐ)"
+            className="w-36 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs outline-none focus:border-zinc-900"
+          />
+          <button
+            type="submit"
+            disabled={saving || !newCatName.trim()}
+            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[15px]">add</span>
+            Thêm loại kho
+          </button>
+        </form>
+      </div>
+
       {/* Top Facility Bar Action: Refresh button placed in FacilitySwitcher */}
       <FacilityBarActions>
         <button

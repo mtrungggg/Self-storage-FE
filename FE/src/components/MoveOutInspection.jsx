@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import InspectionFormModal from "./InspectionFormModal";
 import { useAuth } from "../context/AuthContext";
 import STORAGE_KEYS from "../constants/storageKeys";
-import apiClient from "../api/apiClient";
+import staffRentalApi from "../services/api/staffRentalApi";
 
 export default function MoveOutInspection({ moveOut, onCompleted }) {
   const { t } = useLanguage();
@@ -13,6 +13,7 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
   const [lockInfo, setLockInfo] = useState(null);
   const [cashPaying, setCashPaying] = useState(false);
   const [cashPaid, setCashPaid] = useState(false);
+  const [cashError, setCashError] = useState("");
 
   const lockKey = STORAGE_KEYS.getMoveOutLockKey(moveOut.id);
   const currentUserId = user?.id || user?.userId || user?.employeeId;
@@ -60,27 +61,16 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
 
   const handleConfirmCash = async () => {
     setCashPaying(true);
+    setCashError("");
     try {
       const refundId = moveOut.refundId || moveOut.id;
-      await apiClient.post(`/staff/refunds/${encodeURIComponent(refundId)}/counter-cash-payout`, {
-        note: "Nhân viên xác nhận chi trả tiền mặt tại quầy cho khách hàng.",
+      await staffRentalApi.counterCashPayout(refundId, {
+        notes: "Nhân viên xác nhận chi trả tiền mặt tại quầy cho khách hàng.",
       });
       setCashPaid(true);
       onCompleted?.(moveOut.id, { payoutStatus: "completed" });
-    } catch {
-      try {
-        await apiClient.post("/staff/refunds/confirm-payment", {
-          refundId: moveOut.refundId || moveOut.id,
-          paymentMethod: "cash",
-          note: "Nhân viên xác nhận chi trả tiền mặt tại quầy cho khách hàng.",
-        });
-        setCashPaid(true);
-        onCompleted?.(moveOut.id, { payoutStatus: "completed" });
-      } catch {
-        // Fallback optimistic update
-        setCashPaid(true);
-        onCompleted?.(moveOut.id, { payoutStatus: "completed" });
-      }
+    } catch (err) {
+      setCashError(err?.message || "Không thể xác nhận chi trả tiền mặt tại quầy.");
     } finally {
       setCashPaying(false);
     }
@@ -183,6 +173,11 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
               Đang chờ Quản lý chuyển khoản hoàn cọc{refundAmt > 0 ? ` (${Number(refundAmt).toLocaleString("vi-VN")} đ)` : ""}
             </span>
           </span>
+        )}
+        {cashError && (
+          <p role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700">
+            {cashError}
+          </p>
         )}
       </div>
     );

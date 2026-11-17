@@ -1,32 +1,13 @@
 import apiClient from "./apiClient";
+import staffCheckInApi from "../services/api/staffCheckInApi";
 
 const staffFacilityService = {
-  /**
-   * Lấy cơ sở mà nhân viên đang đăng nhập được phân công làm việc
-   * GET /api/staff/my-facility
-   */
   async getMyFacility() {
-    const response = await apiClient.get("/staff/my-facility");
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to load your assigned facility.");
-    }
-    return response.data ?? null;
+    return await staffCheckInApi.getMyFacility();
   },
 
-  /**
-   * STT 9: Danh sách ô kho và hiện trạng vật lý tại cơ sở
-   * GET /api/staff/facilities/{facilityId}/units
-   */
   async getUnits(facilityId) {
-    const response = await apiClient.get(`/staff/facilities/${encodeURIComponent(facilityId)}/units`);
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to load facility units.");
-    }
-    if (response.data == null) return [];
-    if (!Array.isArray(response.data)) {
-      throw new Error("The server returned an invalid unit list.");
-    }
-    return response.data;
+    return await staffCheckInApi.getUnits(facilityId ? { facilityId: Number(facilityId) } : {});
   },
 
   /**

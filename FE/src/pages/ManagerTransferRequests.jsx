@@ -1,6 +1,6 @@
 import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { Bell, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, ArrowRight, User, Phone, FileText, Search } from "lucide-react";
+import { Bell, RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowRight, User, Phone, FileText, Search } from "lucide-react";
 import managerService from "../api/managerService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { DECISION_STATUS } from "../constants/managerConstants";
@@ -516,15 +516,6 @@ export default function ManagerTransferRequests() {
                         <span>{decidingId === request.id ? "Đang xử lý..." : "Chấp thuận (Approve)"}</span>
                       </button>
 
-                      <button
-                        type="button"
-                        disabled={decidingId === request.id}
-                        onClick={() => decide(request.id, DECISION_STATUS.REJECTED)}
-                        className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 text-xs font-bold text-rose-700 transition disabled:opacity-50 cursor-pointer"
-                      >
-                        <XCircle size={14} />
-                        <span>{t("manager.reject_transfer", "Từ chối")}</span>
-                      </button>
                     </div>
                   </div>
                 )}

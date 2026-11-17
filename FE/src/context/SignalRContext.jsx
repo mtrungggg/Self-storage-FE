@@ -23,17 +23,47 @@ export function SignalRProvider({ children }) {
       return;
     }
 
-    signalRService.start().then(() => {
-      setConnected(true);
+    let cancelled = false;
+    signalRService.start().then((isConnected) => {
+      if (!cancelled) {
+        setConnected(Boolean(isConnected));
+      }
     });
 
+    const handleNotification = (data) => {
+      setRecentEvent({ type: "notification", data, time: Date.now() });
+      setLiveToast({
+        title: data?.title || "Thông báo mới",
+        message: data?.message || "",
+        type: "info",
+      });
+    };
+
     const unsubs = [
-      signalRService.on("ReceiveNotification", (data) => {
-        setRecentEvent({ type: "notification", data, time: Date.now() });
+      signalRService.on("NotificationReceived", handleNotification),
+      signalRService.on("ReceiveNotification", handleNotification),
+      signalRService.on("PaymentPartialReceived", (data) => {
+        setRecentEvent({ type: "payment_partial", data, time: Date.now() });
         setLiveToast({
-          title: data?.title || "Thông báo mới",
-          message: data?.message || "",
-          type: "info",
+          title: "Đã nhận thanh toán một phần",
+          message: `Đã nhận ${Number(data?.paidAmount || 0).toLocaleString()} / ${Number(data?.totalAmount || 0).toLocaleString()} đ.`,
+          type: "warning",
+        });
+      }),
+      signalRService.on("PaymentSucceeded", (data) => {
+        setRecentEvent({ type: "payment_succeeded", data, time: Date.now() });
+        setLiveToast({
+          title: "Thanh toán thành công",
+          message: "Giao dịch VietQR đã được xác nhận.",
+          type: "success",
+        });
+      }),
+      signalRService.on("ReservationConfirmed", (data) => {
+        setRecentEvent({ type: "reservation_confirmed", data, time: Date.now() });
+        setLiveToast({
+          title: "Đơn đặt chỗ đã xác nhận",
+          message: data?.reservationCode ? `Đơn ${data.reservationCode} đã sẵn sàng check-in.` : "Đặt chỗ đã được xác nhận.",
+          type: "success",
         });
       }),
       signalRService.on("TicketUpdated", (data) => {
@@ -74,6 +104,7 @@ export function SignalRProvider({ children }) {
     ];
 
     return () => {
+      cancelled = true;
       unsubs.forEach((unsub) => unsub());
     };
   }, [user]);

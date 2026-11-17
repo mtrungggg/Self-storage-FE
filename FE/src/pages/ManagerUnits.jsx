@@ -11,6 +11,10 @@ import PAGINATION from "../constants/pagination";
 const emptyUnitForm = {
   unitCode: "",
   unitTypeId: "",
+  categoryName: "Kho hàng khô",
+  lengthM: 2,
+  widthM: 1.5,
+  heightM: 2.5,
   areaId: "",
   floorLabel: "1",
   zoneLabel: "A",
@@ -19,6 +23,36 @@ const emptyUnitForm = {
   notes: "",
   imageUrl: "",
 };
+
+const VALID_CATEGORY_KEYWORDS = [
+  "kho", "tủ", "tu", "lạnh", "lanh", "đông", "dong", "mát", "mat",
+  "khô", "hóa chất", "hoa chat", "sưởi", "suoi", "nhiệt độ", "nhiet do",
+  "tài liệu", "tai lieu", "hàng", "hang", "storage", "cold", "dry", "locker",
+  "climate", "warm", "chemical", "archive", "freeze", "seafood",
+];
+
+function analyzeStorageCategory(rawName, adminCategories = []) {
+  const trimmed = String(rawName || "").trim();
+  if (trimmed.length < 3 || /^\d+$/.test(trimmed) || !/[a-zA-ZÀ-ỹ]/.test(trimmed) || new Set(trimmed).size <= 2) {
+    return { valid: false, group: "", surcharge: 0 };
+  }
+  const lower = trimmed.toLowerCase();
+  const matchedAdmin = adminCategories.find((c) => c.name?.toLowerCase() === lower);
+  const hasKeyword = matchedAdmin || VALID_CATEGORY_KEYWORDS.some((kw) => lower.includes(kw));
+  if (!hasKeyword) {
+    return { valid: false, group: "", surcharge: 0 };
+  }
+
+  let group = trimmed;
+  if (lower.includes("hóa chất") || lower.includes("hoa chat") || lower.includes("chemical")) group = "Kho hóa chất";
+  else if (lower.includes("lạnh") || lower.includes("lanh") || lower.includes("đông") || lower.includes("dong") || lower.includes("cold") || lower.includes("freeze") || lower.includes("seafood")) group = "Kho lạnh / Thủy hải sản";
+  else if (lower.includes("mát") || lower.includes("mat") || lower.includes("điều hòa") || lower.includes("nhiệt độ") || lower.includes("climate")) group = "Kho mát điều hòa";
+  else if (lower.includes("sưởi") || lower.includes("suoi") || lower.includes("warm")) group = "Kho sưởi ấm";
+  else if (lower.includes("khô") || lower.includes("dry") || lower.includes("tủ") || lower.includes("locker")) group = "Kho hàng khô";
+
+  const catObj = matchedAdmin || adminCategories.find((c) => c.name?.toLowerCase() === group.toLowerCase());
+  return { valid: true, group, surcharge: Number(catObj?.surchargeAmount ?? 0) };
+}
 
 
 const STORAGE_TYPES = [
@@ -160,6 +194,17 @@ export default function ManagerUnits() {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showUnitForm, setShowUnitForm] = useState(false);
+  const [pricingConfig, setPricingConfig] = useState({ pricePerSquareMeter: 100, categories: [] });
+  useEffect(() => {
+    fetch("/api/v1/pricing-config")
+      .then((r) => r.json())
+      .then((res) => {
+        const d = res?.data ?? res;
+        if (d) setPricingConfig({ pricePerSquareMeter: Number(d.pricePerSquareMeter ?? 100), categories: d.categories || [] });
+      })
+      .catch(() => {});
+  }, []);
+
   const [unitForm, setUnitForm] = useState(emptyUnitForm);
   const [editingUnitId, setEditingUnitId] = useState(null);
   const [savingUnit, setSavingUnit] = useState(false);
@@ -321,10 +366,17 @@ export default function ManagerUnits() {
         imageUrl: (unitForm.imageUrl ?? "").trim(),
       };
 
+      const customDimensions = {
+        categoryName: unitForm.categoryName || "Kho hàng khô",
+        lengthM: Number(unitForm.lengthM) || 2,
+        widthM: Number(unitForm.widthM) || 1.5,
+        heightM: Number(unitForm.heightM) || 2.5,
+      };
       let createdUnitId = null;
       if (editingUnitId) {
         await managerService.updateUnit(editingUnitId, {
           ...basePayload,
+          ...customDimensions,
           unitCode: unitForm.unitCode,
         });
         setNotice(`Đã cập nhật ô kho ${unitForm.unitCode} thành công.`);
@@ -332,6 +384,7 @@ export default function ManagerUnits() {
         // Create unit from drop
         const created = await managerService.createUnit(facilityId, {
           ...basePayload,
+          ...customDimensions,
           unitCode: unitForm.unitCode,
         });
 
@@ -655,12 +708,17 @@ export default function ManagerUnits() {
                   <tr><td colSpan={7} className="py-6 text-center text-slate-400">{t("manager.no_units_found", "Không tìm thấy ô kho nào.")}</td></tr>
                 ) : (
                   units.map((unit) => {
-                    const { typeLabel, sizeLabel } = getUnitTypeAndSizeLabels(unitTypes, unit);
+                    const { typeLabel } = getUnitTypeAndSizeLabels(unitTypes, unit);
+                    const displayCategory = unit.categoryName || unit.storageCategory || typeLabel;
+                    const len = Number(unit.lengthM ?? unit.customLengthM ?? 2);
+                    const wid = Number(unit.widthM ?? unit.customWidthM ?? 1.5);
+                    const area = Number(unit.areaM2 ?? unit.customAreaM2 ?? (len * wid).toFixed(2));
+                    const displaySize = `${len}m × ${wid}m (${area} m²)`;
                     return (
                     <tr key={unit.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="px-4 py-2.5 font-bold text-slate-900">{unit.unitCode}</td>
-                      <td className="px-4 py-2.5 text-slate-600" title={typeLabel}>{typeLabel}</td>
-                      <td className="px-4 py-2.5 text-slate-600" title={sizeLabel}>{sizeLabel}</td>
+                      <td className="px-4 py-2.5 text-slate-700 font-medium" title={displayCategory}>{displayCategory}</td>
+                      <td className="px-4 py-2.5 text-slate-600 font-mono text-[11px]" title={displaySize}>{displaySize}</td>
                       <td className="px-4 py-2.5 text-slate-600">
                         <span className="font-semibold text-slate-800">{unit.zoneLabel || "A"}</span> / Tầng {unit.floorLabel || "1"}
                       </td>
@@ -812,8 +870,8 @@ export default function ManagerUnits() {
                       return false;
                     });
 
-                    // Grid System: 4 columns x 7 rows = 28 slots per zone (fills entire zone height & width)
-                    const GRID_COLS = 4;
+                    // Grid System: 6 columns x 7 rows = 42 slots per zone (fills entire zone height & width)
+                    const GRID_COLS = 6;
                     const GRID_ROWS = 7;
                     const scale = 2.2;
                     const slotW = 22;
@@ -884,8 +942,8 @@ export default function ManagerUnits() {
                                     style={{
                                       left: `${slotX * scale}px`,
                                       top: `${slotY * scale}px`,
-                                      width: `${slotW * scale}px`,
-                                      height: `${slotH * scale}px`,
+                                      width: `${slotW * scale * (Number(occupyingUnit.areaM2 || 0) >= 10 ? 1.45 : Number(occupyingUnit.areaM2 || 0) >= 6 ? 1.25 : 1)}px`,
+                                      height: `${slotH * scale * (Number(occupyingUnit.areaM2 || 0) >= 10 ? 1.35 : 1)}px`,
                                     }}
                                   >
                                     <span className="truncate max-w-full px-1">{occupyingUnit.unitCode}</span>
@@ -894,10 +952,12 @@ export default function ManagerUnits() {
                                 );
                               }
 
-                              // Empty dashed slot
+                              // Empty dashed slot (click or drop to create unit)
                               return (
                                 <div
                                   key={`slot-${r}-${c}`}
+                                  onClick={() => openCreateModal({ areaId: area.areaId, x: slotX, y: slotY })}
+                                  title="Bấm hoặc kéo thả ô kho rỗng vào đây để tạo ô kho mới"
                                   onDragOver={(e) => {
                                     e.preventDefault();
                                     e.dataTransfer.dropEffect = "copy";
@@ -1028,63 +1088,106 @@ export default function ManagerUnits() {
                   </div>
                 </div>
 
-                {/* Row 2: 2 Independent Dropdowns (Loại kho & Kích thước) */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Loại kho *
-                    </label>
-                    <SelectDropdown
-                      value={(() => {
-                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
-                        return parseTypeAndSizeFromUnitType(curObj).storageType;
-                      })()}
-                      onChange={(e) => {
-                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
-                        const { size: curSize } = parseTypeAndSizeFromUnitType(curObj);
-                        const nextId = resolveUnitTypeId(unitTypes, e.target.value, curSize);
-                        setUnitForm((p) => ({ ...p, unitTypeId: nextId }));
-                      }}
-                      className="w-full"
-                    >
-                      {STORAGE_TYPES.map((st) => (
-                        <option key={st.id} value={st.id}>{st.label}</option>
-                      ))}
-                    </SelectDropdown>
-                  </div>
+                {/* Row 2: Loại kho (Combobox/Datalist) & Kích thước độc lập (Dài x Rộng x Cao) */}
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Loại kho * (Chọn hoặc nhập mới)
+                  </label>
+                  <input
+                    list="storage-categories-list"
+                    required
+                    value={unitForm.categoryName || ""}
+                    onChange={(e) => setUnitForm((p) => ({ ...p, categoryName: e.target.value }))}
+                    placeholder="VD: Kho hàng khô, Kho lạnh, Kho hóa chất..."
+                    className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs outline-none focus:border-blue-500"
+                  />
+                  <datalist id="storage-categories-list">
+                    {(pricingConfig.categories || []).map((c) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
+                  {(() => {
+                    const analysis = analyzeStorageCategory(unitForm.categoryName, pricingConfig.categories || []);
+                    return analysis.valid ? (
+                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                        ✓ Nhận diện: {analysis.group} (Phụ phí: +{analysis.surcharge.toLocaleString("vi-VN")} đ)
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 border border-rose-200">
+                        ✕ Loại kho không hợp lệ. Vui lòng nhập đúng loại kho lưu trữ (VD: Kho hàng khô, Kho lạnh, Kho hóa chất...).
+                      </p>
+                    );
+                  })()}
+                </div>
 
+                <div className="grid grid-cols-3 gap-2.5">
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Kích thước *
+                      Chiều dài (m) *
                     </label>
-                    <SelectDropdown
-                      value={(() => {
-                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
-                        return parseTypeAndSizeFromUnitType(curObj).size;
-                      })()}
-                      onChange={(e) => {
-                        const curObj = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
-                        const { storageType: curType } = parseTypeAndSizeFromUnitType(curObj);
-                        const nextId = resolveUnitTypeId(unitTypes, curType, e.target.value);
-                        setUnitForm((p) => ({ ...p, unitTypeId: nextId }));
-                      }}
-                      className="w-full"
-                    >
-                      {UNIT_SIZES.map((sz) => (
-                        <option key={sz.id} value={sz.id}>{sz.label}</option>
-                      ))}
-                    </SelectDropdown>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.5"
+                      required
+                      value={unitForm.lengthM ?? 2}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, lengthM: Number(e.target.value) }))}
+                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      Chiều rộng (m) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.5"
+                      required
+                      value={unitForm.widthM ?? 1.5}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, widthM: Number(e.target.value) }))}
+                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      Chiều cao (m)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.5"
+                      value={unitForm.heightM ?? 2.5}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, heightM: Number(e.target.value) }))}
+                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                    />
                   </div>
                 </div>
 
-                {/* Mapped asset specification tag */}
+                {/* Live Preview: Diện tích & Giá thuê/tháng */}
                 {(() => {
-                  const mapped = unitTypes.find((t) => String(t.id) === String(unitForm.unitTypeId));
-                  if (!mapped) return null;
+                  const len = Math.max(0, Number(unitForm.lengthM) || 0);
+                  const wid = Math.max(0, Number(unitForm.widthM) || 0);
+                  const area = Number((len * wid).toFixed(2));
+                  const matchedCat = (pricingConfig.categories || []).find(
+                    (c) => c.name?.toLowerCase() === (unitForm.categoryName || "").trim().toLowerCase()
+                  );
+                  const surcharge = Number(matchedCat?.surchargeAmount ?? 0);
+                  const basePerSqm = Number(pricingConfig.pricePerSquareMeter ?? 100);
+                  const totalMonthly = area * basePerSqm + surcharge;
                   return (
-                    <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 px-2.5 py-1.5 text-[11px] flex items-center justify-between text-blue-900 dark:text-blue-300">
-                      <span className="font-bold">{mapped.code}</span>
-                      <span className="truncate max-w-[260px] opacity-80">{mapped.name}</span>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs space-y-1 text-emerald-950">
+                      <div className="flex justify-between">
+                        <span>Diện tích ({len}m × {wid}m):</span>
+                        <strong>{area} m²</strong>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-emerald-800">
+                        <span>Công thức: ({area} m² × {basePerSqm.toLocaleString("vi-VN")}đ) + Phụ phí {surcharge.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                      <div className="flex justify-between border-t border-emerald-200 pt-1 font-bold text-sm">
+                        <span>Giá thuê/tháng dự kiến:</span>
+                        <span>{totalMonthly.toLocaleString("vi-VN")} đ</span>
+                      </div>
                     </div>
                   );
                 })()}

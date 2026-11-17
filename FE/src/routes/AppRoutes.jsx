@@ -16,6 +16,7 @@ import AuthScene from "../pages/AuthScene";
 // Lazy-loaded customer routes (code-split on demand)
 const StorageDetail = lazy(() => import("../pages/StorageDetail"));
 const Billing = lazy(() => import("../pages/Billing"));
+const Profile = lazy(() => import("../pages/Profile"));
 const PaymentCheckout = lazy(() => import("../pages/PaymentCheckout"));
 const ReservationDetail = lazy(() => import("../pages/ReservationDetail"));
 const AccessControl = lazy(() => import("../pages/AccessControl"));
@@ -112,11 +113,12 @@ function AppRoutes() {
               <Route path="/reservations/:id" element={<ReservationDetail />} />
               <Route path="/payment" element={<PaymentCheckout />} />
               <Route path="/billing" element={<Billing />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>
 
           {/* Protected staff portal */}
-          <Route element={<RequireAuth allowedRoles={STAFF_ROLES} />}>
+          <Route element={<RequireAuth allowedRoles={[...STAFF_ROLES, ...MANAGER_ROLES]} />}>
             <Route element={<StaffLayouts />}>
               <Route path="/staff-dashboard" element={<StaffDashboard />} />
               <Route path="/staff-shifts" element={<StaffDashboard initialTab="shifts" />} />

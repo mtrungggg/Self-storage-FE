@@ -10,6 +10,7 @@ export default function RentalRenewal({ unit, onClose }) {
   const dialog = useRef(null);
   const lock = useRef(false);
   const [months, setMonths] = useState(1);
+  const [promotionCode, setPromotionCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -44,7 +45,7 @@ export default function RentalRenewal({ unit, onClose }) {
     setBusy(true);
     setError("");
     try {
-      const data = await rentalService.renewAgreement(unit.id, months);
+      const data = await rentalService.renewAgreement(unit.id, months, promotionCode.trim() || undefined);
       setResult(data);
       setTimeLeft(15 * 60);
     } catch (err) {
@@ -100,8 +101,11 @@ export default function RentalRenewal({ unit, onClose }) {
             {[
               [t("table.code", "Code"), result.renewalId],
               [t("common.end_date", "Current Expiry"), result.oldEndDate ? formatDate(result.oldEndDate) : "—"],
-              [t("renewal.new_end_date", "New Expiry"), result.newEndDate ? formatDate(result.newEndDate) : "—"],
+              [t("renewal.new_end_date", "New Expiry"), result.requestedEndDate || result.newEndDate ? formatDate(result.requestedEndDate || result.newEndDate) : "—"],
               [t("renewal.renewal_fee", "Renewal Amount"), formatCurrency(result.totalRenewalAmount)],
+              ...(result.overdueLateFeeAmount > 0 ? [[t("renewal.overdue_fee", "Overdue & Late Fee"), formatCurrency(result.overdueLateFeeAmount)]] : []),
+              [t("billing.total_due", "Total Due"), formatCurrency(result.totalDueAmount || result.totalRenewalAmount)],
+              ...(result.invoiceNo ? [[t("billing.invoice_no", "Invoice"), result.invoiceNo]] : []),
               [t("common.status", "Status"), translateStatus("pending_payment")],
             ].map(([label, value]) => (
               <div key={label} className="flex flex-wrap justify-between gap-2">
@@ -119,7 +123,8 @@ export default function RentalRenewal({ unit, onClose }) {
                 navigate("/checkout", {
                   state: {
                     renewalId: result.renewalId,
-                    amount: result.totalRenewalAmount,
+                    invoiceId: result.invoiceId,
+                    amount: result.totalDueAmount || result.totalRenewalAmount,
                     agreementNo: unit.unitCode,
                   },
                 });
@@ -156,6 +161,17 @@ export default function RentalRenewal({ unit, onClose }) {
                 </option>
               ))}
             </SelectDropdown>
+          </label>
+          <label className="block font-semibold">
+            {t("checkout.promo_code", "Promotion Code (Optional)")}
+            <input
+              type="text"
+              disabled={busy}
+              value={promotionCode}
+              onChange={(event) => setPromotionCode(event.target.value)}
+              placeholder="e.g. SEED-WELCOME10"
+              className="mt-2 w-full rounded-lg border border-[#dfe7f5] p-2 text-sm uppercase"
+            />
           </label>
           {error && <p role="alert" className="text-red-600">{error}</p>}
           <button

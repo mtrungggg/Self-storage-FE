@@ -107,9 +107,28 @@ export default function MyUnits() {
 
   const units = useMemo(() => {
     return activeRentals.map((r) => {
-      const isExpiringSoon = r.endDate
+      const rawStatus = (r.status || "").toLowerCase();
+      const isTerminated = rawStatus === "terminated" || rawStatus === "completed" || rawStatus === "ended";
+      const isMoveOut = rawStatus === "move_out_scheduled" || rawStatus === "checkout_pending";
+      const isExpiringSoon = !isTerminated && !isMoveOut && r.endDate
         ? Math.ceil((new Date(r.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 7
         : false;
+
+      let status = "active";
+      let statusLabel = t("status.occupied", "Đang thuê");
+
+      if (isTerminated) {
+        status = "terminated";
+        statusLabel = t("status.terminated", "Đã trả kho");
+      } else if (isMoveOut) {
+        status = "move_out";
+        statusLabel = t("status.move_out", "Đang trả kho");
+      } else if (isExpiringSoon) {
+        status = "renew";
+        statusLabel = t("my_units.expiring_soon", "Sắp hết hạn");
+      }
+
+      const displayUnitCode = r.unitCode || (r.agreementNo ? `#${r.agreementNo}` : "");
 
       return {
         id: String(r.agreementId),
@@ -117,15 +136,17 @@ export default function MyUnits() {
         agreementNo: r.agreementNo,
         storageUnitId: r.storageUnitId,
         facilityId: r.facilityId,
-        unitCode: r.unitCode,
+        unitCode: displayUnitCode,
         unitTypeCode: r.unitTypeCode || "STANDARD",
         facilityName: r.facilityName || BRAND_NAME,
-        status: isExpiringSoon ? "renew" : "active",
-        statusLabel: isExpiringSoon ? t("my_units.expiring_soon", "Sắp hết hạn") : t("status.occupied", "Active"),
+        status,
+        statusLabel,
         contractDate: `#${r.agreementNo || "AGR-2026"}`,
-        contractLeft: r.endDate
-          ? `${t("common.due_date", "Expires")}: ${formatDate(r.endDate)}`
-          : t("status.active", "Active"),
+        contractLeft: isTerminated
+          ? t("status.terminated", "Đã thanh lý & trả kho")
+          : r.endDate
+          ? `${t("common.due_date", "Hạn thanh toán")}: ${formatDate(r.endDate)}`
+          : t("status.active", "Hoạt động"),
         endDate: r.endDate,
         rawRental: r,
       };
@@ -133,24 +154,37 @@ export default function MyUnits() {
   }, [activeRentals, t, formatDate]);
 
   const tabs = useMemo(() => {
+    const activeCount = units.filter((u) => u.status === "active" || u.status === "renew").length;
     const renewCount = units.filter((u) => u.status === "renew").length;
-    return [
-      { id: "all", label: `${t("common.all", "All")} (${units.length})` },
-      { id: "active", label: `${t("common.active", "Active")} (${units.length})` },
-      { id: "renew", label: `${t("my_units.renew", "Renew")} (${renewCount})` },
+    const endedCount = units.filter((u) => u.status === "terminated" || u.status === "move_out").length;
+
+    const list = [
+      { id: "all", label: `${t("common.all", "Tất cả")} (${units.length})` },
+      { id: "active", label: `${t("common.active", "Đang thuê")} (${activeCount})` },
     ];
+
+    if (renewCount > 0) {
+      list.push({ id: "renew", label: `${t("my_units.renew", "Gia hạn hợp đồng")} (${renewCount})` });
+    }
+
+    if (endedCount > 0) {
+      list.push({ id: "ended", label: `${t("status.terminated", "Đã trả kho")} (${endedCount})` });
+    }
+
+    return list;
   }, [units, t]);
 
   const filteredUnits = useMemo(() => {
     if (activeTab === "all") return units;
     if (activeTab === "renew") return units.filter((u) => u.status === "renew");
-    return units.filter((u) => u.status === "active");
+    if (activeTab === "ended") return units.filter((u) => u.status === "terminated" || u.status === "move_out");
+    return units.filter((u) => u.status === "active" || u.status === "renew");
   }, [units, activeTab]);
 
   const unitSlides = useMemo(() => {
     return filteredUnits.map((u, idx) => ({
       id: String(u.id),
-      title: `${t("common.unit", "Unit")} ${u.unitCode}`,
+      title: u.unitCode?.startsWith("#") ? u.unitCode : `${t("common.unit", "Ô kho")} ${u.unitCode}`,
       src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
       alt: `${u.unitCode} - ${u.facilityName}`,
       badge: u.unitTypeCode || "UNIT",
@@ -301,6 +335,10 @@ export default function MyUnits() {
                             className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                               activeGalleryUnit.status === "renew"
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : activeGalleryUnit.status === "terminated"
+                                ? "bg-slate-100 text-slate-700 border border-slate-300"
+                                : activeGalleryUnit.status === "move_out"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
                                 : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             }`}
                           >
@@ -361,24 +399,34 @@ export default function MyUnits() {
 
                   <UnitInformation rental={activeGalleryUnit.rawRental} className="mt-4" />
 
-                  <div className="mt-4">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2">
-                      {t("common.actions", "Actions")}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[#f8faff] border border-[#eef2f9] p-3">
-                      <div className="flex-1 min-w-[240px]">
-                        <MoveOutRequest agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id} />
+                  {activeGalleryUnit.status !== "terminated" ? (
+                    <div className="mt-4">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2">
+                        {t("common.actions", "Thao tác")}
                       </div>
-                      <div className="flex-1 min-w-[240px]">
-                        <UnitTransferRequest
-                          key={activeGalleryUnit.agreementId}
-                          agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id}
-                          facilityId={activeGalleryUnit.facilityId}
-                          currentFacilityName={activeGalleryUnit.facilityName}
-                        />
+                      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[#f8faff] border border-[#eef2f9] p-3">
+                        <div className="flex-1 min-w-[240px]">
+                          <MoveOutRequest agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id} />
+                        </div>
+                        <div className="flex-1 min-w-[240px]">
+                          <UnitTransferRequest
+                            key={activeGalleryUnit.agreementId}
+                            agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id}
+                            facilityId={activeGalleryUnit.facilityId}
+                            currentFacilityName={activeGalleryUnit.facilityName}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-xs text-slate-700">
+                      <span className="material-symbols-outlined text-[20px] text-slate-500">task_alt</span>
+                      <div>
+                        <div className="font-bold text-slate-900">Hợp đồng đã hoàn tất thủ tục trả kho</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">Kho đã được bàn giao lại cho cơ sở. Quý khách vui lòng kiểm tra khung thông tin hoàn cọc ở phía trên để nhận lại tiền cọc.</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

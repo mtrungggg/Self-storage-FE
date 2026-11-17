@@ -1,9 +1,10 @@
 import { useState } from "react";
-import apiClient from "../api/apiClient";
+import staffCheckInApi from "../services/api/staffCheckInApi";
+import supportService from "../api/supportService";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuccess, isStaff = true }) {
-  const { t, translateStatus } = useLanguage();
+  const { t } = useLanguage();
   const [description, setDescription] = useState("");
   const [selectedPreset, setSelectedPreset] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -32,13 +33,20 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
       return;
     }
 
+    const facilityId = Number(target.facilityId);
+    if (!Number.isFinite(facilityId) || facilityId <= 0) {
+      setError("Missing assigned facility ID.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
     try {
       if (isStaff) {
         const payload = {
-          facilityId: Number(target.facilityId || 1),
+          facilityId,
+          reservationId: target.reservationId || null,
           agreementId: target.agreementId || null,
           storageUnitId: target.storageUnitId || target.unitId || null,
           unitCode: target.unitCode || "",
@@ -47,13 +55,10 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
           description: description.trim(),
           priority: "urgent",
         };
-        const res = await apiClient.post("/staff/tickets", payload);
-        if (res?.success === false) {
-          throw new Error(res?.message || t("common.error", "Error"));
-        }
+        await staffCheckInApi.createTicket(payload);
       } else {
         const payload = {
-          facilityId: Number(target.facilityId || 1),
+          facilityId,
           agreementId: target.agreementId || null,
           storageUnitId: target.storageUnitId || null,
           subject: `[Check-in] ${target.unitCode || "Unit"}`,
@@ -61,10 +66,7 @@ export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuc
           priority: "urgent",
           description: description.trim(),
         };
-        const res = await apiClient.post("/customer/support-tickets", payload);
-        if (res?.success === false) {
-          throw new Error(res?.message || t("common.error", "Error"));
-        }
+        await supportService.createTicket(payload);
       }
 
       setSuccessMsg(t("checkin.report_sent", "Report submitted"));

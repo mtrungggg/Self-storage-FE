@@ -11,6 +11,7 @@ import PageBackground from "../components/PageBackground";
 import StaffReservationLookup from "../components/StaffReservationLookup";
 
 import StaffMoveOutTab from "../components/StaffMoveOutTab";
+import StaffAccessEventsPanel from "../components/StaffAccessEventsPanel";
 
 import StaffFacilityUnits from "../components/StaffFacilityUnits";
 
@@ -249,35 +250,25 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
 
   useEffect(() => {
-
     if (!selectedFacilityId) return;
-
+    const facId = Number(selectedFacilityId);
+    if (Number.isFinite(facId) && facId > 0) {
+      joinFacility(facId);
+    }
     loadDashboardData(selectedFacilityId);
 
     return () => {
-
       requestId.current++;
-
     };
-
-  }, [selectedFacilityId]);
-
-
+  }, [selectedFacilityId, joinFacility]);
 
   // Real-time synchronization via SignalR
-
   useEffect(() => {
-
     if (!recentEvent) return;
-
     const t = recentEvent.type;
-
-    if (t === "ticket" || t === "task" || t === "notification" || t === "unit") {
-
+    if (t === "ticket" || t === "task" || t === "notification" || t === "unit" || t === "reservation_confirmed") {
       loadDashboardData(selectedFacilityId);
-
     }
-
   }, [recentEvent, selectedFacilityId]);
 
 
@@ -355,22 +346,22 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
     const map = new Map();
 
     for (const task of tasks) {
+      // Phân loại: Nghiệm thu trả kho thuộc về quy trình Trả kho, KHÔNG đưa vào tab Sự cố
+      if (
+        task.taskType === "inspection" ||
+        task.title?.includes("Nghiệm thu trả kho") ||
+        task.title?.toLowerCase().includes("nghiệm thu")
+      ) {
+        continue;
+      }
 
       let key = `task_${task.id}`;
 
       if (task.ticketId) {
-
         key = `ticket_${task.ticketId}`;
-
       } else if (task.title && task.title.startsWith("[Sự cố #")) {
-
         const match = task.title.match(/\[Sự cố #([^\]]+)\]/);
-
         if (match) key = `ticket_${match[1]}`;
-      } else if (task.title && task.title.includes("Nghiệm thu trả kho")) {
-        const match = task.title.match(/HĐ #([^\]]+)\]/);
-        if (match) key = `inspection_${match[1]}`;
-
       }
 
 
@@ -899,34 +890,6 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
 
 
-                {hasCapability(user, CAPABILITIES.SHIFT_VIEW) && (
-
-                  <button
-
-                    type="button"
-
-                    onClick={() => setActiveTab("shifts")}
-
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
-
-                      activeTab === "shifts"
-
-                        ? "bg-zinc-900 text-white text-white shadow-xs"
-
-                        : "text-slate-600 hover:bg-slate-100"
-
-                    }`}
-
-                  >
-
-                    {t("staff.shifts_tab", "Ca trực")}
-
-                  </button>
-
-                )}
-
-
-
                 <button
 
                   type="button"
@@ -946,9 +909,19 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
                 >
 
                   {t("staff.issues_tab", "Sự cố")} ({openIssuesCount})
-
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("access")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === "access"
+                      ? "bg-zinc-900 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {t("staff.access_logs_tab", "Nhật ký ra vào")}
+                </button>
               </div>
 
 
@@ -959,7 +932,10 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                 {activeTab === "checkin" && (
 
-                  <StaffReservationLookup />
+                  <StaffReservationLookup
+                    facilityId={selectedFacilityId ? Number(selectedFacilityId) : null}
+                    onCheckInComplete={() => selectedFacilityId && loadDashboardData(selectedFacilityId)}
+                  />
 
                 )}
 
@@ -981,10 +957,8 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
 
 
-                {activeTab === "shifts" && (
-
-                  <StaffShiftSchedule facilityId={selectedFacilityId} />
-
+                {activeTab === "access" && (
+                  <StaffAccessEventsPanel facilityId={selectedFacilityId} />
                 )}
 
 
@@ -1339,7 +1313,7 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
             </div>
 
-
+            <StaffShiftSchedule facilityId={selectedFacilityId} timetable />
 
           </div>
 

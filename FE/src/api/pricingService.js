@@ -1,14 +1,15 @@
-import apiClient from "./apiClient";
+import catalogApi from "../services/api/catalogApi";
 
 export const pricingService = {
-  /**
-   * Tính giá thuê + tiền cọc + tổng chi phí ban đầu cho một lựa chọn thuê
-   * @param {{ facilityId: number, unitTypeId: number, durationMonths: number, voucherCode?: string }} data
-   */
-  async calculatePricing(data) {
-    const res = await apiClient.post("/customer/pricing/calculate", data);
-    return res?.data ?? null;
-  },
+  calculateQuote: (data) => catalogApi.getPricingQuote(data),
+  calculatePricing: (data) =>
+    catalogApi.getPricingQuote({
+      facilityId: data.facilityId,
+      unitTypeId: data.unitTypeId,
+      startDate: data.startDate || new Date().toISOString().slice(0, 10),
+      durationMonths: data.durationMonths,
+      promotionCode: data.promotionCode ?? data.voucherCode,
+    }),
 };
 
 export default pricingService;

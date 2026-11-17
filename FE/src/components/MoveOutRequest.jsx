@@ -38,6 +38,7 @@ export default function MoveOutRequest({ agreementId }) {
   const [error, setError] = useState("");
 
   const [bankSubmitted, setBankSubmitted] = useState(false);
+  const [moveOutQrToken, setMoveOutQrToken] = useState("");
   const [payoutCompleted, setPayoutCompleted] = useState(null);
 
   const syncStateFromStorage = () => {
@@ -94,6 +95,7 @@ export default function MoveOutRequest({ agreementId }) {
     try {
       const bankData = {
         bankName: bankName.trim(),
+        bankAccountNo: accountNumber.trim(),
         bankAccountNumber: accountNumber.trim(),
         accountNumber: accountNumber.trim(),
         bankAccountHolder: accountHolder.trim().toUpperCase(),
@@ -104,12 +106,15 @@ export default function MoveOutRequest({ agreementId }) {
       localStorage.setItem(`refund_bank_info_${agreementId}`, JSON.stringify(bankData));
       window.dispatchEvent(new Event("storage"));
 
-      await rentalService.requestMoveOut(agreementId, {
+      const resp = await rentalService.requestMoveOut(agreementId, {
         requestedMoveOutDate: date,
         reason: reason.trim(),
         ...bankData,
       });
 
+      if (resp?.moveOutQrToken) {
+        setMoveOutQrToken(resp.moveOutQrToken);
+      }
       setBankSubmitted(true);
     } catch (err) {
       if (err.message && (err.message.includes("already requested") || err.message.includes("409"))) {
@@ -128,7 +133,7 @@ export default function MoveOutRequest({ agreementId }) {
       <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:underline">
         {t("moveout.preview", "Move-out & Refund Preview")}
       </summary>
-      <RefundPreview agreementId={agreementId} />
+      <RefundPreview agreementId={agreementId} requestedMoveOutDate={date} />
 
       {payoutCompleted ? (
         <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 space-y-3 shadow-xs">
@@ -216,6 +221,11 @@ export default function MoveOutRequest({ agreementId }) {
               <span className="material-symbols-outlined text-[14px]">schedule</span>
               {translateStatus("pending_manager_payout")}
             </span>
+            {moveOutQrToken && (
+              <span className="font-mono text-[10px] text-slate-600 bg-white px-2 py-0.5 rounded border border-blue-200 truncate max-w-[180px]" title={moveOutQrToken}>
+                QR: {moveOutQrToken.slice(0, 18)}...
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setBankSubmitted(false)}

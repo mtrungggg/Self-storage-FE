@@ -124,6 +124,14 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                   </div>
 
                   <div className="py-1 border-b border-[#f0f3f8]">
+                    <Link
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-[8px] px-3 py-1.5 text-left text-[11px] font-semibold text-[#3a475a] hover:bg-[#f5f7fd] hover:text-zinc-900 dark:text-zinc-100"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-zinc-900 dark:text-zinc-100">badge</span>
+                      {t("nav.profile", "Hồ sơ cá nhân")}
+                    </Link>
                     {isCustomerOnly && (
                       <>
                         <Link
@@ -195,6 +203,56 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
           )}
         </div>
       </div>
+
+      {isCustomerOnly && (!user?.phoneNumber || !user?.identityNumber) && (
+        <div
+          role="alert"
+          className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-amber-950"
+        >
+          <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-amber-600">badge</span>
+              <span>
+                Tài khoản Google của bạn chưa có đầy đủ <strong>Số điện thoại</strong> và <strong>Số CCCD</strong>. Vui lòng cập nhật để đặt kho và check-in.
+              </span>
+            </div>
+            <Link
+              to="/profile"
+              className="rounded-md bg-amber-600 px-3 py-1 text-[11px] font-bold text-white transition hover:bg-amber-700"
+            >
+              Cập nhật ngay
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {isCustomerOnly && user?.hasNegativeDepositDebt && (
+        <div
+          role="alert"
+          className="border-t border-red-700 bg-red-600 px-4 py-2 text-white shadow-sm"
+        >
+          <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">warning</span>
+              <span>
+                CẢNH BÁO CÔNG NỢ: Tiền cọc sau nghiệm thu trả kho đang bị âm{" "}
+                <strong>
+                  {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                    user.totalNegativeDebtAmount || 0
+                  )}
+                </strong>
+                . Vui lòng thanh toán ngay để tất toán hợp đồng.
+              </span>
+            </div>
+            <Link
+              to="/billing"
+              className="rounded-md bg-white px-3 py-1 text-[11px] font-bold text-red-700 transition hover:bg-red-50"
+            >
+              Thanh toán VietQR ngay
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -9,6 +9,7 @@ import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
+import AuthorizedMembersPanel from "../components/AuthorizedMembersPanel";
 
 export default function StoragePass() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function StoragePass() {
     setSelectedRentalId,
     currentUnitCode,
     checkInQrValue,
+    matchingReservation,
     currentFacilityCheckIn,
     isUnitUnlocked,
     verifyUnlockPin,
@@ -51,6 +53,11 @@ export default function StoragePass() {
     handleDeleteStoredItem,
     credentials,
     credentialsLoading,
+    authorizedMembers,
+    membersLoading,
+    membersError,
+    handleAddAuthorizedMember,
+    handleRevokeAuthorizedMember,
   } = useAccessControl();
 
   const [qrCopied, setQrCopied] = useState(false);
@@ -90,13 +97,21 @@ export default function StoragePass() {
 
   const [qrImageUrl, setQrImageUrl] = useState("");
 
+  const qrDisplayCode = useMemo(() => {
+    if (!selectedRental?.checkedInAt && matchingReservation?.reservationCode) {
+      return matchingReservation.reservationCode;
+    }
+    return selectedRental?.agreementNo || checkInQrValue;
+  }, [selectedRental?.checkedInAt, selectedRental?.agreementNo, matchingReservation?.reservationCode, checkInQrValue]);
+
   useEffect(() => {
     let active = true;
-    if (!checkInQrValue) {
+    const payload = qrDisplayCode || checkInQrValue;
+    if (!payload) {
       setQrImageUrl("");
       return;
     }
-    QRCode.toDataURL(checkInQrValue, {
+    QRCode.toDataURL(payload, {
       width: 280,
       margin: 2,
       errorCorrectionLevel: "L",
@@ -114,7 +129,7 @@ export default function StoragePass() {
     return () => {
       active = false;
     };
-  }, [checkInQrValue]);
+  }, [qrDisplayCode, checkInQrValue]);
 
   const handleCopyQrValue = async () => {
     if (!checkInQrValue) return;
@@ -483,6 +498,19 @@ export default function StoragePass() {
                 )}
               </div>
             </div>
+          </div>
+        ) : null}
+
+        {selectedRentalId && !selectedRental?.isReservationFallback && selectedRental?.checkedInAt ? (
+          <div className="mt-8">
+            <AuthorizedMembersPanel
+              members={authorizedMembers}
+              loading={membersLoading}
+              error={membersError}
+              agreementStatus={selectedRental?.status}
+              onAddMember={handleAddAuthorizedMember}
+              onRevokeMember={handleRevokeAuthorizedMember}
+            />
           </div>
         ) : null}
       </motion.main>

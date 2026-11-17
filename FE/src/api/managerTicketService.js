@@ -1,4 +1,5 @@
 import apiClient from "./apiClient";
+import managerIncidentApi from "../services/api/managerIncidentApi";
 
 export const managerTicketService = {
   /**
@@ -71,43 +72,24 @@ export const managerTicketService = {
    * POST /api/manager/agreements/{agreementId}/reassign-unit
    */
   async reassignUnit(agreementId, payload) {
-    const body = {
-      newUnitId: Number(payload.newUnitId),
-      newStorageUnitId: Number(payload.newUnitId),
-      reason: payload.reason || "Severe_Need_Relocation - Sự cố kho nghiêm trọng cần đổi kho",
-      priceAdjustment: 0, // Đổi kho tương đương 0 VNĐ
-      notes: payload.notes || "Đổi kho khẩn cấp 0 VNĐ do hư hỏng nặng tại kho cũ.",
-      ticketId: payload.ticketId,
-    };
-
     if (!agreementId) {
       throw new Error("Mã hợp đồng (agreementId) là bắt buộc để đổi ô kho.");
     }
-
-    const res = await apiClient.post(
-      `/manager/agreements/${encodeURIComponent(agreementId)}/reassign-unit`,
-      body
-    );
-
-    if (res?.success === true) return res.data;
-    if (res?.data) return res.data;
-    throw new Error(res?.message || "Không thể thực hiện đổi ô kho khẩn cấp.");
+    const body = {
+      newUnitId: Number(payload.newUnitId ?? payload.newStorageUnitId),
+      newStorageUnitId: Number(payload.newStorageUnitId ?? payload.newUnitId),
+      reason: payload.reason || "Severe_Need_Relocation - Sự cố kho nghiêm trọng cần đổi kho",
+      notes: payload.notes || "Đổi kho khẩn cấp do hư hỏng nặng tại kho cũ.",
+      ticketId: payload.ticketId,
+    };
+    return await managerIncidentApi.reassignUnit(agreementId, body);
   },
 
-  /**
-   * Hủy hợp đồng và hoàn tiền 100% khi kho gặp sự cố và cơ sở hết kho thay thế
-   * POST /api/manager/agreements/{agreementId}/emergency-cancel-refund
-   */
   async emergencyCancelAndRefund(agreementId, payload) {
     if (!agreementId) {
       throw new Error("Mã hợp đồng là bắt buộc để hủy hợp đồng và hoàn tiền.");
     }
-    const res = await apiClient.post(
-      `/manager/agreements/${encodeURIComponent(agreementId)}/emergency-cancel-refund`,
-      payload
-    );
-    if (res?.success === true) return res.data;
-    return res?.data ?? res;
+    return await managerIncidentApi.emergencyCancelAndRefund(agreementId, payload);
   },
 
   /**

@@ -11,6 +11,7 @@ import { FACILITY_GALLERY_PHOTOS as UNIT_PHOTOS } from "../constants/assets";
 
 import AccessUnitGallery from "../components/AccessUnitGallery";
 import UnitInformation from "../components/UnitInformation";
+import AuthorizedMembersPanel from "../components/AuthorizedMembersPanel";
 
 function AccessControl() {
   const navigate = useNavigate();
@@ -30,6 +31,11 @@ function AccessControl() {
     credentialsError,
     handleCheckIn,
     handleChangePin,
+    authorizedMembers,
+    membersLoading,
+    membersError,
+    handleAddAuthorizedMember,
+    handleRevokeAuthorizedMember,
   } = useAccessControl();
 
   const isSuspended =
@@ -294,7 +300,7 @@ function AccessControl() {
                           <span>{t("billing.pay_now", "Billing")}</span>
                         </button>
                       </div>
-                    ) : isAwaitingCheckIn || (!displayPin && !credentialsLoading) ? (
+                    ) : isAwaitingCheckIn ? (
                       <div className="mt-4 rounded-[14px] border border-blue-200 bg-blue-50/70 p-4">
                         <div className="flex items-start gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
@@ -315,16 +321,6 @@ function AccessControl() {
                                 "Theo quy trình vận hành kho (BR-RSV-04), mã PIN mở khóa sẽ tự động kích hoạt ngay sau khi bạn làm thủ tục nhận kho tại cơ sở. Vui lòng sử dụng Thẻ mở kho & QR để làm thủ tục."
                               )}
                             </p>
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={handleOpenCheckInQr}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-[12px] font-bold text-white shadow-sm transition hover:bg-blue-700"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-                                <span>{t("access.open_qr_pass", "Mở Thẻ mở kho & QR")}</span>
-                              </button>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -412,6 +408,19 @@ function AccessControl() {
       {pinResult && (
         <div role="status" className="mx-auto mb-4 w-full max-w-[1280px] px-4 text-sm text-[#0e7b4c]">
           {t("common.unit", "Unit")} {pinResult.unitCode}: {pinResult.message || t("common.success", "PIN updated")}
+        </div>
+      )}
+
+      {selectedRentalId && !isAwaitingCheckIn && (
+        <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
+          <AuthorizedMembersPanel
+            members={authorizedMembers}
+            loading={membersLoading}
+            error={membersError}
+            agreementStatus={selectedRental?.status}
+            onAddMember={handleAddAuthorizedMember}
+            onRevokeMember={handleRevokeAuthorizedMember}
+          />
         </div>
       )}
 

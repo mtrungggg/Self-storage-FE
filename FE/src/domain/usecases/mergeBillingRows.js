@@ -28,13 +28,7 @@ export function mergeBillingRows(history, unpaid, now = Date.now()) {
       ...rows.get(key(invoice)), ...invoice, paymentId: 0,
       amount: invoice.amountDue, method: "bank_transfer", provider: "SePay",
       canPay: true,
-      canCancel: Boolean(
-        (invoice.reservationId && canCancelReservation(invoice)) ||
-        invoice.renewalId ||
-        invoice.transferRequestId ||
-        invoice.invoiceId ||
-        invoice.id
-      ),
+      canCancel: false,
     });
   }
   return [...rows.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

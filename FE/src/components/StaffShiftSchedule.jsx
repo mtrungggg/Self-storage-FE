@@ -52,12 +52,17 @@ function formatShiftName(name, isVi = true) {
   return name;
 }
 
-export default function StaffShiftSchedule({ facilityId }) {
+export default function StaffShiftSchedule({ facilityId, timetable = false }) {
   const { t, lang } = useLanguage();
   const isVi = lang === "vi";
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const [selectedDayKey, setSelectedDayKey] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   const loadShifts = async () => {
     setLoading(true);
@@ -128,7 +133,131 @@ export default function StaffShiftSchedule({ facilityId }) {
           title={t("staff_shifts.no_shifts", "Chưa có ca trực nào")}
           description={t("staff_shifts.no_shifts_desc", "Quản lý cơ sở chưa phân công ca làm việc.")}
         />
-      ) : (
+      ) : timetable ? (() => {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+
+        const shiftsByDay = {};
+        shifts.forEach((s) => {
+          const d = new Date(s.startsAt);
+          if (isNaN(d.getTime())) return;
+          const k = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+          if (!shiftsByDay[k]) shiftsByDay[k] = [];
+          shiftsByDay[k].push(s);
+        });
+
+        const cells = [];
+        for (let i = 0; i < 42; i++) {
+          const dayNum = i - startOffset + 1;
+          let cellDate;
+          let inMonth = true;
+          if (dayNum <= 0) {
+            cellDate = new Date(year, month - 1, prevMonthDays + dayNum);
+            inMonth = false;
+          } else if (dayNum > daysInMonth) {
+            cellDate = new Date(year, month + 1, dayNum - daysInMonth);
+            inMonth = false;
+          } else {
+            cellDate = new Date(year, month, dayNum);
+          }
+          const key = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}-${String(cellDate.getDate()).padStart(2, "0")}`;
+          cells.push({ day: cellDate.getDate(), key, inMonth, dayShifts: shiftsByDay[key] || [] });
+        }
+
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        const selectedShifts = shiftsByDay[selectedDayKey] || [];
+        const monthLabel = isVi
+          ? `Tháng ${month + 1}, ${year}`
+          : viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const dayHeaders = isVi ? ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-900">{monthLabel}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month - 1, 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  title={isVi ? "Tháng trước" : "Previous month"}
+                >
+                  <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month + 1, 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  title={isVi ? "Tháng sau" : "Next month"}
+                >
+                  <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-500">
+              {dayHeaders.map((h) => (
+                <div key={h} className="py-1">{h}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-xs">
+              {cells.map((c) => {
+                const isTodayCell = c.key === todayKey;
+                const isSelected = c.key === selectedDayKey;
+                const hasShift = c.dayShifts.length > 0;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setSelectedDayKey(c.key)}
+                    className={`relative flex h-9 flex-col items-center justify-center rounded-full transition ${
+                      isTodayCell
+                        ? "bg-zinc-900 font-bold text-white shadow-xs"
+                        : isSelected
+                        ? "bg-blue-100 font-bold text-blue-900 ring-1 ring-blue-400"
+                        : c.inMonth
+                        ? "text-slate-800 hover:bg-slate-100"
+                        : "text-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{c.day}</span>
+                    {hasShift && (
+                      <span
+                        className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
+                          isTodayCell ? "bg-emerald-400" : "bg-blue-600"
+                        }`}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs">
+              <div className="font-bold text-slate-700 mb-1.5">
+                {isVi ? `Ca trực ngày ${selectedDayKey.split("-").reverse().join("/")}` : `Shifts on ${selectedDayKey}`}
+              </div>
+              {selectedShifts.length === 0 ? (
+                <p className="text-[11px] text-slate-400">{isVi ? "Không có ca trực trong ngày này." : "No shifts scheduled."}</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {selectedShifts.map((s) => (
+                    <div key={`${s.shiftId}-${s.startsAt}`} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 border border-slate-200/70">
+                      <span className="font-semibold text-slate-900">{formatShiftName(s.shiftName, isVi)}</span>
+                      <span className="font-mono text-[11px] text-slate-600">{formatTime(s.startsAt)} - {formatTime(s.endsAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })() : (
         <div className="space-y-3">
           {shifts.map((shift) => {
             const today = isToday(shift.startsAt);
@@ -200,7 +329,131 @@ export default function StaffShiftSchedule({ facilityId }) {
                           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                             {t("staff_shifts.past_shift", "Đã qua")}
                           </span>
-                        ) : (
+                        ) : timetable ? (() => {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+
+        const shiftsByDay = {};
+        shifts.forEach((s) => {
+          const d = new Date(s.startsAt);
+          if (isNaN(d.getTime())) return;
+          const k = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+          if (!shiftsByDay[k]) shiftsByDay[k] = [];
+          shiftsByDay[k].push(s);
+        });
+
+        const cells = [];
+        for (let i = 0; i < 42; i++) {
+          const dayNum = i - startOffset + 1;
+          let cellDate;
+          let inMonth = true;
+          if (dayNum <= 0) {
+            cellDate = new Date(year, month - 1, prevMonthDays + dayNum);
+            inMonth = false;
+          } else if (dayNum > daysInMonth) {
+            cellDate = new Date(year, month + 1, dayNum - daysInMonth);
+            inMonth = false;
+          } else {
+            cellDate = new Date(year, month, dayNum);
+          }
+          const key = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}-${String(cellDate.getDate()).padStart(2, "0")}`;
+          cells.push({ day: cellDate.getDate(), key, inMonth, dayShifts: shiftsByDay[key] || [] });
+        }
+
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        const selectedShifts = shiftsByDay[selectedDayKey] || [];
+        const monthLabel = isVi
+          ? `Tháng ${month + 1}, ${year}`
+          : viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const dayHeaders = isVi ? ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-900">{monthLabel}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month - 1, 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  title={isVi ? "Tháng trước" : "Previous month"}
+                >
+                  <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month + 1, 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  title={isVi ? "Tháng sau" : "Next month"}
+                >
+                  <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-500">
+              {dayHeaders.map((h) => (
+                <div key={h} className="py-1">{h}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-xs">
+              {cells.map((c) => {
+                const isTodayCell = c.key === todayKey;
+                const isSelected = c.key === selectedDayKey;
+                const hasShift = c.dayShifts.length > 0;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setSelectedDayKey(c.key)}
+                    className={`relative flex h-9 flex-col items-center justify-center rounded-full transition ${
+                      isTodayCell
+                        ? "bg-zinc-900 font-bold text-white shadow-xs"
+                        : isSelected
+                        ? "bg-blue-100 font-bold text-blue-900 ring-1 ring-blue-400"
+                        : c.inMonth
+                        ? "text-slate-800 hover:bg-slate-100"
+                        : "text-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{c.day}</span>
+                    {hasShift && (
+                      <span
+                        className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
+                          isTodayCell ? "bg-emerald-400" : "bg-blue-600"
+                        }`}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs">
+              <div className="font-bold text-slate-700 mb-1.5">
+                {isVi ? `Ca trực ngày ${selectedDayKey.split("-").reverse().join("/")}` : `Shifts on ${selectedDayKey}`}
+              </div>
+              {selectedShifts.length === 0 ? (
+                <p className="text-[11px] text-slate-400">{isVi ? "Không có ca trực trong ngày này." : "No shifts scheduled."}</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {selectedShifts.map((s) => (
+                    <div key={`${s.shiftId}-${s.startsAt}`} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 border border-slate-200/70">
+                      <span className="font-semibold text-slate-900">{formatShiftName(s.shiftName, isVi)}</span>
+                      <span className="font-mono text-[11px] text-slate-600">{formatTime(s.startsAt)} - {formatTime(s.endsAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })() : (
                           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                             {t("staff_shifts.upcoming_shift", "Sắp tới")}
                           </span>
