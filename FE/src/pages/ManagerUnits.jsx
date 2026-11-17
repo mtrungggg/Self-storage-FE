@@ -1,4 +1,5 @@
 import SelectDropdown from "@/components/ui/select-dropdown";
+import CustomCombobox from "@/components/ui/CustomCombobox";
 import { useLanguage } from "../context/LanguageContext";
 import { X, Trash2, GripVertical, Check, Image as ImageIcon, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
@@ -7,6 +8,72 @@ import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
 import PAGINATION from "../constants/pagination";
+
+const UNIT_STATUS_SELECT_OPTIONS = [
+  {
+    value: "available",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+        <span>Khả dụng (Available)</span>
+      </div>
+    ),
+  },
+  {
+    value: "occupied",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shrink-0" />
+        <span>Đang thuê (Occupied)</span>
+      </div>
+    ),
+  },
+  {
+    value: "maintenance",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
+        <span>Bảo trì (Maintenance)</span>
+      </div>
+    ),
+  },
+  {
+    value: "cleaning",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shrink-0" />
+        <span>Vệ sinh (Cleaning)</span>
+      </div>
+    ),
+  },
+  {
+    value: "pending_inspection",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shrink-0" />
+        <span>Chờ nghiệm thu (Inspection)</span>
+      </div>
+    ),
+  },
+  {
+    value: "reserved",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-purple-500 shrink-0" />
+        <span>Đã đặt trước (Reserved)</span>
+      </div>
+    ),
+  },
+  {
+    value: "out_of_service",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
+        <span>Tạm ngưng (Out of Service)</span>
+      </div>
+    ),
+  },
+];
 
 const emptyUnitForm = {
   unitCode: "",
@@ -206,6 +273,7 @@ export default function ManagerUnits() {
   }, []);
 
   const [unitForm, setUnitForm] = useState(emptyUnitForm);
+  const [categoryError, setCategoryError] = useState("");
   const [editingUnitId, setEditingUnitId] = useState(null);
   const [savingUnit, setSavingUnit] = useState(false);
 
@@ -335,7 +403,11 @@ export default function ManagerUnits() {
     const { notes, imageUrl } = parseNotesAndImage(unit.notes, unit.imageUrl);
     setUnitForm({
       unitCode: unit.unitCode || "",
-      unitTypeId: String(unit.unitTypeId || ""),
+      unitTypeId: String(unit.unitTypeId || "1"),
+      categoryName: unit.categoryName || unit.storageCategory || "Kho hàng khô",
+      lengthM: Number(unit.lengthM || unit.customLengthM) || 2,
+      widthM: Number(unit.widthM || unit.customWidthM) || 1.5,
+      heightM: Number(unit.heightM || unit.customHeightM) || 2.5,
       areaId: unit.areaId ? String(unit.areaId) : "",
       floorLabel: unit.floorLabel || "1",
       zoneLabel: unit.zoneLabel || "A",
@@ -344,11 +416,23 @@ export default function ManagerUnits() {
       notes,
       imageUrl,
     });
+    setCategoryError("");
     setShowUnitForm(true);
   }
 
   async function submitUnit(event) {
     event.preventDefault();
+    const trimmedCat = (unitForm.categoryName || "").trim();
+    if (!trimmedCat) {
+      setCategoryError("Vui lòng chọn hoặc nhập tên loại kho.");
+      return;
+    }
+    const catAnalysis = analyzeStorageCategory(trimmedCat, pricingConfig.categories || []);
+    if (!catAnalysis.valid) {
+      setCategoryError("Loại kho không hợp lệ. Vui lòng nhập đúng loại kho lưu trữ (VD: Kho hàng khô, Kho lạnh, Kho hóa chất...).");
+      return;
+    }
+    setCategoryError("");
     setSavingUnit(true);
     setError("");
     try {
@@ -590,16 +674,18 @@ export default function ManagerUnits() {
 
       setEditingUnitId(null);
       setUnitForm({
+        ...emptyUnitForm,
         unitCode: nextCode,
         unitTypeId: defaultTypeId,
         areaId: area.areaId ? String(area.areaId) : "",
         floorLabel,
         zoneLabel,
-        physicalStatus: "available",
-        isListed: true,
-        notes: "",
-        imageUrl: "",
+        categoryName: "Kho hàng khô",
+        lengthM: 2,
+        widthM: 1.5,
+        heightM: 2.5,
       });
+      setCategoryError("");
       setShowUnitForm(true);
     }
   }
@@ -725,13 +811,10 @@ export default function ManagerUnits() {
                       <td className="px-4 py-2.5">
                         <SelectDropdown
                           value={unit.physicalStatus}
-                          onChange={(e) => handleQuickStatusChange(unit, e.target.value)}
-                          className="w-36"
-                        >
-                          {STATUS_OPTIONS.map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </SelectDropdown>
+                          options={UNIT_STATUS_SELECT_OPTIONS}
+                          onChange={(e) => handleQuickStatusChange(unit, e.target?.value ?? e)}
+                          className="w-44"
+                        />
                       </td>
                       <td className="px-4 py-2.5">
                         <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs">
@@ -1078,46 +1161,29 @@ export default function ManagerUnits() {
                     </label>
                     <SelectDropdown
                       value={unitForm.physicalStatus}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, physicalStatus: e.target.value }))}
+                      options={UNIT_STATUS_SELECT_OPTIONS}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, physicalStatus: e.target?.value ?? e }))}
                       className="w-full"
-                    >
-                      {STATUS_OPTIONS.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </SelectDropdown>
+                    />
                   </div>
                 </div>
 
-                {/* Row 2: Loại kho (Combobox/Datalist) & Kích thước độc lập (Dài x Rộng x Cao) */}
+                {/* Row 2: Loại kho (Combobox thông minh) */}
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                    Loại kho * (Chọn hoặc nhập mới)
+                    Loại kho * (Chọn từ danh sách hoặc nhập mới)
                   </label>
-                  <input
-                    list="storage-categories-list"
+                  <CustomCombobox
+                    value={unitForm.categoryName}
+                    onChange={(val) => {
+                      setUnitForm((p) => ({ ...p, categoryName: val }));
+                      if (categoryError) setCategoryError("");
+                    }}
+                    options={pricingConfig.categories || []}
+                    error={categoryError}
+                    placeholder="Chọn hoặc nhập tên loại kho..."
                     required
-                    value={unitForm.categoryName || ""}
-                    onChange={(e) => setUnitForm((p) => ({ ...p, categoryName: e.target.value }))}
-                    placeholder="VD: Kho hàng khô, Kho lạnh, Kho hóa chất..."
-                    className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs outline-none focus:border-blue-500"
                   />
-                  <datalist id="storage-categories-list">
-                    {(pricingConfig.categories || []).map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
-                  {(() => {
-                    const analysis = analyzeStorageCategory(unitForm.categoryName, pricingConfig.categories || []);
-                    return analysis.valid ? (
-                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-                        ✓ Nhận diện: {analysis.group} (Phụ phí: +{analysis.surcharge.toLocaleString("vi-VN")} đ)
-                      </p>
-                    ) : (
-                      <p className="mt-1.5 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 border border-rose-200">
-                        ✕ Loại kho không hợp lệ. Vui lòng nhập đúng loại kho lưu trữ (VD: Kho hàng khô, Kho lạnh, Kho hóa chất...).
-                      </p>
-                    );
-                  })()}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2.5">
@@ -1130,9 +1196,9 @@ export default function ManagerUnits() {
                       step="0.1"
                       min="0.5"
                       required
-                      value={unitForm.lengthM ?? 2}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, lengthM: Number(e.target.value) }))}
-                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                      value={unitForm.lengthM}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, lengthM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
                   <div>
@@ -1144,9 +1210,9 @@ export default function ManagerUnits() {
                       step="0.1"
                       min="0.5"
                       required
-                      value={unitForm.widthM ?? 1.5}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, widthM: Number(e.target.value) }))}
-                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                      value={unitForm.widthM}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, widthM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
                   <div>
@@ -1157,14 +1223,14 @@ export default function ManagerUnits() {
                       type="number"
                       step="0.1"
                       min="0.5"
-                      value={unitForm.heightM ?? 2.5}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, heightM: Number(e.target.value) }))}
-                      className="w-full rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2 text-xs outline-none focus:border-blue-500"
+                      value={unitForm.heightM}
+                      onChange={(e) => setUnitForm((p) => ({ ...p, heightM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
                 </div>
 
-                {/* Live Preview: Diện tích & Giá thuê/tháng */}
+                {/* Minimalist Price & Area Card */}
                 {(() => {
                   const len = Math.max(0, Number(unitForm.lengthM) || 0);
                   const wid = Math.max(0, Number(unitForm.widthM) || 0);
@@ -1175,16 +1241,29 @@ export default function ManagerUnits() {
                   const surcharge = Number(matchedCat?.surchargeAmount ?? 0);
                   const basePerSqm = Number(pricingConfig.pricePerSquareMeter ?? 100);
                   const totalMonthly = area * basePerSqm + surcharge;
+
                   return (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs space-y-1 text-emerald-950">
-                      <div className="flex justify-between">
-                        <span>Diện tích ({len}m × {wid}m):</span>
-                        <strong>{area} m²</strong>
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-4 text-xs space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600 font-medium">Diện tích mặt sàn</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-400 text-[11px]">({len}m × {wid}m)</span>
+                          <strong className="text-sm font-bold text-slate-900">{area.toFixed(1)} m²</strong>
+                        </div>
                       </div>
-                      
-                      <div className="flex justify-between border-t border-emerald-200 pt-1 font-bold text-sm">
-                        <span>Giá thuê/tháng dự kiến:</span>
-                        <span>{totalMonthly.toLocaleString("vi-VN")} đ</span>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600 font-medium">Phụ phí loại kho</span>
+                        <span className="font-semibold text-slate-800">
+                          {surcharge > 0 ? `+ ${surcharge.toLocaleString("vi-VN")} đ` : "+ 0 đ"}
+                        </span>
+                      </div>
+
+                      <div className="border-t border-slate-200/80 pt-2.5 flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-xs">Giá thuê / tháng</span>
+                        <span className="text-base font-extrabold text-blue-600">
+                          {totalMonthly.toLocaleString("vi-VN")} đ
+                        </span>
                       </div>
                     </div>
                   );

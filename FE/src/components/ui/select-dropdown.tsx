@@ -175,9 +175,9 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         onKeyDown={handleKeyDown}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/90 px-3.5 py-2 text-sm font-medium text-zinc-800 dark:text-zinc-100 shadow-xs hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 transition-all cursor-pointer ${
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-zinc-100 shadow-xs hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer ${
           disabled ? "opacity-50 cursor-not-allowed" : ""
-        } ${isOpen ? "ring-2 ring-zinc-900/10 dark:ring-zinc-100/10 border-zinc-300 dark:border-zinc-700" : ""} ${triggerClassName}`}
+        } ${isOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""} ${triggerClassName}`}
       >
         <span
           className={`truncate ${
@@ -201,7 +201,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         <div
           role="listbox"
           tabIndex={-1}
-          className={`absolute left-0 right-0 ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"} max-h-60 overflow-y-auto overscroll-contain rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.14)] backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95 ${menuClassName}`}
+          className={`absolute left-0 right-0 ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"} max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1 shadow-xl backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95 ${menuClassName}`}
         >
           {parsedOptions.length === 0 ? (
             <div className="px-3 py-2 text-xs text-zinc-400 text-center">
@@ -220,15 +220,15 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                     opt.disabled
                       ? "opacity-40 cursor-not-allowed"
                       : isSelected
-                      ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      ? "bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-semibold"
+                      : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
                   }`}
                 >
                   <span className="truncate">{opt.label}</span>
                   {isSelected && (
                     <Check
                       size={14}
-                      className="text-zinc-900 dark:text-zinc-100 shrink-0 ml-2"
+                      className="text-blue-600 dark:text-blue-400 shrink-0 ml-2"
                     />
                   )}
                 </div>
