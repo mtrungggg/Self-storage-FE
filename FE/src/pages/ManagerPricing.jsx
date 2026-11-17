@@ -604,10 +604,7 @@ export default function ManagerPricing() {
                 Cấu hình giá theo m² & Phụ phí loại kho
               </h3>
               <p className="mt-0.5 text-xs text-slate-500">
-                Công thức tự động:{" "}
-                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-700">
-                  Giá thuê/tháng = (Diện tích m² × Đơn giá/m²) + Phụ phí loại kho
-                </span>
+                Đơn giá diện tích toàn hệ thống và mức phụ phí cộng thêm theo từng loại kho lưu trữ.
               </p>
             </div>
           </div>
@@ -715,7 +712,7 @@ export default function ManagerPricing() {
           disabled={loading || loadingFees}
           className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
         >
-          {loading || loadingFees ? "Refreshing..." : "Refresh"}
+          {loading || loadingFees ? "Đang tải lại..." : "Làm mới"}
         </button>
       </FacilityBarActions>
 
@@ -739,48 +736,31 @@ export default function ManagerPricing() {
           <span className="material-symbols-outlined text-amber-600 text-[20px]">lock</span>
           <div>
             <p className="font-bold text-amber-900">
-              Khóa quyền chỉnh sửa: Chế độ chỉ xem biểu giá (Read-only)
+              Chế độ chỉ xem biểu giá
             </p>
             <p className="text-[11px] text-amber-700 mt-0.5">
-              {t("manager.pricing_admin_notice", "Biểu giá thuê kho cơ sở.")}
+              Chỉ Quản trị viên hệ thống (Admin) mới có quyền điều chỉnh đơn giá và chính sách biểu phí.
             </p>
           </div>
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("fees")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
-              activeTab === "fees"
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Operational &amp; Penalty Fees ({feeData?.totalCount ?? feesList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("rates")}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition ${
-              activeTab === "rates"
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Unit Rental Rates ({rates.length})
-          </button>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-bold text-white shadow-xs">
+            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+            Phí vận hành &amp; Phạt ({feeData?.totalCount ?? feesList.length})
+          </span>
         </div>
 
         <div>
-          {isAdmin && activeTab === "fees" && (
+          {isAdmin && (
             <button
               type="button"
               onClick={openCreateFeeModal}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
             >
-              {t("manager.add_pricing", "Thêm biểu giá")}
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              {t("manager.add_pricing", "Thêm biểu phí")}
             </button>
           )}
 
@@ -788,17 +768,6 @@ export default function ManagerPricing() {
             <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 mr-2">
               🔒 Chế độ xem (Manager)
             </span>
-          )}
-
-          {isAdmin && activeTab === "rates" && dirtyIds.size > 0 && (
-            <button
-              type="button"
-              onClick={handleSaveRates}
-              disabled={saving}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {saving ? "Saving..." : `Save Changes (${dirtyIds.size})`}
-            </button>
           )}
         </div>
       </div>
@@ -811,7 +780,7 @@ export default function ManagerPricing() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
               <input
                 type="search"
-                placeholder={t("pricing.search_fee_placeholder", "Search code, conditions...")}
+                placeholder={t("pricing.search_fee_placeholder", "Tìm kiếm mã phí, điều kiện áp dụng...")}
                 value={feeFilters.Search}
                 onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
                 className="w-full h-10 rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white px-3.5 text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition"
@@ -832,7 +801,7 @@ export default function ManagerPricing() {
                 className="w-full"
               >
                 <option value="">{t("common.all", "Tất cả phạm vi")}</option>
-                <option value="true">Global (Toàn hệ thống)</option>
+                <option value="true">Toàn hệ thống (Global)</option>
                 <option value="false">{t("common.facility", "Theo cơ sở")}</option>
               </SelectDropdown>
               <div className="flex items-center gap-2">
@@ -880,13 +849,13 @@ export default function ManagerPricing() {
                 {loadingFees ? (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
-                      Loading fee policies from server...
+                      Đang tải chính sách biểu phí...
                     </td>
                   </tr>
                 ) : feesList.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
-                      No fee policies found matching filter criteria.
+                      Không tìm thấy chính sách biểu phí phù hợp.
                     </td>
                   </tr>
                 ) : (
@@ -906,7 +875,7 @@ export default function ManagerPricing() {
                             <span className="font-medium text-slate-800 dark:text-zinc-200">{fee.facilityName}</span>
                           ) : (
                             <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                              Global
+                              Toàn hệ thống
                             </span>
                           )}
                         </td>
@@ -925,11 +894,11 @@ export default function ManagerPricing() {
                           {(!fee.amount && !fee.ratePercent) && "0 ₫"}
                         </td>
                         <td className="px-4 py-2.5 text-center text-slate-600">
-                          {fee.graceDays != null ? `${fee.graceDays}d` : "0d"}
+                          {fee.graceDays != null && fee.graceDays > 0 ? `${fee.graceDays} ngày` : "Không"}
                         </td>
                         <td className="px-4 py-2.5 text-slate-500">
-                          {fee.validFrom ? fee.validFrom.split("T")[0] : "Always"}
-                          {fee.validTo ? ` → ${fee.validTo.split("T")[0]}` : " → Ongoing"}
+                          {fee.validFrom ? fee.validFrom.split("T")[0] : "Vô thời hạn"}
+                          {fee.validTo ? ` → ${fee.validTo.split("T")[0]}` : " → Hiện hành"}
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           {isAdmin ? (
@@ -943,7 +912,7 @@ export default function ManagerPricing() {
                               }`}
                               title="Click to toggle status"
                             >
-                              {fee.isActive ? "Active" : "Inactive"}
+                              {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
                             </button>
                           ) : (
                             <span
@@ -953,7 +922,7 @@ export default function ManagerPricing() {
                                   : "bg-slate-100 text-slate-600"
                               }`}
                             >
-                              {fee.isActive ? "Active" : "Inactive"}
+                              {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
                             </span>
                           )}
                         </td>
@@ -967,7 +936,7 @@ export default function ManagerPricing() {
                               Edit
                             </button>
                           ) : (
-                            <span className="text-[11px] text-slate-400">View only</span>
+                            <span className="text-[11px] text-slate-400">Chỉ xem</span>
                           )}
                         </td>
                       </tr>
@@ -982,9 +951,7 @@ export default function ManagerPricing() {
           {feeData && (
             <div className="flex items-center justify-between text-xs text-slate-500 px-1">
               <span>
-                {feeData.totalCount === 0
-                  ? "0 policies"
-                  : `Showing page ${feeData.pageNumber} of ${Math.max(1, feeData.totalPages)} (${feeData.totalCount} policies)`}
+                {feeData.totalCount === 0 ? "0 chính sách" : `Hiển thị trang ${feeData.pageNumber} / ${Math.max(1, feeData.totalPages)} (Tổng ${feeData.totalCount} chính sách)`}
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1009,117 +976,18 @@ export default function ManagerPricing() {
         </div>
       )}
 
-      {/* TAB 2: UNIT RENTAL RATES SECTION */}
-      {activeTab === "rates" && (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-2.5">LOẠI KHO</th>
-                <th className="px-4 py-2.5">KÍCH THƯỚC</th>
-                <th className="px-4 py-2.5 text-right">{t("pricing.monthly_rate", "Đơn giá tháng")}</th>
-                <th className="px-4 py-2.5 text-right">{t("manager.deposit_amount", "Tiền cọc")}</th>
-                <th className="px-4 py-2.5 text-right">{t("pricing.reservation_fee", "Phí giữ chỗ")}</th>
-                <th className="px-4 py-2.5 text-center">{t("manager.effective_date", "Hiệu lực")}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
-                    Loading rate policies from server...
-                  </td>
-                </tr>
-              ) : rates.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
-                    No rate configurations defined for this facility.
-                  </td>
-                </tr>
-              ) : (
-                rates.map((rate) => {
-                  const edited = editedRates[rate.id] || {};
-                  const isDirty = dirtyIds.has(rate.id);
-                  const { typeLabel, sizeLabel } = parseTypeAndSize(rate.unitTypeName);
-
-                  return (
-                    <tr
-                      key={rate.id}
-                      className={isDirty ? "bg-amber-50/40 hover:bg-amber-50/70 transition" : "hover:bg-slate-50/60 transition"}
-                    >
-                      <td className="px-4 py-2.5">
-                        <div className="font-semibold text-slate-900">{typeLabel}</div>
-                        <div className="text-[10px] text-slate-400">{rate.facilityName}</div>
-                      </td>
-
-                      <td className="px-4 py-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                          {sizeLabel}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-2.5 text-right">
-                        {isAdmin ? (
-                          <input
-                            type="number"
-                            step="1000"
-                            value={edited.monthlyRate ?? rate.monthlyRate}
-                            onChange={(e) => handleRateChange(rate.id, "monthlyRate", e.target.value)}
-                            className="w-32 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-400"
-                          />
-                        ) : (
-                          <span className="text-xs font-bold text-slate-900">
-                            {formatVnd(rate.monthlyRate)}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-2.5 text-right">
-                        {isAdmin ? (
-                          <input
-                            type="number"
-                            step="1000"
-                            value={edited.depositAmount ?? rate.depositAmount}
-                            onChange={(e) => handleRateChange(rate.id, "depositAmount", e.target.value)}
-                            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-medium text-slate-700 focus:outline-none focus:border-slate-400"
-                          />
-                        ) : (
-                          <span className="text-xs font-medium text-slate-700">
-                            {formatVnd(rate.depositAmount)}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-2.5 text-right font-medium text-slate-700">
-                        {formatVnd(rate.bookingFee)}
-                      </td>
-
-                      <td className="px-4 py-2.5 text-center">
-                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                          {rate.validFrom ? new Date(rate.validFrom).toLocaleDateString("en-US") : "Current"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal: Create / Edit Fee Policy */}
+{/* Modal: Create / Edit Fee Policy */}
       {isAdmin && showFeeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">
-                  {feeFormData.id ? "Edit Fee Policy" : "Create New Fee Policy"}
+                  {feeFormData.id ? "Chỉnh sửa chính sách biểu phí" : "Tạo mới chính sách biểu phí"}
                 </h2>
                 {!feeFormData.id && (
                   <p className="text-[11px] text-slate-500">
-                    Select a quick template or enter custom fee parameters.
+                    Chọn mẫu biểu phí nhanh hoặc thiết lập các thông số chi tiết bên dưới.
                   </p>
                 )}
               </div>
@@ -1137,7 +1005,7 @@ export default function ManagerPricing() {
             {!feeFormData.id && (
               <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
                 <div className="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <span>Quick Templates:</span>
+                  <span>Mẫu biểu phí nhanh:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {FEE_TEMPLATES.map((tpl) => (
@@ -1164,7 +1032,7 @@ export default function ManagerPricing() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">
-                    Fee Code <span className="text-red-500">*</span>
+                    Mã biểu phí <span className="text-red-500">*</span>
                   </span>
                   <input
                     type="text"
@@ -1178,14 +1046,14 @@ export default function ManagerPricing() {
 
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">
-                    Scope (Facility)
+                    Phạm vi áp dụng (Cơ sở)
                   </span>
                   <SelectDropdown
                     value={feeFormData.facilityId}
                     onChange={(e) => setFeeFormData({ ...feeFormData, facilityId: e.target.value })}
                     className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400"
                   >
-                    <option value="">Global (All Facilities)</option>
+                    <option value="">Toàn hệ thống (Tất cả cơ sở)</option>
                     {facilitiesList.map((fac) => (
                       <option key={fac.id} value={fac.id}>
                         {fac.name} ({fac.code})
@@ -1197,7 +1065,7 @@ export default function ManagerPricing() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Fee Type <span className="text-red-500">*</span></span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Loại phí <span className="text-red-500">*</span></span>
                   <SelectDropdown
                     value={feeFormData.feeType}
                     onChange={(e) => {
@@ -1217,7 +1085,7 @@ export default function ManagerPricing() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Calculation Method <span className="text-red-500">*</span></span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Phương thức tính <span className="text-red-500">*</span></span>
                   <SelectDropdown
                     value={feeFormData.calculationMethod}
                     onChange={(e) => setFeeFormData({ ...feeFormData, calculationMethod: e.target.value })}
@@ -1235,7 +1103,7 @@ export default function ManagerPricing() {
                 {feeFormData.calculationMethod === "percentage" ? (
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Rate Percent (%) <span className="text-red-500">*</span>
+                      Tỷ lệ phần trăm (%) <span className="text-red-500">*</span>
                     </span>
                     <input
                       type="number"
@@ -1250,7 +1118,7 @@ export default function ManagerPricing() {
                 ) : (
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {feeFormData.calculationMethod === "daily_accrual" ? "Daily Accrual (₫/day) *" : "Fixed Amount (₫) *"}
+                      {feeFormData.calculationMethod === "daily_accrual" ? "Mức phí cộng dồn mỗi ngày (₫/ngày) *" : "Mức phí cố định (₫) *"}
                     </span>
                     <input
                       type="number"
@@ -1265,7 +1133,7 @@ export default function ManagerPricing() {
                 )}
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Grace Period (Days)</span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Thời gian ân hạn (Số ngày)</span>
                   <input
                     type="number"
                     min="0"
@@ -1278,10 +1146,10 @@ export default function ManagerPricing() {
               </div>
 
               <label className="block">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">Conditions / Notes</span>
+                <span className="mb-1 block text-xs font-semibold text-slate-700">Điều kiện áp dụng / Ghi chú</span>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Applied after 3 overdue days calculated daily"
+                  placeholder="Ví dụ: Áp dụng sau 3 ngày quá hạn, tính cộng dồn theo ngày"
                   value={feeFormData.conditions}
                   onChange={(e) => setFeeFormData({ ...feeFormData, conditions: e.target.value })}
                   className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
@@ -1290,7 +1158,7 @@ export default function ManagerPricing() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Valid From</span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Hiệu lực từ ngày</span>
                   <DatePicker
                     value={feeFormData.validFrom}
                     onChange={(e) => setFeeFormData({ ...feeFormData, validFrom: e.target.value })}
@@ -1298,7 +1166,7 @@ export default function ManagerPricing() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-xs font-semibold text-slate-700">Valid To (Optional)</span>
+                  <span className="mb-1 block text-xs font-semibold text-slate-700">Hiệu lực đến ngày (Tùy chọn)</span>
                   <DatePicker
                     value={feeFormData.validTo}
                     onChange={(e) => setFeeFormData({ ...feeFormData, validTo: e.target.value })}
@@ -1313,7 +1181,7 @@ export default function ManagerPricing() {
                   onChange={(e) => setFeeFormData({ ...feeFormData, isActive: e.target.checked })}
                   className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-xs font-medium text-slate-700">Policy is Active immediately</span>
+                <span className="text-xs font-medium text-slate-700">Kích hoạt chính sách này ngay</span>
               </label>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1329,7 +1197,7 @@ export default function ManagerPricing() {
                   disabled={savingFee}
                   className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
                 >
-                  {savingFee ? "Saving..." : feeFormData.id ? "Save Changes" : "Create Policy"}
+                  {savingFee ? "Đang lưu..." : feeFormData.id ? "Lưu thay đổi" : "Tạo chính sách"}
                 </button>
               </div>
             </form>

@@ -480,18 +480,16 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                 <span className="material-symbols-outlined text-[16px] text-slate-500">calculate</span>
                 Bảng tính quyết toán thời gian thực
               </span>
-              <span className="font-mono text-[11px] text-slate-400">
-                POST /api/staff/inspections/{inspection.id}/submit
-              </span>
+              
             </div>
 
             <div className="space-y-1.5 pt-1 text-slate-700">
               <div className="flex justify-between">
-                <span>Tiền cọc của khách hàng (Deposit):</span>
+                <span>Tiền cọc của khách hàng:</span>
                 <span className="font-semibold text-slate-900">{formatMoney(deposit)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Chi phí khấu trừ hư hại (DamageCost):</span>
+                <span>Chi phí khấu trừ hư hại:</span>
                 <span className="font-semibold text-rose-600">- {formatMoney(calculation.damageCost)}</span>
               </div>
             </div>
@@ -589,3 +587,4 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
     </div>
   );
 }
+

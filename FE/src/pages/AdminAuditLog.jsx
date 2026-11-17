@@ -9,27 +9,27 @@ import { isValidPositiveInteger, isValidDateRange } from "../lib/validators";
 import PAGINATION from "../constants/pagination";
 
 const ENTITY_OPTIONS = [
-  { value: "", label: "All Entity Types" },
-  { value: "Facility", label: "Facility" },
-  { value: "StorageUnit", label: "Storage Unit" },
-  { value: "User", label: "User Account" },
-  { value: "RentalAgreement", label: "Rental Agreement" },
-  { value: "Reservation", label: "Reservation" },
-  { value: "SupportTicket", label: "Support Ticket" },
-  { value: "StaffFacilityAssignment", label: "Staff Assignment" },
-  { value: "Invoice", label: "Invoice" },
-  { value: "Payment", label: "Payment" },
+  { value: "", label: "Tất cả đối tượng" },
+  { value: "Facility", label: "Cơ sở kho" },
+  { value: "StorageUnit", label: "Ô kho lưu trữ" },
+  { value: "User", label: "Tài khoản người dùng" },
+  { value: "RentalAgreement", label: "Hợp đồng thuê" },
+  { value: "Reservation", label: "Đơn đặt chỗ" },
+  { value: "SupportTicket", label: "Yêu cầu hỗ trợ" },
+  { value: "StaffFacilityAssignment", label: "Phân công nhân sự" },
+  { value: "Invoice", label: "Hóa đơn" },
+  { value: "Payment", label: "Giao dịch thanh toán" },
 ];
 
 const ACTION_OPTIONS = [
-  { value: "", label: "All Actions" },
-  { value: "Create", label: "Create (Tạo mới)" },
-  { value: "Update", label: "Update (Cập nhật)" },
-  { value: "Update_Status", label: "Update Status (Đổi trạng thái)" },
-  { value: "Update_Roles", label: "Update Roles (Đổi vai trò)" },
-  { value: "Assign_Staff", label: "Assign Staff (Phân công)" },
-  { value: "Revoke_Staff_Assignment", label: "Revoke Assignment (Thu hồi phân công)" },
-  { value: "Delete", label: "Delete (Xóa)" },
+  { value: "", label: "Tất cả hành động" },
+  { value: "Create", label: "Tạo mới (Create)" },
+  { value: "Update", label: "Cập nhật (Update)" },
+  { value: "Update_Status", label: "Đổi trạng thái (Status)" },
+  { value: "Update_Roles", label: "Phân quyền / Đổi vai trò (Roles)" },
+  { value: "Assign_Staff", label: "Phân công nhân viên (Assign)" },
+  { value: "Revoke_Staff_Assignment", label: "Thu hồi phân công (Revoke)" },
+  { value: "Delete", label: "Xóa (Delete)" },
 ];
 
 const defaults = {
@@ -43,7 +43,7 @@ const defaults = {
   PageSize: PAGINATION.TABLE_PAGE_SIZE,
 };
 
-const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "medium" });
+const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "medium" });
 function formatDate(value) {
   const date = new Date(value);
   return !value || Number.isNaN(date.getTime()) ? "—" : dateFormat.format(date);
@@ -205,7 +205,7 @@ export default function AdminAuditLog() {
             >
               {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
-                  {size} rows / page
+                  {size} dòng / trang
                 </option>
               ))}
             </SelectDropdown>
@@ -256,7 +256,7 @@ export default function AdminAuditLog() {
               />
             </div>
             <div>
-              <span className="mb-1 block text-xs font-semibold text-slate-600">To Date / Time</span>
+              <span className="mb-1 block text-xs font-semibold text-slate-600">Đến ngày</span>
               <DatePicker
                 value={filters.ToDate}
                 onChange={(e) => setFilters({ ...filters, ToDate: e.target.value })}
@@ -276,9 +276,9 @@ export default function AdminAuditLog() {
       <section aria-busy={loading} className="reference-card reference-table-card">
         <div className="reference-card-heading">
           <div>
-            <h2>Audit Event Trail</h2>
+            <h2>Nhật ký hoạt động hệ thống</h2>
             <p className="reference-muted">
-              {data ? `Displaying page ${data.pageNumber} of ${data.totalPages} (${data.totalCount} total events)` : "Querying audit logs..."}
+              {data ? `Hiển thị trang ${data.pageNumber} / ${data.totalPages} (Tổng số ${data.totalCount} sự kiện)` : "Đang tải dữ liệu nhật ký..."}
             </p>
           </div>
         </div>
@@ -297,22 +297,22 @@ export default function AdminAuditLog() {
           <table className="reference-table">
             <thead>
               <tr>
-                <th scope="col">Event ID</th>
-                <th scope="col">Timestamp</th>
-                <th scope="col">Actor</th>
-                <th scope="col">Role</th>
-                <th scope="col">Entity Type</th>
-                <th scope="col">Entity ID</th>
-                <th scope="col">Action</th>
-                <th scope="col">IP Address</th>
-                <th scope="col" className="text-right pr-6">Changes</th>
+                <th scope="col">Mã sự kiện</th>
+                <th scope="col">Thời gian</th>
+                <th scope="col">Người thực hiện</th>
+                <th scope="col">Vai trò</th>
+                <th scope="col">Đối tượng</th>
+                <th scope="col">Mã ĐT</th>
+                <th scope="col">Hành động</th>
+                <th scope="col">Địa chỉ IP</th>
+                <th scope="col" className="text-right pr-6">Chi tiết</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
-                    Loading audit trail events...
+                    Đang tải danh sách nhật ký...
                   </td>
                 </tr>
               ) : !data || data.items.length === 0 ? (
@@ -320,8 +320,8 @@ export default function AdminAuditLog() {
                   <td colSpan={9} className="py-12 text-center">
                     <div className="admin-empty py-4">
                       <History size={32} className="mx-auto text-slate-400 mb-2" />
-                      <strong className="block text-sm text-slate-900">No audit events found</strong>
-                      <p className="text-xs text-slate-500 mt-1">No activities match the selected filter parameters.</p>
+                      <strong className="block text-sm text-slate-900">Không tìm thấy sự kiện nhật ký nào</strong>
+                      <p className="text-xs text-slate-500 mt-1">Không có hoạt động nào phù hợp với điều kiện lọc đã chọn.</p>
                     </div>
                   </td>
                 </tr>
@@ -360,11 +360,18 @@ export default function AdminAuditLog() {
                         </td>
                         <td>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[11px] font-semibold ${actionStyle}`}>
-                            {entry.action ?? "—"}
+                            {entry.action === "ASSIGN_STAFF" ? "Phân công NV" :
+                             entry.action === "REVOKE_STAFF_ASSIGNMENT" ? "Thu hồi phân công" :
+                             entry.action === "UPDATE_ROLES" ? "Đổi vai trò" :
+                             entry.action === "UPDATE_STATUS" ? "Đổi trạng thái" :
+                             entry.action === "CREATE" ? "Tạo mới" :
+                             entry.action === "UPDATE" ? "Cập nhật" :
+                             entry.action === "DELETE" ? "Xóa" :
+                             (entry.action ?? "—")}
                           </span>
                         </td>
                         <td>
-                          <span className="font-mono text-xs text-slate-500">{entry.ipAddress || "—"}</span>
+                          <span className="font-mono text-xs text-slate-500">{entry.ipAddress === "::1" || entry.ipAddress === "127.0.0.1" ? "Nội bộ (Local)" : (entry.ipAddress || "—")}</span>
                         </td>
                         <td className="text-right pr-6">
                           <button
@@ -376,11 +383,11 @@ export default function AdminAuditLog() {
                           >
                             {expanded === entry.id ? (
                               <>
-                                Collapse <ChevronUp size={12} />
+                                Thu gọn <ChevronUp size={12} />
                               </>
                             ) : (
                               <>
-                                Details <ChevronDown size={12} />
+                                Chi tiết <ChevronDown size={12} />
                               </>
                             )}
                           </button>
@@ -405,7 +412,7 @@ export default function AdminAuditLog() {
         {data && data.totalPages > 1 && (
           <div className="reference-pagination">
             <span>
-              Page <strong>{data.pageNumber}</strong> of <strong>{data.totalPages}</strong> ({data.totalCount} events)
+              Trang <strong>{data.pageNumber}</strong> / <strong>{data.totalPages}</strong> ({data.totalCount} sự kiện)
             </span>
             <div className="reference-pagination-buttons">
               <button
@@ -414,7 +421,7 @@ export default function AdminAuditLog() {
                 onClick={() => changePage(data.pageNumber - 1)}
                 className="reference-button-secondary !py-1 !px-2 text-xs"
               >
-                <ChevronLeft size={14} /> Previous
+                <ChevronLeft size={14} /> Trước
               </button>
               <button
                 type="button"
@@ -422,7 +429,7 @@ export default function AdminAuditLog() {
                 onClick={() => changePage(data.pageNumber + 1)}
                 className="reference-button-secondary !py-1 !px-2 text-xs"
               >
-                Next <ChevronRight size={14} />
+                Sau <ChevronRight size={14} />
               </button>
             </div>
           </div>

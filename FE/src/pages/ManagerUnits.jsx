@@ -1181,9 +1181,7 @@ export default function ManagerUnits() {
                         <span>Diện tích ({len}m × {wid}m):</span>
                         <strong>{area} m²</strong>
                       </div>
-                      <div className="flex justify-between text-[11px] text-emerald-800">
-                        <span>Công thức: ({area} m² × {basePerSqm.toLocaleString("vi-VN")}đ) + Phụ phí {surcharge.toLocaleString("vi-VN")}đ</span>
-                      </div>
+                      
                       <div className="flex justify-between border-t border-emerald-200 pt-1 font-bold text-sm">
                         <span>Giá thuê/tháng dự kiến:</span>
                         <span>{totalMonthly.toLocaleString("vi-VN")} đ</span>
@@ -1296,3 +1294,4 @@ export default function ManagerUnits() {
     </>
   );
 }
+
