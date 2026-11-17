@@ -38,6 +38,16 @@ export const authService = {
     return await authApi.getCurrentUser();
   },
 
+  async getProfile() {
+    const res = await authApi.getProfile();
+    return res?.data ?? null;
+  },
+
+  async updateProfile(data) {
+    const res = await authApi.updateProfile(data);
+    return res?.data ?? null;
+  },
+
   async googleLogin(idToken) {
     const res = await authApi.googleLogin(idToken);
     persistAuthSession(res);

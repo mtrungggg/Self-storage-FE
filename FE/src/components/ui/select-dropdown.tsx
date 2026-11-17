@@ -70,13 +70,14 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
     }
     const extracted: SelectOption[] = [];
     React.Children.forEach(children, (child) => {
-      if (React.isValidElement(child) && (child.type === "option" || (child.props && "value" in child.props))) {
-        const val = child.props.value;
-        const lbl = child.props.children || child.props.label || String(val);
+      if (React.isValidElement(child) && (child.type === "option" || (child.props && "value" in (child.props as object)))) {
+        const props = child.props as any;
+        const val = props.value;
+        const lbl = props.children || props.label || String(val);
         extracted.push({
           value: val,
           label: lbl,
-          disabled: child.props.disabled,
+          disabled: props.disabled,
         });
       }
     });

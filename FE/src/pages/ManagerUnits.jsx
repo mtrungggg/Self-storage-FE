@@ -4,6 +4,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { X, Trash2, GripVertical, Check, Image as ImageIcon, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import managerService from "../api/managerCoreService";
+import apiClient from "../api/apiClient";
 import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
@@ -263,8 +264,8 @@ export default function ManagerUnits() {
   const [showUnitForm, setShowUnitForm] = useState(false);
   const [pricingConfig, setPricingConfig] = useState({ pricePerSquareMeter: 100, categories: [] });
   useEffect(() => {
-    fetch("/api/v1/pricing-config")
-      .then((r) => r.json())
+    apiClient
+      .get("/v1/pricing-config")
       .then((res) => {
         const d = res?.data ?? res;
         if (d) setPricingConfig({ pricePerSquareMeter: Number(d.pricePerSquareMeter ?? 100), categories: d.categories || [] });
@@ -1040,7 +1041,6 @@ export default function ManagerUnits() {
                                 <div
                                   key={`slot-${r}-${c}`}
                                   onClick={() => openCreateModal({ areaId: area.areaId, x: slotX, y: slotY })}
-                                  title="Bấm hoặc kéo thả ô kho rỗng vào đây để tạo ô kho mới"
                                   onDragOver={(e) => {
                                     e.preventDefault();
                                     e.dataTransfer.dropEffect = "copy";
@@ -1059,7 +1059,7 @@ export default function ManagerUnits() {
                                     width: `${slotW * scale}px`,
                                     height: `${slotH * scale}px`,
                                   }}
-                                  title={`Ô lưới trống (Hàng ${r + 1}, Cột ${c + 1}) - Thả ô kho vào đây`}
+                                  title={`Ô lưới trống (Hàng ${r + 1}, Cột ${c + 1}) - Bấm hoặc thả ô kho vào đây để tạo mới`}
                                 >
                                   <span className="text-[11px] font-bold select-none opacity-60">
                                     {isHovered ? "+ Thả" : "+"}
