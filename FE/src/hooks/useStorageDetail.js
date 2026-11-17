@@ -86,6 +86,13 @@ export function useStorageDetail() {
         }
 
         const unitType = unitTypes.find((ut) => ut.id === picked.unitTypeId);
+        const categoryName = picked.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
+        const length = picked.length ?? unitType?.lengthM ?? 2;
+        const width = picked.width ?? unitType?.widthM ?? 1.5;
+        const height = picked.height ?? unitType?.heightM ?? 2.5;
+        const area = picked.area ?? picked.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
+        const dimension = `${length}m × ${width}m`;
+
         if (active) {
           setUnit({
             id: picked.id,
@@ -94,17 +101,23 @@ export function useStorageDetail() {
             unitCode: picked.unitCode,
             facilityName: targetFacility.name,
             address: targetFacility.address,
-            floor: [picked.floorLabel && `Floor ${picked.floorLabel}`, picked.zoneLabel && `Zone ${picked.zoneLabel}`]
+            floorLabel: picked.floorLabel || "1",
+            zoneLabel: picked.zoneLabel || "A",
+            floor: [picked.floorLabel && `Tầng ${picked.floorLabel}`, picked.zoneLabel && `Khu ${picked.zoneLabel}`]
               .filter(Boolean)
               .join(" • "),
-            dimension: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
-            sizeLabel: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
-            volume: unitType?.volumeM3 ? `${unitType.volumeM3} m³` : "",
-            height: unitType?.heightM ? `${unitType.heightM}m` : "",
-            areaM2: unitType?.areaM2 ?? null,
-            typeName: unitType?.name || `Type #${picked.unitTypeId}`,
+            dimension,
+            sizeLabel: dimension,
+            length,
+            width,
+            height: `${height}m`,
+            area,
+            areaM2: area,
+            volume: picked.volume || `${(area * height).toFixed(1)} m³`,
+            categoryName,
+            typeName: categoryName,
             fitNote: unitType?.description || "",
-            rentPrice: picked.monthlyRate,
+            rentPrice: picked.monthlyRate ?? picked.monthlyPrice ?? 0,
             image: DEFAULT_STORAGE_UNIT_IMAGE,
           });
         }
