@@ -25,7 +25,7 @@ import {
   Lock,
   Warehouse,
 } from "lucide-react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
 
 function formatDateTime(value) {

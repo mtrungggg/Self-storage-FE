@@ -4,7 +4,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
 // facilities loaded via ManagerFacilityContext
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import apiClient from "../api/apiClient";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { useAuth } from "../context/AuthContext";

@@ -10,19 +10,19 @@ import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../hooks/useAuth";
 
 // Eagerly loaded critical guest routes for instant response
-import Home from "../pages/Home";
+import CustomerHome from "../pages/CustomerHome";
 import AuthScene from "../pages/AuthScene";
 
 // Lazy-loaded customer routes (code-split on demand)
-const StorageDetail = lazy(() => import("../pages/StorageDetail"));
-const Billing = lazy(() => import("../pages/Billing"));
+const CustomerStorageDetail = lazy(() => import("../pages/CustomerStorageDetail"));
+const CustomerBilling = lazy(() => import("../pages/CustomerBilling"));
 const Profile = lazy(() => import("../pages/Profile"));
-const PaymentCheckout = lazy(() => import("../pages/PaymentCheckout"));
-const ReservationDetail = lazy(() => import("../pages/ReservationDetail"));
-const AccessControl = lazy(() => import("../pages/AccessControl"));
-const StoragePass = lazy(() => import("../pages/StoragePass"));
-const Support = lazy(() => import("../pages/Support"));
-const MyUnits = lazy(() => import("../pages/MyUnits"));
+const CustomerPaymentCheckout = lazy(() => import("../pages/CustomerPaymentCheckout"));
+const CustomerReservationDetail = lazy(() => import("../pages/CustomerReservationDetail"));
+const CustomerAccessControl = lazy(() => import("../pages/CustomerAccessControl"));
+const CustomerStoragePass = lazy(() => import("../pages/CustomerStoragePass"));
+const CustomerSupport = lazy(() => import("../pages/CustomerSupport"));
+const CustomerMyUnits = lazy(() => import("../pages/CustomerMyUnits"));
 
 // Lazy-loaded staff portal
 const StaffDashboard = lazy(() => import("../pages/StaffDashboard"));
@@ -77,7 +77,7 @@ function RoleAwareHome() {
       return <Navigate to={dest} replace />;
     }
   }
-  return <Home />;
+  return <CustomerHome />;
 }
 
 // Central route table: public guest exploration (/home) plus protected routes.
@@ -96,23 +96,23 @@ function AppRoutes() {
           {/* Public customer browsing */}
           <Route element={<CustomerLayouts />}>
             <Route path="/home" element={<RoleAwareHome />} />
-            <Route path="/storage-detail" element={<StorageDetail />} />
-            <Route path="/support" element={<Support />} />
+            <Route path="/storage-detail" element={<CustomerStorageDetail />} />
+            <Route path="/support" element={<CustomerSupport />} />
 
             {/* Protected customer routes: require login */}
             <Route element={<RequireAuth />}>
-              <Route path="/my-units" element={<MyUnits />} />
+              <Route path="/my-units" element={<CustomerMyUnits />} />
               <Route path="/my-storages" element={<Navigate to="/my-units" replace />} />
-              <Route path="/access-control" element={<AccessControl />} />
+              <Route path="/access-control" element={<CustomerAccessControl />} />
               <Route path="/access-ccontrol" element={<Navigate to="/access-control" replace />} />
-              <Route path="/storage-pass" element={<StoragePass />} />
-              <Route path="/storage-management" element={<StoragePass />} />
+              <Route path="/storage-pass" element={<CustomerStoragePass />} />
+              <Route path="/storage-management" element={<CustomerStoragePass />} />
             </Route>
             <Route element={<RequireAuth allowedRoles={CUSTOMER_ROLES} />}>
-              <Route path="/checkout" element={<PaymentCheckout />} />
-              <Route path="/reservations/:id" element={<ReservationDetail />} />
-              <Route path="/payment" element={<PaymentCheckout />} />
-              <Route path="/billing" element={<Billing />} />
+              <Route path="/checkout" element={<CustomerPaymentCheckout />} />
+              <Route path="/reservations/:id" element={<CustomerReservationDetail />} />
+              <Route path="/payment" element={<CustomerPaymentCheckout />} />
+              <Route path="/billing" element={<CustomerBilling />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>

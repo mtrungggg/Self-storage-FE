@@ -8,7 +8,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 
-export default function StorageDetail() {
+export default function CustomerStorageDetail() {
   const { t, lang, formatCurrency } = useLanguage();
   const isVi = lang === "vi";
   const label = (vi, en) => (isVi ? vi : en);

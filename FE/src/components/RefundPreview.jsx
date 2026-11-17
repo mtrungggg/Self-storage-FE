@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function RefundPreview({ agreementId, requestedMoveOutDate }) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Landmark, CheckCircle2, AlertTriangle } from "lucide-react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
 const BANKS = [

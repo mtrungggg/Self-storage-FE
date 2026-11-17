@@ -1,6 +1,6 @@
 import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
 import { DECISION_STATUS } from "../constants/managerConstants";

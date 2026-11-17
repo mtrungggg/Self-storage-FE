@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import QRCode from "qrcode";
-import reservationService from "../api/reservationService";
+import reservationService from "../api/customerReservationService";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -36,7 +36,7 @@ function parseTypeAndSize(unitTypeName) {
   return { typeLabel, sizeLabel };
 }
 
-export default function ReservationDetail() {
+export default function CustomerReservationDetail() {
   const { id } = useParams();
   const { t, translateStatus, formatDate, formatCurrency } = useLanguage();
   const [detail, setDetail] = useState(null);

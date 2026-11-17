@@ -16,7 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatVnd } from "../lib/utils";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import mediaService from "../api/mediaService";
 
 

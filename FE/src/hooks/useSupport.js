@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { SUPPORT_CATEGORIES } from "../data/supportCategories";
 
-import supportService from "../api/supportService";
+import supportService from "../api/customerSupportService";
 import { useAuth } from "./useAuth";
 
 function toTicketView(ticket) {

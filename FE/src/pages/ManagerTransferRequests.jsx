@@ -1,7 +1,7 @@
 import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { Bell, RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowRight, User, Phone, FileText, Search } from "lucide-react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { DECISION_STATUS } from "../constants/managerConstants";
 import { formatStatusToEnglish } from "../lib/utils";

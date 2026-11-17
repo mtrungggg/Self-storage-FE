@@ -3,7 +3,7 @@ import managerIncidentApi from "../services/api/managerIncidentApi";
 import managerDelinquencyApi from "../services/api/managerDelinquencyApi";
 
 // Service layer: wraps the backend "Manager" API group (facility-scoped operations console).
-export const managerService = {
+export const managerCoreService = {
   // STT 11: GET /api/manager/facilities/{facilityId}/dashboard
   // Bảng điều khiển thống kê tỷ lệ lấp đầy, doanh thu cơ sở
   async getDashboard(facilityId, params = {}) {
@@ -256,4 +256,4 @@ export const managerService = {
   },
 };
 
-export default managerService;
+export default managerCoreService;

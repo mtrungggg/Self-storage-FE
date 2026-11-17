@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import paymentApi from "../services/api/paymentApi";
 import reservationApi from "../services/api/reservationApi";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useSignalR } from "../context/SignalRContext";
 import { CHECKOUT_STATUS, PAYMENT_STATUS } from "../constants/paymentConstants";
 import { RESERVATION_STATUS } from "../constants/rentalConstants";

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import rentalService from "../api/rentalService";
-import reservationService from "../api/reservationService";
+import rentalService from "../api/customerRentalService";
+import reservationService from "../api/customerReservationService";
 
 
 

@@ -1,7 +1,7 @@
 import DatePicker from "@/components/ui/date-picker";
 import { useEffect, useId, useRef, useState } from "react";
 import RefundPreview from "./RefundPreview";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
 const POPULAR_BANKS = [

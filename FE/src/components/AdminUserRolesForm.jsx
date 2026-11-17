@@ -64,7 +64,7 @@ export default function AdminUserRolesForm({
         <div>
           <h2>{t("admin.manage_roles", "Manage System Roles & Permissions")}</h2>
           <p className="reference-muted">
-            {t("admin.user_roles_desc", "Mỗi tài khoản chỉ được gán một vai trò duy nhất trong hệ thống.")}
+            {t("admin.user_roles_desc", "Chọn một vai trò phân quyền duy nhất cho tài khoản này.")}
           </p>
         </div>
       </div>

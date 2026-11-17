@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
@@ -26,7 +26,7 @@ const UNIT_CARD_IMAGES = [
   "https://www.aa-ministorage.com/wp-content/uploads/2019/09/AA-139.jpg",
 ];
 
-export default function MyUnits() {
+export default function CustomerMyUnits() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, translateStatus, formatDate } = useLanguage();

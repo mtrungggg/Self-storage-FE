@@ -1,6 +1,6 @@
 import catalogApi from "../services/api/catalogApi";
 
-export const storageUnitService = {
+export const customerStorageUnitService = {
   async getAvailableUnits(params = {}) {
     if (params.facilityId) {
       const { facilityId, ...rest } = params;
@@ -15,4 +15,4 @@ export const storageUnitService = {
   },
 };
 
-export default storageUnitService;
+export default customerStorageUnitService;

@@ -1,6 +1,6 @@
 import rentalApi from "../services/api/rentalApi";
 
-export const rentalService = {
+export const customerRentalService = {
   async getLatestTransferRequest(agreementId) {
     return rentalApi.getLatestTransferRequest(agreementId);
   },
@@ -111,4 +111,4 @@ export const rentalService = {
   },
 };
 
-export default rentalService;
+export default customerRentalService;

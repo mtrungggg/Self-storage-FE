@@ -11,7 +11,7 @@ import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import AuthorizedMembersPanel from "../components/AuthorizedMembersPanel";
 
-export default function StoragePass() {
+export default function CustomerStoragePass() {
   const navigate = useNavigate();
   const { t, translateStatus, lang } = useLanguage();
   const isVi = lang === "vi";

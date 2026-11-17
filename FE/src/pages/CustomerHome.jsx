@@ -8,7 +8,7 @@ import PageBackground from "../components/PageBackground";
 import { CoverflowCarousel } from "../components/ui/coverflow-carousel";
 import CustomSelect from "../components/ui/CustomSelect";
 
-export default function Home() {
+export default function CustomerHome() {
   const { lang, formatCurrency } = useLanguage();
   const isVi = lang === "vi";
   const label = (vi, en) => (isVi ? vi : en);

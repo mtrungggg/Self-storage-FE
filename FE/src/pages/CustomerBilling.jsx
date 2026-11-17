@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import rentalService from "../api/rentalService";
-import reservationService from "../api/reservationService";
+import rentalService from "../api/customerRentalService";
+import reservationService from "../api/customerReservationService";
 import { useBilling } from "../hooks/useBilling";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 
-function Billing() {
+function CustomerBilling() {
   const navigate = useNavigate();
   const { t, translateStatus } = useLanguage();
   const {
@@ -322,4 +322,4 @@ function Billing() {
   );
 }
 
-export default Billing;
+export default CustomerBilling;

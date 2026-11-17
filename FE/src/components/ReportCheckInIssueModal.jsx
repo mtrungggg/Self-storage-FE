@@ -1,6 +1,6 @@
 import { useState } from "react";
 import staffCheckInApi from "../services/api/staffCheckInApi";
-import supportService from "../api/supportService";
+import supportService from "../api/customerSupportService";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function ReportCheckInIssueModal({ target, isOpen, onClose, onSuccess, isStaff = true }) {

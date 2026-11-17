@@ -8,7 +8,7 @@ import {
   getSizeFilters,
 } from "../data/homeRepository";
 import facilityService from "../api/facilityService";
-import storageUnitService from "../api/storageUnitService";
+import storageUnitService from "../api/customerStorageUnitService";
 import { DEFAULT_STORAGE_UNIT_IMAGE as STANDARD_IMAGE, STORAGE_TYPE_PLACEHOLDERS as UNIT_TYPE_IMAGES } from "../constants/assets";
 import BUSINESS_CONFIG from "../config/businessConfig";
 

@@ -1,7 +1,7 @@
 import DatePicker from "@/components/ui/date-picker";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import facilityService from "../api/facilityService";
 import SupportDropdown from "./SupportDropdown";
 import { useLanguage } from "../context/LanguageContext";

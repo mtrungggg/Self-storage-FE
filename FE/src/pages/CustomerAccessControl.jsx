@@ -13,7 +13,7 @@ import AccessUnitGallery from "../components/AccessUnitGallery";
 import UnitInformation from "../components/UnitInformation";
 import AuthorizedMembersPanel from "../components/AuthorizedMembersPanel";
 
-export default function AccessControl() {
+export default function CustomerAccessControl() {
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
   const isVi = lang === "vi";

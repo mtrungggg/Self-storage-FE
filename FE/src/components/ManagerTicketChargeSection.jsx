@@ -2,7 +2,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import managerTicketService from "../api/managerTicketService";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 
 function formatCurrency(val) {
   if (val == null || isNaN(val)) return "0 ₫";

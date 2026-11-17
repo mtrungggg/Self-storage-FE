@@ -8,7 +8,7 @@ import PageBackground from "../components/PageBackground";
 import { formatVnd } from "../lib/utils";
 import { CHECKOUT_STATUS } from "../constants/paymentConstants";
 
-function PaymentCheckout() {
+function CustomerPaymentCheckout() {
   const { t, formatCurrency } = useLanguage();
   const {
     checkout,
@@ -398,4 +398,4 @@ function PaymentCheckout() {
   );
 }
 
-export default PaymentCheckout;
+export default CustomerPaymentCheckout;

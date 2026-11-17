@@ -3,7 +3,7 @@ import CustomCombobox from "@/components/ui/CustomCombobox";
 import { useLanguage } from "../context/LanguageContext";
 import { X, Trash2, GripVertical, Check, Image as ImageIcon, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import facilityService from "../api/facilityService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";

@@ -1,7 +1,7 @@
 import SelectDropdown from "@/components/ui/select-dropdown";
 import { useEffect, useRef, useState } from "react";
 import { Star, CheckCircle2, X } from "lucide-react";
-import supportService from "../api/supportService";
+import supportService from "../api/customerSupportService";
 import { useLanguage } from "../context/LanguageContext";
 
 function Attachments({ items }) {

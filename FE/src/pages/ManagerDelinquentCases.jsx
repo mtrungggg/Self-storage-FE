@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { TableSkeleton } from "../components/SkeletonLoader";
 import EmptyState from "../components/EmptyState";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatVnd } from "../lib/utils";
 

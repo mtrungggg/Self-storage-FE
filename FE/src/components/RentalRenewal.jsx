@@ -1,7 +1,7 @@
 import SelectDropdown from "@/components/ui/select-dropdown";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function RentalRenewal({ unit, onClose }) {
