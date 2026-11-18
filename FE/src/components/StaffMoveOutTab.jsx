@@ -25,6 +25,51 @@ function cleanUnitCode(code) {
   return s.trim() || "—";
 }
 
+function parseReasonAndBank(rawReason) {
+  if (!rawReason || typeof rawReason !== "string") {
+    return { note: "", bank: null };
+  }
+  let str = rawReason.trim();
+  while ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  if (str.includes('\\"')) {
+    str = str.replace(/\\"/g, '"');
+  }
+
+  if (str.startsWith("{") && str.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(str);
+      const note = (parsed.note || parsed.reason || "").trim();
+      const hasBank = parsed.bank || parsed.acc || parsed.holder;
+      const bank = hasBank
+        ? {
+            bankName: parsed.bank || "",
+            accountNo: parsed.acc || "",
+            accountHolder: parsed.holder || "",
+          }
+        : null;
+      return { note, bank };
+    } catch {
+      // ignore
+    }
+  }
+
+  if (str.includes("BANK:") || str.includes("ACC:")) {
+    const parts = str.split("|");
+    const bankName = parts.find((p) => p.startsWith("BANK:"))?.replace("BANK:", "").trim() || "";
+    const accountNo = parts.find((p) => p.startsWith("ACC:"))?.replace("ACC:", "").trim() || "";
+    const accountHolder = parts.find((p) => p.startsWith("NAME:"))?.replace("NAME:", "").trim() || "";
+    const note = parts.find((p) => p.startsWith("NOTE:"))?.replace("NOTE:", "").trim() || "";
+    return {
+      note,
+      bank: { bankName, accountNo, accountHolder },
+    };
+  }
+
+  return { note: str, bank: null };
+}
+
 export default function StaffMoveOutTab({ facilityId = "1" }) {
   const { t } = useLanguage();
   const [date, setDate] = useState(() => today());
@@ -181,7 +226,7 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
                         inventory_2
                       </span>
                       <span className="text-sm font-bold text-slate-900">
-                        {unitLabel === "—" ? "—" : `${t("common.unit", "Ô kho")} ${unitLabel}`}
+                        {unitLabel !== "—" ? `${t("common.unit", "Ô kho")} ${unitLabel}` : (item.agreementNo ? `HĐ #${item.agreementNo}` : "—")}
                       </span>
                     </div>
 
@@ -217,11 +262,56 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
                     </div>
                   </dl>
 
-                  {item.reason && (
-                    <p className="mt-2.5 border-t border-slate-200/60 pt-2 text-[11px] text-slate-500 italic">
-                      &ldquo;{item.reason}&rdquo;
-                    </p>
-                  )}
+                  {(() => {
+                    const { note, bank } = parseReasonAndBank(item.reason);
+                    if (!note && !bank) return null;
+                    return (
+                      <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 text-xs space-y-2">
+                        {note && (
+                          <div className="flex items-start gap-2">
+                            <span className="material-symbols-outlined text-[16px] text-slate-400 shrink-0 mt-0.5">
+                              chat
+                            </span>
+                            <div className="min-w-0">
+                              <span className="font-semibold text-slate-600 mr-1.5">
+                                {t("common.reason", "Lý do / Ghi chú")}:
+                              </span>
+                              <span className="text-slate-800 break-words">{note}</span>
+                            </div>
+                          </div>
+                        )}
+                        {bank && (
+                          <div className={`flex items-start gap-2 ${note ? "border-t border-slate-200/60 pt-2" : ""}`}>
+                            <span className="material-symbols-outlined text-[16px] text-emerald-600 shrink-0 mt-0.5">
+                              account_balance
+                            </span>
+                            <div className="min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-700">
+                              {bank.bankName && (
+                                <span>
+                                  <strong className="text-slate-500 font-medium">{t("common.bank", "Ngân hàng")}:</strong>{" "}
+                                  <span className="font-semibold text-slate-800">{bank.bankName}</span>
+                                </span>
+                              )}
+                              {bank.accountNo && (
+                                <span>
+                                  <strong className="text-slate-500 font-medium">{t("common.account_no", "STK")}:</strong>{" "}
+                                  <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                    {bank.accountNo}
+                                  </span>
+                                </span>
+                              )}
+                              {bank.accountHolder && (
+                                <span>
+                                  <strong className="text-slate-500 font-medium">{t("common.holder", "Chủ TK")}:</strong>{" "}
+                                  <span className="font-bold text-slate-900">{bank.accountHolder}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Khối hành động hoặc trạng thái hoàn cọc duy nhất */}

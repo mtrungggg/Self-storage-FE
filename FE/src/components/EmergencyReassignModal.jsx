@@ -641,9 +641,15 @@ export default function EmergencyReassignModal({
                 </div>
               </div>
               {ticket?.reportNote && (
-                <p className="text-[11px] text-slate-700 border-t border-rose-200 pt-1.5 italic">
-                  Ghi chú từ báo cáo Staff: &ldquo;{ticket.reportNote}&rdquo;
-                </p>
+                <div className="mt-2 flex items-start gap-1.5 border-t border-rose-200/70 pt-2 text-[11px] text-slate-700">
+                  <span className="material-symbols-outlined text-[15px] text-rose-500 shrink-0 mt-0.5">
+                    edit_note
+                  </span>
+                  <div>
+                    <span className="font-semibold text-rose-800 mr-1">Ghi chú từ Staff:</span>
+                    <span>{ticket.reportNote}</span>
+                  </div>
+                </div>
               )}
             </div>
 
