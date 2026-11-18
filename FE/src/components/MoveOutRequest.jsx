@@ -129,11 +129,16 @@ export default function MoveOutRequest({ agreementId }) {
   }
 
   return (
-    <details className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
-      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:underline">
-        {t("moveout.preview", "Move-out & Refund Preview")}
+    <details className="text-xs group">
+      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between transition-colors select-none py-0.5">
+        <span className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-amber-600">output</span>
+          <span className="font-bold text-slate-800 dark:text-zinc-200">{t("moveout.preview", "Báo trả kho & Xem trước hoàn cọc")}</span>
+        </span>
+        <span className="material-symbols-outlined text-[18px] text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
       </summary>
-      <RefundPreview agreementId={agreementId} requestedMoveOutDate={date} />
+      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-2.5">
+        <RefundPreview agreementId={agreementId} requestedMoveOutDate={date} />
 
       {payoutCompleted ? (
         <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 space-y-3 shadow-xs">
@@ -331,6 +336,7 @@ export default function MoveOutRequest({ agreementId }) {
           </fieldset>
         </form>
       )}
+      </div>
     </details>
   );
 }

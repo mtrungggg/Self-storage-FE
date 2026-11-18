@@ -401,14 +401,14 @@ export default function CustomerMyUnits() {
 
                   {activeGalleryUnit.status !== "terminated" ? (
                     <div className="mt-4">
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2.5">
                         {t("common.actions", "Thao tác")}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[#f8faff] border border-[#eef2f9] p-3">
-                        <div className="flex-1 min-w-[240px]">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                        <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 p-4 shadow-2xs">
                           <MoveOutRequest agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id} />
                         </div>
-                        <div className="flex-1 min-w-[240px]">
+                        <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 p-4 shadow-2xs">
                           <UnitTransferRequest
                             key={activeGalleryUnit.agreementId}
                             agreementId={activeGalleryUnit.agreementId || activeGalleryUnit.id}

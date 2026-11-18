@@ -446,7 +446,7 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     return (
       <>
         {confirmCancelModal}
-        <div role="status" className="mt-3 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white dark:from-zinc-900 dark:to-zinc-950 dark:border-blue-900/40 p-4 text-xs space-y-3 shadow-sm">
+        <div role="status" className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white dark:from-zinc-900 dark:to-zinc-950 dark:border-blue-900/40 p-4 text-xs space-y-3 shadow-2xs">
         {paymentNotice && createPortal(
           <div role="alert" className="fixed bottom-5 right-4 z-[110] flex max-w-[calc(100vw-2rem)] items-start gap-3 rounded-2xl border border-emerald-200 bg-white p-4 text-emerald-950 shadow-xl sm:right-6">
             <span aria-hidden="true" className="material-symbols-outlined text-2xl text-emerald-600">check_circle</span>
@@ -631,24 +631,28 @@ const otherFacilities = facilities.filter((f) => String(f.id) !== String(facilit
 return (
   <>
     {confirmCancelModal}
-    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="mt-2 border-t border-[#dfe7f5] dark:border-zinc-800 pt-2 text-xs">
-      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[16px] text-blue-600">swap_horiz</span>
-          {t("transfer.title", "Unit Transfer Request")}
+    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="text-xs group">
+      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between transition-colors select-none py-0.5">
+        <span className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-blue-600">swap_horiz</span>
+          <span className="font-bold text-slate-800 dark:text-zinc-200">{t("transfer.title", "Yêu cầu chuyển kho")}</span>
         </span>
-        {preview && (
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-            preview.transferCount >= preview.maxTransfers
-              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:border-red-900"
-              : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
-          }`}>
-            {t("transfer.transfers_count", "Lượt chuyển:")} {preview.transferCount} / {preview.maxTransfers}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {preview && (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+              preview.transferCount >= preview.maxTransfers
+                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:border-red-900"
+                : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+            }`}>
+              {t("transfer.transfers_count", "Lượt chuyển:")} {preview.transferCount} / {preview.maxTransfers}
+            </span>
+          )}
+          <span className="material-symbols-outlined text-[18px] text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+        </div>
       </summary>
 
-      <form onSubmit={submit} className="mt-2 space-y-2.5">
+      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-2.5">
+        <form onSubmit={submit} className="space-y-2.5">
         {/* Limit Warning if max reached */}
         {preview && !preview.canTransfer && (
           <div role="alert" className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 p-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
@@ -890,6 +894,7 @@ return (
           )}
         </button>
       </form>
+      </div>
     </details>
   </>
 );
