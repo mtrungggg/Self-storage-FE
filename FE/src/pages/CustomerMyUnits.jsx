@@ -110,7 +110,8 @@ export default function CustomerMyUnits() {
       const rawStatus = (r.status || "").toLowerCase();
       const isTerminated = rawStatus === "terminated" || rawStatus === "completed" || rawStatus === "ended";
       const isMoveOut = rawStatus === "move_out_scheduled" || rawStatus === "checkout_pending";
-      const isExpiringSoon = !isTerminated && !isMoveOut && r.endDate
+      const isOverdue = !isTerminated && !isMoveOut && (rawStatus === "overdue" || rawStatus === "defaulted" || Boolean(r.hasOverdueDebt));
+      const isExpiringSoon = !isTerminated && !isMoveOut && !isOverdue && r.endDate
         ? Math.ceil((new Date(r.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 7
         : false;
 
@@ -123,6 +124,9 @@ export default function CustomerMyUnits() {
       } else if (isMoveOut) {
         status = "move_out";
         statusLabel = t("status.move_out", "Đang trả kho");
+      } else if (isOverdue) {
+        status = "overdue";
+        statusLabel = t("status.overdue_locked", "Quá hạn / Đã khóa PIN");
       } else if (isExpiringSoon) {
         status = "renew";
         statusLabel = t("my_units.expiring_soon", "Sắp hết hạn");
@@ -159,8 +163,8 @@ export default function CustomerMyUnits() {
   }, [activeRentals, t, formatDate]);
 
   const tabs = useMemo(() => {
-    const activeCount = units.filter((u) => u.status === "active" || u.status === "renew").length;
-    const renewCount = units.filter((u) => u.status === "renew").length;
+    const activeCount = units.filter((u) => u.status === "active" || u.status === "renew" || u.status === "overdue").length;
+    const renewCount = units.filter((u) => u.status === "renew" || u.status === "overdue").length;
     const endedCount = units.filter((u) => u.status === "terminated" || u.status === "move_out").length;
 
     const list = [
@@ -181,9 +185,9 @@ export default function CustomerMyUnits() {
 
   const filteredUnits = useMemo(() => {
     if (activeTab === "all") return units;
-    if (activeTab === "renew") return units.filter((u) => u.status === "renew");
+    if (activeTab === "renew") return units.filter((u) => u.status === "renew" || u.status === "overdue");
     if (activeTab === "ended") return units.filter((u) => u.status === "terminated" || u.status === "move_out");
-    return units.filter((u) => u.status === "active" || u.status === "renew");
+    return units.filter((u) => u.status === "active" || u.status === "renew" || u.status === "overdue");
   }, [units, activeTab]);
 
   const unitSlides = useMemo(() => {
@@ -361,7 +365,9 @@ export default function CustomerMyUnits() {
                           </h3>
                           <span
                             className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                              activeGalleryUnit.status === "renew"
+                              activeGalleryUnit.status === "overdue"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : activeGalleryUnit.status === "renew"
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
                                 : activeGalleryUnit.status === "terminated"
                                 ? "bg-slate-100 text-slate-700 border border-slate-300"

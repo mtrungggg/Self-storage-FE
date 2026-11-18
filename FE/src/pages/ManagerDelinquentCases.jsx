@@ -199,7 +199,9 @@ function ManagerDelinquentCases() {
   // KPI Calculations
   const stats = useMemo(() => {
     const totalCount = cases.length;
-    const totalDebt = cases.reduce((acc, c) => acc + (Number(c.currentDebt) || 0), 0);
+    const totalDebt = cases
+      .filter((c) => c.status !== "cured" && c.status !== "waived")
+      .reduce((acc, c) => acc + (Number(c.currentDebt) || 0), 0);
     const delinquentCount = cases.filter((c) => c.status === "delinquent").length;
     const graceCount = cases.filter((c) => c.status === "grace").length;
     const curedCount = cases.filter((c) => c.status === "cured").length;

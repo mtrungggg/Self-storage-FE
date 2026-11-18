@@ -369,7 +369,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                           type="number"
                           required
                           min="0"
-                          step="10000"
+                          step="any"
                           placeholder="Chi phí"
                           value={item.cost}
                           onChange={(e) => handleUpdateItem(index, "cost", e.target.value)}
@@ -424,7 +424,7 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                   <input
                     type="number"
                     min="0"
-                    step="10000"
+                    step="any"
                     placeholder="Tùy chỉnh tổng phí..."
                     value={manualDamageCost !== "" ? manualDamageCost : calculatedDamageCost}
                     onChange={(e) => setManualDamageCost(e.target.value)}
