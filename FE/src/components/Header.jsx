@@ -103,8 +103,12 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
                 onClick={() => setMenuOpen((prev) => !prev)}
                 className="flex items-center gap-2 rounded-full border border-[#dfe7f5] bg-white py-1 pl-1 pr-2.5 transition hover:bg-[#f8faff] cursor-pointer"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1c30] text-[12px] font-bold text-white">
-                  {(user.fullName || user.email || "U").charAt(0).toUpperCase()}
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1c30] text-[12px] font-bold text-white overflow-hidden shadow-2xs">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    (user.fullName || user.email || "U").charAt(0).toUpperCase()
+                  )}
                 </div>
                 {showUserBadge && (
                   <div className="hidden text-left leading-tight lg:block">

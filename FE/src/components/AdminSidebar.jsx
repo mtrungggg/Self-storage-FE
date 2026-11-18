@@ -80,6 +80,17 @@ export default function AdminSidebar({
           </div>
         ))}
       </nav>
+      {/* User Profile link in sidebar footer */}
+      <div className="shrink-0 p-3 border-t border-zinc-900">
+        <Link
+          to="/profile"
+          onClick={onClose}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 hover:bg-zinc-900 hover:text-white transition"
+        >
+          <span className="material-symbols-outlined text-[18px] text-zinc-400">manage_accounts</span>
+          <span>{t("nav.profile", "Hồ sơ cá nhân")}</span>
+        </Link>
+      </div>
     </aside>
   );
 

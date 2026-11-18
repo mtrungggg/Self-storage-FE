@@ -99,8 +99,9 @@ function AppRoutes() {
             <Route path="/storage-detail" element={<CustomerStorageDetail />} />
             <Route path="/support" element={<CustomerSupport />} />
 
-            {/* Protected customer routes: require login */}
+            {/* Protected routes: require login (all roles: Customer, Staff, Manager, Admin) */}
             <Route element={<RequireAuth />}>
+              <Route path="/profile" element={<Profile />} />
               <Route path="/my-units" element={<CustomerMyUnits />} />
               <Route path="/my-storages" element={<Navigate to="/my-units" replace />} />
               <Route path="/access-control" element={<CustomerAccessControl />} />
@@ -113,7 +114,6 @@ function AppRoutes() {
               <Route path="/reservations/:id" element={<CustomerReservationDetail />} />
               <Route path="/payment" element={<CustomerPaymentCheckout />} />
               <Route path="/billing" element={<CustomerBilling />} />
-              <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>
 

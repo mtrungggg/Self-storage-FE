@@ -389,7 +389,7 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
   const confirmCancelModal = confirmCancelOpen &&
     createPortal(
       <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs transition-opacity duration-150"
         onClick={(e) => e.target === e.currentTarget && !cancelling && setConfirmCancelOpen(false)}
       >
         <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-2xl space-y-4">
