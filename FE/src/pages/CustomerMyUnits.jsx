@@ -29,7 +29,7 @@ const UNIT_CARD_IMAGES = [
 export default function CustomerMyUnits() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t, translateStatus, formatDate } = useLanguage();
+  const { t, translateStatus, formatDate, formatCurrency } = useLanguage();
 
   const [activeRentals, setActiveRentals] = useState([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
@@ -153,6 +153,11 @@ export default function CustomerMyUnits() {
           : t("status.active", "Hoạt động"),
         endDate: r.endDate,
         rawRental: r,
+        penaltyInvoiceId: r.penaltyInvoiceId,
+        penaltyInvoiceNo: r.penaltyInvoiceNo,
+        penaltyAmount: Number(r.penaltyAmount || 0),
+        latestInspectionSummary: r.latestInspectionSummary,
+        rawStatus,
       };
     });
   }, [activeRentals, t, formatDate]);
@@ -186,18 +191,41 @@ export default function CustomerMyUnits() {
   }, [units, activeTab]);
 
   const unitSlides = useMemo(() => {
-    return filteredUnits.map((u, idx) => ({
-      id: String(u.id),
-      title: u.unitCode?.startsWith("#") ? u.unitCode : `${t("common.unit", "Ô kho")} ${u.unitCode}`,
-      src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
-      alt: `${u.unitCode} - ${u.facilityName}`,
-      badge: u.unitTypeCode || "UNIT",
-      meta: [
-        { label: t("common.facility", "Facility"), value: u.facilityName },
-        { label: t("common.agreement", "Agreement"), value: u.contractLeft },
-      ],
-      unitData: u,
-    }));
+    return filteredUnits.map((u, idx) => {
+      let statusBg = "bg-emerald-600/90 border-emerald-400/40 text-white";
+      let statusDot = "bg-emerald-300";
+      if (u.status === "renew") {
+        statusBg = "bg-amber-600/90 border-amber-400/40 text-white";
+        statusDot = "bg-amber-300 animate-pulse";
+      } else if (u.status === "move_out") {
+        statusBg = "bg-blue-600/90 border-blue-400/40 text-white";
+        statusDot = "bg-blue-300";
+      } else if (u.status === "terminated") {
+        statusBg = "bg-slate-700/90 border-slate-500/40 text-white";
+        statusDot = "bg-slate-400";
+      }
+
+      const statusBadge = (
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm backdrop-blur-md border ${statusBg}`}>
+          <span className={`h-2 w-2 rounded-full ${statusDot}`} />
+          {u.statusLabel}
+        </span>
+      );
+
+      return {
+        id: String(u.id),
+        title: u.unitCode?.startsWith("#") ? u.unitCode : `${t("common.unit", "Ô kho")} ${u.unitCode}`,
+        src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
+        alt: `${u.unitCode} - ${u.facilityName}`,
+        badge: u.unitTypeCode || "STANDARD",
+        statusBadge,
+        meta: [
+          { label: t("common.facility", "Facility"), value: u.facilityName },
+          { label: t("common.agreement", "Agreement"), value: u.contractLeft },
+        ],
+        unitData: u,
+      };
+    });
   }, [filteredUnits, t]);
 
   const activeGalleryUnit = useMemo(() => {
@@ -315,7 +343,7 @@ export default function CustomerMyUnits() {
                     gap={0.16}
                     fade={0.12}
                     showNavigation={unitSlides.length > 1}
-                    showCaption
+                    showCaption={unitSlides.length > 1}
                     showPagination={unitSlides.length > 3}
                     label={t("my_units.title", "My Units")}
                     onActiveSlideChange={handleSelectGalleryUnit}
@@ -405,7 +433,83 @@ export default function CustomerMyUnits() {
 
                   <UnitInformation rental={activeGalleryUnit.rawRental} className="mt-4" />
 
-                  {activeGalleryUnit.status !== "terminated" ? (
+                  {activeGalleryUnit.penaltyAmount > 0 ? (
+                    <div className="mt-4 rounded-2xl border-2 border-rose-300 bg-rose-50/70 dark:bg-rose-950/30 p-5 text-xs text-rose-950 dark:text-rose-100 shadow-sm space-y-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-200/80 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[24px] text-rose-600">error</span>
+                          <div>
+                            <h4 className="text-sm font-black text-rose-900 dark:text-rose-200">
+                              {t("my_units.damage_penalty_title", "Cần thanh toán phí bù đắp thiệt hại sau nghiệm thu trả kho")}
+                            </h4>
+                            <p className="text-[11px] text-rose-700 dark:text-rose-300">
+                              {t("my_units.damage_penalty_subtitle", "Chi phí hư hại vượt quá tiền cọc. Đã khấu trừ 100% tiền cọc.")}
+                            </p>
+                          </div>
+                        </div>
+                        {activeGalleryUnit.penaltyInvoiceNo && (
+                          <span className="rounded-md bg-rose-200/80 dark:bg-rose-900/60 px-2.5 py-1 font-mono text-[11px] font-bold text-rose-900 dark:text-rose-200">
+                            #{activeGalleryUnit.penaltyInvoiceNo}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl bg-white dark:bg-zinc-900 p-4 border border-rose-200/70 dark:border-rose-900/40 space-y-2">
+                        {activeGalleryUnit.latestInspectionSummary && (
+                          <div className="text-xs text-slate-700 dark:text-zinc-300">
+                            <span className="font-bold text-slate-900 dark:text-zinc-100">{t("my_units.inspection_note", "Ghi chú nghiệm thu:")} </span>
+                            {activeGalleryUnit.latestInspectionSummary}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center justify-between pt-1 text-xs">
+                          <span className="font-semibold text-slate-600 dark:text-zinc-400">
+                            {t("my_units.deficit_amount", "Số tiền bồi thường cần thanh toán:")}
+                          </span>
+                          <span className="text-lg font-black text-rose-600 dark:text-rose-400">
+                            {formatCurrency ? formatCurrency(activeGalleryUnit.penaltyAmount) : `${activeGalleryUnit.penaltyAmount.toLocaleString("vi-VN")} VND`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                        <p className="text-[11px] text-rose-800 dark:text-rose-300 max-w-lg">
+                          {t("my_units.penalty_settle_notice", "Vui lòng quét mã VietQR để thanh toán hóa đơn phạt này. Hợp đồng sẽ tự động chuyển sang trạng thái Hoàn tất thanh lý ngay khi nhận được thanh toán.")}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => navigate("/checkout", { state: { invoiceId: activeGalleryUnit.penaltyInvoiceId } })}
+                          className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                          {t("my_units.pay_penalty_vietqr", "Thanh toán ngay bằng VietQR")}
+                        </button>
+                      </div>
+                    </div>
+                  ) : activeGalleryUnit.rawStatus === "checkout_pending" ? (
+                    <div className="mt-4 flex items-center gap-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 p-4 text-xs text-amber-900 dark:text-amber-200 shadow-2xs">
+                      <span className="material-symbols-outlined text-[24px] text-amber-600">hourglass_top</span>
+                      <div className="flex-1">
+                        <div className="font-bold text-sm text-amber-950 dark:text-amber-100">
+                          {t("my_units.checkout_pending_title", "Đang xử lý thủ tục hoàn trả kho & đối soát cọc")}
+                        </div>
+                        <div className="text-[11px] text-amber-800/90 dark:text-amber-300 mt-1">
+                          {t("my_units.checkout_pending_desc", "Nhân viên cơ sở đã hoàn tất biên bản nghiệm thu trả kho. Lệnh hoàn cọc đang được xử lý chuyển khoản hoặc nhận tiền mặt tại quầy lễ tân theo thông tin quý khách đã đăng ký.")}
+                        </div>
+                      </div>
+                    </div>
+                  ) : activeGalleryUnit.status === "terminated" || activeGalleryUnit.rawStatus === "completed" ? (
+                    <div className="mt-4 flex items-center gap-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 p-4 text-xs text-emerald-900 dark:text-emerald-200 shadow-2xs">
+                      <span className="material-symbols-outlined text-[24px] text-emerald-600">verified</span>
+                      <div>
+                        <div className="font-bold text-sm text-emerald-950 dark:text-emerald-100">
+                          {t("my_units.completed_title", "Hợp đồng đã hoàn tất thủ tục bàn giao & thanh lý")}
+                        </div>
+                        <div className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+                          {t("my_units.completed_desc", "Kho đã được bàn giao lại cho cơ sở thành công và mọi nghĩa vụ tài chính đã được quyết toán đầy đủ.")}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                     <div className="mt-4">
                       <div className="text-[11px] font-bold uppercase tracking-wider text-[#8996a9] mb-2.5">
                         {t("common.actions", "Thao tác")}
@@ -422,14 +526,6 @@ export default function CustomerMyUnits() {
                             currentFacilityName={activeGalleryUnit.facilityName}
                           />
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-xs text-slate-700">
-                      <span className="material-symbols-outlined text-[20px] text-slate-500">task_alt</span>
-                      <div>
-                        <div className="font-bold text-slate-900">Hợp đồng đã hoàn tất thủ tục trả kho</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">Kho đã được bàn giao lại cho cơ sở. Quý khách vui lòng kiểm tra khung thông tin hoàn cọc ở phía trên để nhận lại tiền cọc.</div>
                       </div>
                     </div>
                   )}

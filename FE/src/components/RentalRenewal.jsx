@@ -10,7 +10,6 @@ export default function RentalRenewal({ unit, onClose }) {
   const dialog = useRef(null);
   const lock = useRef(false);
   const [months, setMonths] = useState(1);
-  const [promotionCode, setPromotionCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -45,7 +44,7 @@ export default function RentalRenewal({ unit, onClose }) {
     setBusy(true);
     setError("");
     try {
-      const data = await rentalService.renewAgreement(unit.id, months, promotionCode.trim() || undefined);
+      const data = await rentalService.renewAgreement(unit.id, months);
       setResult(data);
       setTimeLeft(15 * 60);
     } catch (err) {
@@ -161,17 +160,6 @@ export default function RentalRenewal({ unit, onClose }) {
                 </option>
               ))}
             </SelectDropdown>
-          </label>
-          <label className="block font-semibold">
-            {t("checkout.promo_code", "Promotion Code (Optional)")}
-            <input
-              type="text"
-              disabled={busy}
-              value={promotionCode}
-              onChange={(event) => setPromotionCode(event.target.value)}
-              placeholder="e.g. SEED-WELCOME10"
-              className="mt-2 w-full rounded-lg border border-[#dfe7f5] p-2 text-sm uppercase"
-            />
           </label>
           {error && <p role="alert" className="text-red-600">{error}</p>}
           <button

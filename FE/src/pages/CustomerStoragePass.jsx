@@ -9,7 +9,6 @@ import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
-import AuthorizedMembersPanel from "../components/AuthorizedMembersPanel";
 
 export default function CustomerStoragePass() {
   const navigate = useNavigate();
@@ -53,11 +52,6 @@ export default function CustomerStoragePass() {
     handleDeleteStoredItem,
     credentials,
     credentialsLoading,
-    authorizedMembers,
-    membersLoading,
-    membersError,
-    handleAddAuthorizedMember,
-    handleRevokeAuthorizedMember,
   } = useAccessControl();
 
   const [qrCopied, setQrCopied] = useState(false);
@@ -498,19 +492,6 @@ export default function CustomerStoragePass() {
                 )}
               </div>
             </div>
-          </div>
-        ) : null}
-
-        {selectedRentalId && !selectedRental?.isReservationFallback && selectedRental?.checkedInAt ? (
-          <div className="mt-8">
-            <AuthorizedMembersPanel
-              members={authorizedMembers}
-              loading={membersLoading}
-              error={membersError}
-              agreementStatus={selectedRental?.status}
-              onAddMember={handleAddAuthorizedMember}
-              onRevokeMember={handleRevokeAuthorizedMember}
-            />
           </div>
         ) : null}
       </motion.main>

@@ -14,6 +14,7 @@ export interface CoverflowSlide {
   title?: string;
   subtitle?: string;
   badge?: React.ReactNode;
+  statusBadge?: React.ReactNode;
   meta?: { label: string; value: string }[];
   unitData?: any;
 }
@@ -101,8 +102,9 @@ export function CoverflowCarousel({
     }
 
     const indexes = new Set<number>();
+    const isLooping = loop && count > 2;
     for (let offset = -renderRadius; offset <= renderRadius; offset += 1) {
-      const index = loop
+      const index = isLooping
         ? ((selected + offset) % count + count) % count
         : selected + offset;
       if (index >= 0 && index < count) indexes.add(index);
@@ -136,8 +138,9 @@ export function CoverflowCarousel({
 
       // Fold the distance into the shorter way round the ring. This is the
       // whole looping mechanism — no cloned nodes, no shuffling the DOM.
+      const isLooping = loop && count > 2;
       let offset = index - pos;
-      if (loop) {
+      if (isLooping) {
         offset = ((offset % count) + count) % count;
         if (offset > count / 2) offset -= count;
       }
@@ -159,10 +162,11 @@ export function CoverflowCarousel({
         `translateX(calc(-50% + ${offset * pitch}px)) ` +
         `translateZ(${-depth * width * ramp}px) rotateY(${-tilt}deg)`;
 
-      // A card is teleported across the ring at exactly half a turn out, so it
-      // has to be gone by then or the jump is visible.
-      const edge = loop ? Math.min(1, Math.max(0, count / 2 - distance)) : 1;
-      card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
+      // When centered (distance < 0.05), opacity MUST be exactly 1 (no milky/faded overlay).
+      // Only fade distant cards or back of the ring.
+      const edge = isLooping ? Math.min(1, Math.max(0, (count / 2 - distance) * 2)) : 1;
+      const baseOpacity = Math.max(0, 1 - fade * distance);
+      card.style.opacity = distance < 0.05 ? "1" : String(Math.max(0.2, baseOpacity * edge));
       card.style.zIndex = String(100 - Math.round(distance));
     });
   }, [count, depth, fade, falloff, gap, loop, renderRadius, rotate]);
@@ -195,7 +199,7 @@ export function CoverflowCarousel({
   );
 
   const clamp = React.useCallback(
-    (pos: number) => (loop ? pos : Math.max(0, Math.min(count - 1, pos))),
+    (pos: number) => (loop && count > 2 ? pos : Math.max(0, Math.min(count - 1, pos))),
     [count, loop],
   );
 
@@ -203,7 +207,7 @@ export function CoverflowCarousel({
     (index: number) => {
       if (!count) return;
       // Take the shorter way round rather than unwinding the whole ring.
-      const target = loop
+      const target = loop && count > 2
         ? index + Math.round((targetRef.current - index) / count) * count
         : index;
       settle(clamp(target));
@@ -369,12 +373,18 @@ export function CoverflowCarousel({
                   {slide.badge && (
                     <div className="absolute top-3.5 left-3.5 z-10">
                       {typeof slide.badge === "string" ? (
-                        <span className="rounded-lg border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white">
+                        <span className="rounded-lg border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white shadow-xs backdrop-blur-xs">
                           {slide.badge}
                         </span>
                       ) : (
                         slide.badge
                       )}
+                    </div>
+                  )}
+
+                  {slide.statusBadge && (
+                    <div className="absolute top-3.5 right-3.5 z-10">
+                      {slide.statusBadge}
                     </div>
                   )}
 

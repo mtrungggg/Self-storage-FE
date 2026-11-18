@@ -370,20 +370,11 @@ export default function CustomerAccessControl() {
                       </div>
                     ) : (
                       <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
-                        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                          <span>{label("Mã PIN hiện tại", "Current Unlock PIN")}</span>
-                          <button
-                            type="button"
-                            onClick={openPinModal}
-                            disabled={!credentials}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer disabled:opacity-50"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">edit</span>
-                            <span>{label("Tạo mã PIN mới", "Generate New PIN")}</span>
-                          </button>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                          {label("Mã PIN hiện tại", "Current Unlock PIN")}
                         </div>
 
-                        <div className="mt-2.5 flex items-center justify-between gap-3">
+                        <div className="mt-3 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             {credentialsLoading ? (
                               <span className="text-xs font-medium text-slate-400 animate-pulse">
@@ -413,6 +404,16 @@ export default function CustomerAccessControl() {
                               </>
                             )}
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={openPinModal}
+                            disabled={!credentials}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2.5 py-1.5 text-[11px] font-bold text-blue-600 shadow-2xs hover:bg-slate-50 hover:text-blue-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-blue-400 dark:hover:bg-zinc-700 cursor-pointer disabled:opacity-50 transition"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                            <span>{label("Tạo mã PIN mới", "Generate New PIN")}</span>
+                          </button>
                         </div>
                       </div>
                     )}

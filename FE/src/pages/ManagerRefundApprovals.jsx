@@ -444,9 +444,19 @@ export default function ManagerRefundApprovals() {
                   </span>
                 </div>
 
-                {/* Reason description */}
-                <div className="mt-2.5 text-xs text-slate-600 italic">
-                  &ldquo;{displayReason || "Yêu cầu thanh lý trả kho & hoàn tiền cọc giữ chỗ."}&rdquo;
+                {/* Reason description / Customer Note */}
+                <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-xs text-slate-700">
+                  <span className="material-symbols-outlined text-[16px] text-slate-400 shrink-0 mt-0.5">
+                    chat
+                  </span>
+                  <div className="min-w-0">
+                    <span className="font-semibold text-slate-600 mr-1.5">
+                      {t("common.reason", "Lý do / Ghi chú")}:
+                    </span>
+                    <span className="text-slate-800">
+                      {displayReason || t("refund.default_reason", "Khách yêu cầu hoàn cọc qua chuyển khoản ngân hàng.")}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Financial Summary Calculation Breakdown */}

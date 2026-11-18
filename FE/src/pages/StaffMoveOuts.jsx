@@ -21,6 +21,51 @@ function cleanUnitCode(code) {
   return s.trim() || "—";
 }
 
+function parseReasonAndBank(rawReason) {
+  if (!rawReason || typeof rawReason !== "string") {
+    return { note: "", bank: null };
+  }
+  let str = rawReason.trim();
+  while ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  if (str.includes('\\"')) {
+    str = str.replace(/\\"/g, '"');
+  }
+
+  if (str.startsWith("{") && str.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(str);
+      const note = (parsed.note || parsed.reason || "").trim();
+      const hasBank = parsed.bank || parsed.acc || parsed.holder;
+      const bank = hasBank
+        ? {
+            bankName: parsed.bank || "",
+            accountNo: parsed.acc || "",
+            accountHolder: parsed.holder || "",
+          }
+        : null;
+      return { note, bank };
+    } catch {
+      // ignore
+    }
+  }
+
+  if (str.includes("BANK:") || str.includes("ACC:")) {
+    const parts = str.split("|");
+    const bankName = parts.find((p) => p.startsWith("BANK:"))?.replace("BANK:", "").trim() || "";
+    const accountNo = parts.find((p) => p.startsWith("ACC:"))?.replace("ACC:", "").trim() || "";
+    const accountHolder = parts.find((p) => p.startsWith("NAME:"))?.replace("NAME:", "").trim() || "";
+    const note = parts.find((p) => p.startsWith("NOTE:"))?.replace("NOTE:", "").trim() || "";
+    return {
+      note,
+      bank: { bankName, accountNo, accountHolder },
+    };
+  }
+
+  return { note: str, bank: null };
+}
+
 export default function StaffMoveOuts() {
   const { t, translateStatus } = useLanguage();
   const [query, setQuery] = useState(() => ({ date: today() }));
@@ -67,12 +112,45 @@ export default function StaffMoveOuts() {
           {loading ? <p role="status">{t("common.loading", "Đang tải...")}</p> : error ? <div role="alert" className="rounded-xl bg-white p-4 text-red-600"><p>{error}</p><button type="button" onClick={() => load(query)} className="mt-2 underline">{t("common.refresh", "Thử lại")}</button></div> : items.length === 0 ? <p className="rounded-xl border bg-white p-8 text-center">{t("common.no_data", "Không có dữ liệu")}</p> : <>
             <p className="mb-3 text-sm text-[#58657a]">{items.length} {t("staff.moveout_tab", "Trả kho")} · {query.date}</p>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {items.map((item) => <article key={item.id} className="min-w-0 rounded-xl border border-[#dfe7f5] bg-white p-4 text-sm">
-                <div className="flex flex-wrap justify-between gap-2"><h2 className="font-bold">{t("common.unit", "Ô kho")} {cleanUnitCode(item.unitCode)}</h2><span className="rounded-full bg-[#eef4ff] px-2 py-1 text-xs">{translateStatus(item.status)}</span></div>
-                <dl className="mt-3 space-y-2">
-                  {[[t("common.customer", "Khách hàng"), item.customerName || item.customerId], [t("common.agreement", "Hợp đồng"), item.agreementNo || item.agreementId], [t("common.facility", "Cơ sở"), item.facilityId], [t("moveout.moveout_date", "Ngày trả kho"), item.requestedMoveOutDate]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words">{value ?? "—"}</dd></div>)}
-                </dl>
-                <p className="mt-3 whitespace-pre-wrap break-words border-t pt-3">{item.reason || t("common.no_notes", "Không có ghi chú")}</p>
+              {items.map((item) => {
+                const { note, bank } = parseReasonAndBank(item.reason);
+                const code = cleanUnitCode(item.unitCode);
+                return (
+                  <article key={item.id} className="min-w-0 rounded-xl border border-[#dfe7f5] bg-white p-4 text-sm flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex flex-wrap justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <h2 className="font-bold text-slate-900">
+                          {code !== "—" ? `${t("common.unit", "Ô kho")} ${code}` : (item.agreementNo ? `HĐ #${item.agreementNo}` : "—")}
+                        </h2>
+                        <span className="rounded-full bg-[#eef4ff] px-2 py-1 text-xs">{translateStatus(item.status)}</span>
+                      </div>
+                      <dl className="mt-3 space-y-2">
+                        {[[t("common.customer", "Khách hàng"), item.customerName || item.customerId], [t("common.agreement", "Hợp đồng"), item.agreementNo || item.agreementId], [t("common.facility", "Cơ sở"), item.facilityId], [t("moveout.moveout_date", "Ngày trả kho"), item.requestedMoveOutDate]].map(([label, value]) => <div key={label}><dt className="text-xs text-[#58657a]">{label}</dt><dd className="break-words font-medium">{value ?? "—"}</dd></div>)}
+                      </dl>
+                      {(note || bank) && (
+                        <div className="mt-3 rounded-lg border border-slate-200/90 bg-slate-50/70 p-2.5 text-xs space-y-2">
+                          {note && (
+                            <div className="flex items-start gap-1.5">
+                              <span className="material-symbols-outlined text-[15px] text-slate-400 shrink-0 mt-0.5">chat</span>
+                              <div>
+                                <span className="font-semibold text-slate-600 mr-1">{t("common.reason", "Lý do / Ghi chú")}:</span>
+                                <span className="text-slate-800">{note}</span>
+                              </div>
+                            </div>
+                          )}
+                          {bank && (
+                            <div className={`flex items-start gap-1.5 ${note ? "border-t border-slate-200/60 pt-2" : ""}`}>
+                              <span className="material-symbols-outlined text-[15px] text-emerald-600 shrink-0 mt-0.5">account_balance</span>
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-slate-700">
+                                {bank.bankName && <span><strong>{t("common.bank", "Ngân hàng")}:</strong> {bank.bankName}</span>}
+                                {bank.accountNo && <span><strong>{t("common.account_no", "STK")}:</strong> <span className="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-slate-200">{bank.accountNo}</span></span>}
+                                {bank.accountHolder && <span><strong>{t("common.holder", "Chủ TK")}:</strong> <span className="font-bold text-slate-900">{bank.accountHolder}</span></span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                 <MoveOutInspection
                   moveOut={item}
@@ -84,7 +162,9 @@ export default function StaffMoveOuts() {
                     )
                   }
                 />
-              </article>)}
+              </article>
+            );
+          })}
             </div>
           </>}
         </section>

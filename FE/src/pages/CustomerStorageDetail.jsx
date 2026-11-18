@@ -105,9 +105,11 @@ export default function CustomerStorageDetail() {
     );
   }
 
-  const categoryName = unit.categoryName || unit.typeName || "Kho hàng khô";
+  const rawCategory = unit.categoryName || unit.typeName || "Kho hàng khô";
+  const categoryName = rawCategory.replace(/\s*\d+(\.\d+)?\s*(m2|m²)/gi, "").trim() || rawCategory;
   const areaValue = unit.areaM2 || unit.area || 3;
-  const dimensionStr = unit.dimension || (unit.length && unit.width ? `${unit.length}m × ${unit.width}m` : "2.0m × 1.5m");
+  const rawDimension = unit.dimension || (unit.length && unit.width ? `${unit.length}m × ${unit.width}m` : "2.0m × 1.5m");
+  const dimensionStr = rawDimension.replace(/\s*\([^)]*m[2²][^)]*\)/gi, "").trim();
   const floorName = unit.floorLabel || "1";
   const zoneName = unit.zoneLabel || "A";
 

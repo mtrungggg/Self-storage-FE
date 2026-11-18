@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Plus } from "lucide-react";
+import { ChevronDown, Check, Plus, X } from "lucide-react";
 
 export default function CustomCombobox({
   value = "",
@@ -33,10 +33,18 @@ export default function CustomCombobox({
     (opt) => (opt.name || "").trim().toLowerCase() === lowerValue
   );
 
-  // Filter options based on typed input
-  const filteredOptions = options.filter((opt) =>
-    (opt.name || "").toLowerCase().includes(lowerValue)
+  const isExactSelected = Boolean(
+    matchedOption && matchedOption.name.trim().toLowerCase() === lowerValue
   );
+
+  // If the input value exactly equals one of the options (e.g. preselected "Kho hàng khô"),
+  // or if blank, show ALL options so the user can see all categories and pick another one!
+  // Only filter by search query if the user is actively typing a custom query that doesn't match the selected item.
+  const filteredOptions = isExactSelected || !trimmedValue
+    ? options
+    : options.filter((opt) =>
+        (opt.name || "").toLowerCase().includes(lowerValue)
+      );
 
   const isCustomNew =
     trimmedValue.length >= 2 && !matchedOption;
@@ -55,7 +63,13 @@ export default function CustomCombobox({
           required={required}
           value={value}
           placeholder={placeholder}
-          onFocus={() => setIsOpen(true)}
+          onFocus={(e) => {
+            setIsOpen(true);
+            e.target.select();
+          }}
+          onClick={() => {
+            if (!isOpen) setIsOpen(true);
+          }}
           onChange={(e) => {
             onChange(e.target.value);
             if (!isOpen) setIsOpen(true);
@@ -67,7 +81,7 @@ export default function CustomCombobox({
               handleSelectOption(filteredOptions[0].name);
             }
           }}
-          className={`w-full rounded-xl border bg-white dark:bg-zinc-900 px-3.5 py-2.5 pr-9 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 outline-none transition-all ${
+          className={`w-full rounded-xl border bg-white dark:bg-zinc-900 px-3.5 py-2.5 pr-14 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 outline-none transition-all ${
             error
               ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
               : isOpen
@@ -75,6 +89,23 @@ export default function CustomCombobox({
               : "border-slate-200 dark:border-zinc-700 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           }`}
         />
+
+        {value ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("");
+              setIsOpen(true);
+              inputRef.current?.focus();
+            }}
+            className="absolute right-8 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            title="Xóa để chọn loại kho khác"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -96,7 +127,7 @@ export default function CustomCombobox({
       {isOpen && (
         <div className="absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-xl backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95">
           <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Danh mục loại kho (Hệ thống)
+            Danh mục loại kho (Hệ thống) ({filteredOptions.length})
           </div>
 
           {filteredOptions.length > 0 ? (
