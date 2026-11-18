@@ -76,6 +76,15 @@ const UNIT_STATUS_SELECT_OPTIONS = [
   },
 ];
 
+const DEFAULT_SYSTEM_CATEGORIES = [
+  { id: 1, name: "Kho hàng khô", surchargeAmount: 0, isActive: true },
+  { id: 2, name: "Kho mát điều hòa", surchargeAmount: 500, isActive: true },
+  { id: 3, name: "Kho lạnh / Thủy hải sản", surchargeAmount: 1000, isActive: true },
+  { id: 4, name: "Kho hóa chất", surchargeAmount: 2000, isActive: true },
+  { id: 5, name: "Kho sưởi ấm", surchargeAmount: 800, isActive: true },
+  { id: 6, name: "Kho núi lửa", surchargeAmount: 200, isActive: true },
+];
+
 const emptyUnitForm = {
   unitCode: "",
   unitTypeId: "",
@@ -262,13 +271,18 @@ export default function ManagerUnits() {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showUnitForm, setShowUnitForm] = useState(false);
-  const [pricingConfig, setPricingConfig] = useState({ pricePerSquareMeter: 100, categories: [] });
+  const [pricingConfig, setPricingConfig] = useState({ pricePerSquareMeter: 100, categories: DEFAULT_SYSTEM_CATEGORIES });
   useEffect(() => {
     apiClient
       .get("/v1/pricing-config")
       .then((res) => {
         const d = res?.data ?? res;
-        if (d) setPricingConfig({ pricePerSquareMeter: Number(d.pricePerSquareMeter ?? 100), categories: d.categories || [] });
+        if (d && Array.isArray(d.categories) && d.categories.length > 0) {
+          setPricingConfig({
+            pricePerSquareMeter: Number(d.pricePerSquareMeter ?? 100),
+            categories: d.categories,
+          });
+        }
       })
       .catch(() => {});
   }, []);
