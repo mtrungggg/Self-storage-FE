@@ -39,8 +39,11 @@ export default function CustomerHome() {
   // Convert filteredUnits into CoverflowSlides with clean Category & Area badges (no old MINI-DRY/S-DRY)
   const slides = useMemo(() => {
     return filteredUnits.slice(0, 36).map((u) => {
-      const categoryName = u.categoryName || u.typeName || "Kho hàng khô";
+      const rawCategory = u.categoryName || u.typeName || "Kho hàng khô";
+      // Strip redundant area suffix like " 3 m2", " 3m2", " 3 m²", " 1m²" from category name
+      const cleanCategoryName = rawCategory.replace(/\s*\d+(\.\d+)?\s*(m2|m²)/gi, "").trim() || rawCategory;
       const areaText = `${u.areaM2 || u.area || 3} m²`;
+      const cleanDimension = (u.dimension || `${u.length || 2}m × ${u.width || 1.5}m`).replace(/\s*\([^)]*m[2²][^)]*\)/gi, "").trim();
 
       return {
         src: u.image || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=640&h=640&fit=crop&q=70&auto=format",
@@ -50,7 +53,7 @@ export default function CustomerHome() {
         badge: (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="rounded-lg border border-white/20 bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
-              {categoryName}
+              {cleanCategoryName}
             </span>
             <span className="rounded-lg border border-blue-400/40 bg-blue-600 px-2 py-0.5 text-[10px] font-extrabold text-white backdrop-blur-xs shadow-xs">
               {areaText}
@@ -64,11 +67,11 @@ export default function CustomerHome() {
           },
           {
             label: label("Kích thước", "Specifications"),
-            value: `${u.dimension || ""} (${areaText})`,
+            value: cleanDimension,
           },
           {
             label: label("Loại kho", "Category"),
-            value: categoryName,
+            value: cleanCategoryName,
           },
         ],
         unitData: u,
