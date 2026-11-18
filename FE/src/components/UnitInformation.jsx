@@ -3,7 +3,12 @@ import { useLanguage } from "../context/LanguageContext";
 function getCategoryName(unitTypeName) {
   if (!unitTypeName) return "Kho tiêu chuẩn";
   const name = String(unitTypeName).trim();
-  return name.replace(/\s*-\s*(Mini|Small|Medium|Large|Extra Large|XL|\d+(\.\d+)?\s*m²).*/i, "").trim() || name;
+  return (
+    name
+      .replace(/\s*-\s*(Mini|Small|Medium|Large|Extra Large|XL|\d+(\.\d+)?\s*m²).*/i, "")
+      .replace(/\s*\d+(\.\d+)?\s*(m2|m²)/gi, "")
+      .trim() || name
+  );
 }
 
 export default function UnitInformation({ rental, className = "" }) {
