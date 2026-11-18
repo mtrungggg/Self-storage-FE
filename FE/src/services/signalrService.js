@@ -63,10 +63,10 @@ class SignalRService {
   async start() {
     const conn = this.getConnection();
     if (conn.state === signalR.HubConnectionState.Connected) {
-      return;
+      return true;
     }
     if (this.isStarting || conn.state === signalR.HubConnectionState.Connecting) {
-      return;
+      return false;
     }
 
     this.isStarting = true;
@@ -76,20 +76,26 @@ class SignalRService {
       if (this.currentFacilityId) {
         await this.joinFacility(this.currentFacilityId);
       }
+      return true;
     } catch (err) {
       console.warn("[SignalR] Failed to start connection (will retry automatically):", err);
+      return false;
     } finally {
       this.isStarting = false;
     }
   }
 
   async stop() {
+    this.currentFacilityId = null;
+    this.isStarting = false;
     if (this.connection) {
       try {
         await this.connection.stop();
         console.log("[SignalR] Disconnected.");
       } catch (err) {
         console.warn("[SignalR] Error stopping connection:", err);
+      } finally {
+        this.connection = null;
       }
     }
   }
@@ -124,27 +130,30 @@ class SignalRService {
   }
 
   async joinFacility(facilityId) {
-    this.currentFacilityId = facilityId;
-    if (this.connection?.state === signalR.HubConnectionState.Connected && facilityId) {
+    const idNum = Number(facilityId);
+    if (!Number.isFinite(idNum) || idNum <= 0) return;
+    this.currentFacilityId = idNum;
+    if (this.connection?.state === signalR.HubConnectionState.Connected) {
       try {
-        await this.connection.invoke("JoinFacility", String(facilityId));
-        console.log(`[SignalR] Joined facility_${facilityId}`);
+        await this.connection.invoke("JoinFacility", idNum);
+        console.log(`[SignalR] Joined facility_${idNum}`);
       } catch (err) {
-        console.warn(`[SignalR] Failed to join facility_${facilityId}:`, err);
+        console.warn(`[SignalR] Failed to join facility_${idNum}:`, err);
       }
     }
   }
 
   async leaveFacility(facilityId) {
-    if (this.connection?.state === signalR.HubConnectionState.Connected && facilityId) {
+    const idNum = Number(facilityId);
+    if (this.connection?.state === signalR.HubConnectionState.Connected && Number.isFinite(idNum) && idNum > 0) {
       try {
-        await this.connection.invoke("LeaveFacility", String(facilityId));
-        console.log(`[SignalR] Left facility_${facilityId}`);
+        await this.connection.invoke("LeaveFacility", idNum);
+        console.log(`[SignalR] Left facility_${idNum}`);
       } catch (err) {
-        console.warn(`[SignalR] Failed to leave facility_${facilityId}:`, err);
+        console.warn(`[SignalR] Failed to leave facility_${idNum}:`, err);
       }
     }
-    if (this.currentFacilityId === facilityId) {
+    if (this.currentFacilityId === idNum) {
       this.currentFacilityId = null;
     }
   }

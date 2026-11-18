@@ -54,6 +54,7 @@ export default function ManagerExpiringContractsPage() {
         if (statusFilter === "unassigned" && item.inspectionStatus !== "unassigned") return false;
         if (statusFilter === "inspecting" && item.postInspectionStatus !== "inspecting") return false;
         if (statusFilter === "waiting_bank_info" && item.postInspectionStatus !== "waiting_bank_info") return false;
+        if (statusFilter === "waiting_manager_payout" && item.postInspectionStatus !== "waiting_manager_payout") return false;
         if (statusFilter === "waiting_penalty_payment" && item.postInspectionStatus !== "waiting_penalty_payment") return false;
         if (statusFilter === "refunded" && item.postInspectionStatus !== "refunded") return false;
       }
@@ -74,6 +75,7 @@ export default function ManagerExpiringContractsPage() {
       all: items.length,
       unassigned: items.filter((i) => i.inspectionStatus === "unassigned").length,
       waiting_bank_info: items.filter((i) => i.postInspectionStatus === "waiting_bank_info").length,
+      waiting_manager_payout: items.filter((i) => i.postInspectionStatus === "waiting_manager_payout").length,
       waiting_penalty_payment: items.filter((i) => i.postInspectionStatus === "waiting_penalty_payment").length,
       refunded: items.filter((i) => i.postInspectionStatus === "refunded").length,
     };
@@ -109,7 +111,7 @@ export default function ManagerExpiringContractsPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div
           onClick={() => setStatusFilter("all")}
           className={`cursor-pointer rounded-2xl border p-4 transition ${
@@ -138,6 +140,21 @@ export default function ManagerExpiringContractsPage() {
             <Clock size={16} className="text-amber-500" />
           </div>
           <div className="mt-2 text-2xl font-black text-amber-900">{counts.waiting_bank_info}</div>
+        </div>
+
+        <div
+          onClick={() => setStatusFilter("waiting_manager_payout")}
+          className={`cursor-pointer rounded-2xl border p-4 transition ${
+            statusFilter === "waiting_manager_payout"
+              ? "border-purple-400 bg-purple-50/50 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700">{t("moveout.waiting_payout", "Chờ chuyển khoản")}</span>
+            <CreditCard size={16} className="text-purple-500" />
+          </div>
+          <div className="mt-2 text-2xl font-black text-purple-900">{counts.waiting_manager_payout}</div>
         </div>
 
         <div
@@ -219,6 +236,15 @@ export default function ManagerExpiringContractsPage() {
               }`}
             >
               {t("moveout.waiting_bank", "Chờ khách nhập STK")} ({counts.waiting_bank_info})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("waiting_manager_payout")}
+              className={`rounded-lg px-3 py-1.5 font-semibold transition cursor-pointer ${
+                statusFilter === "waiting_manager_payout" ? "bg-purple-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {t("moveout.waiting_payout", "Chờ chuyển khoản")} ({counts.waiting_manager_payout})
             </button>
             <button
               type="button"
@@ -343,6 +369,16 @@ export default function ManagerExpiringContractsPage() {
                             </span>
                           )}
                         </div>
+                      ) : item.postInspectionStatus === "waiting_manager_payout" ? (
+                        <div className="inline-flex flex-col items-center">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-800 border border-purple-300">
+                            <span className="material-symbols-outlined text-[16px] text-purple-600">payments</span>
+                            Chờ quản lý chuyển khoản
+                          </span>
+                          <span className="text-[10px] text-purple-700 mt-0.5">
+                            Cần hoàn cọc: {formatVnd(item.refundAmount || item.depositAmount)}
+                          </span>
+                        </div>
                       ) : item.postInspectionStatus === "waiting_bank_info" ? (
                         <div className="inline-flex flex-col items-center">
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-300">
@@ -386,6 +422,14 @@ export default function ManagerExpiringContractsPage() {
                             <span className="material-symbols-outlined text-[15px]">check_circle</span>
                             <span>Đã hoàn tất</span>
                           </span>
+                        ) : item.postInspectionStatus === "waiting_manager_payout" ? (
+                          <Link
+                            to="/manager-refunds"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">send_money</span>
+                            <span>Duyệt chuyển tiền</span>
+                          </Link>
                         ) : item.inspectionStatus === "completed" || item.inspectionStatus === "inspected" ? (
                           <button
                             type="button"

@@ -196,6 +196,8 @@ export default function AuthScene() {
     setEmail: setRegisterEmail,
     phoneNumber,
     setPhoneNumber,
+    identityNumber,
+    setIdentityNumber,
     password: registerPassword,
     setPassword: setRegisterPassword,
     confirmPassword,
@@ -696,7 +698,7 @@ export default function AuthScene() {
 
                         <div>
                           <label htmlFor="register-phone" className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
-                            {t("auth.phone_number", "Phone Number")}
+                            {t("auth.phone_number", "Phone Number")} *
                           </label>
                           <div className="relative">
                             <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
@@ -707,11 +709,34 @@ export default function AuthScene() {
                               name="phone"
                               type="tel"
                               autoComplete="tel"
+                              required
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value)}
                               className="h-11 w-full rounded-[12px] border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/90 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10"
                             />
                           </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="register-cccd" className="mb-1.5 block text-[13px] font-semibold text-[#0f172a]">
+                          {t("auth.identity_number", "Số CCCD")} *
+                        </label>
+                        <div className="relative">
+                          <span className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#687586]">
+                            badge
+                          </span>
+                          <input
+                            id="register-cccd"
+                            name="identityNumber"
+                            inputMode="numeric"
+                            required
+                            maxLength={12}
+                            value={identityNumber}
+                            onChange={(e) => setIdentityNumber(e.target.value.replace(/\D/g, ""))}
+                            placeholder="9–12 chữ số (không thể sửa sau khi đăng ký)"
+                            className="h-11 w-full rounded-[12px] border border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/90 pl-10 pr-4 text-[13px] text-[#122033] outline-none backdrop-blur-md transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10"
+                          />
                         </div>
                       </div>
 

@@ -13,7 +13,7 @@ export interface CoverflowSlide {
   alt: string;
   title?: string;
   subtitle?: string;
-  badge?: string;
+  badge?: React.ReactNode;
   meta?: { label: string; value: string }[];
   unitData?: any;
 }
@@ -368,9 +368,13 @@ export function CoverflowCarousel({
                   
                   {slide.badge && (
                     <div className="absolute top-3.5 left-3.5 z-10">
-                      <span className="rounded-lg border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white">
-                        {slide.badge}
-                      </span>
+                      {typeof slide.badge === "string" ? (
+                        <span className="rounded-lg border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-mono font-bold text-white">
+                          {slide.badge}
+                        </span>
+                      ) : (
+                        slide.badge
+                      )}
                     </div>
                   )}
 

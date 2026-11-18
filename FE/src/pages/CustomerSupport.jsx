@@ -12,7 +12,7 @@ import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 import MediaUpload from "../components/MediaUpload";
 
-function Support() {
+function CustomerSupport() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -320,4 +320,4 @@ function Support() {
   );
 }
 
-export default Support;
+export default CustomerSupport;

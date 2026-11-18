@@ -27,6 +27,7 @@ export function useManagementShell() {
   const profile = {
     name: user?.fullName || user?.email?.split("@")[0] || "Administrator",
     email: user?.email || "",
+    avatarUrl: user?.avatarUrl || null,
     role: roleLabel,
     roles: user?.roles || [],
     isAdmin,

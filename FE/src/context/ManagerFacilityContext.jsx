@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import adminFacilityService from "../api/adminFacilityService";
 import { useAuth } from "./AuthContext";
 import { ADMIN_ROLES, MANAGER_ROLES, hasAnyRole } from "../constants/roles";

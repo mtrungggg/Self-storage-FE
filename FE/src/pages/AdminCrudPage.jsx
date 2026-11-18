@@ -36,6 +36,45 @@ const statuses = [
   ["inactive", "Inactive"],
 ];
 
+const FACILITY_STATUS_OPTIONS = [
+  {
+    value: "active",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+        <span>Hoạt động (Active)</span>
+      </div>
+    ),
+  },
+  {
+    value: "suspended_new_bookings",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
+        <span>Ngưng nhận đặt mới (Suspended)</span>
+      </div>
+    ),
+  },
+  {
+    value: "maintenance",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500 shrink-0" />
+        <span>Bảo trì (Maintenance)</span>
+      </div>
+    ),
+  },
+  {
+    value: "inactive",
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
+        <span>Ngừng hoạt động (Inactive)</span>
+      </div>
+    ),
+  },
+];
+
 const initialFilters = {
   Search: "",
   Status: "",
@@ -605,19 +644,14 @@ export default function AdminCrudPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-                  Status <span className="text-red-500">*</span>
+                  Trạng thái cơ sở <span className="text-red-500">*</span>
                 </span>
                 <SelectDropdown
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="reference-select"
-                >
-                  {statuses.map(([val, label]) => (
-                    <option key={val} value={val}>
-                      {label}
-                    </option>
-                  ))}
-                </SelectDropdown>
+                  options={FACILITY_STATUS_OPTIONS}
+                  onChange={(e) => setFormData({ ...formData, status: e.target?.value ?? e })}
+                  className="w-full"
+                />
               </label>
             </div>
 
@@ -1223,19 +1257,14 @@ export default function AdminCrudPage() {
             <form onSubmit={handleStatusSubmit} className="mt-4 space-y-4">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-[#25232c]">
-                  Target Status <span className="text-red-500">*</span>
+                  Trạng thái mục tiêu <span className="text-red-500">*</span>
                 </span>
                 <SelectDropdown
                   value={targetStatus}
-                  onChange={(e) => setTargetStatus(e.target.value)}
-                  className="reference-select w-full"
-                >
-                  {statuses.map(([val, label]) => (
-                    <option key={val} value={val}>
-                      {label}
-                    </option>
-                  ))}
-                </SelectDropdown>
+                  options={FACILITY_STATUS_OPTIONS}
+                  onChange={(e) => setTargetStatus(e.target?.value ?? e)}
+                  className="w-full"
+                />
               </label>
 
               <label className="block">

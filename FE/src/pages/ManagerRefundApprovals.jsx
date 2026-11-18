@@ -16,7 +16,7 @@ import {
   ExternalLink,
   X,
 } from "lucide-react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import mediaService from "../api/mediaService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { useLanguage } from "../context/LanguageContext";

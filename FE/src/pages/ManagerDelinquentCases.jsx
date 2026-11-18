@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { TableSkeleton } from "../components/SkeletonLoader";
 import EmptyState from "../components/EmptyState";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatVnd } from "../lib/utils";
 
@@ -97,6 +97,11 @@ function ManagerDelinquentCases() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [copiedAgreement, setCopiedAgreement] = useState("");
+  const [liquidatingItem, setLiquidatingItem] = useState(null);
+  const [liquidateReason, setLiquidateReason] = useState("");
+  const [auctionProceeds, setAuctionProceeds] = useState("");
+  const [deductDeposit, setDeductDeposit] = useState(true);
+  const [liquidating, setLiquidating] = useState(false);
 
   async function load() {
     if (!facilityId) {
@@ -144,6 +149,7 @@ function ManagerDelinquentCases() {
       await managerService.createDelinquentCaseAction(id, {
         actionType: draft.actionType,
         note: draft.note || undefined,
+        lateFeeAmount: draft.lateFeeAmount ? Number(draft.lateFeeAmount) : undefined,
         updateCaseStatus: draft.updateCaseStatus || undefined,
       });
       setNotice("Đã ghi nhận biện pháp xử lý và cập nhật trạng thái hồ sơ thành công.");
@@ -153,6 +159,33 @@ function ManagerDelinquentCases() {
       setError(err?.message || "Không thể ghi nhận biện pháp xử lý. Vui lòng thử lại.");
     } finally {
       setSubmittingId(null);
+    }
+  }
+
+  async function submitLiquidation(e) {
+    e.preventDefault();
+    if (!liquidatingItem || !liquidateReason.trim()) return;
+    setLiquidating(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await managerService.liquidateAgreement(liquidatingItem.agreementId, {
+        reason: liquidateReason.trim(),
+        auctionProceedsAmount: auctionProceeds !== "" ? Number(auctionProceeds) : undefined,
+        deductDeposit,
+      });
+      setNotice(
+        `Đã thanh lý hợp đồng #${res?.agreementNo || liquidatingItem.agreementNo} (Khấu trừ cọc: ${formatVnd(res?.deductedDepositAmount || 0)}).`
+      );
+      setLiquidatingItem(null);
+      setLiquidateReason("");
+      setAuctionProceeds("");
+      setDeductDeposit(true);
+      await load();
+    } catch (err) {
+      setError(err?.message || "Không thể thanh lý hợp đồng. Vui lòng kiểm tra trạng thái quá hạn.");
+    } finally {
+      setLiquidating(false);
     }
   }
 
@@ -472,8 +505,8 @@ function ManagerDelinquentCases() {
                   </div>
                 </div>
 
-                {/* Collapsible Action History Toggle */}
-                <div className="mt-3 flex items-center justify-between">
+                {/* Collapsible Action History Toggle & Liquidation Button */}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => setExpandedId(expanded ? null : item.id)}
@@ -486,6 +519,22 @@ function ManagerDelinquentCases() {
                       expand_more
                     </span>
                   </button>
+
+                  {item.status !== "cured" && item.status !== "waived" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLiquidatingItem(item);
+                        setLiquidateReason("Khách hàng quá hạn kéo dài không gia hạn, tiến hành niêm phong & thanh lý kho.");
+                        setAuctionProceeds("");
+                        setDeductDeposit(true);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">gavel</span>
+                      <span>Thanh lý hợp đồng</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Action History Timeline */}
@@ -581,6 +630,24 @@ function ManagerDelinquentCases() {
                       </div>
                     </div>
 
+                    {/* Late Fee Amount when adding manual penalty */}
+                    {draft.actionType === "late_fee_added" && (
+                      <div className="mt-3">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Số tiền phí phạt bổ sung (VND)
+                        </label>
+                        <input
+                          type="number"
+                          min="1000"
+                          step="1000"
+                          value={draft.lateFeeAmount || ""}
+                          onChange={(e) => updateDraft(item.id, "lateFeeAmount", e.target.value)}
+                          placeholder="VD: 50000"
+                          className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800"
+                        />
+                      </div>
+                    )}
+
                     {/* Notes */}
                     <div className="mt-3">
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -649,6 +716,85 @@ function ManagerDelinquentCases() {
           })
         )}
       </div>
+
+      {liquidatingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <form
+            onSubmit={submitLiquidation}
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4 text-xs"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900">
+                Thanh lý & Niêm phong HĐ #{liquidatingItem.agreementNo}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setLiquidatingItem(null)}
+                className="rounded-lg border px-2.5 py-1 text-slate-600 hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-rose-800">
+              <p className="font-semibold">Kho {liquidatingItem.unitCode} • Công nợ: {formatVnd(liquidatingItem.currentDebt || liquidatingItem.outstandingSnapshot)}</p>
+              <p className="mt-1 text-[11px]">Thao tác này sẽ thu hồi vĩnh viễn mọi PIN/quyền truy cập, chấm dứt hợp đồng (terminated) và chuyển kho sang chờ kiểm tra (pending_inspection).</p>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Lý do thanh lý *</label>
+              <textarea
+                required
+                rows={3}
+                value={liquidateReason}
+                onChange={(e) => setLiquidateReason(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-2.5 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Số tiền thu hồi đấu giá / thanh lý (VND, tùy chọn)</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={auctionProceeds}
+                onChange={(e) => setAuctionProceeds(e.target.value)}
+                placeholder="0"
+                className="w-full rounded-lg border border-slate-300 p-2.5 text-xs"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deductDeposit}
+                onChange={(e) => setDeductDeposit(e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              Khấu trừ toàn bộ tiền cọc còn lại để bù đắp công nợ
+            </label>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={liquidating}
+                onClick={() => setLiquidatingItem(null)}
+                className="rounded-lg border border-slate-200 px-4 py-2 font-semibold text-slate-600"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={liquidating || !liquidateReason.trim()}
+                className="rounded-lg bg-rose-600 px-4 py-2 font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+              >
+                {liquidating ? "Đang xử lý..." : "Xác nhận thanh lý"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

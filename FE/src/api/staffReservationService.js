@@ -1,30 +1,13 @@
 import apiClient from "./apiClient";
+import staffCheckInApi from "../services/api/staffCheckInApi";
 
 const staffReservationService = {
-  async lookup(query, facilityId) {
-    const params = { query: query?.trim() || "" };
-    if (facilityId) params.facilityId = Number(facilityId);
-
-    const response = await apiClient.get("/staff/reservations/lookup", { params });
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to look up reservations.");
-    }
-    if (response.data == null) return [];
-    if (!Array.isArray(response.data)) {
-      throw new Error("The server returned an invalid reservation list.");
-    }
-    return response.data;
+  async lookup(query, facilityId, status = "confirmed") {
+    return await staffCheckInApi.lookupReservations({ query, facilityId, status });
   },
 
-  async assignUnit(reservationId, storageUnitId) {
-    const response = await apiClient.post(
-      `/staff/reservations/${encodeURIComponent(reservationId)}/assign-unit`,
-      { storageUnitId: Number(storageUnitId) },
-    );
-    if (response?.success !== true) {
-      throw new Error(response?.message || "Unable to assign the storage unit.");
-    }
-    return response.data;
+  async assignUnit(reservationId, storageUnitId, reason) {
+    return await staffCheckInApi.assignReservationUnit(reservationId, storageUnitId, reason);
   },
 
   async createHandover(payload) {

@@ -11,6 +11,7 @@ export function useRegister() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [identityNumber, setIdentityNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,9 +53,16 @@ export function useRegister() {
 
     const cleanFullName = fullName.trim();
     const cleanEmail = email.trim();
+    const cleanPhone = phoneNumber.trim();
+    const cleanCccd = identityNumber.trim();
 
-    if (!cleanFullName || !cleanEmail || !password) {
-      setErrorMessage("Please fill in all required fields (*).");
+    if (!cleanFullName || !cleanEmail || !password || !cleanPhone || !cleanCccd) {
+      setErrorMessage("Vui lòng nhập đầy đủ Họ tên, Email, SĐT, CCCD và Mật khẩu (*).");
+      return;
+    }
+
+    if (!/^\d{9,12}$/.test(cleanCccd)) {
+      setErrorMessage("Số CCCD phải gồm 9–12 chữ số.");
       return;
     }
 
@@ -74,14 +82,15 @@ export function useRegister() {
         fullName: cleanFullName,
         email: cleanEmail,
         password,
-        phoneNumber: phoneNumber.trim() || undefined,
+        phoneNumber: cleanPhone,
+        identityNumber: cleanCccd,
       });
 
       setSuccessMessage(
         res?.message || "Registration successful! A 6-digit OTP code has been sent to your email."
       );
       setIsOtpStep(true);
-      setResendCooldown(60);
+      setResendCooldown(Number(res?.data?.cooldownSeconds ?? res?.cooldownSeconds ?? 60) || 60);
     } catch (err) {
       setErrorMessage(err?.message || "Registration failed. Please try again.");
     } finally {
@@ -126,7 +135,7 @@ export function useRegister() {
     try {
       const res = await resendOtp(email.trim());
       setSuccessMessage(res?.message || "A new OTP code has been sent to your email.");
-      setResendCooldown(60);
+      setResendCooldown(Number(res?.data?.cooldownSeconds ?? res?.cooldownSeconds ?? 60) || 60);
     } catch (err) {
       setErrorMessage(err?.message || "Failed to resend OTP code. Please try again.");
     } finally {
@@ -148,6 +157,8 @@ export function useRegister() {
     setEmail,
     phoneNumber,
     setPhoneNumber,
+    identityNumber,
+    setIdentityNumber,
     password,
     setPassword,
     confirmPassword,

@@ -215,7 +215,7 @@ export default function StaffInspectionsPage() {
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {inspections.map((item) => {
-                  const deposit = Number(item.depositAmount ?? item.deposit ?? 2000000);
+                  const deposit = Number(item.depositAmount ?? item.deposit ?? 0);
                   const isCompleted = item.status === "completed" || item.inspectionResult != null;
                   const hasDamage = item.hasDamage || item.inspectionResult?.hasDamage;
                   const isOver = (item.penaltyAmount ?? item.inspectionResult?.penaltyAmount) > 0;

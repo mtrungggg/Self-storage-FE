@@ -52,6 +52,7 @@ export const ProjectItem = ({
   onClick,
   isActive,
   isIdle,
+  ref,
 }: {
   project: any;
   index: number;
@@ -60,8 +61,14 @@ export const ProjectItem = ({
   onClick?: (project: any, index: number) => void;
   isActive: boolean;
   isIdle: boolean;
+  ref?: React.Ref<HTMLLIElement>;
 }) => {
   const itemRef = useRef<HTMLLIElement>(null);
+  const setItemRef = (el: HTMLLIElement | null) => {
+    itemRef.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) (ref as React.MutableRefObject<HTMLLIElement | null>).current = el;
+  };
   const textRefs = {
     artist: useRef<HTMLSpanElement>(null),
     album: useRef<HTMLSpanElement>(null),
@@ -100,7 +107,7 @@ export const ProjectItem = ({
 
   return (
     <li 
-      ref={itemRef}
+      ref={setItemRef}
       className={`project-item ${isActive ? 'active' : ''} ${isIdle ? 'idle' : ''}`}
       onMouseEnter={() => onMouseEnter(index, project.image)}
       onMouseLeave={onMouseLeave}

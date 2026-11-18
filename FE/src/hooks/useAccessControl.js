@@ -1,28 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import rentalService from "../api/rentalService";
-
-import reservationService from "../api/reservationService";
-
-import STORAGE_KEYS from "../constants/storageKeys";
-
-
-
-function getStoredFacilityCheckIns() {
-
-  try {
-
-    const raw = localStorage.getItem(STORAGE_KEYS.FACILITY_CHECKINS);
-
-    return raw ? JSON.parse(raw) : [];
-
-  } catch {
-
-    return [];
-
-  }
-
-}
+import rentalService from "../api/customerRentalService";
+import reservationService from "../api/customerReservationService";
 
 
 
@@ -82,99 +60,27 @@ export function useAccessControl() {
 
 
 
-  // Unlocked state per agreementId in current session & live activity logs
-
+  // Unlocked state per agreementId in current session & live/backend activity logs
   const [unlockedMap, setUnlockedMap] = useState({});
-
   const [liveLogsMap, setLiveLogsMap] = useState({});
+  const [backendAccessLogs, setBackendAccessLogs] = useState([]);
 
-  const [facilityCheckIns, setFacilityCheckIns] = useState(() => getStoredFacilityCheckIns());
-
-
+  const [authorizedMembers, setAuthorizedMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState("");
 
   const appendLiveLog = useCallback((unitCode, title, dot = "#2dd4a0") => {
-
     if (!unitCode) return;
-
     const now = new Date();
-
     const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} today`;
-
     setLiveLogsMap((prev) => {
-
       const list = prev[unitCode] || [];
-
       return {
-
         ...prev,
-
         [unitCode]: [{ icon: "lock_open", title, time: timeStr, dot, id: `${Date.now()}-${Math.random()}` }, ...list],
-
       };
-
     });
-
   }, []);
-
-
-
-  // Listen to Staff facility check-in confirmations via BroadcastChannel & storage events
-
-  useEffect(() => {
-
-    const syncCheckIns = () => {
-
-      setFacilityCheckIns(getStoredFacilityCheckIns());
-
-    };
-
-    window.addEventListener("storage", syncCheckIns);
-
-
-
-    let channel = null;
-
-    try {
-
-      channel = new BroadcastChannel("g1_facility_checkin");
-
-      channel.onmessage = (event) => {
-
-        syncCheckIns();
-
-        if (event?.data?.unitCode) {
-
-          appendLiveLog(
-
-            event.data.unitCode,
-
-            `Staff confirmed facility check-in (${event.data.unitCode})`,
-
-            "#1d5fe5"
-
-          );
-
-        }
-
-      };
-
-    } catch {
-
-      // BroadcastChannel not supported
-
-    }
-
-
-
-    return () => {
-
-      window.removeEventListener("storage", syncCheckIns);
-
-      if (channel) channel.close();
-
-    };
-
-  }, [appendLiveLog]);
 
 
 
@@ -358,75 +264,109 @@ export function useAccessControl() {
 
 
 
+  const [fetchedCheckInQr, setFetchedCheckInQr] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const rsvId = matchingReservation?.id || matchingReservation?.reservationId;
+    if (!rsvId || matchingReservation?.checkInQrToken || credentials?.gateQrToken) {
+      setFetchedCheckInQr("");
+      return;
+    }
+    reservationService.getReservationDetail?.(rsvId)
+      .then((detail) => {
+        if (active && detail?.checkInQrToken) {
+          setFetchedCheckInQr(detail.checkInQrToken);
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [matchingReservation, credentials?.gateQrToken]);
+
   const checkInQrValue = useMemo(() => {
-    if (!selectedRental && !matchingReservation) return "";
-
-    const unitCode = selectedRental?.unitCode || currentUnitCode || matchingReservation?.unitCode || "";
-    const rawAgrNo = selectedRental?.agreementNo || "";
-    const agreementNo = rawAgrNo
-      ? (rawAgrNo.startsWith("AGR-") ? rawAgrNo : `AGR-${rawAgrNo}`)
-      : (selectedRental?.agreementId ? `AGR-${selectedRental.agreementId}` : "");
-    const reservationCode = matchingReservation?.reservationCode || "";
-    const facilityId = selectedRental?.facilityId || matchingReservation?.facilityId || "";
-
-    // Generate compact, low-density QR payload: "CHK|unit|agrNo|rsvCode|facId"
-    // Keeps payload under ~55 characters (QR Version 2-3) so cameras scan instantly with zero blur
-    return `CHK|${unitCode}|${agreementNo}|${reservationCode}|${facilityId}`;
-  }, [selectedRental, currentUnitCode, matchingReservation]);
-
-
+    return (
+      matchingReservation?.checkInQrToken ||
+      fetchedCheckInQr ||
+      credentials?.gateQrToken ||
+      selectedRental?.checkInQrToken ||
+      selectedRental?.qrToken ||
+      ""
+    );
+  }, [matchingReservation, fetchedCheckInQr, credentials, selectedRental]);
 
   const currentFacilityCheckIn = useMemo(() => {
-
-    if (!selectedRental) return null;
-
-    return (
-
-      facilityCheckIns.find(
-
-        (c) =>
-
-          (c.agreementNo && c.agreementNo === selectedRental.agreementNo) ||
-
-          (c.unitCode && c.unitCode === selectedRental.unitCode) ||
-
-          (matchingReservation?.reservationCode && c.reservationCode === matchingReservation.reservationCode)
-
-      ) || null
-
-    );
-
-  }, [facilityCheckIns, selectedRental, matchingReservation]);
+    if (!selectedRental?.checkedInAt) return null;
+    return {
+      timeLabel: new Date(selectedRental.checkedInAt).toLocaleString(),
+    };
+  }, [selectedRental]);
 
 
 
   const accessLogs = useMemo(() => {
-
     const liveLogs = liveLogsMap[currentUnitCode] || [];
+    const apiLogs = (backendAccessLogs || []).map((ev) => ({
+      id: `ev-${ev.id}`,
+      icon: ev.result === "granted" ? "lock_open" : ev.result === "denied" ? "gpp_bad" : "error_outline",
+      title: `${ev.accessPointName || "Door"} • ${ev.actorName || "Customer"} (${ev.result})${ev.reason ? ` — ${ev.reason}` : ""}`,
+      time: ev.occurredAt ? new Date(ev.occurredAt).toLocaleString() : "",
+      dot: ev.result === "granted" ? "#2dd4a0" : ev.result === "denied" ? "#ef4444" : "#f59e0b",
+    }));
 
-    const checkInLogs = currentFacilityCheckIn
-
+    const checkInLogs = currentFacilityCheckIn && apiLogs.length === 0
       ? [
-
           {
-
             icon: "qr_code_scanner",
-
             title: `Facility Check-in • Unit ${currentUnitCode}`,
-
             time: currentFacilityCheckIn.timeLabel || "Today",
-
             dot: "#1d5fe5",
-
           },
-
         ]
-
       : [];
 
-    return [...liveLogs, ...checkInLogs];
+    return [...liveLogs, ...apiLogs, ...checkInLogs];
+  }, [currentUnitCode, liveLogsMap, backendAccessLogs, currentFacilityCheckIn]);
 
-  }, [currentUnitCode, liveLogsMap, currentFacilityCheckIn]);
+  const loadAccessLogs = useCallback(async (agreementId = selectedRentalId) => {
+    if (!agreementId) {
+      setBackendAccessLogs([]);
+      return;
+    }
+    try {
+      const data = await rentalService.getAccessLogs(agreementId, { page: 1, pageSize: 20 });
+      setBackendAccessLogs(Array.isArray(data?.items) ? data.items : []);
+    } catch {
+      setBackendAccessLogs([]);
+    }
+  }, [selectedRentalId]);
+
+  const loadAuthorizedMembers = useCallback(async (agreementId = selectedRentalId) => {
+    if (!agreementId) {
+      setAuthorizedMembers([]);
+      return;
+    }
+    setMembersLoading(true);
+    setMembersError("");
+    try {
+      const list = await rentalService.getAuthorizedMembers(agreementId);
+      setAuthorizedMembers(Array.isArray(list) ? list : []);
+    } catch (err) {
+      setMembersError(err?.message || "Unable to load authorized members.");
+      setAuthorizedMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [selectedRentalId]);
+
+  useEffect(() => {
+    if (!selectedRentalId || selectedRental?.isReservationFallback) {
+      setBackendAccessLogs([]);
+      setAuthorizedMembers([]);
+      return;
+    }
+    loadAccessLogs(selectedRentalId);
+    loadAuthorizedMembers(selectedRentalId);
+  }, [selectedRentalId, selectedRental, loadAccessLogs, loadAuthorizedMembers]);
 
 
 
@@ -609,6 +549,7 @@ export function useAccessControl() {
     const res = await rentalService.unlockUnit(selectedRentalId, cleanPin);
     setUnlockedMap((prev) => ({ ...prev, [selectedRentalId]: true }));
     appendLiveLog(currentUnitCode, `Unlocked Unit ${currentUnitCode} via PIN`, "#2dd4a0");
+    loadAccessLogs(selectedRentalId);
     return res;
   };
 
@@ -716,6 +657,19 @@ export function useAccessControl() {
 
 
 
+  const handleAddAuthorizedMember = async (payload) => {
+    if (!selectedRentalId) return null;
+    const created = await rentalService.addAuthorizedMember(selectedRentalId, payload);
+    await loadAuthorizedMembers(selectedRentalId);
+    return created;
+  };
+
+  const handleRevokeAuthorizedMember = async (memberId) => {
+    if (!selectedRentalId) return;
+    await rentalService.revokeAuthorizedMember(selectedRentalId, memberId);
+    await loadAuthorizedMembers(selectedRentalId);
+  };
+
   const toggleAlert = (key) => setAlerts((prev) => ({ ...prev, [key]: !prev[key] }));
 
 
@@ -803,6 +757,20 @@ export function useAccessControl() {
     pinChangeError,
 
     handleChangePin,
+
+    authorizedMembers,
+
+    membersLoading,
+
+    membersError,
+
+    loadAuthorizedMembers,
+
+    handleAddAuthorizedMember,
+
+    handleRevokeAuthorizedMember,
+
+    loadAccessLogs,
 
   };
 

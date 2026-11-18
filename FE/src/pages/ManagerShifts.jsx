@@ -1,6 +1,6 @@
 import { useLanguage } from "../context/LanguageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { DUTY_ROLES } from "../constants/managerConstants";
 import { USER_ROLES } from "../constants/roles";

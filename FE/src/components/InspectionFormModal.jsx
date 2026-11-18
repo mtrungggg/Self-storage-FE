@@ -41,10 +41,10 @@ function cleanUnitCode(code) {
 }
 
 const DEFAULT_DAMAGE_ITEMS = [
-  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "150000", condition: "damaged", notes: "" },
-  { itemName: "Trầy xước / Sơn tường ố bẩn", cost: "300000", condition: "damaged", notes: "" },
-  { itemName: "Móp méo / Kẹt ray cửa cuốn", cost: "500000", condition: "damaged", notes: "" },
-  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "200000", condition: "damaged", notes: "" },
+  { itemName: "Vệ sinh kho / Dọn dẹp rác tồn", cost: "1000", condition: "damaged", notes: "" },
+  { itemName: "Trầy xước / Sơn tường ố bẩn", cost: "2000", condition: "damaged", notes: "" },
+  { itemName: "Móp méo / Kẹt ray cửa cuốn", cost: "3000", condition: "damaged", notes: "" },
+  { itemName: "Hỏng ổ khóa / Chốt then cài", cost: "2000", condition: "damaged", notes: "" },
 ];
 
 export default function InspectionFormModal({ inspection, isOpen, onClose, onSuccess }) {
@@ -53,12 +53,12 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
     inspection?.depositAmount ??
     inspection?.deposit ??
     inspection?.securityDeposit ??
-    2000000
+    0
   );
 
   const [hasDamage, setHasDamage] = useState(false);
   const [damageItems, setDamageItems] = useState([
-    { itemName: "Dọn dẹp vệ sinh kho", cost: "200000", condition: "damaged", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
+    { itemName: "Dọn dẹp vệ sinh kho", cost: "1000", condition: "damaged", notes: "Bụi bẩn và rác đóng gói còn sót lại" },
   ]);
   const [manualDamageCost, setManualDamageCost] = useState("");
   const [evidenceUrls, setEvidenceUrls] = useState([]);
@@ -480,18 +480,16 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
                 <span className="material-symbols-outlined text-[16px] text-slate-500">calculate</span>
                 Bảng tính quyết toán thời gian thực
               </span>
-              <span className="font-mono text-[11px] text-slate-400">
-                POST /api/staff/inspections/{inspection.id}/submit
-              </span>
+              
             </div>
 
             <div className="space-y-1.5 pt-1 text-slate-700">
               <div className="flex justify-between">
-                <span>Tiền cọc của khách hàng (Deposit):</span>
+                <span>Tiền cọc của khách hàng:</span>
                 <span className="font-semibold text-slate-900">{formatMoney(deposit)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Chi phí khấu trừ hư hại (DamageCost):</span>
+                <span>Chi phí khấu trừ hư hại:</span>
                 <span className="font-semibold text-rose-600">- {formatMoney(calculation.damageCost)}</span>
               </div>
             </div>
@@ -589,3 +587,4 @@ export default function InspectionFormModal({ inspection, isOpen, onClose, onSuc
     </div>
   );
 }
+

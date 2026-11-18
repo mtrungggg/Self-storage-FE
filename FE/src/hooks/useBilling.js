@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { getInvoiceTabs } from "../data/billingRepository";
 import { filterInvoices } from "../domain/usecases/filterInvoices";
-import paymentService from "../api/paymentService";
+import paymentService from "../api/customerPaymentService";
 import { mergeBillingRows } from "../domain/usecases/mergeBillingRows";
 import { PAYMENT_STATUS } from "../constants/paymentConstants";
 

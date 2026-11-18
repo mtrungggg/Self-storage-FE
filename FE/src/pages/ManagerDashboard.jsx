@@ -1,7 +1,7 @@
 import { useLanguage } from "../context/LanguageContext";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { FacilityBarActions } from "../components/FacilitySwitcher";
 import { formatVnd } from "../lib/utils";

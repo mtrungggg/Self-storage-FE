@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import rentalService from "../api/rentalService";
-import reservationService from "../api/reservationService";
+import rentalService from "../api/customerRentalService";
+import reservationService from "../api/customerReservationService";
 import { useBilling } from "../hooks/useBilling";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import PageBackground from "../components/PageBackground";
 
-function Billing() {
+function CustomerBilling() {
   const navigate = useNavigate();
   const { t, translateStatus } = useLanguage();
   const {
@@ -256,18 +256,7 @@ function Billing() {
                                 </span>
                                 {t("billing.pay_now", "Pay Now")}
                               </button>
-                              {inv.canCancel && <button
-                                type="button"
-                                onClick={() => handleCancelInvoice(inv)}
-                                disabled={actionLoading === inv.id}
-                                className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-2.5 text-[12px] font-semibold shadow-xs transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-                                title="Hủy giao dịch chờ thanh toán"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">
-                                  close
-                                </span>
-                                {actionLoading === inv.id ? t("common.loading", "...") : t("common.cancel", "Hủy")}
-                              </button>}
+
                             </>
                           )}
                           {inv.reservationId && (
@@ -333,4 +322,4 @@ function Billing() {
   );
 }
 
-export default Billing;
+export default CustomerBilling;

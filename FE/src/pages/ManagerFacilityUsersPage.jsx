@@ -433,16 +433,12 @@ export default function ManagerFacilityUsersPage() {
               <span className="material-symbols-outlined text-[20px] text-blue-600">visibility</span>
               <div>
                 <p className="font-bold text-blue-900">
-                  Danh sách Khách hàng tại cơ sở (Chế độ Read-only)
+                  Danh sách khách hàng đang thuê tại cơ sở
                 </p>
-                <p className="text-[11px] text-blue-700 mt-0.5">
-                  
-                </p>
+                <p className="text-[11px] text-blue-700 mt-0.5">Tra cứu thông tin liên hệ và tình trạng hợp đồng thuê của từng khách hàng.</p>
               </div>
             </div>
-            <span className="font-mono text-[11px] text-blue-600">
-              GET /api/manager/customers
-            </span>
+            
           </div>
 
           {/* Search bar */}
@@ -697,3 +693,5 @@ export default function ManagerFacilityUsersPage() {
     </div>
   );
 }
+
+

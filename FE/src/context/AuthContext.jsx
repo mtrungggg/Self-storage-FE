@@ -25,8 +25,10 @@ export function AuthProvider({ children }) {
         try {
           const res = await authService.getCurrentUser();
           if (res?.data) {
-            setUser(res.data);
-            const serialized = JSON.stringify(res.data);
+            const avatar = localStorage.getItem(`storage_user_avatar_${res.data.id}`);
+            const userData = { ...res.data, avatarUrl: avatar || res.data.avatarUrl || null };
+            setUser(userData);
+            const serialized = JSON.stringify(userData);
             sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
             localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
           }
@@ -42,11 +44,52 @@ export function AuthProvider({ children }) {
     loadUser();
   }, []);
 
+  const updateUser = (partial) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      const serialized = JSON.stringify(next);
+      sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+      return next;
+    });
+  };
+
+  const updateAvatar = (avatarUrl) => {
+    if (user?.id) {
+      if (avatarUrl) {
+        localStorage.setItem(`storage_user_avatar_${user.id}`, avatarUrl);
+      } else {
+        localStorage.removeItem(`storage_user_avatar_${user.id}`);
+      }
+    }
+    updateUser({ avatarUrl: avatarUrl || null });
+  };
+
+  const refreshUser = async () => {
+    try {
+      const res = await authService.getCurrentUser();
+      if (res?.data) {
+        const avatar = localStorage.getItem(`storage_user_avatar_${res.data.id}`);
+        const userData = { ...res.data, avatarUrl: avatar || res.data.avatarUrl || null };
+        setUser(userData);
+        const serialized = JSON.stringify(userData);
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+        return userData;
+      }
+    } catch (err) {
+      console.warn("Refresh user error:", err);
+    }
+  };
+
   const login = async (email, password) => {
     const res = await authService.login({ email, password });
     if (res?.data?.accessToken) {
       setToken(res.data.accessToken);
-      setUser(res.data.user);
+      const avatar = localStorage.getItem(`storage_user_avatar_${res.data.user?.id}`);
+      const userData = { ...res.data.user, avatarUrl: avatar || res.data.user?.avatarUrl || null };
+      setUser(userData);
     }
     return res;
   };
@@ -55,7 +98,9 @@ export function AuthProvider({ children }) {
     const res = await authService.verifyOtp({ email, otpCode });
     if (res?.data?.accessToken) {
       setToken(res.data.accessToken);
-      setUser(res.data.user);
+      const avatar = localStorage.getItem(`storage_user_avatar_${res.data.user?.id}`);
+      const userData = { ...res.data.user, avatarUrl: avatar || res.data.user?.avatarUrl || null };
+      setUser(userData);
     }
     return res;
   };
@@ -64,7 +109,9 @@ export function AuthProvider({ children }) {
     const res = await authService.googleLogin(idToken);
     if (res?.data?.accessToken) {
       setToken(res.data.accessToken);
-      setUser(res.data.user);
+      const avatar = localStorage.getItem(`storage_user_avatar_${res.data.user?.id}`);
+      const userData = { ...res.data.user, avatarUrl: avatar || res.data.user?.avatarUrl || null };
+      setUser(userData);
     }
     return res;
   };
@@ -86,6 +133,9 @@ export function AuthProvider({ children }) {
     resendOtp: authService.resendOtp,
     googleLogin,
     logout,
+    updateUser,
+    updateAvatar,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

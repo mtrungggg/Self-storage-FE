@@ -1,7 +1,7 @@
 import DatePicker from "@/components/ui/date-picker";
 import { useEffect, useId, useRef, useState } from "react";
 import RefundPreview from "./RefundPreview";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
 const POPULAR_BANKS = [
@@ -38,6 +38,7 @@ export default function MoveOutRequest({ agreementId }) {
   const [error, setError] = useState("");
 
   const [bankSubmitted, setBankSubmitted] = useState(false);
+  const [moveOutQrToken, setMoveOutQrToken] = useState("");
   const [payoutCompleted, setPayoutCompleted] = useState(null);
 
   const syncStateFromStorage = () => {
@@ -94,6 +95,7 @@ export default function MoveOutRequest({ agreementId }) {
     try {
       const bankData = {
         bankName: bankName.trim(),
+        bankAccountNo: accountNumber.trim(),
         bankAccountNumber: accountNumber.trim(),
         accountNumber: accountNumber.trim(),
         bankAccountHolder: accountHolder.trim().toUpperCase(),
@@ -104,12 +106,15 @@ export default function MoveOutRequest({ agreementId }) {
       localStorage.setItem(`refund_bank_info_${agreementId}`, JSON.stringify(bankData));
       window.dispatchEvent(new Event("storage"));
 
-      await rentalService.requestMoveOut(agreementId, {
+      const resp = await rentalService.requestMoveOut(agreementId, {
         requestedMoveOutDate: date,
         reason: reason.trim(),
         ...bankData,
       });
 
+      if (resp?.moveOutQrToken) {
+        setMoveOutQrToken(resp.moveOutQrToken);
+      }
       setBankSubmitted(true);
     } catch (err) {
       if (err.message && (err.message.includes("already requested") || err.message.includes("409"))) {
@@ -124,11 +129,16 @@ export default function MoveOutRequest({ agreementId }) {
   }
 
   return (
-    <details className="mt-2 border-t border-[#dfe7f5] pt-2 text-xs">
-      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:underline">
-        {t("moveout.preview", "Move-out & Refund Preview")}
+    <details className="text-xs group">
+      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between transition-colors select-none py-0.5">
+        <span className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-amber-600">output</span>
+          <span className="font-bold text-slate-800 dark:text-zinc-200">{t("moveout.preview", "Báo trả kho & Xem trước hoàn cọc")}</span>
+        </span>
+        <span className="material-symbols-outlined text-[18px] text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
       </summary>
-      <RefundPreview agreementId={agreementId} />
+      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-2.5">
+        <RefundPreview agreementId={agreementId} requestedMoveOutDate={date} />
 
       {payoutCompleted ? (
         <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 space-y-3 shadow-xs">
@@ -216,6 +226,11 @@ export default function MoveOutRequest({ agreementId }) {
               <span className="material-symbols-outlined text-[14px]">schedule</span>
               {translateStatus("pending_manager_payout")}
             </span>
+            {moveOutQrToken && (
+              <span className="font-mono text-[10px] text-slate-600 bg-white px-2 py-0.5 rounded border border-blue-200 truncate max-w-[180px]" title={moveOutQrToken}>
+                QR: {moveOutQrToken.slice(0, 18)}...
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setBankSubmitted(false)}
@@ -321,6 +336,7 @@ export default function MoveOutRequest({ agreementId }) {
           </fieldset>
         </form>
       )}
+      </div>
     </details>
   );
 }

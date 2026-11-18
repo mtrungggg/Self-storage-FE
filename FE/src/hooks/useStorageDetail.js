@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import pricingService from "../api/pricingService";
-import reservationService from "../api/reservationService";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import catalogApi from "../services/api/catalogApi";
+import reservationApi from "../services/api/reservationApi";
+import paymentApi from "../services/api/paymentApi";
 import { DEFAULT_STORAGE_UNIT_IMAGE } from "../constants/assets";
 import BUSINESS_CONFIG from "../config/businessConfig";
-import paymentService from "../api/paymentService";
 import { useLanguage } from "../context/LanguageContext";
 
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -33,43 +33,106 @@ function nextFriday(base) {
   return addDays(base, diff);
 }
 
-// Application layer: encapsulates StorageDetail (booking) page state, pricing and data wiring.
 export function useStorageDetail() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t, lang } = useLanguage();
   const isVi = lang === "vi";
-  const unitFromState = location.state?.unit;
+  const unitFromState = location.state?.unit || null;
 
-  // Selected unit details or fallback default matching BE seed data
-  const unit = useMemo(() => {
-    if (unitFromState) return unitFromState;
-    return {
-      id: 2,
-      facilityId: 1,
-      unitTypeId: 1,
-      unitCode: "A-102",
-      facilityName: "Thu Duc Self Storage",
-      address: "01 Vo Van Ngan, Thu Duc City, HCMC",
-      floor: "Floor 1 • Zone A",
-      dimension: "1.5m x 2.0m",
-      sizeLabel: "1.5m x 2.0m",
-      volume: "8.4 m³",
-      height: "2.8m",
-      areaM2: 3.0,
-      typeName: "Standard Unit 3 m²",
-      fitNote: "Fits 20-30 boxes, small appliances, motorcycle, files.",
-      rentPrice: 2000,
-      depositPrice: 2000,
-      policies: [
-        "Free cancellation within 24h",
-        "Keyless 24/7 digital access",
-        "100% refundable security deposit",
-        "No hidden fees guarantee",
-      ],
-      image: DEFAULT_STORAGE_UNIT_IMAGE,
+  const [unit, setUnit] = useState(unitFromState);
+  const [unitLoading, setUnitLoading] = useState(!unitFromState);
+  const [unitError, setUnitError] = useState("");
+
+  useEffect(() => {
+    if (unitFromState) {
+      setUnit(unitFromState);
+      setUnitLoading(false);
+      return;
+    }
+
+    const qFacilityId = Number(searchParams.get("facilityId"));
+    const qUnitId = Number(searchParams.get("unitId"));
+
+    let active = true;
+    setUnitLoading(true);
+    setUnitError("");
+
+    async function hydrateUnit() {
+      try {
+        const [facilities, unitTypes] = await Promise.all([
+          catalogApi.getFacilities(),
+          catalogApi.getUnitTypes(),
+        ]);
+
+        const targetFacility = qFacilityId
+          ? facilities.find((f) => f.id === qFacilityId) || facilities[0]
+          : facilities[0];
+
+        if (!targetFacility) {
+          if (active) setUnitError("No active storage facilities found.");
+          return;
+        }
+
+        const available = await catalogApi.getAvailableUnits(targetFacility.id);
+        const picked = qUnitId
+          ? available.find((u) => u.id === qUnitId) || available[0]
+          : available[0];
+
+        if (!picked) {
+          if (active) setUnitError("No available units found at this facility.");
+          return;
+        }
+
+        const unitType = unitTypes.find((ut) => ut.id === picked.unitTypeId);
+        const categoryName = picked.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
+        const length = picked.length ?? unitType?.lengthM ?? 2;
+        const width = picked.width ?? unitType?.widthM ?? 1.5;
+        const height = picked.height ?? unitType?.heightM ?? 2.5;
+        const area = picked.area ?? picked.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
+        const dimension = `${length}m × ${width}m`;
+
+        if (active) {
+          setUnit({
+            id: picked.id,
+            facilityId: picked.facilityId,
+            unitTypeId: picked.unitTypeId,
+            unitCode: picked.unitCode,
+            facilityName: targetFacility.name,
+            address: targetFacility.address,
+            floorLabel: picked.floorLabel || "1",
+            zoneLabel: picked.zoneLabel || "A",
+            floor: [picked.floorLabel && `Tầng ${picked.floorLabel}`, picked.zoneLabel && `Khu ${picked.zoneLabel}`]
+              .filter(Boolean)
+              .join(" • "),
+            dimension,
+            sizeLabel: dimension,
+            length,
+            width,
+            height: `${height}m`,
+            area,
+            areaM2: area,
+            volume: picked.volume || `${(area * height).toFixed(1)} m³`,
+            categoryName,
+            typeName: categoryName,
+            fitNote: unitType?.description || "",
+            rentPrice: picked.monthlyRate ?? picked.monthlyPrice ?? 0,
+            image: DEFAULT_STORAGE_UNIT_IMAGE,
+          });
+        }
+      } catch (err) {
+        if (active) setUnitError(err?.message || "Unable to load selected storage unit.");
+      } finally {
+        if (active) setUnitLoading(false);
+      }
+    }
+
+    hydrateUnit();
+    return () => {
+      active = false;
     };
-  }, [unitFromState]);
+  }, [unitFromState, searchParams]);
 
   const [moveInOption, setMoveInOption] = useState("today");
   const [durationMonths, setDurationMonths] = useState(1);
@@ -78,7 +141,6 @@ export function useStorageDetail() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [agreeLock, setAgreeLock] = useState(true);
 
-  // 15-minute hold countdown (starts when page mounts)
   const [holdCountdown, setHoldCountdown] = useState(BUSINESS_CONFIG.RESERVATION.HOLD_TIMEOUT_SECONDS);
   useEffect(() => {
     if (holdCountdown <= 0) return;
@@ -86,7 +148,6 @@ export function useStorageDetail() {
     return () => clearInterval(id);
   }, [holdCountdown]);
 
-  // Move-in date calculation
   const today = useMemo(() => new Date(new Date().setHours(0, 0, 0, 0)), []);
   const tomorrow = useMemo(() => addDays(today, 1), [today]);
   const friday = useMemo(() => nextFriday(today), [today]);
@@ -114,36 +175,37 @@ export function useStorageDetail() {
   }, [moveInOption, today, tomorrow, friday, customDate]);
 
   const isCustomDateInvalid = moveInOption === "custom" && (!customDate || customDate < minCustomDateISO);
-
-  // Derived display values
   const holdCountdownStr = `${String(Math.floor(holdCountdown / 60)).padStart(2, "0")}:${String(holdCountdown % 60).padStart(2, "0")}`;
   const resolvedStartDateLabel = formatDateCompact(resolvedStartDate, isVi);
 
-  // Real pricing quote from the backend
   const [pricing, setPricing] = useState(null);
-  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState("");
 
   useEffect(() => {
-    if (!unit.facilityId || !unit.unitTypeId) {
+    if (!unit?.facilityId || !unit?.unitTypeId || isCustomDateInvalid) {
       setPricingLoading(false);
       return;
     }
     let active = true;
     setPricingLoading(true);
     setPricingError("");
-    pricingService
-      .calculatePricing({
+    catalogApi
+      .getPricingQuote({
         facilityId: unit.facilityId,
         unitTypeId: unit.unitTypeId,
+        startDate: toISODate(resolvedStartDate),
         durationMonths,
-        voucherCode: appliedVoucher.trim() || undefined,
+        promotionCode: appliedVoucher.trim() || undefined,
       })
       .then((data) => {
         if (active) setPricing(data);
       })
       .catch((err) => {
-        if (active) setPricingError(err?.message || "Không thể tính giá thuê. Vui lòng thử lại.");
+        if (active) {
+          setPricingError(err?.message || "Unable to calculate pricing quote.");
+          if (appliedVoucher) setPricing(null);
+        }
       })
       .finally(() => {
         if (active) setPricingLoading(false);
@@ -151,7 +213,7 @@ export function useStorageDetail() {
     return () => {
       active = false;
     };
-  }, [unit.facilityId, unit.unitTypeId, durationMonths, appliedVoucher]);
+  }, [unit?.facilityId, unit?.unitTypeId, durationMonths, appliedVoucher, resolvedStartDate, isCustomDateInvalid]);
 
   const handleApplyVoucher = () => {
     setAppliedVoucher(voucherInput.trim());
@@ -162,28 +224,30 @@ export function useStorageDetail() {
     setAppliedVoucher("");
   };
 
-  // Booking submission state
   const [booking, setBooking] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
 
-  const canSubmit = agreeTerms && agreeLock && !pricingLoading && !bookingLoading && !isCustomDateInvalid;
+  const canSubmit = Boolean(unit) && agreeTerms && agreeLock && !pricingLoading && !bookingLoading && !isCustomDateInvalid && !pricingError;
 
   const submitBooking = async () => {
+    if (!unit) return null;
     setBookingLoading(true);
     setBookingError("");
+    const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `rsv-${Date.now()}`;
     try {
-      const reservation = await reservationService.createReservation({
+      const reservation = await reservationApi.createReservation({
         facilityId: unit.facilityId,
         unitTypeId: unit.unitTypeId,
         storageUnitId: Number.isInteger(unit.id) ? unit.id : undefined,
         startDate: toISODate(resolvedStartDate),
         durationMonths,
         promotionCode: appliedVoucher.trim() || undefined,
+        idempotencyKey,
       });
-      const checkout = await paymentService.createCheckout({
+      const checkout = await paymentApi.createCheckout({
         reservationId: reservation.reservationId,
-        paymentMethod: "vietqr",
+        paymentMethod: "bank_transfer",
       });
       setBooking({ reservation, checkout });
       navigate("/checkout", { state: { checkout, reservation } });
@@ -204,6 +268,8 @@ export function useStorageDetail() {
 
   return {
     unit,
+    unitLoading,
+    unitError,
     moveInOptions,
     moveInOption,
     setMoveInOption,

@@ -1,7 +1,7 @@
 import DatePicker from "@/components/ui/date-picker";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import facilityService from "../api/facilityService";
 import SupportDropdown from "./SupportDropdown";
 import { useLanguage } from "../context/LanguageContext";
@@ -163,6 +163,7 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
   const [paymentRefresh, setPaymentRefresh] = useState(0);
   const [paymentNotice, setPaymentNotice] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const previousPaymentStatus = useRef(null);
 
   useEffect(() => {
@@ -344,17 +345,19 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     }
   }
 
-  async function handleCancelTransfer() {
+  function handleCancelTransfer() {
     if (!result?.id || cancelling) return;
-    const confirmed = window.confirm(
-      t("transfer.confirm_cancel", "Bạn có chắc chắn muốn hủy yêu cầu chuyển kho này không?")
-    );
-    if (!confirmed) return;
+    setConfirmCancelOpen(true);
+  }
+
+  async function executeCancelTransfer() {
+    if (!result?.id || cancelling) return;
 
     setCancelling(true);
     setPaymentCheckError("");
     try {
       await rentalService.cancelTransferRequest(result.id);
+      setConfirmCancelOpen(false);
       setResult(null);
       const targetFacility = Number(selectedFacilityId) || Number(facilityId);
       const targetUnitType = Number(requestedUnitTypeId) || null;
@@ -377,10 +380,61 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
       setPaymentCheckError(
         err?.message || t("transfer.cancel_failed", "Không thể hủy yêu cầu chuyển kho. Vui lòng thử lại.")
       );
+      setConfirmCancelOpen(false);
     } finally {
       setCancelling(false);
     }
   }
+
+  const confirmCancelModal = confirmCancelOpen &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs transition-opacity duration-150"
+        onClick={(e) => e.target === e.currentTarget && !cancelling && setConfirmCancelOpen(false)}
+      >
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-2xl space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+              <span className="material-symbols-outlined text-[22px]">warning</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+                {t("transfer.confirm_cancel_title", "Xác nhận hủy chuyển kho")}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-zinc-400">
+                {t("transfer.confirm_cancel", "Bạn có chắc chắn muốn hủy yêu cầu chuyển kho này không?")}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              disabled={cancelling}
+              onClick={() => setConfirmCancelOpen(false)}
+              className="rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700 cursor-pointer disabled:opacity-50"
+            >
+              {t("common.back", "Quay lại")}
+            </button>
+            <button
+              type="button"
+              disabled={cancelling}
+              onClick={executeCancelTransfer}
+              className="rounded-lg bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 text-xs font-bold disabled:opacity-50 cursor-pointer shadow-xs flex items-center gap-1.5"
+            >
+              {cancelling ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                  {t("common.processing", "Đang hủy…")}
+                </>
+              ) : (
+                t("common.confirm", "Xác nhận hủy")
+              )}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
 
   if (result) {
     const targetFacilityObj = facilities.find((f) => String(f.id) === String(selectedFacilityId));
@@ -390,7 +444,9 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
     const requiresPayment = result.status === "pending_payment" && Number(result.amountDue ?? result.totalPaidAmount) > 0;
 
     return (
-      <div role="status" className="mt-3 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white dark:from-zinc-900 dark:to-zinc-950 dark:border-blue-900/40 p-4 text-xs space-y-3 shadow-sm">
+      <>
+        {confirmCancelModal}
+        <div role="status" className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white dark:from-zinc-900 dark:to-zinc-950 dark:border-blue-900/40 p-4 text-xs space-y-3 shadow-2xs">
         {paymentNotice && createPortal(
           <div role="alert" className="fixed bottom-5 right-4 z-[110] flex max-w-[calc(100vw-2rem)] items-start gap-3 rounded-2xl border border-emerald-200 bg-white p-4 text-emerald-950 shadow-xl sm:right-6">
             <span aria-hidden="true" className="material-symbols-outlined text-2xl text-emerald-600">check_circle</span>
@@ -566,30 +622,37 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
           </div>
         )}
       </div>
-    );
-  }
+    </>
+  );
+}
 
-  const otherFacilities = facilities.filter((f) => String(f.id) !== String(facilityId));
+const otherFacilities = facilities.filter((f) => String(f.id) !== String(facilityId));
 
-  return (
-    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="mt-2 border-t border-[#dfe7f5] dark:border-zinc-800 pt-2 text-xs">
-      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:underline flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[16px] text-blue-600">swap_horiz</span>
-          {t("transfer.title", "Unit Transfer Request")}
+return (
+  <>
+    {confirmCancelModal}
+    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="text-xs group">
+      <summary className="cursor-pointer font-semibold text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between transition-colors select-none py-0.5">
+        <span className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-blue-600">swap_horiz</span>
+          <span className="font-bold text-slate-800 dark:text-zinc-200">{t("transfer.title", "Yêu cầu chuyển kho")}</span>
         </span>
-        {preview && (
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-            preview.transferCount >= preview.maxTransfers
-              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:border-red-900"
-              : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
-          }`}>
-            {t("transfer.transfers_count", "Lượt chuyển:")} {preview.transferCount} / {preview.maxTransfers}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {preview && (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+              preview.transferCount >= preview.maxTransfers
+                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:border-red-900"
+                : "bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+            }`}>
+              {t("transfer.transfers_count", "Lượt chuyển:")} {preview.transferCount} / {preview.maxTransfers}
+            </span>
+          )}
+          <span className="material-symbols-outlined text-[18px] text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+        </div>
       </summary>
 
-      <form onSubmit={submit} className="mt-2 space-y-2.5">
+      <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 mt-2.5">
+        <form onSubmit={submit} className="space-y-2.5">
         {/* Limit Warning if max reached */}
         {preview && !preview.canTransfer && (
           <div role="alert" className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 p-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
@@ -831,6 +894,8 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
           )}
         </button>
       </form>
+      </div>
     </details>
-  );
+  </>
+);
 }

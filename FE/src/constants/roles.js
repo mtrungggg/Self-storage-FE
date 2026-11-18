@@ -44,9 +44,7 @@ export const ADMIN_ROLES = Object.freeze([
 export const MANAGER_ROLES = Object.freeze([
   USER_ROLES.FACILITY_MANAGER,
   USER_ROLES.BUSINESS_OPERATIONS_MANAGER,
-  USER_ROLES.SYSTEM_ADMINISTRATOR,
   USER_ROLES.MANAGER,
-  USER_ROLES.ADMIN,
 ]);
 
 export const STAFF_ROLES = Object.freeze([
@@ -65,9 +63,9 @@ export function hasAnyRole(userRoles = [], targetRoles = []) {
 
 export function getDefaultRouteForUser(user) {
   const roles = (user?.roles || []).map((r) => r.toLowerCase());
-  if (hasAnyRole(roles, ADMIN_ROLES)) return "/admin-overview";
   if (hasAnyRole(roles, MANAGER_ROLES)) return "/manager-dashboard";
   if (hasAnyRole(roles, STAFF_ROLES)) return "/staff-dashboard";
+  if (hasAnyRole(roles, ADMIN_ROLES)) return "/admin-overview";
   return "/home";
 }
 

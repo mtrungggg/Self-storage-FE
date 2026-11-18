@@ -1,7 +1,9 @@
 import apiClient from "./apiClient";
+import managerIncidentApi from "../services/api/managerIncidentApi";
+import managerDelinquencyApi from "../services/api/managerDelinquencyApi";
 
 // Service layer: wraps the backend "Manager" API group (facility-scoped operations console).
-export const managerService = {
+export const managerCoreService = {
   // STT 11: GET /api/manager/facilities/{facilityId}/dashboard
   // Bảng điều khiển thống kê tỷ lệ lấp đầy, doanh thu cơ sở
   async getDashboard(facilityId, params = {}) {
@@ -20,11 +22,10 @@ export const managerService = {
     return res?.data ?? null;
   },
 
-  // POST /api/manager/agreements/{agreementId}/reassign-unit
+  // POST /api/v1/manager/agreements/{agreementId}/reassign-unit
   // Đổi kho trực tiếp/khẩn cấp cho khách (khi kho hư hỏng, sự cố)
   async reassignAgreementUnit(agreementId, payload) {
-    const res = await apiClient.post("/manager/agreements/" + encodeURIComponent(agreementId) + "/reassign-unit", payload);
-    return res?.data ?? null;
+    return await managerIncidentApi.reassignUnit(agreementId, payload);
   },
 
   // STT 13: GET /api/manager/facilities/{facilityId}/units
@@ -236,15 +237,16 @@ export const managerService = {
     return res?.data ?? null;
   },
 
-  // --- Delinquent cases ---
-  async getDelinquentCases(facilityId) {
-    const res = await apiClient.get(`/manager/facilities/${encodeURIComponent(facilityId)}/delinquent-cases`);
-    return res?.data ?? [];
+  // --- Delinquent cases (V1 Flow 6) ---
+  async getDelinquentCases(facilityId, status) {
+    return managerDelinquencyApi.getDelinquencyCases(facilityId, status);
   },
-  /** @param {{ actionType: string, note?: string, updateCaseStatus?: string }} payload */
+  /** @param {{ actionType: string, note?: string, lateFeeAmount?: number, updateCaseStatus?: string }} payload */
   async createDelinquentCaseAction(id, payload) {
-    const res = await apiClient.post(`/manager/delinquent-cases/${encodeURIComponent(id)}/actions`, payload);
-    return res?.data ?? null;
+    return managerDelinquencyApi.addDelinquencyAction(id, payload);
+  },
+  async liquidateAgreement(agreementId, payload) {
+    return managerDelinquencyApi.liquidateAgreement(agreementId, payload);
   },
 
   // --- Assigned Facilities Scope ---
@@ -254,4 +256,4 @@ export const managerService = {
   },
 };
 
-export default managerService;
+export default managerCoreService;

@@ -5,7 +5,7 @@ import { TableSkeleton } from "../components/SkeletonLoader";
 import EmptyState from "../components/EmptyState";
 import { Link } from "react-router-dom";
 import { X, ExternalLink, Clock, FileText, ShieldAlert } from "lucide-react";
-import managerService from "../api/managerService";
+import managerService from "../api/managerCoreService";
 import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { formatStatusToEnglish, formatVnd } from "../lib/utils";
 import PAGINATION from "../constants/pagination";

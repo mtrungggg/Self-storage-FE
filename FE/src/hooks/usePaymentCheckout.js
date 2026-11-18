@@ -1,14 +1,16 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import paymentService from "../api/paymentService";
-import reservationService from "../api/reservationService";
-import rentalService from "../api/rentalService";
+import paymentApi from "../services/api/paymentApi";
+import reservationApi from "../services/api/reservationApi";
+import rentalService from "../api/customerRentalService";
+import { useSignalR } from "../context/SignalRContext";
 import { CHECKOUT_STATUS, PAYMENT_STATUS } from "../constants/paymentConstants";
 import { RESERVATION_STATUS } from "../constants/rentalConstants";
 
 export function usePaymentCheckout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { subscribe } = useSignalR();
 
   const stateCheckout = location.state?.checkout || null;
   const stateReservation = location.state?.reservation || null;
@@ -17,36 +19,29 @@ export function usePaymentCheckout() {
   const stateRenewalId = location.state?.renewalId || null;
   const stateTransferRequestId = location.state?.transferRequestId || null;
 
-  const [checkout, setCheckout] = useState(
-    stateCheckout?.vietQr?.qrImageUrl ? stateCheckout : null
-  );
+  const [checkout, setCheckout] = useState(stateCheckout?.vietQr?.qrImageUrl ? stateCheckout : null);
   const [reservation, setReservation] = useState(stateReservation);
-  const [loading, setLoading] = useState(
-    !stateCheckout?.vietQr?.qrImageUrl
-  );
+  const [loading, setLoading] = useState(!stateCheckout?.vietQr?.qrImageUrl);
   const [error, setError] = useState("");
-
-  // Status: pending | success | expired | failed
   const [status, setStatus] = useState(CHECKOUT_STATUS.PENDING);
+  const [partialInfo, setPartialInfo] = useState(null);
+  const [checkInQrToken, setCheckInQrToken] = useState(null);
 
-  // Custom modal for confirming cancellation
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
 
-  // Calculate initial countdown seconds
   const initialSeconds = useMemo(() => {
     if (reservation?.holdUntil) {
       const diff = Math.floor((new Date(reservation.holdUntil).getTime() - Date.now()) / 1000);
       if (diff > 0) return diff;
     }
-    return checkout?.expiresInSeconds || 15 * 60; // 15 minutes default
+    return checkout?.expiresInSeconds || 15 * 60;
   }, [reservation, checkout]);
 
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
   const totalSecondsRef = useRef(initialSeconds > 0 ? initialSeconds : 900);
 
-  // If no checkout with full QR is in state, fetch reservation & create checkout
   useEffect(() => {
     if (checkout?.vietQr?.qrImageUrl) {
       setLoading(false);
@@ -59,29 +54,28 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
-        // 1. If we have a reservation (from state or user's pending reservation)
         if (stateReservationId || (!stateInvoiceId && !stateRenewalId)) {
           let targetReservation = reservation;
           if (stateReservationId) {
             try {
-              targetReservation = await reservationService.getReservationDetail(stateReservationId);
+              targetReservation = await reservationApi.getReservationDetail(stateReservationId);
               if (active && targetReservation) setReservation(targetReservation);
             } catch {
-              // fallback
+              // ignore and fallback
             }
           }
 
           if (!targetReservation) {
-            const myReservations = await reservationService.getMyReservations("pending");
+            const myReservations = await reservationApi.getMyReservations({ status: "pending" });
             targetReservation = Array.isArray(myReservations) ? myReservations[0] : null;
             if (active && targetReservation) setReservation(targetReservation);
           }
 
           const resId = targetReservation?.reservationId || targetReservation?.id || stateReservationId;
           if (resId) {
-            const newCheckout = await paymentService.createCheckout({
+            const newCheckout = await paymentApi.createCheckout({
               reservationId: Number(resId),
-              paymentMethod: "vietqr",
+              paymentMethod: "bank_transfer",
             });
             if (active && newCheckout) {
               setCheckout(newCheckout);
@@ -95,11 +89,10 @@ export function usePaymentCheckout() {
           }
         }
 
-        // 2. If it's a rental renewal
         if (stateRenewalId) {
-          const renewalCheckout = await paymentService.createCheckout({
+          const renewalCheckout = await paymentApi.createCheckout({
             renewalId: Number(stateRenewalId),
-            paymentMethod: "vietqr",
+            paymentMethod: "bank_transfer",
           });
           if (active) {
             setCheckout(renewalCheckout);
@@ -113,11 +106,10 @@ export function usePaymentCheckout() {
           return;
         }
 
-        // 3. If it's an independent invoice (e.g. fees, damage, transfer difference)
         if (stateInvoiceId) {
-          const invoiceCheckout = await paymentService.createCheckout({
+          const invoiceCheckout = await paymentApi.createCheckout({
             invoiceId: Number(stateInvoiceId),
-            paymentMethod: "vietqr",
+            paymentMethod: "bank_transfer",
           });
           if (active) {
             setCheckout(invoiceCheckout);
@@ -137,13 +129,55 @@ export function usePaymentCheckout() {
     };
 
     resolveCheckout();
-
     return () => {
       active = false;
     };
   }, [stateReservationId, stateInvoiceId, stateRenewalId, checkout?.vietQr?.qrImageUrl]);
 
-  // 15-Minute Countdown Timer
+  // Real-time SignalR listeners for instant SePay confirmation or partial transfer notice
+  useEffect(() => {
+    if (status !== CHECKOUT_STATUS.PENDING) return;
+
+    const targetPaymentId = checkout?.paymentId;
+    const targetResId = reservation?.reservationId || reservation?.id || checkout?.reservationId;
+
+    const unsubSucceeded = subscribe("PaymentSucceeded", (payload) => {
+      if (
+        (!targetPaymentId || payload?.paymentId === targetPaymentId) &&
+        (!targetResId || !payload?.reservationId || payload?.reservationId === targetResId)
+      ) {
+        if (payload?.checkInQrToken) setCheckInQrToken(payload.checkInQrToken);
+        setStatus(CHECKOUT_STATUS.SUCCESS);
+      }
+    });
+
+    const unsubConfirmed = subscribe("ReservationConfirmed", (payload) => {
+      if (targetResId && payload?.reservationId === targetResId) {
+        if (payload?.checkInQrToken) setCheckInQrToken(payload.checkInQrToken);
+        setStatus(CHECKOUT_STATUS.SUCCESS);
+      }
+    });
+
+    const unsubPartial = subscribe("PaymentPartialReceived", (payload) => {
+      if (
+        (targetResId && payload?.reservationId === targetResId) ||
+        (checkout?.invoiceId && payload?.invoiceId === checkout.invoiceId)
+      ) {
+        setPartialInfo({
+          paidAmount: payload.paidAmount,
+          totalAmount: payload.totalAmount,
+          remainingAmount: payload.remainingAmount,
+        });
+      }
+    });
+
+    return () => {
+      unsubSucceeded();
+      unsubConfirmed();
+      unsubPartial();
+    };
+  }, [subscribe, status, checkout?.paymentId, checkout?.invoiceId, checkout?.reservationId, reservation]);
+
   useEffect(() => {
     if (status !== CHECKOUT_STATUS.PENDING) return;
 
@@ -161,7 +195,7 @@ export function usePaymentCheckout() {
     return () => clearInterval(timer);
   }, [status]);
 
-  // Optimized Polling for SePay payment confirmation (3s interval, targeted)
+  // Fallback polling using GET /api/v1/payments/{paymentId}/status
   useEffect(() => {
     if (status !== CHECKOUT_STATUS.PENDING) return;
 
@@ -170,27 +204,34 @@ export function usePaymentCheckout() {
 
     const checkPaymentSuccess = async () => {
       try {
-        const resId = reservation?.reservationId || reservation?.id || checkout?.reservationId;
-        if (resId) {
-          const detail = await reservationService.getReservationDetail(resId);
-          if (!isCancelled && detail) {
-            const detailStatus = (detail.status || "").toLowerCase();
-            if (detailStatus === RESERVATION_STATUS.CONFIRMED || detailStatus === "paid") {
+        if (checkout?.paymentId > 0) {
+          const st = await paymentApi.getPaymentStatus(checkout.paymentId);
+          if (!isCancelled && st) {
+            const pStatus = String(st.paymentStatus || "").toLowerCase();
+            const rStatus = String(st.reservationStatus || "").toLowerCase();
+            if (pStatus === PAYMENT_STATUS.SUCCEEDED || rStatus === RESERVATION_STATUS.CONFIRMED) {
+              if (st.checkInQrToken) setCheckInQrToken(st.checkInQrToken);
               setStatus(CHECKOUT_STATUS.SUCCESS);
               return;
             }
-            if (detailStatus === RESERVATION_STATUS.EXPIRED) {
+            if (st.paidAmount > 0 && st.paidAmount < st.totalAmount) {
+              setPartialInfo({
+                paidAmount: st.paidAmount,
+                totalAmount: st.totalAmount,
+                remainingAmount: Math.max(0, st.totalAmount - st.paidAmount),
+              });
+            }
+            if (rStatus === RESERVATION_STATUS.EXPIRED) {
               setStatus(CHECKOUT_STATUS.EXPIRED);
               return;
             }
-            if (detailStatus === RESERVATION_STATUS.CANCELLED) {
+            if (rStatus === RESERVATION_STATUS.CANCELLED || pStatus === PAYMENT_STATUS.CANCELLED || pStatus === PAYMENT_STATUS.FAILED) {
               setStatus(CHECKOUT_STATUS.FAILED);
               return;
             }
           }
         } else {
-          // Check payment history only for invoices / renewals
-          const history = await paymentService.getPaymentHistory();
+          const history = await paymentApi.getPaymentHistory();
           if (!isCancelled && Array.isArray(history)) {
             const matched = history.find(
               (p) =>
@@ -199,7 +240,7 @@ export function usePaymentCheckout() {
                 (reservation?.reservationCode && p.reservationCode === reservation.reservationCode)
             );
             if (matched) {
-              const pStatus = (matched.status || "").toLowerCase();
+              const pStatus = String(matched.status || "").toLowerCase();
               if (pStatus === PAYMENT_STATUS.SUCCEEDED || pStatus === "paid") {
                 setStatus(CHECKOUT_STATUS.SUCCESS);
                 return;
@@ -211,8 +252,8 @@ export function usePaymentCheckout() {
             }
           }
         }
-      } catch (err) {
-        // Silently ignore network hiccup during poll
+      } catch {
+        // Ignore transient poll network error
       }
 
       if (!isCancelled) {
@@ -228,7 +269,6 @@ export function usePaymentCheckout() {
     };
   }, [status, checkout, reservation]);
 
-  // Open modal to confirm cancel
   const handleOpenCancelModal = () => {
     setCancelError("");
     setCancelModalOpen(true);
@@ -240,7 +280,6 @@ export function usePaymentCheckout() {
     setCancelError("");
   };
 
-  // Perform cancel for reservation, renewal, transfer or invoice
   const handleConfirmCancel = async () => {
     const resId = reservation?.reservationId || reservation?.id || checkout?.reservationId || stateReservationId;
     const rnwId = stateRenewalId || checkout?.renewalId;
@@ -256,10 +295,10 @@ export function usePaymentCheckout() {
     setCancelling(true);
     setCancelError("");
     try {
-      if (invId) {
+      if (resId) {
+        await reservationApi.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
+      } else if (invId) {
         await rentalService.cancelInvoice(invId);
-      } else if (resId) {
-        await reservationService.cancelReservation(resId, "Khách hàng tự hủy giao dịch");
       } else if (rnwId) {
         await rentalService.cancelRenewal(rnwId);
       } else if (trfId) {
@@ -285,6 +324,8 @@ export function usePaymentCheckout() {
     loading,
     error,
     status,
+    partialInfo,
+    checkInQrToken,
     timeLeft,
     formattedCountdown,
     progressPercent,

@@ -37,7 +37,8 @@ export function RequireAuth({ allowedRoles, children }) {
     const roles = (user?.roles || []).map((r) => r.toLowerCase());
     const hasPermission = roles.some((r) => allowedRoles.includes(r.toLowerCase()));
     if (!hasPermission) {
-      const isTargetingAdmin = allowedRoles.some((r) => ADMIN_ROLES.includes(r.toLowerCase()));
+      const allowsManager = allowedRoles.some((r) => MANAGER_ROLES.includes(r.toLowerCase()));
+      const isTargetingAdmin = !allowsManager && allowedRoles.some((r) => ADMIN_ROLES.includes(r.toLowerCase()));
       const isManager = hasAnyRole(roles, MANAGER_ROLES);
       const isStaff = hasAnyRole(roles, STAFF_ROLES);
 

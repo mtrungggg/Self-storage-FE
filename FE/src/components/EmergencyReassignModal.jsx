@@ -4,10 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import managerTicketService from "../api/managerTicketService";
 import staffFacilityService from "../api/staffFacilityService";
 
-function generateSamplePin() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
 // Tách mã kho và hậu tố trạng thái (ví dụ: "A-906-PENDING-INSPECT" -> code: "A-906", badge: "Chờ kiểm tra")
 function formatUnitCodeDisplay(rawCode) {
   if (!rawCode) return { code: "—", badge: null };
@@ -293,7 +289,6 @@ export default function EmergencyReassignModal({
       (u) => String(u.unitId || u.id) === String(selectedUnitId)
     );
     const newUnitCode = selectedUnit?.unitCode || `Unit #${selectedUnitId}`;
-    const newPin = generateSamplePin();
 
     try {
       const payload = {
@@ -308,9 +303,8 @@ export default function EmergencyReassignModal({
       const outputResult = {
         ...(result || payload),
         oldUnitCode: formattedOldUnit.code,
-        newUnitCode,
-        newPin: result?.newPin || newPin,
-        qrCodePayload: `CHK|${newUnitCode}|${effectiveAgreementNo}|${effectiveFacilityId}`,
+        newUnitCode: result?.newUnitCode || newUnitCode,
+        newPin: result?.newPinCode || result?.newPin || "",
       };
 
       setSuccessResult(outputResult);

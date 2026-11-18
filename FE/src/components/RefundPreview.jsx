@@ -1,8 +1,8 @@
 import { useId, useRef, useState } from "react";
-import rentalService from "../api/rentalService";
+import rentalService from "../api/customerRentalService";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function RefundPreview({ agreementId }) {
+export default function RefundPreview({ agreementId, requestedMoveOutDate }) {
   const panelId = useId();
   const lock = useRef(false);
   const { t, formatCurrency } = useLanguage();
@@ -12,11 +12,14 @@ export default function RefundPreview({ agreementId }) {
   const [opened, setOpened] = useState(false);
 
   const fieldDefs = [
-    { label: t("common.deposit", "Deposit"), key: "depositBalance" },
+    { label: t("common.deposit", "Original Deposit"), key: "originalDeposit" },
+    { label: t("common.deposit_balance", "Deposit Balance"), key: "depositBalance" },
+    { label: t("moveout.unused_rent_refund", "Unused Rent Refund"), key: "estimatedUnusedRentRefund" },
     { label: t("common.deductions", "Cleaning Fee"), key: "estimatedCleaningFee" },
     { label: t("common.deductions", "Repair Fee"), key: "estimatedRepairFee" },
-    { label: t("moveout.unpaid_charges", "Công nợ / Hóa đơn chưa thanh toán"), key: "estimatedOverdueCharges" },
-    { label: t("common.net_refund", "Net Refund"), key: "estimatedNetRefund", isBold: true },
+    { label: t("moveout.early_termination_fee", "Early Termination Fee"), key: "earlyTerminationFee" },
+    { label: t("moveout.unpaid_charges", "Unpaid Debt / Invoices"), key: "unpaidDebt" },
+    { label: t("common.net_refund", "Estimated Net Refund"), key: "estimatedNetRefund", isBold: true },
   ];
 
   async function load() {
@@ -27,7 +30,7 @@ export default function RefundPreview({ agreementId }) {
     setError("");
     setPreview(null);
     try {
-      setPreview(await rentalService.getRefundPreview(agreementId));
+      setPreview(await rentalService.getRefundPreview(agreementId, requestedMoveOutDate));
     } catch (err) {
       setError(err.status === 404 ? t("common.no_data", "Not found.") : err.message || t("common.error", "Failed to load."));
     } finally {

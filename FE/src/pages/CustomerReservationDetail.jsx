@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import reservationService from "../api/reservationService";
+import QRCode from "qrcode";
+import reservationService from "../api/customerReservationService";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -35,7 +36,7 @@ function parseTypeAndSize(unitTypeName) {
   return { typeLabel, sizeLabel };
 }
 
-export default function ReservationDetail() {
+export default function CustomerReservationDetail() {
   const { id } = useParams();
   const { t, translateStatus, formatDate, formatCurrency } = useLanguage();
   const [detail, setDetail] = useState(null);
@@ -43,6 +44,20 @@ export default function ReservationDetail() {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [cancelling, setCancelling] = useState(false);
+  const [qrImageUrl, setQrImageUrl] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const token = detail?.checkInQrToken;
+    if (!token) {
+      setQrImageUrl("");
+      return undefined;
+    }
+    QRCode.toDataURL(token, { width: 220, margin: 2, errorCorrectionLevel: "M" })
+      .then((url) => { if (active) setQrImageUrl(url); })
+      .catch(() => { if (active) setQrImageUrl(""); });
+    return () => { active = false; };
+  }, [detail?.checkInQrToken]);
 
   const handleCancelReservation = async () => {
     const isPaid = detail.status?.toLowerCase() === "confirmed";
@@ -123,6 +138,13 @@ export default function ReservationDetail() {
             {detail.checkInQrToken && (
               <section>
                 <h2 className="font-bold">{t("table.code", "Check-in Code")}</h2>
+                {qrImageUrl && (
+                  <img
+                    src={qrImageUrl}
+                    alt="Check-in QR"
+                    className="mt-3 h-44 w-44 rounded-lg border border-[#dfe7f5] bg-white p-2"
+                  />
+                )}
                 <p className="mt-2 break-all rounded-lg bg-[#f8faff] p-3 font-mono text-xs">{detail.checkInQrToken}</p>
               </section>
             )}

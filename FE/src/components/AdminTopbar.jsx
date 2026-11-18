@@ -110,7 +110,13 @@ export default function AdminTopbar({
             onClick={() => setProfileOpen(!profileOpen)}
             className="admin-profile-trigger cursor-pointer"
           >
-            <span className="admin-avatar">{initial}</span>
+            <span className="admin-avatar overflow-hidden flex items-center justify-center">
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="Avatar" className="h-full w-full object-cover rounded-full" />
+              ) : (
+                initial
+              )}
+            </span>
             <span className="hidden text-left sm:block">
               <strong>{profile?.name || "Account"}</strong>
               <small>{profile?.role || "Administrator"}</small>
@@ -123,6 +129,14 @@ export default function AdminTopbar({
                 <strong className="block truncate text-xs font-semibold text-slate-900">{profile?.name}</strong>
                 <span className="block truncate text-[11px] text-slate-500">{profile?.email}</span>
               </div>
+              <Link
+                to="/profile"
+                onClick={() => setProfileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition border-b border-slate-100"
+              >
+                <span className="material-symbols-outlined text-[16px] text-slate-500">manage_accounts</span>
+                {t("nav.profile", "Hồ sơ cá nhân")}
+              </Link>
               <button
                 type="button"
                 onClick={() => {

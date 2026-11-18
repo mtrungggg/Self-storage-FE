@@ -1,87 +1,59 @@
-import apiClient from "./apiClient";
+import authApi from "../services/api/authApi";
 import STORAGE_KEYS from "../constants/storageKeys";
 
+function persistAuthSession(res) {
+  if (res?.data?.accessToken) {
+    sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+    if (res.data.user) {
+      const serialized = JSON.stringify(res.data.user);
+      sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
+    }
+  }
+}
+
 export const authService = {
-  /**
-   * Đăng nhập người dùng bằng email và mật khẩu
-   * @param {{ email: string, password: string }} credentials
-   */
   async login({ email, password }) {
-    const res = await apiClient.post("/auth/login", { email, password });
-    if (res?.data?.accessToken) {
-      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      if (res.data.user) {
-        const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-      }
-    }
+    const res = await authApi.login({ email, password });
+    persistAuthSession(res);
     return res;
   },
 
-  /**
-   * Đăng ký tài khoản mới và gửi mã OTP qua Gmail
-   * @param {{ fullName: string, email: string, password: string, phoneNumber?: string }} data
-   */
   async register(data) {
-    return await apiClient.post("/auth/register", data);
+    return await authApi.register(data);
   },
 
-  /**
-   * Xác thực mã OTP để kích hoạt tài khoản
-   * @param {{ email: string, otpCode: string }} data
-   */
   async verifyOtp({ email, otpCode }) {
-    const res = await apiClient.post("/auth/verify-otp", { email, otpCode });
-    if (res?.data?.accessToken) {
-      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      if (res.data.user) {
-        const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-      }
-    }
+    const res = await authApi.verifyOtp({ email, otpCode });
+    persistAuthSession(res);
     return res;
   },
 
-  /**
-   * Gửi lại mã xác thực OTP
-   * @param {string} email
-   */
   async resendOtp(email) {
-    return await apiClient.post("/auth/resend-otp", { email });
+    return await authApi.resendOtp(email);
   },
 
-  /**
-   * Lấy thông tin tài khoản hiện tại từ JWT token
-   */
   async getCurrentUser() {
-    return await apiClient.get("/auth/me");
+    return await authApi.getCurrentUser();
   },
 
-  /**
-   * Đăng nhập bằng Google ID Token
-   * @param {string} idToken
-   */
+  async getProfile() {
+    const res = await authApi.getProfile();
+    return res?.data ?? null;
+  },
+
+  async updateProfile(data) {
+    const res = await authApi.updateProfile(data);
+    return res?.data ?? null;
+  },
+
   async googleLogin(idToken) {
-    const res = await apiClient.post("/auth/google-login", { idToken });
-    if (res?.data?.accessToken) {
-      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-      if (res.data.user) {
-        const serialized = JSON.stringify(res.data.user);
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, serialized);
-      }
-    }
+    const res = await authApi.googleLogin(idToken);
+    persistAuthSession(res);
     return res;
   },
 
-  /**
-   * Đăng xuất người dùng
-   */
   logout() {
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
@@ -89,9 +61,6 @@ export const authService = {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   },
 
-  /**
-   * Kiểm tra xem user có đang đăng nhập hay không
-   */
   isAuthenticated() {
     return !!(
       sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
@@ -99,9 +68,6 @@ export const authService = {
     );
   },
 
-  /**
-   * Lấy user đã lưu trong sessionStorage (theo tab) hoặc localStorage
-   */
   getStoredUser() {
     const user =
       sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER) ||

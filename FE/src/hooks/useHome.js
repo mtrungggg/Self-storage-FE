@@ -8,7 +8,7 @@ import {
   getSizeFilters,
 } from "../data/homeRepository";
 import facilityService from "../api/facilityService";
-import storageUnitService from "../api/storageUnitService";
+import storageUnitService from "../api/customerStorageUnitService";
 import { DEFAULT_STORAGE_UNIT_IMAGE as STANDARD_IMAGE, STORAGE_TYPE_PLACEHOLDERS as UNIT_TYPE_IMAGES } from "../constants/assets";
 import BUSINESS_CONFIG from "../config/businessConfig";
 
@@ -197,30 +197,43 @@ export function useHome() {
         climateNote = "Smart Dry Locker";
       }
 
+      const categoryName = u.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
+      const length = u.length ?? unitType?.lengthM ?? 2;
+      const width = u.width ?? unitType?.widthM ?? 1.5;
+      const height = u.height ?? unitType?.heightM ?? 2.5;
+      const area = u.area ?? u.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
+      const dimension = `${length}m × ${width}m`;
+
       return {
         id: u.id,
         unitCode: u.unitCode,
         facilityId: u.facilityId,
         facilityName: facility?.name || "",
         address: facility?.address || "",
+        floorLabel: u.floorLabel || "1",
+        zoneLabel: u.zoneLabel || "A",
         floor: [u.floorLabel && `Tầng ${u.floorLabel}`, u.zoneLabel && `Khu ${u.zoneLabel}`]
           .filter(Boolean)
           .join(" • "),
         unitTypeId: u.unitTypeId,
-        typeCode: unitType?.code || "",
-        typeName: unitType?.name || `Type #${u.unitTypeId}`,
+        typeCode: u.typeCode || unitType?.code || "",
+        categoryName,
+        typeName: categoryName,
         climateControlled: Boolean(unitType?.climateControlled),
         storageType: getUnitStorageType(unitType),
         climateNote,
         type: unitType?.climateControlled ? "climate" : "standard",
-        sizeCategory: sizeCategoryOf(unitType?.areaM2),
-        dimension: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
-        sizeLabel: unitType ? `${unitType.widthM}m × ${unitType.lengthM}m` : "",
-        areaM2: unitType?.areaM2 ?? null,
-        height: unitType ? `${unitType.heightM}m` : "",
-        volume: unitType ? `${unitType.volumeM3} m³` : "",
+        sizeCategory: sizeCategoryOf(area),
+        dimension,
+        sizeLabel: dimension,
+        length,
+        width,
+        height: `${height}m`,
+        area,
+        areaM2: area,
+        volume: u.volume ?? `${(area * height).toFixed(1)} m³`,
         fitNote: unitType?.description || "",
-        rentPrice: u.monthlyRate,
+        rentPrice: u.monthlyRate ?? u.monthlyPrice ?? 0,
         depositPrice: null,
         image: getUnitTypeImage(unitType),
       };

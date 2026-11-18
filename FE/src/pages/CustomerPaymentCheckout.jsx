@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import QRCode from "qrcode";
 import { usePaymentCheckout } from "../hooks/usePaymentCheckout";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
@@ -7,7 +8,7 @@ import PageBackground from "../components/PageBackground";
 import { formatVnd } from "../lib/utils";
 import { CHECKOUT_STATUS } from "../constants/paymentConstants";
 
-function PaymentCheckout() {
+function CustomerPaymentCheckout() {
   const { t, formatCurrency } = useLanguage();
   const {
     checkout,
@@ -15,6 +16,8 @@ function PaymentCheckout() {
     loading,
     error,
     status,
+    partialInfo,
+    checkInQrToken,
     formattedCountdown,
     progressPercent,
     cancelModalOpen,
@@ -27,57 +30,32 @@ function PaymentCheckout() {
   } = usePaymentCheckout();
 
   const displayAmount =
-    checkout?.amount ||
-    checkout?.vietQr?.amount ||
-    reservation?.quotedTotal ||
-    reservation?.amount ||
+    partialInfo?.remainingAmount ??
+    checkout?.amount ??
+    checkout?.vietQr?.amount ??
+    reservation?.quotedTotal ??
+    reservation?.amount ??
     0;
 
-  const bankCode = checkout?.vietQr?.bankCode || "MBBank";
-  const accountNo = checkout?.vietQr?.accountNo || "0817495759";
-  const accountName = checkout?.vietQr?.accountName || "VO THAI HOANG KHOI";
-  const memo = checkout?.vietQr?.transferContent || checkout?.invoiceNo || (reservation?.reservationCode ? `DH${reservation.reservationCode.slice(-4)}` : "");
-
-  const qrCandidateUrls = useMemo(() => {
-    const list = [];
-    const roundedAmount = Math.round(Number(displayAmount) || 0);
-
-    if (checkout?.vietQr?.qrImageUrl) {
-      if (!list.includes(checkout.vietQr.qrImageUrl)) list.push(checkout.vietQr.qrImageUrl);
-      const sepayFallback = checkout.vietQr.qrImageUrl.replace("https://vietqr.app/img", "https://qr.sepay.vn/img");
-      if (!list.includes(sepayFallback)) list.push(sepayFallback);
-    }
-
-    if (bankCode && accountNo) {
-      const qronlyVietQr = `https://vietqr.app/img?bank=${encodeURIComponent(bankCode)}&acc=${encodeURIComponent(accountNo)}&template=qronly&showinfo=false&holder=${encodeURIComponent(accountName)}${roundedAmount > 0 ? `&amount=${roundedAmount}` : ""}${memo ? `&des=${encodeURIComponent(memo)}` : ""}`;
-      if (!list.includes(qronlyVietQr)) list.push(qronlyVietQr);
-
-      list.push(
-        `https://qr.sepay.vn/img?bank=${encodeURIComponent(bankCode)}&acc=${encodeURIComponent(accountNo)}&template=qronly&amount=${roundedAmount}&des=${encodeURIComponent(memo)}`
-      );
-
-      list.push(
-        `https://img.vietqr.io/image/${encodeURIComponent(bankCode)}-${encodeURIComponent(accountNo)}-qronly.png?amount=${roundedAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(accountName)}`
-      );
-
-      const emvcoPayload = `2|99|${bankCode}|${accountNo}|${accountName}|0|0|${roundedAmount}|${memo}`;
-      list.push(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(emvcoPayload)}`);
-    }
-
-    return list;
-  }, [bankCode, accountNo, accountName, memo, displayAmount, checkout?.vietQr?.qrImageUrl]);
-  const [qrIndex, setQrIndex] = useState(0);
+  const bankCode = checkout?.vietQr?.bankCode || "";
+  const accountNo = checkout?.vietQr?.accountNo || "";
+  const accountName = checkout?.vietQr?.accountName || "";
+  const memo = checkout?.vietQr?.transferContent || checkout?.invoiceNo || "";
+  const currentQrSrc = checkout?.vietQr?.qrImageUrl || "";
   const [copiedField, setCopiedField] = useState(null);
+  const [checkInQrImageUrl, setCheckInQrImageUrl] = useState("");
 
   useEffect(() => {
-    setQrIndex(0);
-  }, [qrCandidateUrls]);
-
-  const handleQrImgError = () => {
-    if (qrIndex < qrCandidateUrls.length - 1) {
-      setQrIndex((prev) => prev + 1);
+    let active = true;
+    if (!checkInQrToken) {
+      setCheckInQrImageUrl("");
+      return undefined;
     }
-  };
+    QRCode.toDataURL(checkInQrToken, { width: 220, margin: 2, errorCorrectionLevel: "M" })
+      .then((url) => { if (active) setCheckInQrImageUrl(url); })
+      .catch(() => { if (active) setCheckInQrImageUrl(""); });
+    return () => { active = false; };
+  }, [checkInQrToken]);
 
   const copyToClipboard = (text, fieldName) => {
     if (!text) return;
@@ -87,8 +65,6 @@ function PaymentCheckout() {
       setCopiedField(null);
     }, 2000);
   };
-
-  const currentQrSrc = qrCandidateUrls[qrIndex] || qrCandidateUrls[0];
 
   return (
     <div className="relative flex min-h-screen flex-col text-[#0b1c30]">
@@ -162,6 +138,15 @@ function PaymentCheckout() {
             </div>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && (
+                <button
+                  onClick={() => navigate(`/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`)}
+                  className="inline-flex items-center gap-2 rounded-[12px] bg-[#0e7b4c] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#0b633d]"
+                >
+                  <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
+                  {t("reservation.view_checkin_qr", "Check-in QR")}
+                </button>
+              )}
               <button
                 onClick={() => navigate("/my-units")}
                 className="inline-flex items-center gap-2 rounded-[12px] bg-[#0b1c30] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#182d49]"
@@ -171,12 +156,25 @@ function PaymentCheckout() {
               </button>
               <button
                 onClick={() => navigate("/access-control")}
-                className="inline-flex items-center gap-2 rounded-[12px] bg-zinc-900 text-white px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
+                className="inline-flex items-center gap-2 rounded-[12px] bg-zinc-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
               >
                 <span className="material-symbols-outlined text-[18px]">key</span>
                 {t("access.pin_display", "PIN Code")}
               </button>
             </div>
+            {checkInQrToken && (
+              <div className="mt-5 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4 text-center text-xs">
+                <div className="font-bold text-[#0b1c30] mb-2">Check-in QR (Present at Counter)</div>
+                {checkInQrImageUrl && (
+                  <img
+                    src={checkInQrImageUrl}
+                    alt="Check-in QR"
+                    className="mx-auto mb-3 h-44 w-44 rounded-lg border border-[#dfe7f5] bg-white p-2"
+                  />
+                )}
+                <p className="break-all font-mono text-[11px] text-[#3a475a]">{checkInQrToken}</p>
+              </div>
+            )}
           </div>
         ) : status === CHECKOUT_STATUS.EXPIRED ? (
           <div className="mx-auto mt-8 max-w-[520px] rounded-[22px] border border-[#fecdca] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
@@ -255,7 +253,6 @@ function PaymentCheckout() {
                       key={currentQrSrc}
                       src={currentQrSrc}
                       alt="VietQR Payment Code"
-                      onError={handleQrImgError}
                       className="h-full w-full object-contain"
                     />
                   ) : (
@@ -272,11 +269,16 @@ function PaymentCheckout() {
                 </div>
 
                 <div className="mt-3 text-[14px] font-bold text-[#0b1c30]">
-                  G1SelfStorageSystem
+                  {accountName || t("billing.bank_transfer", "Bank Transfer")}
                 </div>
                 <div className="text-[26px] font-black text-zinc-900 dark:text-zinc-100">
                   {formatCurrency(displayAmount)}
                 </div>
+                {partialInfo && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                    Partial payment received: {formatCurrency(partialInfo.paidAmount)} / {formatCurrency(partialInfo.totalAmount)}. Please transfer remaining {formatCurrency(partialInfo.remainingAmount)}.
+                  </div>
+                )}
 
                 <div className="mt-4 w-full rounded-[16px] bg-[#f8faff] border border-[#e8effd] p-4 text-left text-[12px] space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -396,4 +398,4 @@ function PaymentCheckout() {
   );
 }
 
-export default PaymentCheckout;
+export default CustomerPaymentCheckout;
