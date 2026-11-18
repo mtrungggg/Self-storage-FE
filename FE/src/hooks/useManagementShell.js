@@ -57,7 +57,6 @@ export function useManagementShell() {
       { id: "admin-facilities", label: t("nav.facilities", "Facilities Management"), icon: "warehouse", to: "/admin-facilities" },
       { id: "admin-users", label: t("nav.users_permissions", "Users & Permissions"), icon: "manage_accounts", to: "/admin-users" },
       { id: "admin-audit-log", label: t("nav.audit_logs", "Audit & Logs"), icon: "history", to: "/admin-audit-log" },
-      { id: "admin-pricing", label: t("nav.pricing", "Pricing Table"), icon: "payments", to: "/admin-pricing" },
     ],
   };
 
