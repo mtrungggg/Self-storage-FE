@@ -187,18 +187,41 @@ export default function CustomerMyUnits() {
   }, [units, activeTab]);
 
   const unitSlides = useMemo(() => {
-    return filteredUnits.map((u, idx) => ({
-      id: String(u.id),
-      title: u.unitCode?.startsWith("#") ? u.unitCode : `${t("common.unit", "Ô kho")} ${u.unitCode}`,
-      src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
-      alt: `${u.unitCode} - ${u.facilityName}`,
-      badge: u.unitTypeCode || "UNIT",
-      meta: [
-        { label: t("common.facility", "Facility"), value: u.facilityName },
-        { label: t("common.agreement", "Agreement"), value: u.contractLeft },
-      ],
-      unitData: u,
-    }));
+    return filteredUnits.map((u, idx) => {
+      let statusBg = "bg-emerald-600/90 border-emerald-400/40 text-white";
+      let statusDot = "bg-emerald-300";
+      if (u.status === "renew") {
+        statusBg = "bg-amber-600/90 border-amber-400/40 text-white";
+        statusDot = "bg-amber-300 animate-pulse";
+      } else if (u.status === "move_out") {
+        statusBg = "bg-blue-600/90 border-blue-400/40 text-white";
+        statusDot = "bg-blue-300";
+      } else if (u.status === "terminated") {
+        statusBg = "bg-slate-700/90 border-slate-500/40 text-white";
+        statusDot = "bg-slate-400";
+      }
+
+      const statusBadge = (
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm backdrop-blur-md border ${statusBg}`}>
+          <span className={`h-2 w-2 rounded-full ${statusDot}`} />
+          {u.statusLabel}
+        </span>
+      );
+
+      return {
+        id: String(u.id),
+        title: u.unitCode?.startsWith("#") ? u.unitCode : `${t("common.unit", "Ô kho")} ${u.unitCode}`,
+        src: u.imageUrl || u.image || UNIT_CARD_IMAGES[idx % UNIT_CARD_IMAGES.length],
+        alt: `${u.unitCode} - ${u.facilityName}`,
+        badge: u.unitTypeCode || "STANDARD",
+        statusBadge,
+        meta: [
+          { label: t("common.facility", "Facility"), value: u.facilityName },
+          { label: t("common.agreement", "Agreement"), value: u.contractLeft },
+        ],
+        unitData: u,
+      };
+    });
   }, [filteredUnits, t]);
 
   const activeGalleryUnit = useMemo(() => {
@@ -316,7 +339,7 @@ export default function CustomerMyUnits() {
                     gap={0.16}
                     fade={0.12}
                     showNavigation={unitSlides.length > 1}
-                    showCaption
+                    showCaption={unitSlides.length > 1}
                     showPagination={unitSlides.length > 3}
                     label={t("my_units.title", "My Units")}
                     onActiveSlideChange={handleSelectGalleryUnit}
