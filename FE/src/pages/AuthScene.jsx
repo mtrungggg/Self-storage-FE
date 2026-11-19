@@ -79,7 +79,7 @@ export default function AuthScene() {
   useEffect(() => {
     const clientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      "827798715826-ef477sod2l5a1f34484no0v78r1fbdsl.apps.googleusercontent.com";
+      "241747258288-vld6ic9r803bgen03lf5d78h45e7lp2i.apps.googleusercontent.com";
 
     const initGsi = () => {
       if (window.google?.accounts?.id) {
