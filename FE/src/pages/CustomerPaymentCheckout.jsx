@@ -107,75 +107,141 @@ function CustomerPaymentCheckout() {
             </div>
           </div>
         ) : status === CHECKOUT_STATUS.SUCCESS ? (
-          <div className="mx-auto mt-8 max-w-[540px] rounded-[22px] border border-[#a6f4c5] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#ecfdf3] text-[#12b76a]">
-              <span className="material-symbols-outlined text-[48px]">check_circle</span>
-            </div>
-            <h1 className="mt-5 text-[24px] font-extrabold text-[#027a48]">
-              {t("billing.pay_success", "Payment Successful")}
-            </h1>
-            <p className="mt-2 text-[14px] leading-relaxed text-[#475467]">
-              {t("common.success", "Success")}
-            </p>
+          (() => {
+            const successInvoiceNo = String(checkout?.invoiceNo || reservation?.reservationCode || "").toUpperCase();
+            const isChargeInvoice = successInvoiceNo.startsWith("INV-CHG-");
+            const isPenaltyInvoice = successInvoiceNo.startsWith("INV-PEN-");
+            const isRenewalInvoice =
+              successInvoiceNo.startsWith("INV-RENEW-") ||
+              successInvoiceNo.startsWith("INV-AUTO-") ||
+              successInvoiceNo.startsWith("INV-MTH-");
+            const hasReservationTarget = Boolean(
+              reservation?.reservationId || reservation?.id || checkout?.reservationId
+            );
+            const rsvTargetId = reservation?.reservationId || reservation?.id || checkout?.reservationId;
 
-            <div className="mt-6 rounded-[14px] border border-[#e4e7ec] bg-[#f8f9fc] p-4 text-left text-[13px]">
-              <div className="flex justify-between py-1.5 border-b border-[#eaecf0]">
-                <span className="text-[#667085]">{t("table.code", "Code")}:</span>
-                <span className="font-bold text-[#0b1c30]">
-                  {reservation?.reservationCode || "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-[#eaecf0]">
-                <span className="text-[#667085]">{t("common.amount", "Amount")}:</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                  {formatCurrency(displayAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-[#667085]">{t("billing.payment_method", "Method")}:</span>
-                <span className="font-medium text-[#0b1c30]">{t("billing.bank_transfer", "Bank Transfer")}</span>
-              </div>
-            </div>
+            const successTitle = isChargeInvoice
+              ? "Thanh toán phụ phí thành công"
+              : isPenaltyInvoice
+              ? "Tất toán phí phạt trả kho thành công"
+              : isRenewalInvoice
+              ? "Thanh toán gia hạn / kỳ thuê thành công"
+              : t("billing.pay_success", "Payment Successful");
 
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              {(reservation?.reservationId || reservation?.id || checkout?.reservationId) && (
-                <button
-                  onClick={() => navigate(`/reservations/${reservation?.reservationId || reservation?.id || checkout?.reservationId}`)}
-                  className="inline-flex items-center gap-2 rounded-[12px] bg-[#0e7b4c] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#0b633d]"
-                >
-                  <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
-                  {t("reservation.view_checkin_qr", "Check-in QR")}
-                </button>
-              )}
-              <button
-                onClick={() => navigate("/my-units")}
-                className="inline-flex items-center gap-2 rounded-[12px] bg-[#0b1c30] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#182d49]"
-              >
-                <span className="material-symbols-outlined text-[18px]">warehouse</span>
-                {t("nav.my_units", "My Units")}
-              </button>
-              <button
-                onClick={() => navigate("/access-control")}
-                className="inline-flex items-center gap-2 rounded-[12px] bg-zinc-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
-              >
-                <span className="material-symbols-outlined text-[18px]">key</span>
-                {t("access.pin_display", "PIN Code")}
-              </button>
-            </div>
-            {checkInQrToken && (
-              <div className="mt-5 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4 text-center text-xs">
-                <div className="font-bold text-[#0b1c30] mb-2">Check-in QR (Present at Counter)</div>
-                {checkInQrImageUrl && (
-                  <img
-                    src={checkInQrImageUrl}
-                    alt="Check-in QR"
-                    className="mx-auto mb-3 h-44 w-44 rounded-lg border border-[#dfe7f5] bg-white p-2"
-                  />
+            const successSubtitle = isChargeInvoice
+              ? "Khoản phụ phí hư hại / sự cố đã được ghi nhận thanh toán đầy đủ."
+              : isPenaltyInvoice
+              ? "Công nợ sau nghiệm thu đã được tất toán. Hợp đồng của bạn đã hoàn tất."
+              : isRenewalInvoice
+              ? "Hóa đơn thuê kho kỳ mới đã được thanh toán và cập nhật vào hợp đồng."
+              : t("common.success", "Success");
+
+            const successTypeLabel = isChargeInvoice
+              ? "Phụ phí hư hại / Sự cố (Ticket)"
+              : isPenaltyInvoice
+              ? "Phí phạt nghiệm thu trả kho"
+              : isRenewalInvoice
+              ? "Tiền thuê / Gia hạn định kỳ"
+              : "Đặt chỗ & Thuê kho";
+
+            return (
+              <div className="mx-auto mt-8 max-w-[540px] rounded-[22px] border border-[#a6f4c5] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#ecfdf3] text-[#12b76a]">
+                  <span className="material-symbols-outlined text-[48px]">check_circle</span>
+                </div>
+                <h1 className="mt-5 text-[24px] font-extrabold text-[#027a48]">
+                  {successTitle}
+                </h1>
+                <p className="mt-2 text-[14px] leading-relaxed text-[#475467]">
+                  {successSubtitle}
+                </p>
+
+                <div className="mt-6 rounded-[14px] border border-[#e4e7ec] bg-[#f8f9fc] p-4 text-left text-[13px]">
+                  <div className="flex justify-between py-1.5 border-b border-[#eaecf0]">
+                    <span className="text-[#667085]">{t("table.code", "Code")}:</span>
+                    <span className="font-bold text-[#0b1c30]">
+                      {checkout?.invoiceNo || reservation?.reservationCode || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-[#eaecf0]">
+                    <span className="text-[#667085]">{t("common.type", "Loại hóa đơn")}:</span>
+                    <span className="font-semibold text-[#0b1c30]">{successTypeLabel}</span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-[#eaecf0]">
+                    <span className="text-[#667085]">{t("common.amount", "Amount")}:</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(displayAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-[#667085]">{t("billing.payment_method", "Method")}:</span>
+                    <span className="font-medium text-[#0b1c30]">{t("billing.bank_transfer", "Bank Transfer")}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  {hasReservationTarget && !isChargeInvoice && !isPenaltyInvoice && (
+                    <button
+                      onClick={() => navigate(`/reservations/${rsvTargetId}`)}
+                      className="inline-flex items-center gap-2 rounded-[12px] bg-[#0e7b4c] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#0b633d]"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
+                      {t("reservation.view_checkin_qr", "Check-in QR")}
+                    </button>
+                  )}
+                  {(isChargeInvoice || isPenaltyInvoice) && (
+                    <button
+                      onClick={() => navigate("/billing")}
+                      className="inline-flex items-center gap-2 rounded-[12px] bg-[#0e7b4c] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#0b633d]"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+                      {t("nav.billing", "Lịch sử hóa đơn")}
+                    </button>
+                  )}
+                  {isChargeInvoice && (
+                    <button
+                      onClick={() => navigate("/support")}
+                      className="inline-flex items-center gap-2 rounded-[12px] bg-[#0b1c30] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#182d49]"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">support_agent</span>
+                      {t("nav.support", "Ticket hỗ trợ")}
+                    </button>
+                  )}
+                  {!isChargeInvoice && (
+                    <button
+                      onClick={() => navigate("/my-units")}
+                      className="inline-flex items-center gap-2 rounded-[12px] bg-[#0b1c30] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#182d49]"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">warehouse</span>
+                      {t("nav.my_units", "My Units")}
+                    </button>
+                  )}
+                  {!isChargeInvoice && !isPenaltyInvoice && (
+                    <button
+                      onClick={() => navigate("/access-control")}
+                      className="inline-flex items-center gap-2 rounded-[12px] bg-zinc-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#154ec1]"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">key</span>
+                      {t("access.pin_display", "PIN Code")}
+                    </button>
+                  )}
+                </div>
+                    {checkInQrToken && (
+                  <div className="mt-5 rounded-[12px] border border-[#dfe7f5] bg-[#f8faff] p-4 text-center text-xs">
+                    <div className="font-bold text-[#0b1c30] mb-2">Check-in QR (Present at Counter)</div>
+                    {checkInQrImageUrl && (
+                      <img
+                        src={checkInQrImageUrl}
+                        alt="Check-in QR"
+                        className="mx-auto mb-3 h-44 w-44 rounded-lg border border-[#dfe7f5] bg-white p-2"
+                      />
+                    )}
+                    <p className="break-all font-mono text-[11px] text-[#3a475a]">{checkInQrToken}</p>
+                  </div>
                 )}
-                <p className="break-all font-mono text-[11px] text-[#3a475a]">{checkInQrToken}</p>
               </div>
-            )}
-          </div>
+            );
+          })()
         ) : status === CHECKOUT_STATUS.EXPIRED ? (
           <div className="mx-auto mt-8 max-w-[520px] rounded-[22px] border border-[#fecdca] bg-white p-8 text-center shadow-[0_16px_40px_rgba(16,24,40,0.06)]">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#fffbfa] text-[#d92d20]">
