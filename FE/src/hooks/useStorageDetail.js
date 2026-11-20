@@ -86,11 +86,11 @@ export function useStorageDetail() {
         }
 
         const unitType = unitTypes.find((ut) => ut.id === picked.unitTypeId);
-        const categoryName = picked.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
-        const length = picked.length ?? unitType?.lengthM ?? 2;
-        const width = picked.width ?? unitType?.widthM ?? 1.5;
-        const height = picked.height ?? unitType?.heightM ?? 2.5;
-        const area = picked.area ?? picked.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
+        const categoryName = picked.storageCategory || picked.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
+        const length = picked.customLengthM ?? picked.length ?? unitType?.lengthM ?? 2;
+        const width = picked.customWidthM ?? picked.width ?? unitType?.widthM ?? 1.5;
+        const height = picked.customHeightM ?? picked.height ?? unitType?.heightM ?? 2.5;
+        const area = picked.customAreaM2 ?? picked.area ?? picked.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
         const dimension = `${length}m × ${width}m`;
 
         if (active) {

@@ -43,7 +43,12 @@ export default function ManagerFacilityUsersPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const requestId = useRef(0);
 
-  // Load Staff List
+  const isManagerRole = (role) => {
+    const r = (role || "").toLowerCase();
+    return r === "facility_manager" || r === "manager" || r.includes("quản lý") || r.includes("manager");
+  };
+
+  // Load Staff List (strictly staff only, excludes managers and self)
   const loadStaffs = async () => {
     const cur = ++requestId.current;
     setStaffLoading(true);
@@ -51,7 +56,9 @@ export default function ManagerFacilityUsersPage() {
     try {
       const data = await managerUserService.getStaffs(facilityId);
       if (cur === requestId.current) {
-        setStaffList(Array.isArray(data) ? data : []);
+        const raw = Array.isArray(data) ? data : [];
+        const staffOnly = raw.filter((s) => !isManagerRole(s.role) && !isManagerRole(s.assignmentRole) && !isManagerRole(s.position));
+        setStaffList(staffOnly);
       }
     } catch (err) {
       if (cur === requestId.current) {

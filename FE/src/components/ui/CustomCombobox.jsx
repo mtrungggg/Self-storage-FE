@@ -1,15 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check, Plus, X } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function CustomCombobox({
   value = "",
   onChange,
   options = [],
-  placeholder = "Chọn hoặc nhập loại kho...",
+  placeholder,
   error = "",
   className = "",
   required = false,
 }) {
+  const { lang } = useLanguage();
+  const isVi = lang === "vi";
+
+  const effectivePlaceholder =
+    placeholder ||
+    (isVi ? "Chọn hoặc nhập loại kho..." : "Select or type category name...");
+
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
@@ -37,17 +45,14 @@ export default function CustomCombobox({
     matchedOption && matchedOption.name.trim().toLowerCase() === lowerValue
   );
 
-  // If the input value exactly equals one of the options (e.g. preselected "Kho hàng khô"),
-  // or if blank, show ALL options so the user can see all categories and pick another one!
-  // Only filter by search query if the user is actively typing a custom query that doesn't match the selected item.
-  const filteredOptions = isExactSelected || !trimmedValue
-    ? options
-    : options.filter((opt) =>
-        (opt.name || "").toLowerCase().includes(lowerValue)
-      );
+  const filteredOptions =
+    isExactSelected || !trimmedValue
+      ? options
+      : options.filter((opt) =>
+          (opt.name || "").toLowerCase().includes(lowerValue)
+        );
 
-  const isCustomNew =
-    trimmedValue.length >= 2 && !matchedOption;
+  const isCustomNew = trimmedValue.length >= 2 && !matchedOption;
 
   function handleSelectOption(optName) {
     onChange(optName);
@@ -62,7 +67,7 @@ export default function CustomCombobox({
           type="text"
           required={required}
           value={value}
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           onFocus={(e) => {
             setIsOpen(true);
             e.target.select();
@@ -101,7 +106,7 @@ export default function CustomCombobox({
               inputRef.current?.focus();
             }}
             className="absolute right-8 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-            title="Xóa để chọn loại kho khác"
+            title={isVi ? "Xóa để chọn loại kho khác" : "Clear selection"}
           >
             <X size={14} />
           </button>
@@ -127,7 +132,9 @@ export default function CustomCombobox({
       {isOpen && (
         <div className="absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-xl backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95">
           <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Danh mục loại kho (Hệ thống) ({filteredOptions.length})
+            {isVi
+              ? `Danh mục loại kho (Hệ thống) (${filteredOptions.length})`
+              : `System Categories (${filteredOptions.length})`}
           </div>
 
           {filteredOptions.length > 0 ? (
@@ -158,7 +165,7 @@ export default function CustomCombobox({
                           : "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      +{surcharge.toLocaleString("vi-VN")} đ
+                      +{surcharge.toLocaleString(isVi ? "vi-VN" : "en-US")} {isVi ? "đ" : "₫"}
                     </span>
                     {isSelected && <Check size={14} className="text-blue-600 shrink-0 ml-1" />}
                   </div>
@@ -167,7 +174,9 @@ export default function CustomCombobox({
             })
           ) : (
             <div className="px-3 py-2 text-xs text-slate-400 text-center">
-              Không tìm thấy loại kho trùng khớp
+              {isVi
+                ? "Không tìm thấy loại kho trùng khớp"
+                : "No matching categories found"}
             </div>
           )}
 
@@ -179,7 +188,8 @@ export default function CustomCombobox({
             >
               <Plus size={14} className="text-emerald-600 shrink-0" />
               <span className="truncate">
-                Dùng loại kho mới: <strong className="font-bold">"{trimmedValue}"</strong>
+                {isVi ? "Dùng loại kho mới: " : "Use new category: "}
+                <strong className="font-bold">"{trimmedValue}"</strong>
               </span>
             </div>
           )}
@@ -190,11 +200,15 @@ export default function CustomCombobox({
       <div className="mt-1.5">
         {matchedOption ? (
           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-            ✓ Đã chọn: {matchedOption.name} (Phụ phí: +{Number(matchedOption.surchargeAmount || 0).toLocaleString("vi-VN")} đ)
+            {isVi
+              ? `✓ Đã chọn: ${matchedOption.name} (Phụ phí: +${Number(matchedOption.surchargeAmount || 0).toLocaleString("vi-VN")} đ)`
+              : `✓ Selected: ${matchedOption.name} (Surcharge: +${Number(matchedOption.surchargeAmount || 0).toLocaleString("en-US")} VND)`}
           </span>
         ) : isCustomNew ? (
           <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
-            ✓ Loại kho mới (Phụ phí mặc định: 0 đ)
+            {isVi
+              ? "✓ Loại kho mới (Phụ phí mặc định: 0 đ)"
+              : "✓ New category (Default surcharge: 0 VND)"}
           </span>
         ) : null}
 

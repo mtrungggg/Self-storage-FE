@@ -1,1 +1,39 @@
-.vscode/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Local environment configuration
+.env
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local workspace root mirrors
+/src/
+/public/
+/index.html
+/package.json
+/tsconfig.json
+/vite.config.js
+/components.json
+/jsconfig.json
+/.oxlintrc.json
+/.env.example

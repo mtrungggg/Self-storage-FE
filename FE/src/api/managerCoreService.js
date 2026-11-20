@@ -152,14 +152,20 @@ export const managerCoreService = {
   // STT 25: GET /api/manager/facilities/{facilityId}/pricing/rates
   // Xem biểu giá thuê cơ sở (Kiểm tra quyền cơ sở)
   async getPricingRates(facilityId, params = {}) {
-    const res = await apiClient.get(`/manager/facilities/${encodeURIComponent(facilityId)}/pricing/rates`, { params });
+    const url = facilityId
+      ? `/manager/facilities/${encodeURIComponent(facilityId)}/pricing/rates`
+      : `/manager/pricing/rates`;
+    const res = await apiClient.get(url, { params });
     return res?.data ?? null;
   },
 
   // STT 26: PUT /api/manager/facilities/{facilityId}/pricing/rates
   // Điều chỉnh giá thuê cơ sở (Kiểm tra quyền cơ sở)
   async updatePricingRates(facilityId, payload) {
-    const res = await apiClient.put(`/manager/facilities/${encodeURIComponent(facilityId)}/pricing/rates`, payload);
+    const url = facilityId
+      ? `/manager/facilities/${encodeURIComponent(facilityId)}/pricing/rates`
+      : `/manager/pricing/rates`;
+    const res = await apiClient.put(url, payload);
     return res?.data ?? null;
   },
   async updatePricingRate(facilityId, payload) {

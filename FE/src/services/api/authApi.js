@@ -10,6 +10,7 @@ const authApi = {
   googleLogin: (idToken) => apiClient.post("/v1/auth/google-login", { idToken }),
   getProfile: () => apiClient.get("/v1/profile"),
   updateProfile: (data) => apiClient.put("/v1/profile", data),
+  changePassword: (data) => apiClient.post("/v1/change-password", data),
 };
 
 export default authApi;

@@ -1,6 +1,7 @@
 import SelectDropdown from "@/components/ui/select-dropdown";
 import CustomCombobox from "@/components/ui/CustomCombobox";
 import { useLanguage } from "../context/LanguageContext";
+import { formatVnd } from "../lib/utils";
 import { X, Trash2, GripVertical, Check, Image as ImageIcon, Upload } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import managerService from "../api/managerCoreService";
@@ -10,71 +11,93 @@ import { useManagerFacility } from "../context/ManagerFacilityContext";
 import { UNIT_PHYSICAL_STATUS_OPTIONS as STATUS_OPTIONS } from "../constants/managerConstants";
 import PAGINATION from "../constants/pagination";
 
-const UNIT_STATUS_SELECT_OPTIONS = [
-  {
-    value: "available",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
-        <span>Khả dụng (Available)</span>
-      </div>
-    ),
-  },
-  {
-    value: "occupied",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shrink-0" />
-        <span>Đang thuê (Occupied)</span>
-      </div>
-    ),
-  },
-  {
-    value: "maintenance",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
-        <span>Bảo trì (Maintenance)</span>
-      </div>
-    ),
-  },
-  {
-    value: "cleaning",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shrink-0" />
-        <span>Vệ sinh (Cleaning)</span>
-      </div>
-    ),
-  },
-  {
-    value: "pending_inspection",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shrink-0" />
-        <span>Chờ nghiệm thu (Inspection)</span>
-      </div>
-    ),
-  },
-  {
-    value: "reserved",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-purple-500 shrink-0" />
-        <span>Đã đặt trước (Reserved)</span>
-      </div>
-    ),
-  },
-  {
-    value: "out_of_service",
-    label: (
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
-        <span>Tạm ngưng (Out of Service)</span>
-      </div>
-    ),
-  },
-];
+const STATUS_VI_MAP = {
+  available: "Khả dụng",
+  occupied: "Đang thuê",
+  maintenance: "Bảo trì",
+  cleaning: "Vệ sinh",
+  pending_inspection: "Chờ nghiệm thu",
+  reserved: "Đã đặt trước",
+  out_of_service: "Tạm ngưng",
+};
+
+const STATUS_EN_MAP = {
+  available: "Available",
+  occupied: "Occupied",
+  maintenance: "Maintenance",
+  cleaning: "Cleaning",
+  pending_inspection: "Pending Inspection",
+  reserved: "Reserved",
+  out_of_service: "Out of Service",
+};
+
+function getUnitStatusOptions(isVi) {
+  return [
+    {
+      value: "available",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+          <span>{isVi ? "Khả dụng" : "Available"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "occupied",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shrink-0" />
+          <span>{isVi ? "Đang thuê" : "Occupied"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "maintenance",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
+          <span>{isVi ? "Bảo trì" : "Maintenance"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "cleaning",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shrink-0" />
+          <span>{isVi ? "Vệ sinh" : "Cleaning"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "pending_inspection",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shrink-0" />
+          <span>{isVi ? "Chờ nghiệm thu" : "Pending Inspection"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "reserved",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-purple-500 shrink-0" />
+          <span>{isVi ? "Đã đặt trước" : "Reserved"}</span>
+        </div>
+      ),
+    },
+    {
+      value: "out_of_service",
+      label: (
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
+          <span>{isVi ? "Tạm ngưng" : "Out of Service"}</span>
+        </div>
+      ),
+    },
+  ];
+}
 
 const DEFAULT_SYSTEM_CATEGORIES = [
   { id: 1, name: "Kho hàng khô", surchargeAmount: 0, isActive: true },
@@ -169,44 +192,63 @@ function parseTypeAndSizeFromUnitType(typeObj) {
   return { storageType, size };
 }
 
-function resolveUnitTypeId(unitTypes, storageType, size) {
+function findBestUnitTypeId(unitTypes, categoryName, areaM2) {
   if (!unitTypes || unitTypes.length === 0) return "1";
+  const lower = (categoryName || "").toLowerCase();
+  let typeCode = "DRY";
+  if (lower.includes("lạnh") || lower.includes("thủy hải sản") || lower.includes("seafood") || lower.includes("cold")) {
+    typeCode = "SEAFOOD";
+  } else if (lower.includes("sưởi") || lower.includes("warm") || lower.includes("heat")) {
+    typeCode = "WARM";
+  } else if (lower.includes("mát") || lower.includes("điều hòa") || lower.includes("climate")) {
+    typeCode = "CLIMATE";
+  }
 
-  // Exact type and size
-  let match = unitTypes.find((t) => {
-    const { storageType: st, size: s } = parseTypeAndSizeFromUnitType(t);
-    return st === storageType && s === size;
+  const matchingTypes = unitTypes.filter((t) => {
+    const c = (t.code || "").toUpperCase();
+    const n = (t.name || "").toLowerCase();
+    if (typeCode === "SEAFOOD") return c.includes("SEAFOOD") || n.includes("seafood");
+    if (typeCode === "WARM") return c.includes("WARM") || n.includes("warm");
+    if (typeCode === "CLIMATE") return c.includes("CLIMATE") || n.includes("climate");
+    return c.includes("DRY") || n.includes("dry") || c.includes("LOCKER") || n.includes("locker");
   });
 
-  // Fallback to size
-  if (!match) {
-    match = unitTypes.find((t) => {
-      const { size: s } = parseTypeAndSizeFromUnitType(t);
-      return s === size;
-    });
+  const candidates = matchingTypes.length > 0 ? matchingTypes : unitTypes;
+  const area = Number(areaM2) || 3;
+  let best = candidates[0];
+  let minDiff = Math.abs((Number(best.areaM2) || 0) - area);
+  for (const t of candidates) {
+    const diff = Math.abs((Number(t.areaM2) || 0) - area);
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = t;
+    }
   }
-
-  // Fallback to type
-  if (!match) {
-    match = unitTypes.find((t) => {
-      const { storageType: st } = parseTypeAndSizeFromUnitType(t);
-      return st === storageType;
-    });
-  }
-
-  return match ? String(match.id) : String(unitTypes[0].id);
+  return best ? String(best.id) : "1";
 }
 
-// Tách nhãn Loại kho & Kích thước từ unitTypeId để hiển thị thành 2 cột riêng trong bảng
+// Chuẩn hóa nhãn Loại kho (Việt hóa nếu fallback từ UnitType tiếng Anh hoặc tên kỹ thuật)
+function getDisplayCategoryName(unit) {
+  if (!unit) return "Kho hàng khô";
+  const rawCat = String(unit.storageCategory || unit.categoryName || unit.unitTypeName || "").trim();
+  if (!rawCat) return "Kho hàng khô";
+  const lower = rawCat.toLowerCase();
+  if (lower.includes("climate") || lower.includes("mát") || lower.includes("điều hòa")) return "Kho mát điều hòa";
+  if (lower.includes("seafood") || lower.includes("cold") || lower.includes("lạnh") || lower.includes("thủy hải sản")) return "Kho lạnh / Thủy hải sản";
+  if (lower.includes("warm") || lower.includes("heat") || lower.includes("sưởi")) return "Kho sưởi ấm";
+  if (lower.includes("chemical") || lower.includes("hóa chất")) return "Kho hóa chất";
+  if (lower.includes("dry") || lower.includes("khô")) return "Kho hàng khô";
+  if (lower.includes("locker") || lower.includes("tủ")) return "Tủ đồ cá nhân (Locker)";
+  return rawCat;
+}
+
+// Tách nhãn Loại kho & Kích thước từ thông tin thực tế của ô kho
 function getUnitTypeAndSizeLabels(unitTypes, unit) {
-  const typeObj = unitTypes.find((t) => String(t.id) === String(unit.unitTypeId));
-  if (!typeObj) {
-    return { typeLabel: unit.unitTypeName || "—", sizeLabel: "—" };
-  }
-  const { storageType, size } = parseTypeAndSizeFromUnitType(typeObj);
-  const typeLabel = STORAGE_TYPES.find((st) => st.id === storageType)?.label.split(" (")[0] || unit.unitTypeName || "—";
-  const sizeBase = UNIT_SIZES.find((sz) => sz.id === size)?.label.split(" (")[0] || size;
-  const sizeLabel = typeObj.areaM2 ? `${sizeBase} (${typeObj.areaM2} m²)` : sizeBase;
+  const typeLabel = getDisplayCategoryName(unit);
+  const len = Number(unit.customLengthM ?? unit.lengthM ?? 2);
+  const wid = Number(unit.customWidthM ?? unit.widthM ?? 1.5);
+  const area = Number(unit.customAreaM2 ?? unit.areaM2 ?? (len * wid).toFixed(2));
+  const sizeLabel = `${len}m × ${wid}m (${area} m²)`;
   return { typeLabel, sizeLabel };
 }
 
@@ -260,7 +302,10 @@ function parseNotesAndImage(rawNotes, fallbackImageUrl = "") {
 }
 
 export default function ManagerUnits() {
-  const { t, translateStatus } = useLanguage();
+  const { t, translateStatus, lang } = useLanguage();
+  const isVi = lang === "vi";
+  const label = (vi, en) => (isVi ? vi : en);
+  const unitStatusOptions = useMemo(() => getUnitStatusOptions(isVi), [isVi]);
   const { facilityId, loading: facilityLoading } = useManagerFacility();
   const [tab, setTab] = useState("units");
 
@@ -375,13 +420,21 @@ export default function ManagerUnits() {
         notes: unit.notes ?? "",
         imageUrl: unit.imageUrl ?? "",
       });
-      setNotice(`Đã đổi trạng thái kho ${unit.unitCode} sang ${nextStatus}.`);
+      const statusName = isVi ? (STATUS_VI_MAP[nextStatus] || nextStatus) : (STATUS_EN_MAP[nextStatus] || nextStatus);
+      setNotice(
+        isVi
+          ? `Đã đổi trạng thái kho ${unit.unitCode} sang ${statusName}.`
+          : `Changed status of unit ${unit.unitCode} to ${statusName}.`
+      );
       setTimeout(() => setNotice(""), 3500);
     } catch (err) {
       setUnits((prev) =>
         prev.map((u) => (u.id === unit.id ? { ...u, physicalStatus: prevStatus } : u))
       );
-      setError(err?.message || "Không thể cập nhật trạng thái ô kho.");
+      setError(
+        err?.message ||
+          (isVi ? "Không thể cập nhật trạng thái ô kho." : "Unable to update unit status.")
+      );
     }
   }
 
@@ -402,13 +455,20 @@ export default function ManagerUnits() {
         notes: unit.notes ?? "",
         imageUrl: unit.imageUrl ?? "",
       });
-      setNotice(`Kho ${unit.unitCode} hiện đã ${nextVal ? "Hiển thị cho khách thuê" : "Ẩn"}.`);
+      setNotice(
+        isVi
+          ? `Kho ${unit.unitCode} hiện đã ${nextVal ? "Hiển thị cho khách thuê" : "Ẩn"}.`
+          : `Unit ${unit.unitCode} is now ${nextVal ? "Listed for rent" : "Hidden"}.`
+      );
       setTimeout(() => setNotice(""), 3500);
     } catch (err) {
       setUnits((prev) =>
         prev.map((u) => (u.id === unit.id ? { ...u, isListed: !nextVal } : u))
       );
-      setError(err?.message || "Không thể cập nhật niêm yết.");
+      setError(
+        err?.message ||
+          (isVi ? "Không thể cập nhật niêm yết." : "Unable to update unit listing status.")
+      );
     }
   }
 
@@ -416,13 +476,20 @@ export default function ManagerUnits() {
     setEditingUnitId(unit.id);
     setPendingDrop(null);
     const { notes, imageUrl } = parseNotesAndImage(unit.notes, unit.imageUrl);
+    const cat = getDisplayCategoryName(unit);
+    const len = Number(unit.customLengthM ?? unit.lengthM) || 2;
+    const wid = Number(unit.customWidthM ?? unit.widthM) || 1.5;
+    const hei = Number(unit.customHeightM ?? unit.heightM) || 2.5;
+    const area = Number(unit.customAreaM2 ?? unit.areaM2) || (len * wid);
+    const matchedTypeId = unit.unitTypeId ? String(unit.unitTypeId) : findBestUnitTypeId(unitTypes, cat, area);
+
     setUnitForm({
       unitCode: unit.unitCode || "",
-      unitTypeId: String(unit.unitTypeId || "1"),
-      categoryName: unit.categoryName || unit.storageCategory || "Kho hàng khô",
-      lengthM: Number(unit.lengthM || unit.customLengthM) || 2,
-      widthM: Number(unit.widthM || unit.customWidthM) || 1.5,
-      heightM: Number(unit.heightM || unit.customHeightM) || 2.5,
+      unitTypeId: matchedTypeId,
+      categoryName: cat,
+      lengthM: len,
+      widthM: wid,
+      heightM: hei,
       areaId: unit.areaId ? String(unit.areaId) : "",
       floorLabel: unit.floorLabel || "1",
       zoneLabel: unit.zoneLabel || "A",
@@ -439,20 +506,41 @@ export default function ManagerUnits() {
     event.preventDefault();
     const trimmedCat = (unitForm.categoryName || "").trim();
     if (!trimmedCat) {
-      setCategoryError("Vui lòng chọn hoặc nhập tên loại kho.");
+      setCategoryError(
+        isVi
+          ? "Vui lòng chọn hoặc nhập tên loại kho."
+          : "Please select or enter a storage category name."
+      );
       return;
     }
     const catAnalysis = analyzeStorageCategory(trimmedCat, pricingConfig.categories || []);
     if (!catAnalysis.valid) {
-      setCategoryError("Loại kho không hợp lệ. Vui lòng nhập đúng loại kho lưu trữ (VD: Kho hàng khô, Kho lạnh, Kho hóa chất...).");
+      setCategoryError(
+        isVi
+          ? "Loại kho không hợp lệ. Vui lòng nhập đúng loại kho lưu trữ (VD: Kho hàng khô, Kho lạnh, Kho hóa chất...)."
+          : "Invalid storage category. Please enter a valid storage type (e.g. Dry storage, Cold storage, Chemical storage...)."
+      );
       return;
     }
     setCategoryError("");
     setSavingUnit(true);
     setError("");
     try {
+      const len = Number(unitForm.lengthM) || 2;
+      const wid = Number(unitForm.widthM) || 1.5;
+      const hei = Number(unitForm.heightM) || 2.5;
+      const areaM2 = Number((len * wid).toFixed(2));
+      const chosenCat = trimmedCat || "Kho hàng khô";
+      const matchedCat = (pricingConfig.categories || []).find(
+        (c) => c.name?.toLowerCase() === chosenCat.toLowerCase()
+      );
+      const surcharge = Number(matchedCat?.surchargeAmount ?? 0);
+      const basePerSqm = Number(pricingConfig.pricePerSquareMeter ?? 100);
+      const customMonthlyRate = areaM2 * basePerSqm + surcharge;
+      const matchedTypeId = findBestUnitTypeId(unitTypes, chosenCat, areaM2);
+
       const basePayload = {
-        unitTypeId: Number(unitForm.unitTypeId),
+        unitTypeId: Number(matchedTypeId) || (unitTypes[0]?.id ? Number(unitTypes[0].id) : 1),
         areaId: unitForm.areaId ? Number(unitForm.areaId) : undefined,
         floorLabel: unitForm.floorLabel || "1",
         zoneLabel: unitForm.zoneLabel || "A",
@@ -466,10 +554,16 @@ export default function ManagerUnits() {
       };
 
       const customDimensions = {
-        categoryName: unitForm.categoryName || "Kho hàng khô",
-        lengthM: Number(unitForm.lengthM) || 2,
-        widthM: Number(unitForm.widthM) || 1.5,
-        heightM: Number(unitForm.heightM) || 2.5,
+        categoryName: chosenCat,
+        storageCategory: chosenCat,
+        lengthM: len,
+        widthM: wid,
+        heightM: hei,
+        customLengthM: len,
+        customWidthM: wid,
+        customHeightM: hei,
+        customAreaM2: areaM2,
+        customMonthlyRate,
       };
       let createdUnitId = null;
       if (editingUnitId) {
@@ -478,7 +572,11 @@ export default function ManagerUnits() {
           ...customDimensions,
           unitCode: unitForm.unitCode,
         });
-        setNotice(`Đã cập nhật ô kho ${unitForm.unitCode} thành công.`);
+        setNotice(
+          isVi
+            ? `Đã cập nhật ô kho ${unitForm.unitCode} thành công.`
+            : `Successfully updated storage unit ${unitForm.unitCode}.`
+        );
       } else {
         // Create unit from drop
         const created = await managerService.createUnit(facilityId, {
@@ -489,7 +587,11 @@ export default function ManagerUnits() {
 
         createdUnitId = created?.id;
         if (!createdUnitId) {
-          throw new Error("Không thể lấy mã định danh ô kho sau khi tạo.");
+          throw new Error(
+            isVi
+              ? "Không thể lấy mã định danh ô kho sau khi tạo."
+              : "Unable to retrieve unit ID after creation."
+          );
         }
 
         const width = pendingDrop?.width || 22;
@@ -534,7 +636,11 @@ export default function ManagerUnits() {
         }
 
         setSelectedMapUnitId(createdUnitId);
-        setNotice(`Đã thêm ô kho mới [${unitForm.unitCode}] vào mặt bằng thành công.`);
+        setNotice(
+          isVi
+            ? `Đã thêm ô kho mới [${unitForm.unitCode}] vào mặt bằng thành công.`
+            : `Successfully added new unit [${unitForm.unitCode}] to floor plan.`
+        );
       }
 
       setShowUnitForm(false);
@@ -546,7 +652,10 @@ export default function ManagerUnits() {
       }
       setTimeout(() => setNotice(""), 4000);
     } catch (err) {
-      setError(err?.message || "Không thể lưu thông tin ô kho.");
+      setError(
+        err?.message ||
+          (isVi ? "Không thể lưu thông tin ô kho." : "Unable to save storage unit.")
+      );
     } finally {
       setSavingUnit(false);
     }
@@ -567,13 +676,21 @@ export default function ManagerUnits() {
     const unitObj = units.find((u) => u.id === unitId) || (layout?.unitPositions || []).find((p) => p.unitId === unitId);
     const unitCode = unitObj?.unitCode || `ID #${unitId}`;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa kho "${unitCode}" khỏi hệ thống không?`)) {
+    const confirmMsg = isVi
+      ? `Bạn có chắc chắn muốn xóa kho "${unitCode}" khỏi hệ thống không?`
+      : `Are you sure you want to delete unit "${unitCode}" from the system?`;
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
     setIsDeletingUnit(true);
     try {
       await managerService.deleteUnit(unitId);
-      setNotice(`Đã xóa kho ${unitCode} thành công.`);
+      setNotice(
+        isVi
+          ? `Đã xóa kho ${unitCode} thành công.`
+          : `Successfully deleted unit ${unitCode}.`
+      );
       setTimeout(() => setNotice(""), 3500);
 
       if (selectedMapUnitId === unitId) {
@@ -588,7 +705,12 @@ export default function ManagerUnits() {
         };
       });
     } catch (err) {
-      setError(err?.message || "Không thể xóa ô kho. Vui lòng kiểm tra ràng buộc hợp đồng.");
+      setError(
+        err?.message ||
+          (isVi
+            ? "Không thể xóa ô kho. Vui lòng kiểm tra ràng buộc hợp đồng."
+            : "Unable to delete unit. Please check active contract constraints.")
+      );
     } finally {
       setIsDeletingUnit(false);
     }
@@ -619,14 +741,63 @@ export default function ManagerUnits() {
       };
 
       await managerService.updateMapLayout(facilityId, payload);
-      setNotice("Đã lưu sơ đồ mặt bằng thành công.");
+      setNotice(
+        isVi ? "Đã lưu sơ đồ mặt bằng thành công." : "Floor plan saved successfully."
+      );
       setTimeout(() => setNotice(""), 3500);
       await loadLayout();
     } catch (err) {
-      setError(err?.message || "Không thể lưu mặt bằng.");
+      setError(
+        err?.message || (isVi ? "Không thể lưu mặt bằng." : "Unable to save floor plan.")
+      );
     } finally {
       setSavingLayout(false);
     }
+  }
+
+  function openCreateUnitModal(area, unitX, unitY) {
+    const zoneCode = (area.code || "").toUpperCase();
+    const match = zoneCode.match(/^F(\d+)-Z([A-Z])/i);
+    let zoneLabel = match ? match[2].toUpperCase() : "A";
+    let floorLabel = match ? match[1] : "1";
+    if (!match) {
+      if (zoneCode === "F1-ZA") { zoneLabel = "A"; floorLabel = "1"; }
+      else if (zoneCode === "F1-ZB") { zoneLabel = "B"; floorLabel = "1"; }
+      else if (zoneCode === "F2-ZA") { zoneLabel = "A"; floorLabel = "2"; }
+      else if (area.name?.includes("B")) { zoneLabel = "B"; }
+    }
+
+    const allKnownUnits = [...units, ...(layout?.unitPositions || [])];
+    const nextCode = getNextUnitCode(allKnownUnits, zoneLabel, floorLabel, 0);
+    const initialCategory = "Kho hàng khô";
+    const initialLen = 2;
+    const initialWid = 1.5;
+    const initialArea = initialLen * initialWid;
+    const matchedTypeId = findBestUnitTypeId(unitTypes, initialCategory, initialArea);
+
+    setPendingDrop({
+      area,
+      unitX,
+      unitY,
+      width: 22,
+      height: 16,
+    });
+
+    setEditingUnitId(null);
+    setUnitForm({
+      ...emptyUnitForm,
+      unitCode: nextCode,
+      unitTypeId: matchedTypeId,
+      areaId: area.areaId ? String(area.areaId) : "",
+      floorLabel,
+      zoneLabel,
+      categoryName: initialCategory,
+      lengthM: initialLen,
+      widthM: initialWid,
+      heightM: 2.5,
+    });
+    setCategoryError("");
+    setShowUnitForm(true);
   }
 
   // Handle Drop on a specific grid slot
@@ -658,50 +829,17 @@ export default function ManagerUnits() {
         };
       });
       setSelectedMapUnitId(unitId);
-      setNotice("Đã di chuyển vị trí kho vào ô lưới. Nhấn 'Lưu mặt bằng' để lưu lại.");
+      setNotice(
+        isVi
+          ? "Đã di chuyển vị trí kho vào ô lưới. Nhấn 'Lưu mặt bằng' để lưu lại."
+          : "Moved unit to grid slot. Click 'Save Floor Plan' to save."
+      );
       setTimeout(() => setNotice(""), 3500);
       return;
     }
 
     if (data.type === "new-unit") {
-      const zoneCode = (area.code || "").toUpperCase();
-      const match = zoneCode.match(/^F(\d+)-Z([A-Z])/i);
-      let zoneLabel = match ? match[2].toUpperCase() : "A";
-      let floorLabel = match ? match[1] : "1";
-      if (!match) {
-        if (zoneCode === "F1-ZA") { zoneLabel = "A"; floorLabel = "1"; }
-        else if (zoneCode === "F1-ZB") { zoneLabel = "B"; floorLabel = "1"; }
-        else if (zoneCode === "F2-ZA") { zoneLabel = "A"; floorLabel = "2"; }
-        else if (area.name?.includes("B")) { zoneLabel = "B"; }
-      }
-
-      const allKnownUnits = [...units, ...(layout?.unitPositions || [])];
-      const nextCode = getNextUnitCode(allKnownUnits, zoneLabel, floorLabel, 0);
-      const defaultTypeId = unitTypes[0]?.id ? String(unitTypes[0].id) : "1";
-
-      setPendingDrop({
-        area,
-        unitX,
-        unitY,
-        width: 22,
-        height: 16,
-      });
-
-      setEditingUnitId(null);
-      setUnitForm({
-        ...emptyUnitForm,
-        unitCode: nextCode,
-        unitTypeId: defaultTypeId,
-        areaId: area.areaId ? String(area.areaId) : "",
-        floorLabel,
-        zoneLabel,
-        categoryName: "Kho hàng khô",
-        lengthM: 2,
-        widthM: 1.5,
-        heightM: 2.5,
-      });
-      setCategoryError("");
-      setShowUnitForm(true);
+      openCreateUnitModal(area, unitX, unitY);
     }
   }
 
@@ -773,7 +911,7 @@ export default function ManagerUnits() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onBlur={loadUnits}
-                placeholder="Tìm mã kho..."
+                placeholder={isVi ? "Tìm mã kho..." : "Search unit code..."}
                 className="rounded-xl border border-[#dfe7f5] px-3 py-1.5 text-xs outline-none focus:border-zinc-400"
               />
               <SelectDropdown
@@ -781,9 +919,11 @@ export default function ManagerUnits() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-48"
               >
-                <option value="">{t("manager.all_statuses", "Tất cả trạng thái")}</option>
-                {STATUS_OPTIONS.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                <option value="">{t("manager.all_statuses", isVi ? "Tất cả trạng thái" : "All Statuses")}</option>
+                {STATUS_OPTIONS.map(([value]) => (
+                  <option key={value} value={value}>
+                    {isVi ? (STATUS_VI_MAP[value] || value) : (STATUS_EN_MAP[value] || value)}
+                  </option>
                 ))}
               </SelectDropdown>
             </div>
@@ -793,45 +933,70 @@ export default function ManagerUnits() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-2.5 w-[13%]">{t("common.unit", "Mã kho")}</th>
-                  <th className="px-4 py-2.5 w-[14%]">{t("table.type", "Loại kho")}</th>
-                  <th className="px-4 py-2.5 w-[14%]">{t("table.size", "Kích thước")}</th>
-                  <th className="px-4 py-2.5 w-[14%]">{t("table.zone", "Khu vực / Tầng")}</th>
-                  <th className="px-4 py-2.5 w-[17%]">{t("common.status", "Trạng thái")}</th>
-                  <th className="px-4 py-2.5 w-[14%]">Hiển thị khách thuê</th>
-                  <th className="px-4 py-2.5 w-[14%] text-right">{t("manager.actions", "Thao tác")}</th>
+                  <th className="px-3.5 py-2.5 w-[11%]">{t("common.unit", isVi ? "Mã kho" : "Unit")}</th>
+                  <th className="px-3.5 py-2.5 w-[14%]">{t("table.type", isVi ? "Loại kho" : "Type")}</th>
+                  <th className="px-3.5 py-2.5 w-[15%]">{t("table.size", isVi ? "Kích thước" : "Size")}</th>
+                  <th className="px-3.5 py-2.5 w-[14%] text-right font-bold text-blue-700">
+                    {isVi ? "Giá thuê / tháng" : "Monthly Rate"}
+                  </th>
+                  <th className="px-3.5 py-2.5 w-[13%]">{t("table.zone", isVi ? "Khu vực / Tầng" : "Zone / Floor")}</th>
+                  <th className="px-3.5 py-2.5 w-[15%]">{t("common.status", isVi ? "Trạng thái" : "Status")}</th>
+                  <th className="px-3.5 py-2.5 w-[10%]">{isVi ? "Hiển thị" : "Listed"}</th>
+                  <th className="px-3.5 py-2.5 w-[12%] text-right">{t("manager.actions", isVi ? "Thao tác" : "Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loadingUnits ? (
-                  <tr><td colSpan={7} className="py-6 text-center text-slate-400">{t("manager.loading_units", "Đang tải danh sách ô kho...")}</td></tr>
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-slate-400">
+                      {t("manager.loading_units", isVi ? "Đang tải danh sách ô kho..." : "Loading storage units...")}
+                    </td>
+                  </tr>
                 ) : units.length === 0 ? (
-                  <tr><td colSpan={7} className="py-6 text-center text-slate-400">{t("manager.no_units_found", "Không tìm thấy ô kho nào.")}</td></tr>
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-slate-400">
+                      {t("manager.no_units_found", isVi ? "Không tìm thấy ô kho nào." : "No storage units found.")}
+                    </td>
+                  </tr>
                 ) : (
                   units.map((unit) => {
-                    const { typeLabel } = getUnitTypeAndSizeLabels(unitTypes, unit);
-                    const displayCategory = unit.categoryName || unit.storageCategory || typeLabel;
-                    const len = Number(unit.lengthM ?? unit.customLengthM ?? 2);
-                    const wid = Number(unit.widthM ?? unit.customWidthM ?? 1.5);
-                    const area = Number(unit.areaM2 ?? unit.customAreaM2 ?? (len * wid).toFixed(2));
+                    const displayCategory = getDisplayCategoryName(unit);
+                    const len = Number(unit.customLengthM ?? unit.lengthM ?? 2);
+                    const wid = Number(unit.customWidthM ?? unit.widthM ?? 1.5);
+                    const area = Number(unit.customAreaM2 ?? unit.areaM2 ?? (len * wid).toFixed(2));
                     const displaySize = `${len}m × ${wid}m (${area} m²)`;
+
+                    const matchedCat = (pricingConfig.categories || []).find(
+                      (c) => c.name?.toLowerCase() === displayCategory.toLowerCase()
+                    );
+                    const surcharge = Number(matchedCat?.surchargeAmount ?? unit.categorySurcharge ?? 0);
+                    const basePerSqm = Number(unit.basePricePerSqm ?? pricingConfig.pricePerSquareMeter ?? 100);
+                    const calculatedPrice = Number(unit.customMonthlyRate || (area * basePerSqm + surcharge));
+
                     return (
                     <tr key={unit.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="px-4 py-2.5 font-bold text-slate-900">{unit.unitCode}</td>
-                      <td className="px-4 py-2.5 text-slate-700 font-medium" title={displayCategory}>{displayCategory}</td>
-                      <td className="px-4 py-2.5 text-slate-600 font-mono text-[11px]" title={displaySize}>{displaySize}</td>
-                      <td className="px-4 py-2.5 text-slate-600">
-                        <span className="font-semibold text-slate-800">{unit.zoneLabel || "A"}</span> / Tầng {unit.floorLabel || "1"}
+                      <td className="px-3.5 py-2.5 font-bold text-slate-900">{unit.unitCode}</td>
+                      <td className="px-3.5 py-2.5 font-semibold text-slate-800" title={displayCategory}>
+                        <span className="inline-flex items-center rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-800">
+                          {displayCategory}
+                        </span>
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-3.5 py-2.5 text-slate-700 font-mono text-[11px]" title={displaySize}>{displaySize}</td>
+                      <td className="px-3.5 py-2.5 text-right font-mono text-xs font-bold text-blue-600">
+                        {formatVnd(calculatedPrice)}
+                      </td>
+                      <td className="px-3.5 py-2.5 text-slate-600">
+                        <span className="font-semibold text-slate-800">{unit.zoneLabel || "A"}</span> / {isVi ? "Tầng" : "Floor"} {unit.floorLabel || "1"}
+                      </td>
+                      <td className="px-3.5 py-2.5">
                         <SelectDropdown
                           value={unit.physicalStatus}
-                          options={UNIT_STATUS_SELECT_OPTIONS}
+                          options={unitStatusOptions}
                           onChange={(e) => handleQuickStatusChange(unit, e.target?.value ?? e)}
-                          className="w-44"
+                          className="w-40"
                         />
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-3.5 py-2.5">
                         <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs">
                           <input
                             type="checkbox"
@@ -840,17 +1005,17 @@ export default function ManagerUnits() {
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className={unit.isListed ? "font-semibold text-emerald-700" : "text-slate-400"}>
-                            {unit.isListed ? "Hiển thị" : "Ẩn"}
+                            {unit.isListed ? (isVi ? "Hiển thị" : "Listed") : (isVi ? "Ẩn" : "Hidden")}
                           </span>
                         </label>
                       </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5">
+                      <td className="px-3.5 py-2.5 text-right space-x-1.5">
                         <button
                           type="button"
                           onClick={() => openEditUnit(unit)}
                           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                         >
-                          Sửa
+                          {t("common.edit", isVi ? "Sửa" : "Edit")}
                         </button>
                         <button
                           type="button"
@@ -859,7 +1024,7 @@ export default function ManagerUnits() {
                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40"
                         >
                           <Trash2 size={12} />
-                          <span>Xóa</span>
+                          <span>{t("common.delete", isVi ? "Xóa" : "Delete")}</span>
                         </button>
                       </td>
                     </tr>
@@ -879,7 +1044,9 @@ export default function ManagerUnits() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-700">
-                Sơ đồ phân bổ kho ({layout?.facilityName || "Cơ sở"})
+                {isVi
+                  ? `Sơ đồ phân bổ kho (${layout?.facilityName || "Cơ sở"})`
+                  : `Storage Floor Plan (${layout?.facilityName || "Facility"})`}
               </span>
             </div>
             <div>
@@ -890,7 +1057,7 @@ export default function ManagerUnits() {
                 className="flex items-center gap-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 px-4 py-2 text-xs font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
               >
                 <Check size={14} />
-                <span>{savingLayout ? "Đang lưu..." : "Lưu mặt bằng (Save Layout)"}</span>
+                <span>{savingLayout ? (isVi ? "Đang lưu..." : "Saving...") : (isVi ? "Lưu mặt bằng" : "Save Floor Plan")}</span>
               </button>
             </div>
           </div>
@@ -899,10 +1066,12 @@ export default function ManagerUnits() {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3 shadow-xs">
             <div>
               <p className="text-xs font-bold text-blue-900">
-                Kéo thả ô kho rỗng vào lưới mặt bằng
+                {isVi ? "Kéo thả ô kho rỗng vào lưới mặt bằng" : "Drag and drop empty unit into grid"}
               </p>
               <p className="text-[11px] text-blue-700">
-                Kéo ô bên cạnh và thả vào một vị trí ô lưới nét đứt để tạo và cấu hình thông tin ô kho mới:
+                {isVi
+                  ? "Kéo ô bên cạnh và thả vào một vị trí ô lưới nét đứt để tạo và cấu hình thông tin ô kho mới:"
+                  : "Drag the unit card and drop onto a dashed slot to create and configure a new unit:"}
               </p>
             </div>
 
@@ -916,17 +1085,17 @@ export default function ManagerUnits() {
                   );
                 }}
                 className="flex cursor-grab items-center gap-2 rounded-xl border-2 border-dashed border-blue-500 bg-white px-4 py-2 text-xs font-bold text-blue-700 shadow-sm hover:scale-102 hover:shadow-md active:cursor-grabbing transition"
-                title="Kéo ô này thả vào vị trí lưới nét đứt trên mặt bằng"
+                title={isVi ? "Kéo ô này thả vào vị trí lưới nét đứt trên mặt bằng" : "Drag this card onto a dashed slot on the floor plan"}
               >
                 <GripVertical size={14} className="text-blue-500" />
-                <span>Ô kho rỗng (Kéo vào mặt bằng)</span>
+                <span>{isVi ? "Ô kho rỗng (Kéo vào mặt bằng)" : "Empty unit (Drag to floor plan)"}</span>
               </div>
             </div>
           </div>
 
           {loadingLayout ? (
             <div className="mt-4 rounded-xl border border-dashed border-[#dfe7f5] p-10 text-center text-xs text-[#8996a9]">
-              {t("manager.rendering_floor_plan", "Đang kết xuất mặt bằng...")}
+              {t("manager.rendering_floor_plan", isVi ? "Đang kết xuất mặt bằng..." : "Rendering floor plan...")}
             </div>
           ) : (
             <>
@@ -935,22 +1104,22 @@ export default function ManagerUnits() {
                 <div className="relative min-h-[480px] min-w-[820px] overflow-hidden rounded-xl border border-white/80 bg-[linear-gradient(rgba(65,103,146,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(65,103,146,0.12)_1px,transparent_1px)] bg-[size:32px_32px]">
                   {/* Floor Plan Badge */}
                   <div className="absolute left-5 top-3.5 z-20 rounded-lg bg-slate-900/90 px-3.5 py-1.5 text-[10px] font-bold text-white shadow-md">
-                    {layout?.facilityName || "FACILITY"} · BẢN ĐỒ MẶT BẰNG
+                    {layout?.facilityName || "FACILITY"} · {isVi ? "BẢN ĐỒ MẶT BẰNG" : "FLOOR PLAN"}
                   </div>
 
                   {/* Legend */}
                   <div className="absolute bottom-3.5 left-5 z-20 flex items-center gap-4 text-[10px] font-medium text-slate-700 bg-white/85 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-white/60 shadow-xs">
                     <span className="flex items-center gap-1.5">
                       <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-xs" />
-                      Khả dụng ({mapPositions.filter((p) => p.physicalStatus === "available").length})
+                      {isVi ? "Khả dụng" : "Available"} ({mapPositions.filter((p) => p.physicalStatus === "available").length})
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="inline-block h-2.5 w-2.5 rounded-full bg-indigo-500 shadow-xs" />
-                      Đang thuê ({mapPositions.filter((p) => p.physicalStatus === "occupied").length})
+                      {isVi ? "Đang thuê" : "Occupied"} ({mapPositions.filter((p) => p.physicalStatus === "occupied").length})
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 shadow-xs" />
-                      Đã đặt ({mapPositions.filter((p) => p.physicalStatus === "reserved").length})
+                      {isVi ? "Đã đặt" : "Reserved"} ({mapPositions.filter((p) => p.physicalStatus === "reserved").length})
                     </span>
                   </div>
 
@@ -1000,7 +1169,7 @@ export default function ManagerUnits() {
                         {/* Zone Header Label */}
                         <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#7896ba]/20 bg-white/50 rounded-t-xl text-[10px] font-bold text-[#35506e]">
                           <span>{area.code} · {area.name}</span>
-                          <span className="text-[9px] font-semibold text-slate-500">{zoneUnits.length} ô kho</span>
+                          <span className="text-[9px] font-semibold text-slate-500">{zoneUnits.length} {isVi ? "ô kho" : "units"}</span>
                         </div>
 
                         {/* Relative Grid Canvas inside this Zone */}
@@ -1033,7 +1202,7 @@ export default function ManagerUnits() {
                                       );
                                     }}
                                     onClick={() => setSelectedMapUnitId(occupyingUnit.unitId)}
-                                    title={`${occupyingUnit.unitCode} (${occupyingUnit.physicalStatus}) - Kéo để đổi ô lưới`}
+                                    title={`${occupyingUnit.unitCode} (${occupyingUnit.physicalStatus}) - ${isVi ? "Kéo để đổi ô lưới" : "Drag to change slot"}`}
                                     className={`absolute flex flex-col items-center justify-center rounded-lg border text-[10px] font-bold tracking-tight transition duration-150 cursor-grab hover:scale-102 hover:shadow-md overflow-hidden ${mapStatusStyle(occupyingUnit.physicalStatus)} ${
                                       selected ? "ring-2 ring-blue-600 shadow-md z-20" : "z-10 shadow-xs"
                                     }`}
@@ -1054,7 +1223,7 @@ export default function ManagerUnits() {
                               return (
                                 <div
                                   key={`slot-${r}-${c}`}
-                                  onClick={() => openCreateModal({ areaId: area.areaId, x: slotX, y: slotY })}
+                                  onClick={() => openCreateUnitModal(area, slotX, slotY)}
                                   onDragOver={(e) => {
                                     e.preventDefault();
                                     e.dataTransfer.dropEffect = "copy";
@@ -1073,10 +1242,10 @@ export default function ManagerUnits() {
                                     width: `${slotW * scale}px`,
                                     height: `${slotH * scale}px`,
                                   }}
-                                  title={`Ô lưới trống (Hàng ${r + 1}, Cột ${c + 1}) - Bấm hoặc thả ô kho vào đây để tạo mới`}
+                                  title={isVi ? `Ô lưới trống (Hàng ${r + 1}, Cột ${c + 1}) - Bấm hoặc thả ô kho vào đây để tạo mới` : `Empty slot (Row ${r + 1}, Col ${c + 1}) - Click or drop unit here to create`}
                                 >
                                   <span className="text-[11px] font-bold select-none opacity-60">
-                                    {isHovered ? "+ Thả" : "+"}
+                                    {isHovered ? (isVi ? "+ Thả" : "+ Drop") : "+"}
                                   </span>
                                 </div>
                               );
@@ -1094,7 +1263,7 @@ export default function ManagerUnits() {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs shadow-xs">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-blue-900 text-sm">
-                      Đang chọn: {selectedUnit.unitCode}
+                      {isVi ? `Đang chọn: ${selectedUnit.unitCode}` : `Selected: ${selectedUnit.unitCode}`}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${mapStatusStyle(selectedUnit.physicalStatus)}`}>
                       {selectedUnit.physicalStatus}
@@ -1116,7 +1285,7 @@ export default function ManagerUnits() {
                       }}
                       className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                     >
-                      Chỉnh sửa thông tin kho
+                      {isVi ? "Chỉnh sửa thông tin kho" : "Edit Unit Details"}
                     </button>
                     <button
                       type="button"
@@ -1124,7 +1293,7 @@ export default function ManagerUnits() {
                       onClick={() => handleDeleteUnit(selectedUnit.unitId)}
                       className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
                     >
-                      Xóa kho này
+                      {isVi ? "Xóa kho này" : "Delete This Unit"}
                     </button>
                   </div>
                 </div>
@@ -1141,7 +1310,7 @@ export default function ManagerUnits() {
             <form onSubmit={submitUnit}>
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <h2 className="text-base font-bold text-slate-900">
-                  {editingUnitId ? "Chỉnh sửa ô kho" : "Thêm ô kho mới"}
+                  {editingUnitId ? (isVi ? "Chỉnh sửa ô kho" : "Edit Storage Unit") : (isVi ? "Thêm ô kho mới" : "Add New Storage Unit")}
                 </h2>
                 <button
                   type="button"
@@ -1158,24 +1327,24 @@ export default function ManagerUnits() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Mã kho *
+                      {isVi ? "Mã kho *" : "Unit Code *"}
                     </label>
                     <input
                       required
                       value={unitForm.unitCode}
                       onChange={(e) => setUnitForm((p) => ({ ...p, unitCode: e.target.value.toUpperCase() }))}
                       className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 dark:bg-zinc-800"
-                      placeholder="VD: A-101"
+                      placeholder={isVi ? "VD: A-101" : "e.g. A-101"}
                     />
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Trạng thái
+                      {isVi ? "Trạng thái" : "Status"}
                     </label>
                     <SelectDropdown
                       value={unitForm.physicalStatus}
-                      options={UNIT_STATUS_SELECT_OPTIONS}
+                      options={unitStatusOptions}
                       onChange={(e) => setUnitForm((p) => ({ ...p, physicalStatus: e.target?.value ?? e }))}
                       className="w-full"
                     />
@@ -1185,7 +1354,7 @@ export default function ManagerUnits() {
                 {/* Row 2: Loại kho (Combobox thông minh) */}
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                    Loại kho * (Chọn từ danh sách hoặc nhập mới)
+                    {isVi ? "Loại kho * (Chọn từ danh sách hoặc nhập mới)" : "Storage Category * (Select from list or enter new)"}
                   </label>
                   <CustomCombobox
                     value={unitForm.categoryName}
@@ -1195,53 +1364,63 @@ export default function ManagerUnits() {
                     }}
                     options={pricingConfig.categories || []}
                     error={categoryError}
-                    placeholder="Chọn hoặc nhập tên loại kho..."
+                    placeholder={isVi ? "Chọn hoặc nhập tên loại kho..." : "Select or enter category name..."}
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Chiều dài (m) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.5"
-                      required
-                      value={unitForm.lengthM}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, lengthM: e.target.value === "" ? "" : Number(e.target.value) }))}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
+                <div>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                        {isVi ? "Chiều dài (m) *" : "Length (m) *"}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.5"
+                        required
+                        placeholder="VD: 10"
+                        value={unitForm.lengthM}
+                        onChange={(e) => setUnitForm((p) => ({ ...p, lengthM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                        {isVi ? "Chiều rộng (m) *" : "Width (m) *"}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.5"
+                        required
+                        placeholder="VD: 2"
+                        value={unitForm.widthM}
+                        onChange={(e) => setUnitForm((p) => ({ ...p, widthM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                        {isVi ? "Chiều cao trần (m)" : "Ceiling Height (m)"}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.5"
+                        placeholder="VD: 2.5"
+                        value={unitForm.heightM}
+                        onChange={(e) => setUnitForm((p) => ({ ...p, heightM: e.target.value === "" ? "" : Number(e.target.value) }))}
+                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Chiều rộng (m) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.5"
-                      required
-                      value={unitForm.widthM}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, widthM: e.target.value === "" ? "" : Number(e.target.value) }))}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Chiều cao (m)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.5"
-                      value={unitForm.heightM}
-                      onChange={(e) => setUnitForm((p) => ({ ...p, heightM: e.target.value === "" ? "" : Number(e.target.value) }))}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-zinc-400">
+                    {isVi
+                      ? "💡 Diện tích sàn tính bằng Dài × Rộng (m²). Chiều cao trần để tính thể tích chứa đồ (m³)."
+                      : "💡 Floor area = Length × Width (m²). Ceiling height is used for volume (m³)."}
+                  </p>
                 </div>
 
                 {/* Minimalist Price & Area Card */}
@@ -1259,7 +1438,7 @@ export default function ManagerUnits() {
                   return (
                     <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-4 text-xs space-y-2.5 shadow-2xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-600 font-medium">Diện tích mặt sàn</span>
+                        <span className="text-slate-600 font-medium">{isVi ? "Diện tích mặt sàn" : "Floor Area"}</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-slate-400 text-[11px]">({len}m × {wid}m)</span>
                           <strong className="text-sm font-bold text-slate-900">{area.toFixed(1)} m²</strong>
@@ -1267,16 +1446,16 @@ export default function ManagerUnits() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-600 font-medium">Phụ phí loại kho</span>
+                        <span className="text-slate-600 font-medium">{isVi ? "Phụ phí loại kho" : "Category Surcharge"}</span>
                         <span className="font-semibold text-slate-800">
-                          {surcharge > 0 ? `+ ${surcharge.toLocaleString("vi-VN")} đ` : "+ 0 đ"}
+                          {surcharge > 0 ? `+ ${surcharge.toLocaleString(isVi ? "vi-VN" : "en-US")} ${isVi ? "đ" : "₫"}` : `+ 0 ${isVi ? "đ" : "₫"}`}
                         </span>
                       </div>
 
                       <div className="border-t border-slate-200/80 pt-2.5 flex items-center justify-between">
-                        <span className="font-bold text-slate-800 text-xs">Giá thuê / tháng</span>
+                        <span className="font-bold text-slate-800 text-xs">{isVi ? "Giá thuê / tháng" : "Monthly Rate"}</span>
                         <span className="text-base font-extrabold text-blue-600">
-                          {totalMonthly.toLocaleString("vi-VN")} đ
+                          {totalMonthly.toLocaleString(isVi ? "vi-VN" : "en-US")} {isVi ? "đ" : "₫"}
                         </span>
                       </div>
                     </div>
@@ -1292,21 +1471,21 @@ export default function ManagerUnits() {
                       onChange={(e) => setUnitForm((p) => ({ ...p, isListed: e.target.checked }))}
                       className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>Hiển thị cho khách thuê</span>
+                    <span>{isVi ? "Hiển thị cho khách thuê" : "Listed for rent"}</span>
                   </label>
                 </div>
 
                 {/* Image Upload & URL */}
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Hình ảnh ô kho
+                    {isVi ? "Hình ảnh ô kho" : "Unit Image"}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="url"
                       value={unitForm.imageUrl}
                       onChange={(e) => setUnitForm((p) => ({ ...p, imageUrl: e.target.value }))}
-                      placeholder="Dán link ảnh (https://...)"
+                      placeholder={isVi ? "Dán link ảnh (https://...)" : "Paste image link (https://...)"}
                       className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-500"
                     />
                     <button
@@ -1315,7 +1494,7 @@ export default function ManagerUnits() {
                       className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
                     >
                       <Upload size={13} />
-                      <span>Tải ảnh</span>
+                      <span>{isVi ? "Tải ảnh" : "Upload"}</span>
                     </button>
                     <input
                       ref={fileInputRef}
@@ -1336,14 +1515,14 @@ export default function ManagerUnits() {
                       />
                       <div className="flex-1 min-w-0">
                         <span className="text-[11px] font-semibold text-slate-700 block truncate">
-                          Đã chọn ảnh ô kho
+                          {isVi ? "Đã chọn ảnh ô kho" : "Unit image selected"}
                         </span>
                         <button
                           type="button"
                           onClick={() => setUnitForm((p) => ({ ...p, imageUrl: "" }))}
                           className="text-[11px] text-rose-600 font-semibold hover:underline cursor-pointer"
                         >
-                          Xóa ảnh
+                          {isVi ? "Xóa ảnh" : "Remove image"}
                         </button>
                       </div>
                     </div>
@@ -1353,12 +1532,12 @@ export default function ManagerUnits() {
                 {/* Notes */}
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Ghi chú
+                    {isVi ? "Ghi chú" : "Notes"}
                   </label>
                   <input
                     value={unitForm.notes}
                     onChange={(e) => setUnitForm((p) => ({ ...p, notes: e.target.value }))}
-                    placeholder="Ghi chú vị trí, gần thang máy / cửa ra vào..."
+                    placeholder={isVi ? "Ghi chú vị trí, gần thang máy / cửa ra vào..." : "Location notes, near elevator / door..."}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-blue-500"
                   />
                 </div>
@@ -1370,14 +1549,14 @@ export default function ManagerUnits() {
                   onClick={() => { setShowUnitForm(false); setPendingDrop(null); }}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
-                  Hủy bỏ
+                  {isVi ? "Hủy bỏ" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={savingUnit}
                   className="rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 px-5 py-2 text-xs font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
-                  {savingUnit ? "Đang lưu..." : editingUnitId ? "Cập nhật kho" : "Tạo ô kho"}
+                  {savingUnit ? (isVi ? "Đang lưu..." : "Saving...") : editingUnitId ? (isVi ? "Cập nhật kho" : "Update Unit") : (isVi ? "Tạo ô kho" : "Create Unit")}
                 </button>
               </div>
             </form>
