@@ -234,7 +234,7 @@ function CustomerBilling() {
                       </td>
                       <td className="py-3.5 pr-3 text-right">
                         <div className="inline-flex items-center justify-end gap-2">
-                          {(inv.canPay || inv.status === "upcoming" || inv.status === "pending") && (
+                          {inv.canPay && (
                             <>
                               <button
                                 onClick={() =>
