@@ -744,6 +744,8 @@ export default function ManagerPricing() {
           </div>
         </div>
       )}
+      {false && (
+      <>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-bold text-white shadow-xs">
@@ -974,6 +976,8 @@ export default function ManagerPricing() {
             </div>
           )}
         </div>
+      )}
+      </>
       )}
 
 {/* Modal: Create / Edit Fee Policy */}
