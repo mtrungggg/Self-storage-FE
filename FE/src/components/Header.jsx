@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
+import { useSignalR } from "../context/SignalRContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { ADMIN_ROLES, CUSTOMER_ROLES, MANAGER_ROLES, STAFF_ROLES, hasAnyRole } from "../constants/roles";
@@ -19,10 +20,26 @@ const ACTIVE_CLASS = {
 
 // Shared top navigation bar used by customer and staff portals.
 function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { t } = useLanguage();
+  const { subscribe } = useSignalR();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [liveNotice, setLiveNotice] = useState(null);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    const unsub = subscribe("NotificationReceived", (payload) => {
+      refreshUser?.();
+      if (payload?.title || payload?.message) {
+        setLiveNotice({
+          title: payload.title || "Thông báo mới",
+          message: payload.message || "",
+        });
+      }
+    });
+    return () => unsub();
+  }, [user, subscribe, refreshUser]);
 
   const handleLogout = () => {
     logout();
@@ -290,6 +307,39 @@ function Header({ active, showUserBadge = true, hideCustomerNav = false }) {
             >
               Thanh toán VietQR ngay
             </Link>
+          </div>
+        </div>
+      )}
+
+      {liveNotice && (
+        <div
+          role="status"
+          className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 shadow-sm"
+        >
+          <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 text-xs font-medium">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-amber-600">notifications_active</span>
+              <span>
+                <strong className="font-bold">{liveNotice.title}</strong>
+                {liveNotice.message ? ` — ${liveNotice.message}` : ""}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/billing"
+                onClick={() => setLiveNotice(null)}
+                className="rounded-md bg-amber-600 px-3 py-1 text-[11px] font-bold text-white transition hover:bg-amber-700"
+              >
+                Xem hóa đơn
+              </Link>
+              <button
+                type="button"
+                onClick={() => setLiveNotice(null)}
+                className="rounded-md px-2 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-200/60"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

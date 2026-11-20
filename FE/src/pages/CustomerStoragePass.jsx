@@ -92,10 +92,13 @@ export default function CustomerStoragePass() {
   const [qrImageUrl, setQrImageUrl] = useState("");
 
   const qrDisplayCode = useMemo(() => {
+    if (checkInQrValue) {
+      return checkInQrValue;
+    }
     if (!selectedRental?.checkedInAt && matchingReservation?.reservationCode) {
       return matchingReservation.reservationCode;
     }
-    return selectedRental?.agreementNo || checkInQrValue;
+    return selectedRental?.agreementNo || "";
   }, [selectedRental?.checkedInAt, selectedRental?.agreementNo, matchingReservation?.reservationCode, checkInQrValue]);
 
   useEffect(() => {
