@@ -399,14 +399,32 @@ export default function CustomerMyUnits() {
                         {t("my_units.storage_pass", "Storage Pass")}
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setRenewalUnit(activeGalleryUnit)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[#dfe7f5] bg-white px-3.5 py-2 text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-xs transition hover:bg-[#f0f5ff] hover:border-[#b9ccf0]"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">autorenew</span>
-                        {t("my_units.renew", "Renew")}
-                      </button>
+                      {activeGalleryUnit.status !== "terminated" &&
+                        activeGalleryUnit.status !== "move_out" &&
+                        activeGalleryUnit.endDate &&
+                        Math.ceil((new Date(activeGalleryUnit.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 7 && (
+                        <button
+                          type="button"
+                          onClick={() => setRenewalUnit(activeGalleryUnit)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#dfe7f5] bg-white px-3.5 py-2 text-xs font-bold text-zinc-900 dark:text-zinc-100 shadow-xs transition hover:bg-[#f0f5ff] hover:border-[#b9ccf0]"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">autorenew</span>
+                          {t("my_units.renew", "Renew")}
+                        </button>
+                      )}
+
+                      {activeGalleryUnit.status === "overdue" &&
+                        activeGalleryUnit.endDate &&
+                        Math.ceil((new Date(activeGalleryUnit.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) > 7 && (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/billing")}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-rose-700"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                          {t("billing.pay_monthly_invoice", "Thanh toán hóa đơn tháng")}
+                        </button>
+                      )}
 
                       <button
                         type="button"
