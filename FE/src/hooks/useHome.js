@@ -174,8 +174,6 @@ export function useHome() {
     [facilities, availableFacilityIds]
   );
 
-  const storageTypes = useMemo(() => getStorageTypeFilters(), []);
-
   // Adapt raw storage units (backend shape) into the shape the UI cards expect
   const allUnits = useMemo(() => {
     return rawUnits.map((u) => {
@@ -242,6 +240,29 @@ export function useHome() {
 
   const sizeFilters = useMemo(() => getSizeFilters(), []);
 
+  // Dynamic storage categories derived from actual units in the system
+  const storageTypes = useMemo(() => {
+    const seen = new Set();
+    const types = [
+      { id: "all", label: "All Categories", desc: "Tất cả loại kho", icon: "warehouse" },
+    ];
+
+    allUnits.forEach((u) => {
+      const cat = (u.categoryName || "").trim();
+      if (cat && !seen.has(cat)) {
+        seen.add(cat);
+        types.push({
+          id: cat,
+          label: cat,
+          desc: cat,
+          icon: "inventory_2",
+        });
+      }
+    });
+
+    return types;
+  }, [allUnits]);
+
   const facilitiesWithFromPrice = useMemo(() => {
     return facilities.map((f) => {
       const unitsAtFacility = allUnits.filter((u) => u.facilityId === f.id);
@@ -274,8 +295,8 @@ export function useHome() {
           return false;
         }
 
-        // Storage Type (Preservation Condition) filter
-        if (selectedType !== "all" && unit.storageType !== selectedType) {
+        // Storage Type (Preservation Condition / Category) filter
+        if (selectedType !== "all" && unit.categoryName !== selectedType && unit.storageType !== selectedType) {
           return false;
         }
 

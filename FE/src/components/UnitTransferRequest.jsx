@@ -13,57 +13,22 @@ function localDate() {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }
 
-function getUnitCategory(type) {
-  const n = (type?.name || "").toLowerCase();
-  const c = (type?.code || "").toLowerCase();
-  if (n.includes("climate") || c.includes("climate")) return "climate_controlled";
-  if (n.includes("seafood") || n.includes("freeze") || n.includes("cold") || c.includes("seafood")) return "cold_seafood";
-  if (n.includes("warm") || n.includes("heat") || c.includes("warm")) return "heated_warm";
-  if (n.includes("locker") || c.includes("mini") || n.includes("mini smart")) return "smart_locker";
-  return "dry_standard";
+function resolveUnitCategory(typeOrUnit) {
+  const cat = typeOrUnit?.storageCategory || typeOrUnit?.categoryName;
+  if (cat && typeof cat === "string" && cat.trim()) return cat.trim();
+  const n = (typeOrUnit?.name || "").toLowerCase();
+  const c = (typeOrUnit?.code || "").toLowerCase();
+  if (n.includes("climate") || c.includes("climate")) return "Kho mát điều hòa";
+  if (n.includes("seafood") || n.includes("freeze") || n.includes("cold") || c.includes("seafood")) return "Kho lạnh / Thủy hải sản";
+  if (n.includes("warm") || n.includes("heat") || c.includes("warm")) return "Kho sưởi ấm";
+  return "Kho hàng khô";
 }
 
-function getUnitCategoryLabel(catKey, isVi) {
-  switch (catKey) {
-    case "climate_controlled":
-      return isVi ? "Kho mát điều hòa (Climate-Controlled)" : "Climate-Controlled Storage";
-    case "cold_seafood":
-      return isVi ? "Kho lạnh / Thủy hải sản (Cold / Deep Freeze)" : "Cold / Deep Freeze Storage";
-    case "heated_warm":
-      return isVi ? "Kho giữ nhiệt (Heated Warm Storage)" : "Heated Warm Storage";
-    case "smart_locker":
-      return isVi ? "Tủ đồ thông minh (Smart Dry Locker)" : "Smart Dry Locker";
-    case "dry_standard":
-    default:
-      return isVi ? "Kho tiêu chuẩn / Khô (Dry Goods Storage)" : "Standard Dry Goods Storage";
-  }
-}
-
-function getUnitSizeKey(type) {
-  const area = Number(type?.areaM2 || (type?.widthM * type?.lengthM) || 0);
-  if (area <= 1.5) return "mini";
-  if (area <= 3.5) return "small";
-  if (area <= 6.5) return "medium";
-  if (area <= 10.5) return "large";
-  return "xlarge";
-}
-
-function getUnitSizeLabel(sizeKey, areaM2, isVi) {
-  const areaText = areaM2 ? `${areaM2} m²` : "";
-  switch (sizeKey) {
-    case "mini":
-      return isVi ? "Mini (1 m² - 1.2 m³)" : "Mini (1 m² - 1.2 m³)";
-    case "small":
-      return isVi ? `Nhỏ - Small (${areaText || "3 m²"} - 7.5 m³)` : `Small (${areaText || "3 m²"} - 7.5 m³)`;
-    case "medium":
-      return isVi ? `Vừa - Medium (${areaText || "6 m²"} - 15 m³)` : `Medium (${areaText || "6 m²"} - 15 m³)`;
-    case "large":
-      return isVi ? `Lớn - Large (${areaText || "10 m²"} - 28 m³)` : `Large (${areaText || "10 m²"} - 28 m³)`;
-    case "xlarge":
-      return isVi ? `Rất lớn - XL (${areaText || "16 m²"} - 48 m³)` : `Extra Large (${areaText || "16 m²"} - 48 m³)`;
-    default:
-      return `${areaText || sizeKey}`;
-  }
+function formatUnitDimension(len, wid, area) {
+  const l = Number(len || 0);
+  const w = Number(wid || 0);
+  const a = Number(area || (l * w) || 0);
+  return `${l}m × ${w}m (${a} m²)`;
 }
 
 export default function UnitTransferRequest({ agreementId, unitId, facilityId, currentFacilityName = "" }) {
@@ -81,73 +46,175 @@ export default function UnitTransferRequest({ agreementId, unitId, facilityId, c
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
 
+  const targetFacilityId = useMemo(() => {
+    return Number(selectedFacilityId) || Number(facilityId) || null;
+  }, [selectedFacilityId, facilityId]);
+
+  const [facilityUnits, setFacilityUnits] = useState([]);
+  const [facilityUnitsLoading, setFacilityUnitsLoading] = useState(false);
+
+  // Fetch real available units for the selected target facility
+  useEffect(() => {
+    if (!open || !targetFacilityId) return;
+    let active = true;
+    setFacilityUnitsLoading(true);
+    facilityService
+      .getAvailableUnits(targetFacilityId)
+      .then((units) => {
+        if (!active) return;
+        setFacilityUnits(Array.isArray(units) ? units : []);
+      })
+      .catch((err) => {
+        console.warn("Failed to load available units for facility", targetFacilityId, err);
+        if (active) setFacilityUnits([]);
+      })
+      .finally(() => {
+        if (active) setFacilityUnitsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, targetFacilityId]);
+
+  // Real categories available in this facility
   const categoryOptions = useMemo(() => {
     const seen = new Set();
     const list = [];
-    unitTypes.forEach((t) => {
-      const cat = getUnitCategory(t);
-      if (!seen.has(cat)) {
-        seen.add(cat);
-        list.push({
-          value: cat,
-          label: getUnitCategoryLabel(cat, isVi),
-        });
-      }
-    });
-    return list;
-  }, [unitTypes, isVi]);
 
+    // 1. From real units in this facility
+    if (facilityUnits.length > 0) {
+      facilityUnits.forEach((u) => {
+        const cat = resolveUnitCategory(u);
+        if (cat && !seen.has(cat)) {
+          seen.add(cat);
+          list.push({ value: cat, label: cat });
+        }
+      });
+    }
+
+    // 2. Fallback if facilityUnits is empty
+    if (list.length === 0 && unitTypes.length > 0) {
+      unitTypes.forEach((t) => {
+        const cat = resolveUnitCategory(t);
+        if (cat && !seen.has(cat)) {
+          seen.add(cat);
+          list.push({ value: cat, label: cat });
+        }
+      });
+    }
+
+    return list;
+  }, [facilityUnits, unitTypes]);
+
+  // Real dimensions & sizes for the selected category in this facility
   const sizeOptions = useMemo(() => {
-    const filteredTypes = selectedCategory
-      ? unitTypes.filter((t) => getUnitCategory(t) === selectedCategory)
-      : unitTypes;
+    if (!selectedCategory) return [];
 
     const seen = new Set();
     const list = [];
-    filteredTypes.forEach((t) => {
-      const sz = getUnitSizeKey(t);
-      if (!seen.has(sz)) {
-        seen.add(sz);
-        const area = Number(t.areaM2 || (t.widthM * t.lengthM) || 0);
-        list.push({
-          value: sz,
-          label: getUnitSizeLabel(sz, area, isVi),
-          area,
-        });
-      }
-    });
+
+    // 1. From real units in this facility
+    if (facilityUnits.length > 0) {
+      const unitsInCat = facilityUnits.filter(
+        (u) => resolveUnitCategory(u) === selectedCategory
+      );
+
+      unitsInCat.forEach((u) => {
+        const len = Number(u.length ?? u.customLengthM ?? 0);
+        const wid = Number(u.width ?? u.customWidthM ?? 0);
+        const area = Number(u.areaM2 ?? u.area ?? (len * wid));
+        const key = `${u.unitTypeId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            value: String(u.unitTypeId),
+            label: formatUnitDimension(len, wid, area),
+            area,
+            unitTypeId: u.unitTypeId,
+          });
+        }
+      });
+    }
+
+    // 2. Fallback to unitTypes
+    if (list.length === 0 && unitTypes.length > 0) {
+      const matchingTypes = unitTypes.filter(
+        (t) => resolveUnitCategory(t) === selectedCategory
+      );
+
+      matchingTypes.forEach((t) => {
+        const len = Number(t.lengthM || 0);
+        const wid = Number(t.widthM || 0);
+        const area = Number(t.areaM2 || (len * wid));
+        const key = `${t.id}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({
+            value: String(t.id),
+            label: formatUnitDimension(len, wid, area),
+            area,
+            unitTypeId: t.id,
+          });
+        }
+      });
+    }
+
     return list.sort((a, b) => a.area - b.area);
-  }, [unitTypes, selectedCategory, isVi]);
+  }, [facilityUnits, unitTypes, selectedCategory]);
 
   const selectedUnitType = useMemo(() => {
     return unitTypes.find((t) => String(t.id) === String(requestedUnitTypeId));
   }, [unitTypes, requestedUnitTypeId]);
 
-  const handleCategoryChange = (cat) => {
-    setSelectedCategory(cat);
-    const availableInCat = unitTypes.filter((t) => getUnitCategory(t) === cat);
-    const matching = availableInCat.find((t) => getUnitSizeKey(t) === selectedSize);
-    if (matching) {
-      setRequestedUnitTypeId(String(matching.id));
-    } else if (availableInCat.length > 0) {
-      // Tự động pre-select kích thước khả dụng đầu tiên của Loại kho mới
-      setSelectedSize(getUnitSizeKey(availableInCat[0]));
-      setRequestedUnitTypeId(String(availableInCat[0].id));
+  // Synchronize category selection when facility / categoryOptions change
+  useEffect(() => {
+    if (categoryOptions.length > 0) {
+      const exists = categoryOptions.some((c) => c.value === selectedCategory);
+      if (!exists) {
+        handleCategoryChange(categoryOptions[0].value);
+      }
+    } else {
+      setSelectedCategory("");
+      setSelectedSize("");
+      setRequestedUnitTypeId("");
+    }
+  }, [categoryOptions]);
+
+  // Synchronize size selection when category / sizeOptions change
+  useEffect(() => {
+    if (sizeOptions.length > 0) {
+      const exists = sizeOptions.some((s) => s.value === String(requestedUnitTypeId));
+      if (!exists) {
+        setSelectedSize(sizeOptions[0].value);
+        setRequestedUnitTypeId(sizeOptions[0].value);
+      }
     } else {
       setSelectedSize("");
       setRequestedUnitTypeId("");
+    }
+  }, [sizeOptions]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    const matchingUnit = facilityUnits.find((u) => resolveUnitCategory(u) === cat);
+    if (matchingUnit) {
+      setSelectedSize(String(matchingUnit.unitTypeId));
+      setRequestedUnitTypeId(String(matchingUnit.unitTypeId));
+    } else {
+      const matchingType = unitTypes.find((t) => resolveUnitCategory(t) === cat);
+      if (matchingType) {
+        setSelectedSize(String(matchingType.id));
+        setRequestedUnitTypeId(String(matchingType.id));
+      } else {
+        setSelectedSize("");
+        setRequestedUnitTypeId("");
+      }
     }
   };
 
   const handleSizeChange = (sz) => {
     setSelectedSize(sz);
-    if (!selectedCategory) return;
-    const matching = unitTypes.find(
-      (t) => getUnitCategory(t) === selectedCategory && getUnitSizeKey(t) === sz
-    );
-    if (matching) {
-      setRequestedUnitTypeId(String(matching.id));
-    }
+    setRequestedUnitTypeId(sz);
   };
   const [requestedEffectiveDate, setRequestedEffectiveDate] = useState(localDate);
   const [reason, setReason] = useState("");
@@ -730,24 +797,26 @@ return (
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <SupportDropdown
-              label={isVi ? "1. Loại Kho & Tiện Ích" : "1. Storage Environment"}
+              label={isVi ? "1. Loại Kho Thực Tế" : "1. Storage Category"}
               icon="category"
-              disabled={typesLoading || (preview && !preview.canTransfer)}
+              disabled={facilityUnitsLoading || typesLoading || (preview && !preview.canTransfer)}
               value={selectedCategory}
               onChange={handleCategoryChange}
-              placeholder={typesLoading ? t("common.loading", "Đang tải...") : (isVi ? "Chọn loại kho..." : "Select type...")}
+              placeholder={facilityUnitsLoading ? t("common.loading", "Đang tải...") : (isVi ? "Chọn loại kho..." : "Select category...")}
               options={categoryOptions}
             />
 
             <SupportDropdown
-              label={isVi ? "2. Kích Thước & Diện Tích" : "2. Unit Size"}
+              label={isVi ? "2. Kích Thước Thực Tế" : "2. Dimensions & Area"}
               icon="aspect_ratio"
-              disabled={typesLoading || (preview && !preview.canTransfer) || !selectedCategory}
+              disabled={facilityUnitsLoading || typesLoading || (preview && !preview.canTransfer) || !selectedCategory}
               value={selectedSize}
               onChange={handleSizeChange}
               placeholder={
-                !selectedCategory
-                  ? (isVi ? "← Chọn loại kho trước" : "← Select type first")
+                facilityUnitsLoading
+                  ? t("common.loading", "Đang tải...")
+                  : !selectedCategory
+                  ? (isVi ? "← Chọn loại kho trước" : "← Select category first")
                   : (isVi ? "Chọn kích thước..." : "Select size...")
               }
               options={sizeOptions}
@@ -761,7 +830,7 @@ return (
                 <div>
                   <p className="font-bold text-slate-900 dark:text-zinc-100">{selectedUnitType.name}</p>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                    {selectedUnitType.widthM}m × {selectedUnitType.lengthM}m × {selectedUnitType.heightM}m 
+                    {selectedUnitType.lengthM}m × {selectedUnitType.widthM}m × {selectedUnitType.heightM}m 
                     {selectedUnitType.areaM2 ? ` • ${selectedUnitType.areaM2} m²` : ""}
                     {selectedUnitType.volumeM3 ? ` • ${selectedUnitType.volumeM3} m³` : ""}
                   </p>
