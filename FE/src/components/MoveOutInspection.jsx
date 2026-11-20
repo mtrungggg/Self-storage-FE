@@ -87,6 +87,7 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
   if (result) {
     const isCash = moveOut.refundMethod === "cash" || moveOut.payoutMethod === "cash";
     const refundAmt = Number(result.refundAmount || 0);
+    const extraPenaltyAmt = Number(result.extraPenalty || 0);
 
     return (
       <div role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-950 space-y-2 shadow-2xs">
@@ -99,7 +100,12 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
             Khấu trừ hư hại: <strong className="text-slate-800">{Number(result.totalDamageCharges || 0).toLocaleString("vi-VN")} đ</strong>
           </p>
         )}
-        {refundAmt > 0 ? (
+        {extraPenaltyAmt > 0 ? (
+          <div className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-300 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800">
+            <span className="material-symbols-outlined text-[15px] text-amber-600">receipt_long</span>
+            <span>Đã xuất hóa đơn phạt bổ sung ({extraPenaltyAmt.toLocaleString("vi-VN")} đ) — Chờ khách hàng thanh toán</span>
+          </div>
+        ) : refundAmt > 0 ? (
           isCash ? (
             cashPaid ? (
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800">
@@ -126,6 +132,22 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
         ) : (
           <span className="text-[11px] text-slate-500 font-medium">Đã tất toán (Không hoàn cọc)</span>
         )}
+      </div>
+    );
+  }
+
+  // Đơn đã nghiệm thu nhưng phát sinh nợ vượt cọc -> chờ khách đóng phạt
+  if (moveOut.status === "checkout_pending") {
+    const penaltyAmt = Number(moveOut.extraPenaltyAmount || 0);
+    return (
+      <div className="mt-3">
+        <div className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800">
+          <span className="material-symbols-outlined text-[16px] text-amber-600">receipt_long</span>
+          <span>
+            Đã nghiệm thu — Chờ khách hàng thanh toán hóa đơn phạt
+            {penaltyAmt > 0 ? ` (${penaltyAmt.toLocaleString("vi-VN")} đ)` : ""}
+          </span>
+        </div>
       </div>
     );
   }
@@ -223,13 +245,16 @@ export default function MoveOutInspection({ moveOut, onCompleted }) {
               inspectionId: data.id || "M-" + Date.now(),
               totalDamageCharges: data.damageCost || 0,
               refundAmount: data.refundAmount,
+              extraPenalty: data.extraPenalty || 0,
               unitStatus: data.hasDamage ? "under_maintenance" : "available",
             });
             if (onCompleted) {
+              const extraPen = Number(data.extraPenalty || 0);
               onCompleted(moveOut.id, {
-                status: "completed",
-                payoutStatus: "pending_manager_transfer",
+                status: extraPen > 0 ? "checkout_pending" : "completed",
+                payoutStatus: extraPen > 0 ? "pending_customer_payment" : "pending_manager_transfer",
                 refundAmount: data.refundAmount,
+                extraPenaltyAmount: extraPen,
               });
             }
           }}

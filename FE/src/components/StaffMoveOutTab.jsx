@@ -213,6 +213,7 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
             const rawCode = item.unitCode && item.unitCode !== "N/A" ? item.unitCode : item.storageUnitCode;
             const unitLabel = cleanUnitCode(rawCode);
             const isCompleted = item.status === "completed";
+            const isCheckoutPending = item.status === "checkout_pending";
 
             return (
               <article
@@ -234,10 +235,16 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                         isCompleted
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : isCheckoutPending
+                          ? "bg-amber-50 text-amber-800 border border-amber-300"
                           : "bg-blue-50 text-blue-700 border border-blue-200"
                       }`}
                     >
-                      {isCompleted ? t("common.completed", "Đã nghiệm thu") : t("staff_inspections.pending_inspection", "Chờ kiểm tra")}
+                      {isCompleted
+                        ? t("common.completed", "Đã nghiệm thu")
+                        : isCheckoutPending
+                        ? "Chờ khách đóng phạt"
+                        : t("staff_inspections.pending_inspection", "Chờ kiểm tra")}
                     </span>
                   </div>
 
@@ -321,7 +328,7 @@ export default function StaffMoveOutTab({ facilityId = "1" }) {
                     onCompleted={(id, extra) =>
                       setItems((current) =>
                         current.map((entry) =>
-                          entry.id === id ? { ...entry, status: "completed", ...extra } : entry
+                          entry.id === id ? { ...entry, status: extra?.status || "completed", ...extra } : entry
                         )
                       )
                     }
