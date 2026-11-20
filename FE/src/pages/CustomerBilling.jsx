@@ -218,7 +218,9 @@ function CustomerBilling() {
                         ) : inv.status === "failed" ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#fecdca] bg-[#fff1f1] px-2.5 py-0.5 text-[11px] font-bold text-[#b3261e]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#d92d20]"></span>
-                            {translateStatus(inv.status)}
+                            {inv.rawStatus === "cancelled"
+                              ? t("status.cancelled", "Đã hủy")
+                              : t("billing.payment_failed", "Thất bại")}
                           </span>
                         ) : inv.status === "expired" ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full whitespace-nowrap border border-[#fecdca] bg-[#fff5f5] px-2.5 py-0.5 text-[11px] font-bold text-[#b42318]">
