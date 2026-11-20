@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import paymentApi from "../services/api/paymentApi";
+import paymentService from "../api/customerPaymentService";
 import reservationApi from "../services/api/reservationApi";
 import rentalService from "../api/customerRentalService";
 import { useSignalR } from "../context/SignalRContext";
@@ -54,6 +55,20 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
+        if (stateInvoiceId) {
+          const invoiceCheckout = await paymentApi.createCheckout({
+            invoiceId: Number(stateInvoiceId),
+            paymentMethod: "bank_transfer",
+          });
+          if (active) {
+            setCheckout(invoiceCheckout);
+            setReservation(null);
+            setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
+            totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
+          }
+          return;
+        }
+
         if (stateRenewalId) {
           const renewalCheckout = await paymentApi.createCheckout({
             renewalId: Number(stateRenewalId),
@@ -67,20 +82,6 @@ export function usePaymentCheckout() {
             });
             setTimeLeft(900);
             totalSecondsRef.current = 900;
-          }
-          return;
-        }
-
-        if (stateInvoiceId) {
-          const invoiceCheckout = await paymentApi.createCheckout({
-            invoiceId: Number(stateInvoiceId),
-            paymentMethod: "bank_transfer",
-          });
-          if (active) {
-            setCheckout(invoiceCheckout);
-            setReservation(null);
-            setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
-            totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
           }
           return;
         }
@@ -117,6 +118,22 @@ export function usePaymentCheckout() {
               : newCheckout.expiresInSeconds || 900;
             setTimeLeft(remaining > 0 ? remaining : 900);
             totalSecondsRef.current = remaining > 0 ? remaining : 900;
+          }
+          return;
+        }
+
+        const unpaidInvoices = await paymentService.getUnpaidInvoices().catch(() => []);
+        const firstUnpaid = Array.isArray(unpaidInvoices) ? unpaidInvoices[0] : null;
+        if (firstUnpaid?.invoiceId) {
+          const fallbackCheckout = await paymentApi.createCheckout({
+            invoiceId: Number(firstUnpaid.invoiceId),
+            paymentMethod: "bank_transfer",
+          });
+          if (active && fallbackCheckout) {
+            setCheckout(fallbackCheckout);
+            setReservation(null);
+            setTimeLeft(fallbackCheckout?.expiresInSeconds || 900);
+            totalSecondsRef.current = fallbackCheckout?.expiresInSeconds || 900;
           }
           return;
         }
