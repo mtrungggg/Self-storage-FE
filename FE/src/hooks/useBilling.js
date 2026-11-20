@@ -5,6 +5,7 @@ import paymentService from "../api/customerPaymentService";
 import { mergeBillingRows } from "../domain/usecases/mergeBillingRows";
 import { PAYMENT_STATUS } from "../constants/paymentConstants";
 import { useAuth } from "./useAuth";
+import { useSignalR } from "../context/SignalRContext";
 
 // Maps BE payment status strings → FE tab keys
 function mapStatus(status) {
@@ -47,6 +48,7 @@ function formatMethod(method, provider) {
 export function useBilling() {
   const invoiceTabs = getInvoiceTabs();
   const { refreshUser } = useAuth();
+  const { subscribe } = useSignalR();
 
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -78,6 +80,20 @@ export function useBilling() {
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  // Realtime auto-refresh when Staff sends penalty invoice, Manager approves ticket charge, or SePay settles payment
+  useEffect(() => {
+    const unsubNotif = subscribe("NotificationReceived", () => {
+      fetchInvoices();
+    });
+    const unsubPay = subscribe("PaymentSucceeded", () => {
+      fetchInvoices();
+    });
+    return () => {
+      unsubNotif();
+      unsubPay();
+    };
+  }, [subscribe, fetchInvoices]);
 
   // Live timer tick every second for 15-minute hold countdown
   useEffect(() => {
