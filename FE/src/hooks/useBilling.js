@@ -4,6 +4,7 @@ import { filterInvoices } from "../domain/usecases/filterInvoices";
 import paymentService from "../api/customerPaymentService";
 import { mergeBillingRows } from "../domain/usecases/mergeBillingRows";
 import { PAYMENT_STATUS } from "../constants/paymentConstants";
+import { useAuth } from "./useAuth";
 
 // Maps BE payment status strings → FE tab keys
 function mapStatus(status) {
@@ -45,6 +46,7 @@ function formatMethod(method, provider) {
 // Application layer: encapsulates Billing page state, filtering and data wiring.
 export function useBilling() {
   const invoiceTabs = getInvoiceTabs();
+  const { refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -65,6 +67,7 @@ export function useBilling() {
 
       setNow(Date.now());
       setPayments(mergeBillingRows(history, unpaid));
+      refreshUser?.();
     } catch (err) {
       setError(err?.message || "Không thể tải lịch sử thanh toán.");
     } finally {

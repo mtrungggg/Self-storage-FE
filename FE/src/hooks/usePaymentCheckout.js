@@ -5,6 +5,7 @@ import paymentService from "../api/customerPaymentService";
 import reservationApi from "../services/api/reservationApi";
 import rentalService from "../api/customerRentalService";
 import { useSignalR } from "../context/SignalRContext";
+import { useAuth } from "./useAuth";
 import { CHECKOUT_STATUS, PAYMENT_STATUS } from "../constants/paymentConstants";
 import { RESERVATION_STATUS } from "../constants/rentalConstants";
 
@@ -12,6 +13,7 @@ export function usePaymentCheckout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { subscribe } = useSignalR();
+  const { refreshUser } = useAuth();
 
   const stateCheckout = location.state?.checkout || null;
   const stateReservation = location.state?.reservation || null;
@@ -27,6 +29,12 @@ export function usePaymentCheckout() {
   const [status, setStatus] = useState(CHECKOUT_STATUS.PENDING);
   const [partialInfo, setPartialInfo] = useState(null);
   const [checkInQrToken, setCheckInQrToken] = useState(null);
+
+  useEffect(() => {
+    if (status === CHECKOUT_STATUS.SUCCESS) {
+      refreshUser?.();
+    }
+  }, [status, refreshUser]);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
