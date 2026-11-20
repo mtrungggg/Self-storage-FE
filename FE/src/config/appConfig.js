@@ -4,11 +4,18 @@
  */
 
 const rawTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+const isLocalHost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const defaultApiBaseUrl = isLocalHost
+  ? "http://localhost:51283/api"
+  : "https://selfstoragesystem-be.onrender.com/api";
 
 export const appConfig = Object.freeze({
   api: Object.freeze({
-    baseUrl: import.meta.env.VITE_API_URL || "http://localhost:51283/api",
-    timeoutMs: Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : 15000,
+    baseUrl: import.meta.env.VITE_API_URL || defaultApiBaseUrl,
+    timeoutMs: Number.isFinite(rawTimeout) && rawTimeout > 0 ? rawTimeout : 30000,
   }),
   app: Object.freeze({
     name: import.meta.env.VITE_APP_NAME || "G1 SelfStorage",
