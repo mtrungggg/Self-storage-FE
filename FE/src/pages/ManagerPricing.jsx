@@ -225,10 +225,29 @@ export default function ManagerPricing() {
     loadDynamicPricingConfig();
   }, []);
 
+  const sanitizeNonNegative = (val) => {
+    if (val === "") return "";
+    const cleaned = String(val).replace(/-/g, "");
+    const num = Number(cleaned);
+    if (Number.isNaN(num) || num < 0) return "0";
+    return cleaned;
+  };
+
+  const blockNegativeKeys = (e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleSavePricePerSqm = async () => {
+    const val = Number(pricePerSqm);
+    if (Number.isNaN(val) || val < 0) {
+      setError("Đơn giá cơ bản / 1m² không được là số âm.");
+      return;
+    }
     try {
       setSaving(true);
-      await apiClient.put("/v1/admin/pricing-config", { pricePerSquareMeter: Number(pricePerSqm) || 0 });
+      await apiClient.put("/v1/admin/pricing-config", { pricePerSquareMeter: val || 0 });
       setNotice("Đã lưu đơn giá cơ bản theo m².");
       await loadDynamicPricingConfig();
     } catch (err) {
@@ -239,11 +258,16 @@ export default function ManagerPricing() {
   };
 
   const handleSaveCategorySurcharge = async (cat) => {
+    const val = Number(cat.surchargeAmount);
+    if (Number.isNaN(val) || val < 0) {
+      setError(`Phụ phí cho loại "${cat.name}" không được là số âm.`);
+      return;
+    }
     try {
       setSaving(true);
       await apiClient.put(`/v1/admin/storage-categories/${cat.id}`, {
         name: cat.name,
-        surchargeAmount: Number(cat.surchargeAmount) || 0,
+        surchargeAmount: val || 0,
         isActive: cat.isActive ?? true,
       });
       setNotice(`Đã lưu phụ phí cho loại "${cat.name}".`);
@@ -258,11 +282,16 @@ export default function ManagerPricing() {
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
+    const val = Number(newCatSurcharge);
+    if (Number.isNaN(val) || val < 0) {
+      setError("Phụ phí loại kho mới không được là số âm.");
+      return;
+    }
     try {
       setSaving(true);
       await apiClient.post("/v1/admin/storage-categories", {
         name: newCatName.trim(),
-        surchargeAmount: Number(newCatSurcharge) || 0,
+        surchargeAmount: val || 0,
         isActive: true,
       });
       setNewCatName("");
@@ -618,8 +647,9 @@ export default function ManagerPricing() {
                 <input
                   type="number"
                   min="0"
+                  onKeyDown={blockNegativeKeys}
                   value={pricePerSqm}
-                  onChange={(e) => setPricePerSqm(e.target.value)}
+                  onChange={(e) => setPricePerSqm(sanitizeNonNegative(e.target.value))}
                   className="w-28 rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-right font-mono text-sm font-bold text-[#0b1c30] outline-none focus:border-blue-500"
                 />
                 <span className="text-xs font-bold text-blue-900">đ/m²</span>
@@ -652,10 +682,12 @@ export default function ManagerPricing() {
                   <span className="pl-2 text-[11px] font-bold text-slate-400">+</span>
                   <input
                     type="number"
+                    min="0"
+                    onKeyDown={blockNegativeKeys}
                     value={cat.surchargeAmount}
                     onChange={(e) =>
                       setStorageCategories((prev) =>
-                        prev.map((c) => (c.id === cat.id ? { ...c, surchargeAmount: e.target.value } : c))
+                        prev.map((c) => (c.id === cat.id ? { ...c, surchargeAmount: sanitizeNonNegative(e.target.value) } : c))
                       )
                     }
                     className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right font-mono text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
@@ -688,8 +720,10 @@ export default function ManagerPricing() {
           />
           <input
             type="number"
+            min="0"
+            onKeyDown={blockNegativeKeys}
             value={newCatSurcharge}
-            onChange={(e) => setNewCatSurcharge(e.target.value)}
+            onChange={(e) => setNewCatSurcharge(sanitizeNonNegative(e.target.value))}
             placeholder="Phụ phí (+VNĐ)"
             className="w-36 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs outline-none focus:border-zinc-900"
           />
@@ -745,242 +779,240 @@ export default function ManagerPricing() {
         </div>
       )}
       {false && (
-      <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-bold text-white shadow-xs">
-            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-            Phí vận hành &amp; Phạt ({feeData?.totalCount ?? feesList.length})
-          </span>
-        </div>
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-bold text-white shadow-xs">
+                <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                Phí vận hành &amp; Phạt ({feeData?.totalCount ?? feesList.length})
+              </span>
+            </div>
 
-        <div>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={openCreateFeeModal}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              {t("manager.add_pricing", "Thêm biểu phí")}
-            </button>
-          )}
+            <div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={openCreateFeeModal}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
+                >
+                  <span className="material-symbols-outlined text-[16px]">add</span>
+                  {t("manager.add_pricing", "Thêm biểu phí")}
+                </button>
+              )}
 
-          {!isAdmin && (
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 mr-2">
-              🔒 Chế độ xem (Manager)
-            </span>
-          )}
-        </div>
-      </div>
+              {!isAdmin && (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 mr-2">
+                  🔒 Chế độ xem (Manager)
+                </span>
+              )}
+            </div>
+          </div>
 
-      {/* TAB 1: FEES & SURCHARGES SECTION */}
-      {activeTab === "fees" && (
-        <div className="space-y-4">
-          {/* Fees Filter Bar - Clean 4-column Grid */}
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
-              <input
-                type="search"
-                placeholder={t("pricing.search_fee_placeholder", "Tìm kiếm mã phí, điều kiện áp dụng...")}
-                value={feeFilters.Search}
-                onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
-                className="w-full h-10 rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white px-3.5 text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition"
-              />
-              <SelectDropdown
-                value={feeFilters.FeeType}
-                onChange={(e) => handleFeeFilterChange("FeeType", e.target.value)}
-                className="w-full"
-              >
-                <option value="">{t("common.all", "Tất cả loại phí")}</option>
-                {feeTypes.map(([val, label]) => (
-                  <option key={val} value={val}>{label}</option>
-                ))}
-              </SelectDropdown>
-              <SelectDropdown
-                value={feeFilters.GlobalOnly}
-                onChange={(e) => handleFeeFilterChange("GlobalOnly", e.target.value)}
-                className="w-full"
-              >
-                <option value="">{t("common.all", "Tất cả phạm vi")}</option>
-                <option value="true">Toàn hệ thống (Global)</option>
-                <option value="false">{t("common.facility", "Theo cơ sở")}</option>
-              </SelectDropdown>
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
+          {/* TAB 1: FEES & SURCHARGES SECTION */}
+          {activeTab === "fees" && (
+            <div className="space-y-4">
+              {/* Fees Filter Bar - Clean 4-column Grid */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                  <input
+                    type="search"
+                    placeholder={t("pricing.search_fee_placeholder", "Tìm kiếm mã phí, điều kiện áp dụng...")}
+                    value={feeFilters.Search}
+                    onChange={(e) => handleFeeFilterChange("Search", e.target.value)}
+                    className="w-full h-10 rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-white px-3.5 text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition"
+                  />
                   <SelectDropdown
-                    value={feeFilters.IsActive}
-                    onChange={(e) => handleFeeFilterChange("IsActive", e.target.value)}
+                    value={feeFilters.FeeType}
+                    onChange={(e) => handleFeeFilterChange("FeeType", e.target.value)}
                     className="w-full"
                   >
-                    <option value="">{t("common.all", "Tất cả trạng thái")}</option>
-                    <option value="true">{t("status.active", "Đang áp dụng")}</option>
-                    <option value="false">Không kích hoạt</option>
+                    <option value="">{t("common.all", "Tất cả loại phí")}</option>
+                    {feeTypes.map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
                   </SelectDropdown>
-                </div>
-                {(feeFilters.Search || feeFilters.FeeType || feeFilters.GlobalOnly || feeFilters.IsActive) && (
-                  <button
-                    type="button"
-                    onClick={handleResetFeeFilters}
-                    className="shrink-0 h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
+                  <SelectDropdown
+                    value={feeFilters.GlobalOnly}
+                    onChange={(e) => handleFeeFilterChange("GlobalOnly", e.target.value)}
+                    className="w-full"
                   >
-                    Reset
-                  </button>
-                )}
+                    <option value="">{t("common.all", "Tất cả phạm vi")}</option>
+                    <option value="true">Toàn hệ thống (Global)</option>
+                    <option value="false">{t("common.facility", "Theo cơ sở")}</option>
+                  </SelectDropdown>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <SelectDropdown
+                        value={feeFilters.IsActive}
+                        onChange={(e) => handleFeeFilterChange("IsActive", e.target.value)}
+                        className="w-full"
+                      >
+                        <option value="">{t("common.all", "Tất cả trạng thái")}</option>
+                        <option value="true">{t("status.active", "Đang áp dụng")}</option>
+                        <option value="false">Không kích hoạt</option>
+                      </SelectDropdown>
+                    </div>
+                    {(feeFilters.Search || feeFilters.FeeType || feeFilters.GlobalOnly || feeFilters.IsActive) && (
+                      <button
+                        type="button"
+                        onClick={handleResetFeeFilters}
+                        className="shrink-0 h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Fees Data Table */}
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-2.5">{t("manager.fee_code", "Mã phí")}</th>
-                  <th className="px-4 py-2.5">{t("manager.scope", "Phạm vi")}</th>
-                  <th className="px-4 py-2.5">{t("manager.category", "Danh mục")}</th>
-                  <th className="px-4 py-2.5">{t("manager.method", "Phương thức")}</th>
-                  <th className="px-4 py-2.5 text-right">{t("manager.rate_amount", "Mức phí / Tỷ lệ")}</th>
-                  <th className="px-4 py-2.5 text-center">{t("manager.grace_period", "Thời gian ân hạn")}</th>
-                  <th className="px-4 py-2.5">{t("manager.effective_date", "Hiệu lực")}</th>
-                  <th className="px-4 py-2.5 text-center">{t("common.status", "Trạng thái")}</th>
-                  <th className="px-4 py-2.5 text-right">{t("manager.actions", "Thao tác")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loadingFees ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
-                      Đang tải chính sách biểu phí...
-                    </td>
-                  </tr>
-                ) : feesList.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
-                      Không tìm thấy chính sách biểu phí phù hợp.
-                    </td>
-                  </tr>
-                ) : (
-                  feesList.map((fee) => {
-                    const langKey = lang === "vi" ? "vi" : "en";
-                    const feeTypeLabel = FEE_TYPE_TRANSLATIONS[langKey]?.[fee.feeType] || feeTypes.find(([val]) => val === fee.feeType)?.[1] || fee.feeType;
-                    const calcMethodLabel = calculationMethods.find(([val]) => val === fee.calculationMethod)?.[1] || fee.calculationMethod;
-                    const cleanCondition = getCleanCondition(fee.conditions);
-
-                    return (
-                      <tr key={fee.id} className="hover:bg-slate-50/60 transition">
-                        <td className="px-4 py-2.5 font-sans font-semibold tracking-wide text-slate-800 dark:text-zinc-100">
-                          {fee.code}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {fee.facilityName ? (
-                            <span className="font-medium text-slate-800 dark:text-zinc-200">{fee.facilityName}</span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                              Toàn hệ thống
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 font-sans">
-                          <span className="font-medium text-slate-800 dark:text-zinc-100">{feeTypeLabel}</span>
-                          {cleanCondition && (
-                            <p className="max-w-[240px] truncate text-[11px] text-slate-500 dark:text-zinc-400 font-sans mt-0.5" title={cleanCondition}>
-                              {cleanCondition}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-600">{calcMethodLabel}</td>
-                        <td className="px-4 py-2.5 text-right font-medium text-slate-900">
-                          {fee.amount != null && fee.amount > 0 ? formatVnd(fee.amount) : ""}
-                          {fee.ratePercent != null && fee.ratePercent > 0 ? ` ${fee.ratePercent}%` : ""}
-                          {(!fee.amount && !fee.ratePercent) && "0 ₫"}
-                        </td>
-                        <td className="px-4 py-2.5 text-center text-slate-600">
-                          {fee.graceDays != null && fee.graceDays > 0 ? `${fee.graceDays} ngày` : "Không"}
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-500">
-                          {fee.validFrom ? fee.validFrom.split("T")[0] : "Vô thời hạn"}
-                          {fee.validTo ? ` → ${fee.validTo.split("T")[0]}` : " → Hiện hành"}
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          {isAdmin ? (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleFeeStatus(fee)}
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold transition ${
-                                fee.isActive
-                                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                              }`}
-                              title="Click to toggle status"
-                            >
-                              {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
-                            </button>
-                          ) : (
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                fee.isActive
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          {isAdmin ? (
-                            <button
-                              type="button"
-                              onClick={() => openEditFeeModal(fee)}
-                              className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                            >
-                              Edit
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-slate-400">Chỉ xem</span>
-                          )}
+              {/* Fees Data Table */}
+              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2.5">{t("manager.fee_code", "Mã phí")}</th>
+                      <th className="px-4 py-2.5">{t("manager.scope", "Phạm vi")}</th>
+                      <th className="px-4 py-2.5">{t("manager.category", "Danh mục")}</th>
+                      <th className="px-4 py-2.5">{t("manager.method", "Phương thức")}</th>
+                      <th className="px-4 py-2.5 text-right">{t("manager.rate_amount", "Mức phí / Tỷ lệ")}</th>
+                      <th className="px-4 py-2.5 text-center">{t("manager.grace_period", "Thời gian ân hạn")}</th>
+                      <th className="px-4 py-2.5">{t("manager.effective_date", "Hiệu lực")}</th>
+                      <th className="px-4 py-2.5 text-center">{t("common.status", "Trạng thái")}</th>
+                      <th className="px-4 py-2.5 text-right">{t("manager.actions", "Thao tác")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loadingFees ? (
+                      <tr>
+                        <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
+                          Đang tải chính sách biểu phí...
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ) : feesList.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-12 text-center text-xs text-slate-400">
+                          Không tìm thấy chính sách biểu phí phù hợp.
+                        </td>
+                      </tr>
+                    ) : (
+                      feesList.map((fee) => {
+                        const langKey = lang === "vi" ? "vi" : "en";
+                        const feeTypeLabel = FEE_TYPE_TRANSLATIONS[langKey]?.[fee.feeType] || feeTypes.find(([val]) => val === fee.feeType)?.[1] || fee.feeType;
+                        const calcMethodLabel = calculationMethods.find(([val]) => val === fee.calculationMethod)?.[1] || fee.calculationMethod;
+                        const cleanCondition = getCleanCondition(fee.conditions);
 
-          {/* Pagination for Fees */}
-          {feeData && (
-            <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-              <span>
-                {feeData.totalCount === 0 ? "0 chính sách" : `Hiển thị trang ${feeData.pageNumber} / ${Math.max(1, feeData.totalPages)} (Tổng ${feeData.totalCount} chính sách)`}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={!feeData.hasPreviousPage || feeQuery.PageNumber <= 1}
-                  onClick={() => setFeeQuery({ ...feeQuery, PageNumber: feeQuery.PageNumber - 1 })}
-                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  disabled={!feeData.hasNextPage}
-                  onClick={() => setFeeQuery({ ...feeQuery, PageNumber: feeQuery.PageNumber + 1 })}
-                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
-                >
-                  Next
-                </button>
+                        return (
+                          <tr key={fee.id} className="hover:bg-slate-50/60 transition">
+                            <td className="px-4 py-2.5 font-sans font-semibold tracking-wide text-slate-800 dark:text-zinc-100">
+                              {fee.code}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {fee.facilityName ? (
+                                <span className="font-medium text-slate-800 dark:text-zinc-200">{fee.facilityName}</span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                                  Toàn hệ thống
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 font-sans">
+                              <span className="font-medium text-slate-800 dark:text-zinc-100">{feeTypeLabel}</span>
+                              {cleanCondition && (
+                                <p className="max-w-[240px] truncate text-[11px] text-slate-500 dark:text-zinc-400 font-sans mt-0.5" title={cleanCondition}>
+                                  {cleanCondition}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-600">{calcMethodLabel}</td>
+                            <td className="px-4 py-2.5 text-right font-medium text-slate-900">
+                              {fee.amount != null && fee.amount > 0 ? formatVnd(fee.amount) : ""}
+                              {fee.ratePercent != null && fee.ratePercent > 0 ? ` ${fee.ratePercent}%` : ""}
+                              {(!fee.amount && !fee.ratePercent) && "0 ₫"}
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-slate-600">
+                              {fee.graceDays != null && fee.graceDays > 0 ? `${fee.graceDays} ngày` : "Không"}
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-500">
+                              {fee.validFrom ? fee.validFrom.split("T")[0] : "Vô thời hạn"}
+                              {fee.validTo ? ` → ${fee.validTo.split("T")[0]}` : " → Hiện hành"}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              {isAdmin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleFeeStatus(fee)}
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold transition ${fee.isActive
+                                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    }`}
+                                  title="Click to toggle status"
+                                >
+                                  {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
+                                </button>
+                              ) : (
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${fee.isActive
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : "bg-slate-100 text-slate-600"
+                                    }`}
+                                >
+                                  {fee.isActive ? "Đang áp dụng" : "Ngừng áp dụng"}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-right">
+                              {isAdmin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditFeeModal(fee)}
+                                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                                >
+                                  Edit
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-slate-400">Chỉ xem</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
+
+              {/* Pagination for Fees */}
+              {feeData && (
+                <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                  <span>
+                    {feeData.totalCount === 0 ? "0 chính sách" : `Hiển thị trang ${feeData.pageNumber} / ${Math.max(1, feeData.totalPages)} (Tổng ${feeData.totalCount} chính sách)`}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!feeData.hasPreviousPage || feeQuery.PageNumber <= 1}
+                      onClick={() => setFeeQuery({ ...feeQuery, PageNumber: feeQuery.PageNumber - 1 })}
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!feeData.hasNextPage}
+                      onClick={() => setFeeQuery({ ...feeQuery, PageNumber: feeQuery.PageNumber + 1 })}
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
-      </>
+        </>
       )}
 
-{/* Modal: Create / Edit Fee Policy */}
+      {/* Modal: Create / Edit Fee Policy */}
       {isAdmin && showFeeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
