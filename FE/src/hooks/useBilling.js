@@ -103,11 +103,31 @@ export function useBilling() {
             (p.reservationCode && p.reservationCode.startsWith("RNW-"))
         );
 
-        const desc = isRenewal
-          ? `Gia hạn hợp đồng ${p.agreementNo || (p.reservationCode || "").replace("RNW-", "") || p.invoiceNo}`
-          : p.reservationCode
-          ? `Đơn đặt chỗ ${p.reservationCode}`
-          : `Hóa đơn ${p.invoiceNo || p.invoiceId}`;
+        const invNo = String(p.invoiceNo || "").toUpperCase();
+        const agrSuffix = p.agreementNo ? ` (${p.agreementNo})` : "";
+        let desc = "";
+
+        if (isRenewal || invNo.startsWith("INV-RENEW-") || invNo.startsWith("INV-AUTO-") || invNo.startsWith("INV-MTH-")) {
+          desc = `Tiền thuê / Gia hạn định kỳ${agrSuffix || (p.reservationCode ? ` (${p.reservationCode.replace("RNW-", "")})` : "")}`;
+        } else if (invNo.startsWith("INV-CHG-")) {
+          desc = `Phụ phí hư hại / Sự cố (Ticket)${agrSuffix}`;
+        } else if (invNo.startsWith("INV-PEN-")) {
+          desc = `Phí phạt nghiệm thu trả kho${agrSuffix}`;
+        } else if (invNo.startsWith("INV-INIT-")) {
+          desc = `Đặt cọc & Tiền thuê kỳ đầu${agrSuffix}`;
+        } else if (invNo.startsWith("INV-TRF-")) {
+          desc = `Phí đổi / nâng cấp ô kho${agrSuffix}`;
+        } else if (invNo.startsWith("INV-OVD-")) {
+          desc = `Thanh toán quá hạn & Phí trễ hạn${agrSuffix}`;
+        } else if (invNo.startsWith("INV-DEP-")) {
+          desc = `Đối soát tiền đặt cọc${agrSuffix}`;
+        } else if (p.reservationCode) {
+          desc = `Đặt chỗ & Thuê kho (${p.reservationCode})`;
+        } else if (p.description) {
+          desc = p.description;
+        } else {
+          desc = `Hóa đơn dịch vụ (${p.invoiceNo || p.invoiceId})`;
+        }
 
         const remainingSeconds = isPending && deadline !== null
           ? Math.max(0, Math.floor((deadline - now) / 1000)) : 0;
