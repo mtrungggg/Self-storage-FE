@@ -1153,6 +1153,38 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                     )}
 
+                    {myAssignedTickets.length > 0 && (
+                      <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          {t("staff.assigned_tickets", "Ticket hỗ trợ & sự cố")} ({myAssignedTickets.length})
+                        </h4>
+                        {myAssignedTickets.map((tk) => (
+                          <div
+                            key={tk.id}
+                            className="p-3 rounded-xl border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="text-xs font-bold text-slate-900">
+                                #{tk.ticketNo} • {tk.subject}
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                {tk.unitCode ? `Ô kho ${tk.unitCode} • ` : ""}
+                                {tk.customerName || "Khách hàng"} • Trạng thái: {tk.status}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTicket(tk)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-300 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+                              <span>Xử lý Ticket & Đề xuất phụ phí</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
 
                 )}
