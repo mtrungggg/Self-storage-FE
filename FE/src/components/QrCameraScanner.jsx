@@ -3,18 +3,30 @@ import { Html5Qrcode } from "html5-qrcode";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function QrCameraScanner({ onScan, onClose }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isVi = lang === "vi";
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
   const scannerRef = useRef(null);
   const elementId = useRef(`qr-reader-${Math.random().toString(36).substring(2, 9)}`);
-  const activeRef = useRef(true);
+  const onScanRef = useRef(onScan);
 
   useEffect(() => {
-    activeRef.current = true;
+    onScanRef.current = onScan;
+  }, [onScan]);
+
+  useEffect(() => {
+    let isMounted = true;
     let qrScanner = null;
 
-    async function init() {
+    async function initCamera() {
+      const container = document.getElementById(elementId.current);
+      if (container) {
+        container.innerHTML = "";
+      }
+
+      if (!isMounted) return;
+
       try {
         qrScanner = new Html5Qrcode(elementId.current);
         scannerRef.current = qrScanner;
@@ -23,17 +35,13 @@ export default function QrCameraScanner({ onScan, onClose }) {
           { facingMode: "environment" },
           {
             fps: 15,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-              const qrboxEdgeSize = Math.max(220, Math.floor(minEdge * 0.75));
-              return { width: qrboxEdgeSize, height: qrboxEdgeSize };
-            },
+            qrbox: { width: 220, height: 220 },
             aspectRatio: 1.0,
           },
           (decodedText) => {
-            if (!activeRef.current) return;
-            activeRef.current = false;
-            if (qrScanner.isScanning) {
+            if (!isMounted) return;
+            isMounted = false;
+            if (qrScanner?.isScanning) {
               qrScanner
                 .stop()
                 .then(() => {
@@ -43,34 +51,47 @@ export default function QrCameraScanner({ onScan, onClose }) {
                 })
                 .catch(() => {})
                 .finally(() => {
-                  onScan(decodedText.trim());
+                  onScanRef.current?.(decodedText.trim());
                 });
             } else {
-              onScan(decodedText.trim());
+              onScanRef.current?.(decodedText.trim());
             }
           },
           () => {} // Frame drop callback
         );
 
-        if (activeRef.current) setStarting(false);
+        if (isMounted) {
+          setStarting(false);
+        } else {
+          // If unmounted while starting
+          if (qrScanner?.isScanning) {
+            qrScanner
+              .stop()
+              .then(() => {
+                try {
+                  qrScanner.clear();
+                } catch (_) {}
+              })
+              .catch(() => {});
+          }
+        }
       } catch (err) {
-        if (activeRef.current) {
+        if (isMounted) {
           setStarting(false);
           const msg = err?.message || String(err);
           setError(
             msg.includes("Permission") || msg.includes("NotAllowedError")
-              ? "Camera access is blocked. Allow camera access in your browser and try again."
-              : `Unable to connect to the camera: ${msg}`
+              ? (isVi ? "Quyền truy cập Camera bị chặn. Vui lòng cấp quyền trong trình duyệt và thử lại." : "Camera access is blocked. Allow camera access in your browser and try again.")
+              : `${isVi ? "Không thể kết nối camera" : "Unable to connect to the camera"}: ${msg}`
           );
         }
       }
     }
 
-    // Delay slightly to ensure element is rendered in DOM
-    const timer = setTimeout(init, 100);
+    const timer = setTimeout(initCamera, 80);
 
     return () => {
-      activeRef.current = false;
+      isMounted = false;
       clearTimeout(timer);
       if (scannerRef.current) {
         const instance = scannerRef.current;
@@ -89,11 +110,41 @@ export default function QrCameraScanner({ onScan, onClose }) {
           } catch (_) {}
         }
       }
+      const container = document.getElementById(elementId.current);
+      if (container) {
+        container.innerHTML = "";
+      }
     };
-  }, [onScan]);
+  }, []); // Run strictly once on mount
 
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-[#dfe7f5] bg-[#0b1c30] p-4 text-white shadow-xl">
+    <div className="relative overflow-hidden rounded-[14px] border border-[#dfe7f5] bg-[#0b1c30] p-3.5 sm:p-4 text-white shadow-xl">
+      <style>{`
+        #${elementId.current} {
+          width: 100% !important;
+          height: 100% !important;
+          overflow: hidden !important;
+          position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          border-radius: 12px !important;
+        }
+        #${elementId.current} video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          display: block !important;
+          border-radius: 12px !important;
+        }
+        #${elementId.current} canvas {
+          display: none !important;
+        }
+        #${elementId.current} #qr-shaded-region {
+          display: none !important;
+        }
+      `}</style>
+
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[20px] text-[#2dd4a0]">photo_camera</span>
@@ -108,13 +159,6 @@ export default function QrCameraScanner({ onScan, onClose }) {
         </button>
       </div>
 
-      {starting && (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs text-[#8996a9]">
-          <span className="material-symbols-outlined animate-spin text-[28px] text-zinc-900 dark:text-zinc-100">progress_activity</span>
-          <span>{t("common.starting_camera", "Đang khởi động camera...")}</span>
-        </div>
-      )}
-
       {error ? (
         <div className="rounded-[10px] bg-red-950/80 p-4 text-center text-xs text-red-200">
           <span className="material-symbols-outlined text-3xl text-red-400">videocam_off</span>
@@ -128,13 +172,21 @@ export default function QrCameraScanner({ onScan, onClose }) {
           </button>
         </div>
       ) : (
-        <div className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[10px] bg-black">
+        <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] aspect-square overflow-hidden rounded-xl bg-black shadow-inner">
           {/* Container for html5-qrcode video */}
-          <div id={elementId.current} className="w-full" />
+          <div id={elementId.current} className="h-full w-full" />
 
-          {/* Aiming border overlay */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="relative h-48 w-48 rounded-xl border-2 border-dashed border-[#2dd4a0]/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]">
+          {/* Loading overlay while camera initializes */}
+          {starting && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#0b1c30]/90 text-xs text-[#8996a9]">
+              <span className="material-symbols-outlined animate-spin text-[28px] text-[#2dd4a0]">progress_activity</span>
+              <span>{t("common.starting_camera", "Đang khởi động camera...")}</span>
+            </div>
+          )}
+
+          {/* Aiming border overlay (Single unified viewfinder) */}
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+            <div className="relative h-44 w-44 rounded-xl border-2 border-dashed border-[#2dd4a0]/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
               {/* Corner accents */}
               <div className="absolute -left-1 -top-1 h-4 w-4 border-l-4 border-t-4 border-[#2dd4a0]" />
               <div className="absolute -right-1 -top-1 h-4 w-4 border-r-4 border-t-4 border-[#2dd4a0]" />
@@ -149,7 +201,9 @@ export default function QrCameraScanner({ onScan, onClose }) {
       )}
 
       <p className="mt-3 text-center text-[11px] text-[#8996a9]">
-        Point the camera at the customer's QR code to scan and look up their check-in.
+        {isVi
+          ? "Hướng camera vào mã QR check-in của khách để quét thông tin tự động."
+          : "Point the camera at the customer's QR code to scan and look up their check-in."}
       </p>
     </div>
   );
