@@ -20,39 +20,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      chunkSizeWarningLimit: 800,
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('three')) {
-                return 'vendor-three';
-              }
-              if (id.includes('@ark-ui/react')) {
-                return 'vendor-ark';
-              }
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-                return 'vendor-react';
-              }
-              if (id.includes('framer-motion') || id.includes('motion')) {
-                return 'vendor-motion';
-              }
-              if (id.includes('lucide-react')) {
-                return 'vendor-icons';
-              }
-              if (id.includes('html5-qrcode')) {
-                return 'vendor-qrcode';
-              }
-              if (id.includes('gsap')) {
-                return 'vendor-gsap';
-              }
-              if (id.includes('axios')) {
-                return 'vendor-axios';
-              }
-            }
-          },
-        },
-      },
+      chunkSizeWarningLimit: 1200,
     },
     server: {
       port: 5174,

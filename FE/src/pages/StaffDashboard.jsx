@@ -17,6 +17,8 @@ import StaffFacilityUnits from "../components/StaffFacilityUnits";
 
 import StaffTaskStatus from "../components/StaffTaskStatus";
 
+import StaffAssignedTicketModal from "../components/StaffAssignedTicketModal";
+
 import StaffShiftSchedule from "../components/StaffShiftSchedule";
 
 
@@ -124,6 +126,8 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
   const [tasks, setTasks] = useState([]);
 
   const [supportTickets, setSupportTickets] = useState([]);
+
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
@@ -1029,7 +1033,14 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                         const isInProgress = task.status === "in_progress";
 
-
+                        const tckMatch = (task.title || "").match(/#(TCK-[A-Z0-9-]+)/i);
+                        const linkedTicket = supportTickets.find(
+                          (tk) =>
+                            (task.ticketId && tk.id === task.ticketId) ||
+                            (tckMatch &&
+                              tk.ticketNo &&
+                              tk.ticketNo.toUpperCase() === tckMatch[1].toUpperCase())
+                        );
 
                         return (
 
@@ -1115,9 +1126,22 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
 
                             </div>
 
-                            <div>
+                            <div className="space-y-2">
 
                               <StaffTaskStatus task={task} onUpdated={handleUpdateTask} />
+
+                              {linkedTicket && (
+                                <div className="flex justify-end pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedTicket(linkedTicket)}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-300 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition cursor-pointer"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+                                    <span>Xử lý Ticket & Đề xuất phụ phí</span>
+                                  </button>
+                                </div>
+                              )}
 
                             </div>
 
@@ -1326,6 +1350,17 @@ export default function StaffDashboard({ initialTab = "checkin" }) {
       </main>
 
 
+
+      {/* Ticket Detail & Propose Charge Modal */}
+      <StaffAssignedTicketModal
+        ticket={selectedTicket}
+        isOpen={Boolean(selectedTicket)}
+        onClose={() => setSelectedTicket(null)}
+        onSuccess={() => {
+          setSelectedTicket(null);
+          if (selectedFacilityId) loadDashboardData(selectedFacilityId);
+        }}
+      />
 
       {/* Shared Portal Footer */}
 
