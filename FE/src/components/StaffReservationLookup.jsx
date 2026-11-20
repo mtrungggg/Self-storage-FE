@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import staffCheckInApi from "../services/api/staffCheckInApi";
 import StaffAssignUnit from "./StaffAssignUnit";
@@ -199,7 +199,7 @@ export default function StaffReservationLookup({ facilityId: propFacilityId = nu
     search(query.trim());
   }
 
-  function handleQrScan(scannedCode) {
+  const handleQrScan = useCallback((scannedCode) => {
     setCameraActive(false);
     setQuery(scannedCode);
     if (String(scannedCode).startsWith("v1.")) {
@@ -207,7 +207,7 @@ export default function StaffReservationLookup({ facilityId: propFacilityId = nu
     } else {
       search(scannedCode);
     }
-  }
+  }, [resolvedFacilityId, query]);
 
   return (
     <section className="mt-5 rounded-[16px] border border-[#dfe7f5] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
