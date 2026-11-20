@@ -5,6 +5,7 @@ export const facilityService = {
   getFacilitiesPaged: (params) => catalogApi.getFacilitiesPaged(params),
   getFacilityDetail: (id) => catalogApi.getFacilityDetail(id),
   getUnitTypes: () => catalogApi.getUnitTypes(),
+  getAvailableUnits: (facilityId, params) => catalogApi.getAvailableUnits(facilityId, params),
 };
 
 export default facilityService;
