@@ -54,41 +54,6 @@ export function usePaymentCheckout() {
 
     const resolveCheckout = async () => {
       try {
-        if (stateReservationId || (!stateInvoiceId && !stateRenewalId)) {
-          let targetReservation = reservation;
-          if (stateReservationId) {
-            try {
-              targetReservation = await reservationApi.getReservationDetail(stateReservationId);
-              if (active && targetReservation) setReservation(targetReservation);
-            } catch {
-              // ignore and fallback
-            }
-          }
-
-          if (!targetReservation) {
-            const myReservations = await reservationApi.getMyReservations({ status: "pending" });
-            targetReservation = Array.isArray(myReservations) ? myReservations[0] : null;
-            if (active && targetReservation) setReservation(targetReservation);
-          }
-
-          const resId = targetReservation?.reservationId || targetReservation?.id || stateReservationId;
-          if (resId) {
-            const newCheckout = await paymentApi.createCheckout({
-              reservationId: Number(resId),
-              paymentMethod: "bank_transfer",
-            });
-            if (active && newCheckout) {
-              setCheckout(newCheckout);
-              const remaining = targetReservation?.holdUntil
-                ? Math.max(0, Math.floor((new Date(targetReservation.holdUntil).getTime() - Date.now()) / 1000))
-                : newCheckout.expiresInSeconds || 900;
-              setTimeLeft(remaining > 0 ? remaining : 900);
-              totalSecondsRef.current = remaining > 0 ? remaining : 900;
-            }
-            return;
-          }
-        }
-
         if (stateRenewalId) {
           const renewalCheckout = await paymentApi.createCheckout({
             renewalId: Number(stateRenewalId),
@@ -116,6 +81,42 @@ export function usePaymentCheckout() {
             setReservation(null);
             setTimeLeft(invoiceCheckout?.expiresInSeconds || 900);
             totalSecondsRef.current = invoiceCheckout?.expiresInSeconds || 900;
+          }
+          return;
+        }
+
+        let targetReservation = reservation;
+        if (stateReservationId) {
+          try {
+            targetReservation = await reservationApi.getReservationDetail(stateReservationId);
+            if (active && targetReservation) setReservation(targetReservation);
+          } catch {
+            // ignore and fallback
+          }
+        }
+
+        if (!targetReservation && !stateReservationId) {
+          const myReservations = await reservationApi.getMyReservations({ status: "pending" });
+          const nowMs = Date.now();
+          targetReservation = Array.isArray(myReservations)
+            ? myReservations.find((r) => !r.holdUntil || new Date(r.holdUntil).getTime() > nowMs) || null
+            : null;
+          if (active && targetReservation) setReservation(targetReservation);
+        }
+
+        const resId = targetReservation?.reservationId || targetReservation?.id || stateReservationId;
+        if (resId) {
+          const newCheckout = await paymentApi.createCheckout({
+            reservationId: Number(resId),
+            paymentMethod: "bank_transfer",
+          });
+          if (active && newCheckout) {
+            setCheckout(newCheckout);
+            const remaining = targetReservation?.holdUntil
+              ? Math.max(0, Math.floor((new Date(targetReservation.holdUntil).getTime() - Date.now()) / 1000))
+              : newCheckout.expiresInSeconds || 900;
+            setTimeLeft(remaining > 0 ? remaining : 900);
+            totalSecondsRef.current = remaining > 0 ? remaining : 900;
           }
           return;
         }
