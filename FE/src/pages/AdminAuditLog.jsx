@@ -23,13 +23,13 @@ const ENTITY_OPTIONS = [
 
 const ACTION_OPTIONS = [
   { value: "", label: "Tất cả hành động" },
-  { value: "Create", label: "Tạo mới (Create)" },
-  { value: "Update", label: "Cập nhật (Update)" },
-  { value: "Update_Status", label: "Đổi trạng thái (Status)" },
-  { value: "Update_Roles", label: "Phân quyền / Đổi vai trò (Roles)" },
-  { value: "Assign_Staff", label: "Phân công nhân viên (Assign)" },
-  { value: "Revoke_Staff_Assignment", label: "Thu hồi phân công (Revoke)" },
-  { value: "Delete", label: "Xóa (Delete)" },
+  { value: "Create", label: "Tạo mới" },
+  { value: "Update", label: "Cập nhật" },
+  { value: "Update_Status", label: "Đổi trạng thái" },
+  { value: "Update_Roles", label: "Phân quyền / Đổi vai trò" },
+  { value: "Assign_Staff", label: "Phân công nhân viên" },
+  { value: "Revoke_Staff_Assignment", label: "Thu hồi phân công" },
+  { value: "Delete", label: "Xóa dữ liệu" },
 ];
 
 const defaults = {
@@ -167,7 +167,7 @@ export default function AdminAuditLog() {
           </div>
 
           {/* Entity Type Dropdown */}
-          <div className="w-44">
+          <div className="w-52">
             <SelectDropdown
               value={filters.EntityType}
               onChange={(e) => setFilters({ ...filters, EntityType: e.target.value })}
@@ -182,7 +182,7 @@ export default function AdminAuditLog() {
           </div>
 
           {/* Action Dropdown */}
-          <div className="w-36">
+          <div className="w-52">
             <SelectDropdown
               value={filters.Action}
               onChange={(e) => setFilters({ ...filters, Action: e.target.value })}
@@ -191,21 +191,6 @@ export default function AdminAuditLog() {
               {ACTION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
-                </option>
-              ))}
-            </SelectDropdown>
-          </div>
-
-          {/* Rows per page */}
-          <div className="w-32">
-            <SelectDropdown
-              value={filters.PageSize}
-              onChange={(e) => setFilters({ ...filters, PageSize: Number(e.target.value) })}
-              className="reference-select text-xs"
-            >
-              {[10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size} dòng / trang
                 </option>
               ))}
             </SelectDropdown>

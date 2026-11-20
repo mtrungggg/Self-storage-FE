@@ -202,7 +202,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         <div
           role="listbox"
           tabIndex={-1}
-          className={`absolute left-0 right-0 ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"} max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1 shadow-xl backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95 ${menuClassName}`}
+          className={`absolute left-0 min-w-full w-max max-w-[min(90vw,26rem)] ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"} max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1 shadow-xl backdrop-blur-md z-[99999] animate-in fade-in-0 zoom-in-95 ${menuClassName}`}
         >
           {parsedOptions.length === 0 ? (
             <div className="px-3 py-2 text-xs text-zinc-400 text-center">
@@ -225,7 +225,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                       : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
                   }`}
                 >
-                  <span className="truncate">{opt.label}</span>
+                  <span className="whitespace-nowrap pr-2">{opt.label}</span>
                   {isSelected && (
                     <Check
                       size={14}

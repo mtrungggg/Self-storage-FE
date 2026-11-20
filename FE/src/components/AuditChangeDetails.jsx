@@ -1,37 +1,41 @@
 import { useLanguage } from "../context/LanguageContext";
-import { useState } from "react";
-import { ArrowRight, Copy, GitCompareArrows } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldAlert, UserCheck, RefreshCw, Layers } from "lucide-react";
 import "../styles/audit-details.css";
 
-function parsePayload(value) {
-  if (value == null || value === "") return { value: undefined };
-  if (typeof value !== "string") return { value };
-  try { return { value: JSON.parse(value) }; }
-  catch { return { value, invalid: true }; }
-}
-
-function sameValue(before, after) {
-  if (Object.is(before, after)) return true;
-  if (!before || !after || typeof before !== "object" || typeof after !== "object") return false;
-  if (Array.isArray(before) !== Array.isArray(after)) return false;
-  const keys = Object.keys(before);
-  return keys.length === Object.keys(after).length && keys.every((key) => Object.hasOwn(after, key) && sameValue(before[key], after[key]));
-}
+const ENTITY_NAMES = {
+  Facility: "Cơ sở kho",
+  StorageUnit: "Ô kho lưu trữ",
+  User: "Tài khoản người dùng",
+  RentalAgreement: "Hợp đồng thuê kho",
+  rental_agreement: "Hợp đồng thuê kho",
+  Reservation: "Đơn đặt chỗ",
+  SupportTicket: "Yêu cầu hỗ trợ",
+  StaffFacilityAssignment: "Phân công nhân sự",
+  Invoice: "Hóa đơn thanh toán",
+  Payment: "Giao dịch thanh toán",
+};
 
 const FIELD_LABELS = {
   Value: "Nội dung ghi nhận",
   Status: "Trạng thái",
+  status: "Trạng thái",
   Role: "Vai trò",
   Roles: "Danh sách vai trò",
-  IsActive: "Trạng thái kích hoạt",
+  IsActive: "Kích hoạt",
   Email: "Địa chỉ Email",
   PhoneNumber: "Số điện thoại",
   FullName: "Họ và tên",
   Address: "Địa chỉ",
-  DepositAmount: "Tiền cọc (VNĐ)",
-  MonthlyPrice: "Đơn giá tháng (VNĐ)",
-  MonthlyRate: "Đơn giá tháng (VNĐ)",
-  Reason: "Lý do",
+  DepositAmount: "Tiền cọc",
+  deductedDeposit: "Tiền cọc khấu trừ",
+  MonthlyPrice: "Đơn giá tháng",
+  MonthlyRate: "Đơn giá tháng",
+  unitStatus: "Trạng thái ô kho",
+  auctionProceeds: "Số tiền thanh lý",
+  settledAmount: "Số tiền đã tất toán",
+  remainingDebt: "Nợ tồn đọng",
+  reason: "Lý do thực hiện",
+  Reason: "Lý do thực hiện",
   FacilityName: "Cơ sở kho",
   FacilityId: "Mã cơ sở",
   UnitCode: "Mã ô kho",
@@ -42,115 +46,258 @@ const FIELD_LABELS = {
 
 function fieldLabel(key) {
   if (FIELD_LABELS[key]) return FIELD_LABELS[key];
-  return key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]/g, " ").replace(/\bId\b/g, "ID").replace(/^./, (letter) => letter.toUpperCase());
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]/g, " ")
+    .replace(/\bId\b/g, "ID")
+    .replace(/^./, (letter) => letter.toUpperCase());
 }
 
-function formatAuditText(str) {
-  if (typeof str !== "string") return str;
-  // Match staff assignment: Staff: Name (EMP-123) -> Facility: Facility Name (facility_staff)
-  const staffMatch = str.match(/Staff:\s*(.*?)\s*\((.*?)\)\s*->\s*Facility:\s*(.*?)\s*\((.*?)\)/i);
-  if (staffMatch) {
-    const [, name, empId, facility, role] = staffMatch;
-    const roleVN = role === "facility_staff" ? "Nhân viên cơ sở" : role === "facility_manager" ? "Quản lý cơ sở" : role;
-    return `Phân công nhân viên: ${name} (${empId}) vào cơ sở "${facility}" với vai trò ${roleVN}`;
-  }
-  // Match revoke: Revoke Staff: ... -> Facility: ...
-  const revokeMatch = str.match(/Revoke.*?Staff:\s*(.*?)\s*\((.*?)\)\s*->\s*Facility:\s*(.*?)(?:\s*\(|$)/i);
-  if (revokeMatch) {
-    const [, name, empId, facility] = revokeMatch;
-    return `Thu hồi phân công nhân viên: ${name} (${empId}) tại cơ sở "${facility}"`;
-  }
-  // Generic arrow: Old -> New
-  if (str.includes(" -> ")) {
-    const parts = str.split(" -> ");
-    return `Chuyển từ "${parts[0].trim()}" sang "${parts[1].trim()}"`;
-  }
-  // Clean IPv6
-  if (str === "::1" || str === "127.0.0.1") {
-    return "Nội bộ (Local)";
-  }
-  return str;
+function translateRole(r) {
+  if (!r) return "—";
+  const s = String(r).toLowerCase().trim();
+  if (s === "storage_customer" || s === "customer") return "Khách hàng (Customer)";
+  if (s === "facility_staff" || s === "staff") return "Nhân viên cơ sở (Staff)";
+  if (s === "facility_manager" || s === "manager") return "Quản lý cơ sở (Manager)";
+  if (s === "system_administrator" || s === "admin") return "Quản trị hệ thống (Admin)";
+  return r;
 }
 
-function Value({ value, t }) {
-  if (value === undefined || value === null || value === "") return <span className="audit-value-empty">{t("common.no_data", "—")}</span>;
-  if (typeof value === "boolean") return <span className={`audit-boolean ${value ? "is-true" : ""}`}>{value ? "Có (Bật)" : "Không (Tắt)"}</span>;
-  if (Array.isArray(value)) return value.length ? <ul className="audit-value-list">{value.map((item, index) => <li key={index}><Value value={item} t={t} /></li>)}</ul> : <span className="audit-value-empty">Danh sách trống</span>;
-  if (typeof value === "object") return Object.keys(value).length ? <dl className="audit-value-object">{Object.entries(value).map(([key, item]) => <div key={key}><dt>{fieldLabel(key)}</dt><dd><Value value={item} t={t} /></dd></div>)}</dl> : <span className="audit-value-empty">Không có dữ liệu</span>;
-  return <span>{formatAuditText(String(value))}</span>;
+function translateStatus(st) {
+  if (!st) return "—";
+  const s = String(st).toLowerCase().trim();
+  if (s.startsWith("active")) return "Đang hoạt động (Active)";
+  if (s.startsWith("disabled")) return "Đã vô hiệu hóa / Khóa (Disabled)";
+  if (s.startsWith("pending")) return "Chờ xử lý (Pending)";
+  if (s.startsWith("terminated")) return "Đã chấm dứt (Terminated)";
+  if (s.startsWith("overdue")) return "Quá hạn thanh toán (Overdue)";
+  return st;
+}
+
+function parsePayload(value) {
+  if (value == null || value === "") return { value: undefined };
+  if (typeof value !== "string") return { value };
+  try {
+    return { value: JSON.parse(value) };
+  } catch {
+    return { value, invalid: true };
+  }
 }
 
 export default function AuditChangeDetails({ entry }) {
   const { t } = useLanguage();
-  const [showAll, setShowAll] = useState(false);
-  const [copyStatus, setCopyStatus] = useState("");
   const before = parsePayload(entry.oldValues);
   const after = parsePayload(entry.newValues);
-  const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-  const asFields = (value) => value === undefined ? {} : isRecord(value) ? value : { Value: value };
-  const oldFields = asFields(before.value);
-  const newFields = asFields(after.value);
-  const fields = [...new Set([...Object.keys(oldFields), ...Object.keys(newFields)])].map((key) => ({
-    key, before: oldFields[key], after: newFields[key],
-    changed: !sameValue(oldFields[key], newFields[key]),
-    kind: !Object.hasOwn(oldFields, key) ? "Thêm mới" : !Object.hasOwn(newFields, key) ? "Đã xóa" : "Cập nhật",
-  }));
-  const changed = fields.filter((field) => field.changed);
-  const visible = showAll ? fields : changed;
-  const requestId = entry.requestId == null ? "" : String(entry.requestId).trim();
 
-  async function copyId() {
-    try { await navigator.clipboard.writeText(requestId); setCopyStatus("Đã sao chép mã truy vấn."); }
-    catch { setCopyStatus("Không thể sao chép tự động."); }
-  }
+  const entityNameVN = ENTITY_NAMES[entry.entityType] || entry.entityType || "Bản ghi";
+  const act = String(entry.action || "").toUpperCase();
 
-  const entityNameVN = {
-    Facility: "Cơ sở kho",
-    StorageUnit: "Ô kho",
-    User: "Người dùng",
-    RentalAgreement: "Hợp đồng thuê",
-    Reservation: "Đơn đặt chỗ",
-    SupportTicket: "Yêu cầu hỗ trợ",
-    StaffFacilityAssignment: "Phân công nhân sự",
-    Invoice: "Hóa đơn",
-    Payment: "Thanh toán",
-  }[entry.entityType] || entry.entityType || "Bản ghi";
+  // 1. Phân công nhân sự: ASSIGN_STAFF
+  const staffMatch = typeof entry.newValues === "string" && entry.newValues.match(/Staff:\s*(.*?)\s*\((.*?)\)\s*->\s*Facility:\s*(.*?)\s*\((.*?)\)/i);
+  if (act.includes("ASSIGN_STAFF") || staffMatch) {
+    const [, name, empId, facility, role] = staffMatch || ["", "Nhân viên", entry.entityId, "Cơ sở kho", "facility_staff"];
+    const roleVN = role === "facility_staff" ? "Nhân viên cơ sở" : role === "facility_manager" ? "Quản lý cơ sở" : role;
 
-  return <section className="audit-detail" aria-label={`Chi tiết thay đổi sự kiện ${entry.id}`}>
-    <header className="audit-detail-header">
-      <div className="audit-detail-title">
-        <span className="audit-detail-icon"><GitCompareArrows size={20} /></span>
-        <div>
-          <h3>{t("admin.audit_change_summary", "Tóm tắt thay đổi")}</h3>
-          <p className="text-slate-600 font-medium">
-            {entityNameVN} · #{entry.entityId ?? "—"} · {changed.length > 0 ? `${changed.length} trường thông tin được điều chỉnh` : "Hoạt động thực thi hệ thống"}
-          </p>
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-3">
+          <UserCheck size={18} className="text-emerald-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Chi tiết phân công nhân sự vào cơ sở
+          </h4>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Nhân viên được giao việc</div>
+            <div className="text-sm font-bold text-slate-900 mt-0.5">{name}</div>
+            <div className="text-xs text-slate-500 font-mono mt-0.5">Mã NV: {empId}</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Cơ sở tiếp nhận</div>
+            <div className="text-sm font-bold text-slate-900 mt-0.5">{facility}</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Vai trò tại cơ sở</div>
+            <div className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              {roleVN}
+            </div>
+          </div>
         </div>
       </div>
-      <div className="audit-request">
-        <span>{t("admin.audit_request_id", "Mã truy vấn")}</span>
-        <div>{requestId ? <><code>{requestId}</code><button type="button" onClick={copyId} aria-label="Sao chép mã truy vấn"><Copy size={14} /></button></> : <span className="audit-value-empty">{t("common.no_data", "—")}</span>}</div>
-        {copyStatus && <small role="status">{copyStatus}</small>}
+    );
+  }
+
+  // 2. Thu hồi phân công: REVOKE_STAFF_ASSIGNMENT
+  if (act.includes("REVOKE")) {
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldAlert size={18} className="text-amber-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Thu hồi phân công nhân sự
+          </h4>
+        </div>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <p className="text-xs text-slate-700">
+            Hệ thống đã thu hồi phân công làm việc và chấm dứt nhiệm vụ của nhân sự tại điểm kho tương ứng.
+          </p>
+          {entry.oldValues && (
+            <div className="mt-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono">
+              Thông tin phân công trước đó: {entry.oldValues}
+            </div>
+          )}
+        </div>
       </div>
-    </header>
-    <div className="audit-detail-toolbar">
-      <span>So sánh giá trị ghi nhận <ArrowRight size={14} /></span>
-      <label>
-        <input type="checkbox" checked={showAll} onChange={(event) => setShowAll(event.target.checked)} />
-        Hiện các trường không đổi ({fields.length - changed.length})
-      </label>
+    );
+  }
+
+  // 3. Đổi vai trò / phân quyền: UPDATE_ROLES
+  if (act.includes("ROLE")) {
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-2">
+          <RefreshCw size={17} className="text-blue-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Thay đổi vai trò người dùng (User ID: #{entry.entityId})
+          </h4>
+        </div>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
+            {translateRole(entry.oldValues)}
+          </span>
+          <ArrowRight size={16} className="text-blue-500 shrink-0" />
+          <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
+            {translateRole(entry.newValues)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Đổi trạng thái: UPDATE_STATUS
+  if (act.includes("STATUS")) {
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-2">
+          <RefreshCw size={17} className="text-blue-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Thay đổi trạng thái hoạt động (ID: #{entry.entityId})
+          </h4>
+        </div>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
+            {translateStatus(entry.oldValues)}
+          </span>
+          <ArrowRight size={16} className="text-blue-500 shrink-0" />
+          <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+            {translateStatus(entry.newValues)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Thanh lý hợp đồng: agreement_liquidated
+  if (act.includes("LIQUIDAT")) {
+    const details = after.value && typeof after.value === "object" ? after.value : {};
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldAlert size={18} className="text-rose-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Chi tiết thanh lý hợp đồng thuê (#{entry.entityId})
+          </h4>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+          {details.reason && (
+            <div className="sm:col-span-2 bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
+              <div className="text-[11px] font-semibold text-amber-800 uppercase">Lý do cưỡng chế thanh lý</div>
+              <div className="text-xs font-medium text-amber-950 mt-0.5">{details.reason}</div>
+            </div>
+          )}
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Trạng thái hợp đồng</div>
+            <div className="text-xs font-bold text-rose-600 mt-0.5">
+              {entry.oldValues || "overdue"} ➔ Đã chấm dứt (terminated)
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Trạng thái ô kho</div>
+            <div className="text-xs font-bold text-amber-700 mt-0.5">
+              Chờ nghiệm thu ({details.unitStatus || "pending_inspection"})
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Tiền cọc khấu trừ vi phạm</div>
+            <div className="text-xs font-bold text-slate-900 mt-0.5">
+              {details.deductedDeposit ? Number(details.deductedDeposit).toLocaleString("vi-VN") + " VNĐ" : "0 VNĐ"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">Xử lý tài sản tồn lưu</div>
+            <div className="text-xs font-medium text-slate-700 mt-0.5">Niêm phong & tiến hành nghiệm thu kho</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 6. Generic Object / Trường dữ liệu thay đổi
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (isObj(before.value) || isObj(after.value)) {
+    const oldObj = before.value || {};
+    const newObj = after.value || {};
+    const allKeys = [...new Set([...Object.keys(oldObj), ...Object.keys(newObj)])];
+    const changedKeys = allKeys.filter((k) => oldObj[k] !== newObj[k]);
+
+    return (
+      <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex items-center gap-2 mb-2">
+          <Layers size={17} className="text-blue-600" />
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+            Chi tiết các trường thông tin thay đổi ({entityNameVN} #{entry.entityId})
+          </h4>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px]">
+              <tr>
+                <th className="py-2.5 px-4 w-1/3">Trường thông tin</th>
+                <th className="py-2.5 px-4 w-1/3">Trước thay đổi</th>
+                <th className="py-2.5 px-4 w-1/3">Sau thay đổi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {changedKeys.map((k) => (
+                <tr key={k}>
+                  <td className="py-2 px-4 font-semibold text-slate-800">{fieldLabel(k)}</td>
+                  <td className="py-2 px-4 text-slate-500">{String(oldObj[k] ?? "—")}</td>
+                  <td className="py-2 px-4 font-bold text-slate-900">{String(newObj[k] ?? "—")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // 7. Generic Fallback: Text rõ ràng
+  return (
+    <div className="p-4 bg-slate-50 border-t border-slate-200">
+      <div className="flex items-center gap-2 mb-2">
+        <CheckCircle2 size={17} className="text-slate-600" />
+        <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+          Nội dung ghi nhận ({entityNameVN} #{entry.entityId})
+        </h4>
+      </div>
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs text-xs text-slate-800">
+        {entry.newValues ? (
+          <div>{entry.newValues}</div>
+        ) : (
+          <div className="text-slate-400 italic">Không có thêm dữ liệu chi tiết cho sự kiện này.</div>
+        )}
+      </div>
     </div>
-    {(before.invalid || after.invalid) && <p className="audit-detail-notice">Dữ liệu ghi nhận dạng mô tả hoạt động chi tiết.</p>}
-    <div className="audit-change-head" aria-hidden="true">
-      <span>{t("admin.audit_field", "Trường dữ liệu")}</span>
-      <span>{t("admin.audit_before", "Trước thay đổi")}</span>
-      <span>{t("admin.audit_after", "Sau thay đổi")}</span>
-    </div>
-    {visible.map((field) => <div className={`audit-change-row ${field.changed ? "is-changed" : ""}`} key={field.key}>
-      <div className="audit-field-name"><strong>{fieldLabel(field.key)}</strong><small>{field.changed ? field.kind : "Không đổi"}</small></div>
-      <div className="audit-before"><span className="audit-mobile-label">Trước: </span><Value value={field.before} t={t} /></div>
-      <div className="audit-after"><span className="audit-mobile-label">Sau: </span><Value value={field.after} t={t} /></div>
-    </div>)}
-    {!visible.length && <div className="audit-no-changes">{fields.length ? "Không có thay đổi dữ liệu nào trong các trường được ghi nhận. Bật “Hiện các trường không đổi” để xem toàn bộ." : "Không có dữ liệu trước/sau nào được ghi nhận cho sự kiện này."}</div>}
-  </section>;
+  );
 }

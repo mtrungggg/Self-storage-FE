@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   RefreshCw,
   Trash2,
-  User,
   Building2,
   Calendar,
   AlertTriangle,
@@ -86,16 +85,15 @@ export default function AdminUserDetail() {
   const customer = user?.customerProfile;
   const employee = user?.employeeProfile;
 
-  // Determine user category: is this user a customer, employee, or both?
-  const isCustomerOnly =
-    user?.roles?.some((r) => r.code?.toLowerCase().includes("customer")) &&
-    !user?.roles?.some((r) =>
-      ["admin", "manager", "staff", "operations"].some((sub) => r.code?.toLowerCase().includes(sub))
-    );
+  const userRoleCodes = (user?.roles || []).map((r) => (r.code || "").toLowerCase());
 
-  const isStaffOrManager = user?.roles?.some((r) =>
-    ["admin", "manager", "staff", "operations"].some((sub) => r.code?.toLowerCase().includes(sub))
+  // Determine user category: only facility staff and manager can have facility branch assignments
+  const isFacilityStaffOrManager = userRoleCodes.some((code) =>
+    code === "facility_staff" || code === "facility_manager" || code === "staff" || code === "manager"
   );
+
+  const isCustomerOnly =
+    userRoleCodes.some((code) => code.includes("customer")) && !isFacilityStaffOrManager;
 
   async function removeAssignment(assignment) {
     if (deletePending.current || savingStatus || savingRoles || savingAssignment) return;
@@ -246,11 +244,11 @@ export default function AdminUserDetail() {
               <div className="lg:col-span-7 xl:col-span-8 border-b lg:border-b-0 lg:border-r border-slate-100 pb-5 lg:pb-0 lg:pr-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 font-bold text-base border border-blue-100">
-                    {(employee?.fullName || customer?.fullName || user.email).charAt(0).toUpperCase()}
+                    {(isFacilityStaffOrManager ? (employee?.fullName || customer?.fullName || user.email) : (customer?.fullName || employee?.fullName || user.email)).charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-slate-900 leading-tight">
-                      {employee?.fullName || customer?.fullName || "Account Profile"}
+                      {isFacilityStaffOrManager ? (employee?.fullName || customer?.fullName || "Account Profile") : (customer?.fullName || employee?.fullName || "Account Profile")}
                     </h2>
                     <p className="text-xs text-slate-500 font-mono">
                       User ID: #{user.id} · Created {date(user.createdAt)}
@@ -273,7 +271,7 @@ export default function AdminUserDetail() {
                     <strong className="text-slate-800 font-semibold">{user.phoneNumber || "—"}</strong>
                   </div>
 
-                  {employee && (
+                  {isFacilityStaffOrManager && employee && (
                     <>
                       <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-100">
                         <span className="text-[11px] font-semibold text-slate-400 block mb-0.5 flex items-center gap-1">
@@ -291,21 +289,32 @@ export default function AdminUserDetail() {
                     </>
                   )}
 
-                  {customer && !employee && (
+                  {!isFacilityStaffOrManager && (
                     <>
                       <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-100">
                         <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
-                          ID / Passport
+                          National ID / Passport
                         </span>
-                        <strong className="text-slate-800 font-semibold font-mono">{customer.identityNumber || "—"}</strong>
+                        <strong className="text-slate-800 font-semibold font-mono">{customer?.identityNumber || "—"}</strong>
                       </div>
 
                       <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-100">
                         <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
                           Residential Address
                         </span>
-                        <strong className="text-slate-800 font-semibold truncate block">{customer.address || "—"}</strong>
+                        <strong className="text-slate-800 font-semibold truncate block">{customer?.address || "—"}</strong>
                       </div>
+
+                      {customer?.emergencyContactName && (
+                        <div className="rounded-lg bg-slate-50 p-2.5 border border-slate-100 sm:col-span-2">
+                          <span className="text-[11px] font-semibold text-slate-400 block mb-0.5">
+                            Emergency Contact
+                          </span>
+                          <strong className="text-slate-800 font-semibold">
+                            {customer.emergencyContactName} ({customer.emergencyContactPhone || "—"})
+                          </strong>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -370,48 +379,8 @@ export default function AdminUserDetail() {
             }}
           />
 
-          {/* Customer Profile (Rendered ONLY when user is actually a Customer) */}
-          {!isStaffOrManager && customer && (
-            <section className="reference-card mb-5 p-5">
-              <div className="reference-card-heading mb-3">
-                <div className="flex items-center gap-2">
-                  <User size={16} className="text-blue-600" />
-                  <h2>Customer Rental Profile</h2>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-xs">
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">Full Legal Name</span>
-                  <strong className="text-slate-800">{customer.fullName}</strong>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">National ID / Passport</span>
-                  <strong className="text-slate-800 font-mono">{customer.identityNumber || "—"}</strong>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">Date of Birth</span>
-                  <strong className="text-slate-800">{date(customer.dateOfBirth)}</strong>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">Residential Address</span>
-                  <strong className="text-slate-800">{customer.address || "—"}</strong>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">Emergency Contact</span>
-                  <strong className="text-slate-800">
-                    {customer.emergencyContactName ? `${customer.emergencyContactName} (${customer.emergencyContactPhone || "—"})` : "—"}
-                  </strong>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="text-slate-400 block mb-0.5">Profile Registered</span>
-                  <strong className="text-slate-800">{date(customer.createdAt)}</strong>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Employee Facility Assignments (Rendered ONLY when user is an Employee/Staff/Manager) */}
-          {employee && (
+          {/* Employee Facility Assignments (Rendered ONLY when user is an active Facility Staff or Manager) */}
+          {isFacilityStaffOrManager && employee && (
             <section className="reference-card reference-table-card mb-5">
               <div className="reference-card-heading">
                 <div className="flex items-center gap-2.5">

@@ -197,11 +197,11 @@ export function useHome() {
         climateNote = "Smart Dry Locker";
       }
 
-      const categoryName = u.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
-      const length = u.length ?? unitType?.lengthM ?? 2;
-      const width = u.width ?? unitType?.widthM ?? 1.5;
-      const height = u.height ?? unitType?.heightM ?? 2.5;
-      const area = u.area ?? u.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
+      const categoryName = u.storageCategory || u.categoryName || unitType?.categoryName || unitType?.name || "Kho hàng khô";
+      const length = u.customLengthM ?? u.length ?? unitType?.lengthM ?? 2;
+      const width = u.customWidthM ?? u.width ?? unitType?.widthM ?? 1.5;
+      const height = u.customHeightM ?? u.height ?? unitType?.heightM ?? 2.5;
+      const area = u.customAreaM2 ?? u.area ?? u.areaM2 ?? unitType?.areaM2 ?? Number((length * width).toFixed(1));
       const dimension = `${length}m × ${width}m`;
 
       return {
@@ -233,9 +233,9 @@ export function useHome() {
         areaM2: area,
         volume: u.volume ?? `${(area * height).toFixed(1)} m³`,
         fitNote: unitType?.description || "",
-        rentPrice: u.monthlyRate ?? u.monthlyPrice ?? 0,
+        rentPrice: u.customMonthlyRate ?? u.monthlyRate ?? u.monthlyPrice ?? 0,
         depositPrice: null,
-        image: getUnitTypeImage(unitType),
+        image: u.imageUrl || getUnitTypeImage(unitType),
       };
     });
   }, [rawUnits, facilityById, unitTypeById]);
